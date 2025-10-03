@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+  <!-- <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"> -->
+  <title>TonBitcoin Mine</title>
+</head>
+
+<body>
+  <div id="app" class="select-none"></div>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    window?.Telegram?.WebApp?.expand()
+    window?.Telegram?.WebApp?.disableVerticalSwipes()
+    window?.Telegram?.WebApp?.lockOrientation('portrait')
+    window?.Telegram?.WebApp?.setHeaderColor('#000')
+  </script>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

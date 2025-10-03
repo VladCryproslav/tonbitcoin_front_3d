@@ -1,0 +1,7 @@
+{
+  "plugins": ["stylelint-no-unused-selectors"],
+  "processors": ["stylelint-processor-html"],
+  "rules": {
+    "plugin/no-unused-selectors": true
+  }
+}
