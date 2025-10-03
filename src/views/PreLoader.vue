@@ -15,7 +15,7 @@ const app = useAppStore()
 const { tg } = useTelegram()
 const { t, locale } = useI18n()
 
-const TECH_MAINTENANCE = false;
+const TECH_MAINTENANCE = true; // Технічні роботи
 const opacityLevels = ref([])
 
 const scrollHandler = () => {
