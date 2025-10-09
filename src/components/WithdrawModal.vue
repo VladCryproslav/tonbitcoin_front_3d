@@ -103,7 +103,7 @@ const toWalletAmount = computed(() => {
   const s21sxAfterCommission = s21sxPart - (s21sxPart * commissionRate.value)
 
   // 25% від S21/SX йде в гаманець
-  const s21sxToWallet = s21sxAfterCommission * 0.25
+  const s21sxToWallet = s21sxAfterCommission * 0.50
 
   return +((s1s19AfterCommission + s21sxToWallet)).toFixed(2)
 })
@@ -126,7 +126,7 @@ const toStakingAmount = computed(() => {
   const s21sxAfterCommission = s21sxPart - (s21sxPart * commissionRate.value)
 
   // 75% від S21/SX йде в стейкінг
-  const s21sxToStaking = s21sxAfterCommission * 0.75
+  const s21sxToStaking = s21sxAfterCommission * 0.50
 
   return +s21sxToStaking.toFixed(2)
 })
