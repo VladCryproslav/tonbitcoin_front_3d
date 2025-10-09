@@ -153,7 +153,7 @@ onUnmounted(() => {
           </div>
           <button class="trade-btn">
             {{ t('market.trade_btn') }}
-            <img src="@/assets/tBTC.png" width="18px" height="18px" />
+            <img src="@/assets/TBTC.png" width="18px" height="18px" />
           </button>
         </div>
       </div>

@@ -652,7 +652,7 @@ onUnmounted(() => {
         <input name="radio-group" id="radio2" v-model="paymentRadio" value="ton" class="radio-payment__input"
           type="radio">
         <label for="radio2" class="radio-payment__label">
-          <img src="@/assets/ton.png" width="28px" />
+          <img src="@/assets/TON.png" width="28px" />
           <span v-if="paymentRadio == 'ton'">{{ t('boost.eternal') }}</span>
           <span class="radio-payment__custom"></span>
         </label>
@@ -964,7 +964,7 @@ onUnmounted(() => {
                   paymentRadio == 'ton' && item?.slug !== 'azot' && item?.slug !== 'autostart'
                 " class="flex justify-center items-center font-bold gap-1 text-[12px]">
                   {{ t('common.from') }}
-                  <img src="@/assets/ton.png" width="15px" alt="TON" />
+                  <img src="@/assets/TON.png" width="15px" alt="TON" />
                   {{ foreverBoosts?.[item?.slug]?.price }}
                   <span class="text-[8px] text-black font-bold line-through decoration-red-400 decoration-[2px]">
                     {{ foreverBoosts?.[item?.slug]?.old_price }}</span>

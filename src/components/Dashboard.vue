@@ -547,7 +547,7 @@ watch(currFilter, async () => {
               <div v-if="revealBuy == item?.name" class="asic-buy">
                 <div class="asic-buy-price">
                   <span class="asic-buy-price-value">{{ item.price }}</span>
-                  <img src="@/assets/ton.png" width="16px" height="16px" alt="" />
+                  <img src="@/assets/TON.png" width="16px" height="16px" alt="" />
                 </div>
                 <button class="asic-buy-btn" @click="buyAsics(index, item?.price, item?.link, item?.sale)">
                   <h1 class="asic-buy-btn-text">{{ t('common.buy') }}</h1>
@@ -616,7 +616,7 @@ watch(currFilter, async () => {
               </div>
               <div class="stat-grouping">
                 <span class="stat-grouping-title">{{ t('dashboard.around_cost') }}</span>
-                <h1 class="stat-grouping-value">{{ getPriceRange(item) }}<img src="@/assets/ton.png" width="18px"
+                <h1 class="stat-grouping-value">{{ getPriceRange(item) }}<img src="@/assets/TON.png" width="18px"
                     aly="" />
                 </h1>
               </div>
