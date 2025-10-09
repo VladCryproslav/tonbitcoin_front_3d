@@ -358,7 +358,7 @@ const Asic = (name) => {
         <div class="wheel-statistic-title">{{ t('wheel.balance') }}</div>
         <div class="wheel-statistic-balances">
           <div class="wheel-statistic-balances-kw">
-            <img src="@/assets/kw_token.png" width="22px" height="22px" />{{
+            <img src="@/assets/kW_token.png" width="22px" height="22px" />{{
               +(+app.user.kw_wallet).toFixed(0) || 0
             }}
           </div>
@@ -375,7 +375,7 @@ const Asic = (name) => {
       <div class="wheel-button-group">
         <button class="btn-spin-kw" @click="spinWheel('kW')">
           {{ t('wheel.spin_for', { n: app?.withdraw_config?.wheel_kw_cost || 0 }) }}
-          <img src="@/assets/kw_token.png" width="22px" height="22px" />
+          <img src="@/assets/kW_token.png" width="22px" height="22px" />
         </button>
         <button class="btn-spin-tbtc" @click="spinWheel('tBTC')">
           {{ t('wheel.spin_for', { n: app?.withdraw_config?.wheel_tbtc_cost || 0 }) }}

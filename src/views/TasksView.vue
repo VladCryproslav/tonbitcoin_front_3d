@@ -289,7 +289,7 @@ onUnmounted(() => {
             <div class="task-item-info">
               <p class="task-item-info-title">{{ item?.task?.[`title${locale == 'uk' ? '' : `_${locale}`}`] }}</p>
               <span class="task-item-info-price">{{ item?.task?.reward_amount }}
-                <img v-if="item?.task?.reward_type == 'kW'" src="@/assets/kw_token.png" width="16px" />
+                <img v-if="item?.task?.reward_type == 'kW'" src="@/assets/kW_token.png" width="16px" />
                 <img v-if="item?.task?.reward_type == 'tBTC'" src="@/assets/fBTC.webp" width="16px" />
               </span>
             </div>

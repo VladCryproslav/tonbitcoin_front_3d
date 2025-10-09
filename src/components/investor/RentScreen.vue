@@ -450,7 +450,7 @@ onUnmounted(() => {
     </label>
     <label class="rent-radio">
       <!-- v-model="currRentToggle" -->
-      <input type="radio" :class="{ checked: currRentToggle == 'miner' }" value="miner" @click="openInfoModal = true" /> 
+      <input type="radio" :class="{ checked: currRentToggle == 'miner' }" value="miner" @click="openInfoModal = true" />
       <span class="name" :style="{ borderRadius: '0.5rem 0 0 0.5rem' }">{{ t('investor.miner_tab') }}</span>
     </label>
   </div>
@@ -594,7 +594,7 @@ onUnmounted(() => {
                 )
               }">
               <h1>{{ t('investor.rent_in') }}</h1>
-              <label><img src="@/assets/kw_token.png" width="14px" />{{((num) => num ? num < 1000 ? num.toString() :
+              <label><img src="@/assets/kW_token.png" width="14px" />{{((num) => num ? num < 1000 ? num.toString() :
                 +(num / 1000).toFixed(num % 1000 >= 100 ? 2 : num % 1000 >= 10 ? 1 : 0) + 'К' :
                 0)(getAsicData(item.nft, all_asics, asicsSheet, 'consumption') * 24) }}</label>
             </button>
