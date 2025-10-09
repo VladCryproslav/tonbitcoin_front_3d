@@ -16,7 +16,6 @@
     "@ton/crypto": "^3.3.0",
     "@ton/ton": "^15.1.0",
     "@townsquarelabs/ui-vue": "^2.0.11-beta.0",
-    "@vue/composition-api": "^1.7.2",
     "axios": "^1.7.9",
     "canvas-confetti": "^1.9.3",
     "chart.js": "^4.4.9",
@@ -62,5 +61,15 @@
     "vite-plugin-node-polyfills": "^0.22.0",
     "vite-plugin-vue-devtools": "^7.6.5",
     "vite-svg-loader": "^5.1.0"
+  },
+  "overrides": {
+    "@vue/composition-api": "npm:@vue/composition-api@1.7.2"
+  },
+  "resolutions": {
+    "@vue/composition-api": "npm:@vue/composition-api@1.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }
