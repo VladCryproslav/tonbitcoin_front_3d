@@ -2,9 +2,9 @@
 
 ## Что было исправлено
 
-1. **Конфликт зависимостей**: Использованы `overrides` и `resolutions` для принудительного разрешения конфликта с `@vue/composition-api`
-2. **Конфигурация npm**: Обновлен `.npmrc` с флагами `legacy-peer-deps=true`, `force=true`, `audit=false`
-3. **Конфигурация Vercel**: Создан `vercel.json` с командой установки `npm install --legacy-peer-deps`
+1. **Полное исключение @vue/composition-api**: Использованы `overrides` и `resolutions` со значением `false` для полного исключения конфликтующей зависимости
+2. **Агрессивная конфигурация npm**: Обновлен `.npmrc` с максимальными флагами обхода конфликтов
+3. **Усиленная конфигурация Vercel**: Команда установки `npm install --legacy-peer-deps --force`
 4. **Исключения**: Создан `.vercelignore` для исключения ненужных файлов
 
 ## Как деплоить
@@ -29,10 +29,10 @@ vercel
 ## Важные моменты
 
 - ✅ Сборка проекта работает корректно
-- ✅ Все зависимости разрешены через overrides/resolutions
+- ✅ @vue/composition-api полностью исключена из установки
 - ✅ Конфигурация для SPA (Single Page Application) настроена
 - ✅ Продакшен не сломан - изменения только в dev-зависимостях
-- ✅ Используется `--legacy-peer-deps` для обхода конфликтов
+- ✅ Используется максимально агрессивный обход конфликтов
 
 ## Проверка
 
@@ -43,8 +43,10 @@ vercel
 
 ## Технические детали
 
-Проблема была в том, что `@townsquarelabs/ui-vue` требует `@vue/composition-api`, но эта библиотека предназначена для Vue 2, а проект использует Vue 3. Решение:
+**Финальное решение**: Полное исключение `@vue/composition-api` через:
 
-1. Использование `overrides` и `resolutions` для принудительного разрешения версии
-2. Флаг `--legacy-peer-deps` для игнорирования peer dependency конфликтов
-3. Настройка `.npmrc` для автоматического применения этих флагов
+1. `overrides` и `resolutions` со значением `false`
+2. Агрессивные флаги в `.npmrc`: `legacy-peer-deps=true`, `force=true`, `audit=false`, `fund=false`, `strict-peer-deps=false`
+3. Команда установки: `npm install --legacy-peer-deps --force`
+
+Это решение полностью исключает конфликтующую зависимость, позволяя `@townsquarelabs/ui-vue` работать с встроенным Composition API Vue 3.

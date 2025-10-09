@@ -63,10 +63,10 @@
     "vite-svg-loader": "^5.1.0"
   },
   "overrides": {
-    "@vue/composition-api": "npm:@vue/composition-api@1.7.2"
+    "@vue/composition-api": false
   },
   "resolutions": {
-    "@vue/composition-api": "npm:@vue/composition-api@1.7.2"
+    "@vue/composition-api": false
   },
   "engines": {
     "node": ">=18.0.0",
