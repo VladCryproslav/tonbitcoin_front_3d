@@ -155,7 +155,9 @@ async function confirm() {
   if (props.kind == 'mint') {
     let kwPrice = props.kw
     let tbtcPrice = ((app.user?.current_mint && app.stationsNft.length) || allStations.indexOf(app.user?.station_type) == 3) ? props.tbtc : +(+app.stations?.storage_configs?.find((el) => el?.station_type == allStations[allStations.indexOf(app.user?.station_type)] && el?.level == 1)?.price_tbtc / 2)
-    if (kwPrice && app?.user?.energy < kwPrice) {
+
+    // Безопасная проверка цен - убеждаемся что цены не null/undefined
+    if (kwPrice != null && kwPrice > 0 && app?.user?.energy < kwPrice) {
       emit('close', {
         status: 'error',
         title: t('notification.st_error'),
@@ -163,7 +165,7 @@ async function confirm() {
       })
       return;
     }
-    if (tbtcPrice && app?.user?.tbtc_wallet < tbtcPrice) {
+    if (tbtcPrice != null && tbtcPrice > 0 && app?.user?.tbtc_wallet < tbtcPrice) {
       emit('close', {
         status: 'error',
         title: t('notification.st_error'),
@@ -188,7 +190,7 @@ async function confirm() {
               .storeAddress(receiveWalletAddress) // new_owner_address
               .storeAddress(Address.parse(userAddress)) // response_address
               .storeBit(0)                   // Немає custom_payload
-              .storeCoins(toNano(0.01))      // forward_amount 
+              .storeCoins(toNano(0.01))      // forward_amount
               .storeBit(0)                   // Немає forward_payload
               .endCell()
             return {

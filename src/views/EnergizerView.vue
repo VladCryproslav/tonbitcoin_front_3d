@@ -1288,7 +1288,8 @@ onUnmounted(() => {
               app.user?.generation_level == findMaxLevel(app.stations?.gen_configs) &&
               app.user?.station_type !== allStations?.[allStations.length - 1] &&
               allStations?.indexOf(app.user?.station_type) >= 3 &&
-              (!app.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0)
+              (!app.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) &&
+              (allStations?.indexOf(app.user?.station_type) == 3 || (app.stationsNft.length && app.user?.current_mint))
             " class="upg-btn"
               :class="{ 'mint': (app.stationsNft.length && app.user?.current_mint) || allStations?.indexOf(app.user?.station_type) == 3, 'upg-btn-unactive': (!app.stationsNft.length || !app.user?.current_mint) && allStations?.indexOf(app.user?.station_type) !== 3 }"
               @click="() => {
