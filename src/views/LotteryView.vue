@@ -6,6 +6,11 @@
       <div class="lottery-main">
         <div class="lottery-bg"></div>
         <div class="lottery-content">
+          <div class="lottery-header">
+            <h2 class="lottery-title">Лотерея</h2>
+            <div class="close-icon"></div>
+          </div>
+
           <div class="station-info">
             <h3 class="station-title">Орбитальная электростанция</h3>
           </div>
@@ -138,9 +143,12 @@ const buyTicket = () => {
   position: relative;
   width: 100%;
   height: 465px;
-  border-radius: 25px;
+  border-radius: 0 0 20px 20px;
   overflow: hidden;
   margin: 0;
+  background: radial-gradient(circle at 48% 5%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%), #131313;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-top: none;
 
   .lottery-bg {
     position: absolute;
@@ -151,6 +159,7 @@ const buyTicket = () => {
     background: url('@/assets/lottery-bg.png');
     background-size: cover;
     background-position: center;
+    opacity: 0.4;
   }
 
   .lottery-content {
@@ -164,9 +173,38 @@ const buyTicket = () => {
     justify-content: center;
     gap: 15px;
 
+    .lottery-header {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      right: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 3;
+
+      .lottery-title {
+        color: #fff;
+        font-family: 'Inter', sans-serif;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .close-icon {
+        width: 16px;
+        height: 16px;
+        background: #fff;
+        mask: url('@/assets/close-modal.svg') no-repeat center;
+        mask-size: contain;
+        cursor: pointer;
+      }
+    }
+
     .station-info {
       text-align: center;
       max-width: 262px;
+      margin-top: 60px;
 
       .station-title {
         color: #fff;
@@ -275,6 +313,14 @@ const buyTicket = () => {
   width: 358px;
   margin-left: auto;
   margin-right: auto;
+  max-height: calc(100vh - 500px);
+  overflow-y: scroll;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   .participants-header {
     display: flex;
