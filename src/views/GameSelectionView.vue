@@ -50,13 +50,6 @@ const goBack = () => {
       </div>
     </div>
 
-    <!-- Back Button -->
-    <div class="back-button-container">
-      <button class="back-button" @click="goBack">
-        {{ t('games.go_back') }}
-      </button>
-    </div>
-
     <!-- Bottom Navigation -->
     <div class="bottom-navigation">
       <div class="nav-item">
@@ -84,6 +77,13 @@ const goBack = () => {
         <span class="nav-label">Tasks</span>
       </div>
     </div>
+
+    <!-- Back Button -->
+    <div class="back-button-container">
+      <button class="back-button" @click="goBack">
+        {{ t('games.go_back') }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -102,9 +102,9 @@ const goBack = () => {
 
 .main-content {
   flex: 1;
-  padding: 170px 15px 0;
+  padding: 170px 15px 200px;
   overflow-y: auto;
-  background: radial-gradient(circle at 50% 0%, rgba(103, 98, 240, 1) 0%, rgba(103, 98, 240, 0) 100%), #000000;
+  background: radial-gradient(circle at 50% 0%, rgba(103, 98, 240, 1) 0%, rgba(103, 98, 240, 0) 100%), #0B150F;
 
   .games-container {
     display: flex;
@@ -145,9 +145,6 @@ const goBack = () => {
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
-                rgba(0, 0, 0, 0.2),
-                rgba(129, 67, 252, 0.2);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -164,33 +161,41 @@ const goBack = () => {
     margin: 0;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   }
-
 }
 
 .wheel-card {
   .game-card-bg {
-    background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
+    background: url('@/assets/wheel-icon.svg'),
+                radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.2),
                 rgba(129, 67, 252, 0.2);
-    /* Место для фонового изображения колеса */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
   }
 }
 
 .lottery-card {
   .game-card-bg {
-    background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
+    background: url('@/assets/lottery-icon.svg'),
+                radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.2),
                 rgba(129, 67, 252, 0.2);
-    /* Место для фонового изображения лотереи */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
   }
 }
 
 .development-card {
   .game-card-bg {
-    background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
+    background: url('@/assets/development-icon.svg'),
+                radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.2),
                 rgba(129, 67, 252, 0.2);
-    /* Место для фонового изображения разработки */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
   }
 
   .development-overlay {
@@ -209,15 +214,20 @@ const goBack = () => {
 }
 
 .back-button-container {
+  position: fixed;
+  bottom: 100px;
+  left: 0;
+  right: 0;
   padding: 16px;
   background: rgba(16, 21, 27, 0.25);
   backdrop-filter: blur(9px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1002;
 
   .back-button {
     width: 100%;
     height: 50px;
-    background: linear-gradient(135deg, #8143FC 0%, #FFFFFF 100%);
+    background: #8143FC;
     border: none;
     border-radius: 10px;
     color: #FFFFFF;
