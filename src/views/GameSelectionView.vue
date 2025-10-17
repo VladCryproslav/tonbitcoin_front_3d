@@ -50,34 +50,6 @@ const goBack = () => {
       </div>
     </div>
 
-    <!-- Bottom Navigation -->
-    <div class="bottom-navigation">
-      <div class="nav-item">
-        <div class="nav-icon"></div>
-        <span class="nav-label">Wallet</span>
-      </div>
-      <div class="nav-item">
-        <div class="nav-icon"></div>
-        <span class="nav-label">Boost</span>
-      </div>
-      <div class="nav-item active">
-        <div class="nav-icon"></div>
-        <span class="nav-label">Home</span>
-      </div>
-      <div class="nav-item">
-        <div class="nav-icon"></div>
-        <span class="nav-label">Market</span>
-      </div>
-      <div class="nav-item">
-        <div class="nav-icon"></div>
-        <span class="nav-label">Friends</span>
-      </div>
-      <div class="nav-item">
-        <div class="nav-icon"></div>
-        <span class="nav-label">Tasks</span>
-      </div>
-    </div>
-
     <!-- Back Button -->
     <div class="back-button-container">
       <button class="back-button" @click="goBack">
@@ -102,7 +74,7 @@ const goBack = () => {
 
 .main-content {
   flex: 1;
-  padding: 170px 15px 200px;
+  padding: 48px 15px 120px;
   overflow-y: auto;
   background: radial-gradient(circle at 50% 0%, rgba(103, 98, 240, 1) 0%, rgba(103, 98, 240, 0) 100%), #0B150F;
 
@@ -215,7 +187,7 @@ const goBack = () => {
 
 .back-button-container {
   position: fixed;
-  bottom: 100px;
+  bottom: 120px;
   left: 0;
   right: 0;
   padding: 16px;
@@ -250,60 +222,11 @@ const goBack = () => {
   }
 }
 
-.bottom-navigation {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 100px;
-  background: rgba(16, 21, 27, 0.25);
-  backdrop-filter: blur(9px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding: 26px 25.5px;
-  z-index: 1001;
-
-  .nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-    transition: opacity 0.2s ease;
-
-    &.active {
-      .nav-label {
-        color: #B8C9DB;
-      }
-    }
-
-    .nav-icon {
-      width: 22px;
-      height: 22px;
-      background: rgba(184, 201, 219, 0.1);
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .nav-label {
-      color: rgba(184, 201, 219, 0.25);
-      font-family: 'Inter', sans-serif;
-      font-weight: 600;
-      font-size: 10px;
-      line-height: 1.21;
-      text-align: center;
-    }
-  }
-}
 
 // Responsive adjustments
 @media (max-width: 390px) {
   .main-content {
-    padding: 170px 15px 0;
+    padding: 48px 15px 120px;
   }
 
   .game-card {
