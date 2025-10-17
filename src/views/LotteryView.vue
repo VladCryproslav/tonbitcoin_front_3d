@@ -114,7 +114,7 @@ import { useAppStore } from '@/stores/app'
 const router = useRouter()
 const { t } = useI18n()
 const ton_address = useTonAddress()
-const tonConnectUI = useTonConnectUI()
+const { tonConnectUI } = useTonConnectUI()
 const app = useAppStore()
 
 // Modal states
@@ -224,6 +224,11 @@ const buyTicket = async () => {
     return
   }
 
+  if (!tonConnectUI) {
+    showModal('error', t('notification.st_error'), 'TON Connect не инициализирован')
+    return
+  }
+
   if (isProcessing.value) return
   isProcessing.value = true
 
@@ -240,11 +245,11 @@ const buyTicket = async () => {
     const networkFee = 0.1 // TON
 
     // Создаем payload для покупки билета лотереи
-    // Используем op: 2 для покупки билета лотереи (аналогично другим операциям в проекте)
+    // Используем тот же формат, что и в Dashboard.vue
     const lotteryPayload = beginCell()
       .storeUint(2, 32) // op: 2 = buy lottery ticket
       .storeUint(0, 64) // query id
-      .storeUint(1, 32) // ticket count
+      .storeUint(1, 4) // ticket count (4 bits как в Dashboard)
       .endCell()
 
     const transactionData = {
@@ -258,23 +263,18 @@ const buyTicket = async () => {
       ],
     }
 
-    const result = await tonConnectUI.sendTransaction(transactionData, {
+    await tonConnectUI.sendTransaction(transactionData, {
       modals: ['before', 'success'],
       notifications: [],
     })
 
-    // Проверяем результат транзакции
-    if (result && result?.boc) {
-      // Если дошли до этой точки, транзакция успешна
-      showModal('success', t('notification.st_success'), `Успешно куплен билет за ${ticketPrice} TON!`)
+    // Если дошли до этой точки, транзакция успешна
+    showModal('success', t('notification.st_success'), `Успешно куплен билет за ${ticketPrice} TON!`)
 
-      // Обновляем данные пользователя после успешной покупки
-      await app.initUser()
-    } else {
-      throw new Error('Transaction failed - no BOC returned')
-    }
+    // Обновляем данные пользователя после успешной покупки
+    await app.initUser()
   } catch (err) {
-    console.log(err)
+    console.log('Error in buyTicket:', err)
     showModal('error', t('notification.st_error'), t('notification.failed_transaction'))
   } finally {
     isProcessing.value = false
