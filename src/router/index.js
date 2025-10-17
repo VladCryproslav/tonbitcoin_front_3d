@@ -30,6 +30,11 @@ const router = createRouter({
       component: () => import('@/views/FriendsView.vue'),
     },
     {
+      path: '/games',
+      name: 'games',
+      component: () => import('@/views/GameSelectionView.vue'),
+    },
+    {
       path: '/wheel',
       name: 'wheel',
       component: () => import('@/views/WheelView.vue'),

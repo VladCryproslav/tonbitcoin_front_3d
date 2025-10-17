@@ -417,6 +417,14 @@
     "insufficient_funds": "На вашому балансі недостатньо коштів",
     "min_withdraw_fbtc": "Для виведення fBTC ваш баланс повинен становити не менше {min} fBTC."
   },
+  "games": {
+    "title": "Ігри",
+    "subtitle": "bot",
+    "wheel_of_fortune": "Колесо Фортуни",
+    "lottery": "Лотерея",
+    "in_development": "В розробці",
+    "go_back": "Повернутися назад"
+  },
   "common": {
     "lvl": "рів.",
     "comming": "Скоро буде",

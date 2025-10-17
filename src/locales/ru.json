@@ -417,6 +417,14 @@
     "imposible_activate_booster": "Невозможно активировать бустер.",
     "insufficient_funds": "На вашем балансе недостаточно средств"
   },
+  "games": {
+    "title": "Игры",
+    "subtitle": "bot",
+    "wheel_of_fortune": "Колесо Фортуны",
+    "lottery": "Лотерея",
+    "in_development": "В разработке",
+    "go_back": "Вернуться назад"
+  },
   "common": {
     "lvl": "ур.",
     "comming": "Скоро будет",

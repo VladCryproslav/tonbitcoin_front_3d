@@ -417,6 +417,14 @@
     "insufficient_funds": "Insufficient funds in your balance",
     "min_withdraw_fbtc": "To withdraw fBTC, your balance must be at least {min} fBTC"
   },
+  "games": {
+    "title": "Games",
+    "subtitle": "bot",
+    "wheel_of_fortune": "Wheel of Fortune",
+    "lottery": "Lottery",
+    "in_development": "In Development",
+    "go_back": "Go Back"
+  },
   "common": {
     "lvl": "lvl",
     "comming": "Coming Soon",
