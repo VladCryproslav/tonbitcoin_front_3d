@@ -1,57 +1,37 @@
 <template>
   <div class="lottery-screen">
-    <!-- Header -->
-    <div class="header">
-      <div class="header-content">
-        <button class="back-button" @click="goBack">
-          <span>Cancel</span>
-        </button>
-        <div class="title-section">
-          <h1 class="title">Mining game</h1>
-          <span class="subtitle">bot</span>
-        </div>
-        <div class="menu-button">
-          <span>􀍡</span>
-        </div>
-      </div>
-    </div>
-
     <!-- Main Content -->
     <div class="main-content">
       <!-- Lottery Main Section -->
       <div class="lottery-main">
         <div class="lottery-bg"></div>
         <div class="lottery-content">
-          <div class="lottery-header">
-            <h2 class="lottery-title">Лотерея</h2>
-            <div class="close-icon"></div>
+          <div class="station-info">
+            <h3 class="station-title">Орбитальная электростанция</h3>
           </div>
 
-          <div class="lottery-info">
-            <h3 class="station-name">Орбитальная электростанция</h3>
-            <div class="ticket-stats">
-              <div class="stat-item">
-                <span class="stat-label">Всего билетов:</span>
-                <div class="stat-value">
-                  <span class="stat-number">150</span>
-                  <div class="stat-icon"></div>
-                </div>
+          <div class="ticket-info">
+            <div class="ticket-row">
+              <span class="ticket-label">Всего билетов:</span>
+              <div class="ticket-value">
+                <span class="ticket-count">150</span>
+                <div class="ticket-icon"></div>
               </div>
-              <div class="stat-item">
-                <span class="stat-label">Осталось билетов:</span>
-                <div class="stat-value">
-                  <span class="stat-number">50</span>
-                  <div class="stat-icon"></div>
-                </div>
+            </div>
+            <div class="ticket-row">
+              <span class="ticket-label">Осталось билетов:</span>
+              <div class="ticket-value">
+                <span class="ticket-count">50</span>
+                <div class="ticket-icon"></div>
               </div>
             </div>
           </div>
 
           <button class="buy-ticket-btn" @click="buyTicket">
             <span class="btn-text">Купить билет</span>
-            <div class="price-section">
-              <div class="price-icon"></div>
-              <span class="price">10</span>
+            <div class="btn-price">
+              <div class="diamond-icon"></div>
+              <span class="price-amount">10</span>
             </div>
           </button>
         </div>
@@ -107,9 +87,6 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
 
 const participants = ref([
   {
@@ -132,10 +109,6 @@ const participants = ref([
   }
 ])
 
-const goBack = () => {
-  router.back()
-}
-
 const buyTicket = () => {
   // TODO: Implement TON Connect payment
   console.log('Buy ticket clicked')
@@ -151,65 +124,10 @@ const buyTicket = () => {
   flex-direction: column;
 }
 
-.header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(50px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-
-  .header-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px;
-    height: 68px;
-
-    .back-button {
-      background: none;
-      border: none;
-      color: #fff;
-      font-family: 'Inter', sans-serif;
-      font-size: 17px;
-      cursor: pointer;
-    }
-
-    .title-section {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1px;
-
-      .title {
-        color: #fff;
-        font-family: 'Inter', sans-serif;
-        font-size: 17px;
-        font-weight: 400;
-        margin: 0;
-      }
-
-      .subtitle {
-        color: #707579;
-        font-family: 'Roboto', sans-serif;
-        font-size: 13px;
-        font-weight: 400;
-      }
-    }
-
-    .menu-button {
-      color: #fff;
-      font-size: 18px;
-      cursor: pointer;
-    }
-  }
-}
 
 .main-content {
   flex: 1;
-  padding: 68px 16px 120px;
+  padding: 20px 16px 120px;
   background: #0B150F;
   display: flex;
   flex-direction: column;
@@ -222,7 +140,7 @@ const buyTicket = () => {
   height: 465px;
   border-radius: 25px;
   overflow: hidden;
-  margin: 20px 0;
+  margin: 0;
 
   .lottery-bg {
     position: absolute;
@@ -230,10 +148,9 @@ const buyTicket = () => {
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('@/assets/Orbital Power Plant.webp');
+    background: url('@/assets/lottery-bg.png');
     background-size: cover;
     background-position: center;
-    opacity: 0.4;
   }
 
   .lottery-content {
@@ -247,87 +164,65 @@ const buyTicket = () => {
     justify-content: center;
     gap: 15px;
 
-    .lottery-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      max-width: 223px;
-
-      .lottery-title {
-        color: #fff;
-        font-family: 'Inter', sans-serif;
-        font-size: 28px;
-        font-weight: 600;
-        margin: 0;
-      }
-
-      .close-icon {
-        width: 16px;
-        height: 16px;
-        background: #fff;
-        mask: url('@/assets/close-modal.svg') no-repeat center;
-        mask-size: contain;
-        cursor: pointer;
-      }
-    }
-
-    .lottery-info {
+    .station-info {
       text-align: center;
       max-width: 262px;
 
-      .station-name {
+      .station-title {
         color: #fff;
         font-family: 'Inter', sans-serif;
         font-size: 20px;
         font-weight: 600;
-        margin: 0 0 10px 0;
+        margin: 0;
       }
+    }
 
-      .ticket-stats {
+    .ticket-info {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 262px;
+
+      .ticket-row {
         display: flex;
-        flex-direction: column;
-        gap: 10px;
+        justify-content: space-between;
+        align-items: center;
+        height: 19px;
 
-        .stat-item {
+        .ticket-label {
+          color: #fff;
+          font-family: 'Inter', sans-serif;
+          font-size: 14px;
+          font-weight: 400;
+          opacity: 0.5;
+        }
+
+        .ticket-value {
           display: flex;
-          justify-content: space-between;
           align-items: center;
+          gap: 5px;
 
-          .stat-label {
+          .ticket-count {
             color: #fff;
             font-family: 'Inter', sans-serif;
             font-size: 14px;
             font-weight: 400;
-            opacity: 0.5;
           }
 
-          .stat-value {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-
-            .stat-number {
-              color: #fff;
-              font-family: 'Inter', sans-serif;
-              font-size: 14px;
-              font-weight: 400;
-            }
-
-            .stat-icon {
-              width: 30px;
-              height: 18px;
-              background: url('@/assets/fBTC.webp');
-              background-size: cover;
-              background-position: center;
-            }
+          .ticket-icon {
+            width: 30px;
+            height: 18px;
+            background: url('@/assets/ticket-icon-6cfb78.png');
+            background-size: cover;
+            background-position: center;
           }
         }
       }
     }
 
     .buy-ticket-btn {
-      background: linear-gradient(180deg, #FCD909 0%, #FEA400 100%);
+      background: radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%),
+                  linear-gradient(180deg, #FCD909 0%, #FEA400 100%);
       border: none;
       border-radius: 10px;
       padding: 15px 19px;
@@ -346,20 +241,20 @@ const buyTicket = () => {
         font-weight: 600;
       }
 
-      .price-section {
+      .btn-price {
         display: flex;
         align-items: center;
-        gap: 2px;
+        gap: 5px;
 
-        .price-icon {
+        .diamond-icon {
           width: 20px;
           height: 20px;
-          background: url('@/assets/fBTC.webp');
+          background: url('@/assets/diamond-icon.png');
           background-size: cover;
           background-position: center;
         }
 
-        .price {
+        .price-amount {
           color: #000;
           font-family: 'Inter', sans-serif;
           font-size: 16px;
@@ -377,11 +272,15 @@ const buyTicket = () => {
   border-radius: 0;
   padding: 12px;
   margin-top: 20px;
+  width: 358px;
+  margin-left: auto;
+  margin-right: auto;
 
   .participants-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
+    gap: 5px;
     margin-bottom: 12px;
 
     .participants-title {
@@ -400,7 +299,7 @@ const buyTicket = () => {
       .count-icon {
         width: 16px;
         height: 16px;
-        background: url('@/assets/fBTC.webp');
+        background: url('@/assets/participants-icon.png');
         background-size: cover;
         background-position: center;
       }
@@ -429,13 +328,15 @@ const buyTicket = () => {
         display: flex;
         align-items: center;
         gap: 10px;
+        width: 337px;
 
         .participant-rank {
           color: #FCD909;
           font-family: 'Inter', sans-serif;
           font-size: 14px;
           font-weight: 700;
-          min-width: 16px;
+          width: 16px;
+          text-align: right;
         }
 
         .participant-details {
@@ -443,12 +344,14 @@ const buyTicket = () => {
           display: flex;
           flex-direction: column;
           gap: 5px;
+          width: 311px;
 
           .participant-name {
             color: #fff;
             font-family: 'Inter', sans-serif;
             font-size: 14px;
             font-weight: 500;
+            letter-spacing: -0.011em;
           }
 
           .participant-address {
@@ -456,6 +359,7 @@ const buyTicket = () => {
             font-family: 'Inter', sans-serif;
             font-size: 12px;
             font-weight: 600;
+            letter-spacing: -0.011em;
           }
 
           .participant-tickets {
@@ -466,7 +370,7 @@ const buyTicket = () => {
             .ticket-icon {
               width: 37px;
               height: 22px;
-              background: url('@/assets/fBTC.webp');
+              background: url('@/assets/ticket-icon-6cfb78.png');
               background-size: cover;
               background-position: center;
             }
@@ -476,6 +380,7 @@ const buyTicket = () => {
               font-family: 'Inter', sans-serif;
               font-size: 14px;
               font-weight: 400;
+              letter-spacing: -0.011em;
             }
           }
         }
@@ -488,6 +393,9 @@ const buyTicket = () => {
     flex-direction: column;
     align-items: center;
     gap: 12px;
+    width: 358px;
+    margin-left: auto;
+    margin-right: auto;
 
     .page-numbers {
       display: flex;
@@ -495,6 +403,7 @@ const buyTicket = () => {
       gap: 3px;
       flex-wrap: wrap;
       justify-content: center;
+      padding: 2px 10px 5px;
 
       .page-number {
         width: 18px;
@@ -510,13 +419,18 @@ const buyTicket = () => {
         font-size: 8px;
         font-weight: 500;
         cursor: pointer;
+        padding: 0 3px;
 
         &.active {
-          background: linear-gradient(180deg, #FCD909 0%, #FEA400 100%);
+          background: radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%),
+                      linear-gradient(180deg, #FCD909 0%, #FEA400 100%);
           border: 1px solid linear-gradient(180deg, #DAD69B 0%, #FFBD0A 100%);
           color: #000;
           font-weight: 600;
           font-size: 12px;
+          width: 22px;
+          height: 22px;
+          border-radius: 6px;
         }
       }
 
@@ -532,9 +446,12 @@ const buyTicket = () => {
     .pagination-controls {
       display: flex;
       gap: 17px;
+      width: 277px;
+      justify-content: center;
 
       .page-btn {
-        background: linear-gradient(180deg, #FCD909 0%, #FEA400 100%);
+        background: radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%),
+                    linear-gradient(180deg, #FCD909 0%, #FEA400 100%);
         border: 1px solid linear-gradient(180deg, #DAD69B 0%, #FFBD0A 100%);
         border-radius: 7px;
         padding: 11px 17px;
@@ -543,6 +460,11 @@ const buyTicket = () => {
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
+        width: 130px;
+        height: 37px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
 
         &.prev {
           opacity: 0.6;
