@@ -61,15 +61,11 @@ const goBack = () => {
 
 <style lang="scss" scoped>
 .game-selection-screen {
-  position: fixed;
-  top: 0;
-  left: 0;
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
   background: #11151A;
   display: flex;
   flex-direction: column;
-  z-index: 1000;
 }
 
 .main-content {
@@ -139,10 +135,10 @@ const goBack = () => {
 
 .wheel-card {
   .game-card-bg {
-    background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
+    background: url('@/assets/wheel-icon.jpg'),
+                radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.2),
-                rgba(129, 67, 252, 0.2),
-                url('@/assets/wheel-icon.svg');
+                rgba(129, 67, 252, 0.2);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -151,10 +147,10 @@ const goBack = () => {
 
 .lottery-card {
   .game-card-bg {
-    background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
+    background: url('@/assets/lottery-icon.jpg'),
+                radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.2),
-                rgba(129, 67, 252, 0.2),
-                url('@/assets/lottery-icon.svg');
+                rgba(129, 67, 252, 0.2);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -163,10 +159,10 @@ const goBack = () => {
 
 .development-card {
   .game-card-bg {
-    background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
+    background: url('@/assets/development-icon.jpg'),
+                radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.2),
-                rgba(129, 67, 252, 0.2),
-                url('@/assets/development-icon.svg');
+                rgba(129, 67, 252, 0.2);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -193,26 +189,25 @@ const goBack = () => {
 
   .back-button {
     width: 100%;
-    height: 50px;
-    background: #8143FC;
-    border: none;
-    border-radius: 10px;
-    color: #FFFFFF;
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 18px;
-    cursor: pointer;
+    height: 48px;
+    padding: 10px 0;
     display: flex;
-    align-items: center;
     justify-content: center;
-    transition: opacity 0.2s ease;
-
-    &:hover {
-      opacity: 0.8;
-    }
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #8143fc;
+    border-radius: 10px;
+    color: #fff;
+    font-family: 'Inter';
+    font-weight: 600;
+    font-size: clamp(14px, 4dvw, 18px);
+    letter-spacing: 0px;
+    transition: all 100ms ease;
+    background: transparent;
 
     &:active {
-      opacity: 0.6;
+      opacity: 0.5;
+      scale: 0.95;
     }
   }
 }
