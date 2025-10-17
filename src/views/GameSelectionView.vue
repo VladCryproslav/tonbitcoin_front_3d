@@ -135,10 +135,7 @@ const goBack = () => {
 
 .wheel-card {
   .game-card-bg {
-    background: url('@/assets/wheelgamebutton.jpg'),
-                radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
-                rgba(0, 0, 0, 0.2),
-                rgba(129, 67, 252, 0.2);
+    background: url('@/assets/wheelgamebutton.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -147,10 +144,7 @@ const goBack = () => {
 
 .lottery-card {
   .game-card-bg {
-    background: url('@/assets/lotgamebutton.jpg'),
-                radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
-                rgba(0, 0, 0, 0.2),
-                rgba(129, 67, 252, 0.2);
+    background: url('@/assets/lotgamebutton.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -159,10 +153,7 @@ const goBack = () => {
 
 .development-card {
   .game-card-bg {
-    background: url('@/assets/indevgamebutton.jpg'),
-                radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
-                rgba(0, 0, 0, 0.2),
-                rgba(129, 67, 252, 0.2);
+    background: url('@/assets/indevgamebutton.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -207,7 +198,7 @@ const goBack = () => {
     font-size: clamp(14px, 4dvw, 18px);
     letter-spacing: 0px;
     transition: all 100ms ease;
-    background: transparent;
+    background: #8143fc;
 
     &:active {
       opacity: 0.5;
