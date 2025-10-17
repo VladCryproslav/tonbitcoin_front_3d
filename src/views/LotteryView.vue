@@ -60,15 +60,15 @@
         </div>
 
         <div class="participants-list">
-          <div class="participant-card" v-for="(participant, index) in displayedParticipants" :key="index">
+          <div class="participant-card" v-for="(participant, index) in displayedParticipants" :key="participant.id">
             <div class="participant-rank">#{{ (currentPage - 1) * itemsPerPage + index + 1 }}</div>
-            <div class="participant-name">{{ participant.name }}</div>
+            <div class="participant-name">{{ participant.username }}</div>
             <div class="separator"></div>
-            <div class="participant-address">{{ participant.address }}</div>
+            <div class="participant-address">{{ participant.wallet_address }}</div>
             <div class="separator"></div>
             <div class="participant-tickets">
               <div class="ticket-icon"></div>
-              <span class="ticket-count">{{ participant.tickets }}</span>
+              <span class="ticket-count">{{ participant.tickets_count }}</span>
             </div>
           </div>
         </div>
@@ -130,33 +130,7 @@ const modalTitle = ref(null)
 const modalBody = ref(null)
 const isProcessing = ref(false)
 
-const participants = ref([
-  { name: 'Vadim', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 20 },
-  { name: 'Alex', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 15 },
-  { name: 'Maria', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 30 },
-  { name: 'John', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 25 },
-  { name: 'Anna', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 18 },
-  { name: 'Peter', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 22 },
-  { name: 'Lisa', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 28 },
-  { name: 'Mike', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 16 },
-  { name: 'Sara', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 35 },
-  { name: 'Tom', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 12 },
-  { name: 'Emma', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 24 },
-  { name: 'David', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 19 },
-  { name: 'Kate', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 31 },
-  { name: 'Chris', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 27 },
-  { name: 'Nina', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 14 },
-  { name: 'Mark', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 33 },
-  { name: 'Julia', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 21 },
-  { name: 'Paul', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 17 },
-  { name: 'Elena', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 29 },
-  { name: 'Steve', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 26 },
-  { name: 'Olga', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 23 },
-  { name: 'Igor', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 32 },
-  { name: 'Tanya', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 18 },
-  { name: 'Max', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 25 },
-  { name: 'Irina', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 20 }
-])
+const participants = ref([])
 
 const currentPage = ref(1)
 const itemsPerPage = 25
@@ -164,9 +138,9 @@ const totalParticipants = computed(() => participants.value.length)
 
 // Lottery data
 const lotteryData = ref({
-  totalTickets: 150,
-  remainingTickets: 50,
-  isActive: true
+  totalTickets: 0,
+  remainingTickets: 0,
+  isActive: false
 })
 
 const totalPages = computed(() => Math.ceil(totalParticipants.value / itemsPerPage))

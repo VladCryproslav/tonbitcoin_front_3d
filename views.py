@@ -4413,8 +4413,8 @@ class BuyLotteryTicketView(APIView):
                 participant, created = LotteryParticipant.objects.get_or_create(
                     wallet_address=wallet_address,
                     defaults={
-                        'user': request.user if hasattr(request, 'user') else None,
-                        'username': request.user.username if hasattr(request, 'user') and request.user.username else 'Anonymous',
+                        'user': request.user_profile if hasattr(request, 'user_profile') else None,
+                        'username': request.user_profile.username if hasattr(request, 'user_profile') and request.user_profile.username else 'Anonymous',
                         'tickets_count': 1,
                         'transaction_hash': transaction_hash
                     }
