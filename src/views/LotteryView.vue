@@ -253,14 +253,13 @@ const buyTicket = async () => {
       ],
     }
 
-    const result = await tonConnectUI.sendTransaction(transactionData, {
+    await tonConnectUI.sendTransaction(transactionData, {
       modals: ['before', 'success'],
       notifications: [],
     })
 
-    if (result && result.boc) {
-      showModal('success', t('notification.st_success'), `Успешно куплен билет за ${ticketPrice} TON!`)
-    }
+    // Если дошли до этой точки, транзакция успешна
+    showModal('success', t('notification.st_success'), `Успешно куплен билет за ${ticketPrice} TON!`)
   } catch (err) {
     console.log(err)
     showModal('error', t('notification.st_error'), t('notification.failed_transaction'))
