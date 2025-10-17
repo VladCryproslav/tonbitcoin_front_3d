@@ -237,6 +237,14 @@ const fetchParticipants = async () => {
 
 const buyLotteryTicket = async (transactionHash) => {
   try {
+    console.log('Buying lottery ticket with data:', {
+      user_id: app.user?.id,
+      wallet_address: ton_address.value,
+      transaction_hash: transactionHash,
+      amount: lotteryData.value.ticketPrice || 0.01,
+      app_user: app.user
+    })
+
     const response = await host.post('lottery/buy-ticket/', {
       user_id: app.user?.id,
       wallet_address: ton_address.value,
@@ -253,11 +261,15 @@ const buyLotteryTicket = async (transactionHash) => {
     return false
   } catch (err) {
     console.error('Error buying lottery ticket:', err)
+    console.error('Error response:', err.response?.data)
+    console.error('Error status:', err.response?.status)
     return false
   }
 }
 
 const buyTicket = async () => {
+  await app.initUser()
+
   if (!ton_address.value) {
     showModal('warning', t('notification.st_attention'), t('notification.unconnected'))
     return
@@ -275,6 +287,11 @@ const buyTicket = async () => {
 
   if (lotteryData.value.remainingTickets <= 0) {
     showModal('error', t('notification.st_error'), 'Все билеты распроданы')
+    return
+  }
+
+  if (!app.user?.id) {
+    showModal('error', t('notification.st_error'), 'Пользователь не найден. Попробуйте перезагрузить страницу.')
     return
   }
 
@@ -340,6 +357,7 @@ const buyTicket = async () => {
 
 // Загружаем данные при инициализации компонента
 onMounted(async () => {
+  await app.initUser()
   await fetchLotteryData()
   await fetchParticipants()
 })
