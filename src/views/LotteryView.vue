@@ -109,11 +109,13 @@ import { useTonAddress, useTonConnectUI } from '@townsquarelabs/ui-vue'
 import { toNano, beginCell } from '@ton/core'
 import ModalNew from '@/components/ModalNew.vue'
 import { useI18n } from 'vue-i18n'
+import { useAppStore } from '@/stores/app'
 
 const router = useRouter()
 const { t } = useI18n()
 const ton_address = useTonAddress()
 const tonConnectUI = useTonConnectUI()
+const app = useAppStore()
 
 // Modal states
 const openModal = ref(false)
@@ -237,29 +239,40 @@ const buyTicket = async () => {
     const receiveAddress = 'EQBO8QPd8NbTGW7sOg4eOb1BZmgWvunRV98tRIHRf1fToWQA'
     const networkFee = 0.1 // TON
 
+    // Создаем payload для покупки билета лотереи
+    // Используем op: 2 для покупки билета лотереи (аналогично другим операциям в проекте)
+    const lotteryPayload = beginCell()
+      .storeUint(2, 32) // op: 2 = buy lottery ticket
+      .storeUint(0, 64) // query id
+      .storeUint(1, 32) // ticket count
+      .endCell()
+
     const transactionData = {
       validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutes
       messages: [
         {
           address: receiveAddress,
           amount: toNano(ticketPrice + networkFee).toString(),
-          payload: beginCell()
-            .storeUint(0, 32) // op: 0 = simple transfer
-            .storeUint(0, 64) // query id
-            .endCell()
-            .toBoc()
-            .toString('base64'),
+          payload: lotteryPayload.toBoc().toString('base64'),
         },
       ],
     }
 
-    await tonConnectUI.sendTransaction(transactionData, {
+    const result = await tonConnectUI.sendTransaction(transactionData, {
       modals: ['before', 'success'],
       notifications: [],
     })
 
-    // Если дошли до этой точки, транзакция успешна
-    showModal('success', t('notification.st_success'), `Успешно куплен билет за ${ticketPrice} TON!`)
+    // Проверяем результат транзакции
+    if (result && result?.boc) {
+      // Если дошли до этой точки, транзакция успешна
+      showModal('success', t('notification.st_success'), `Успешно куплен билет за ${ticketPrice} TON!`)
+
+      // Обновляем данные пользователя после успешной покупки
+      await app.initUser()
+    } else {
+      throw new Error('Transaction failed - no BOC returned')
+    }
   } catch (err) {
     console.log(err)
     showModal('error', t('notification.st_error'), t('notification.failed_transaction'))
