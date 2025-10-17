@@ -106,17 +106,17 @@ const goBack = () => {
   backdrop-filter: blur(9px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 44px; // Status bar height
-  
+
   .header-content {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 4px 16px;
     height: 36px;
-    
+
     .header-left {
       min-width: 80px;
-      
+
       .cancel-btn {
         background: none;
         border: none;
@@ -126,20 +126,20 @@ const goBack = () => {
         font-size: 17px;
         cursor: pointer;
         padding: 11px 16px;
-        
+
         &:hover {
           opacity: 0.7;
         }
       }
     }
-    
+
     .header-center {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 1px;
-      
+
       .header-title {
         color: #FFFFFF;
         font-family: 'Inter', sans-serif;
@@ -148,7 +148,7 @@ const goBack = () => {
         margin: 0;
         text-align: center;
       }
-      
+
       .header-subtitle {
         color: #707579;
         font-family: 'Roboto', sans-serif;
@@ -158,12 +158,12 @@ const goBack = () => {
         text-align: center;
       }
     }
-    
+
     .header-right {
       min-width: 80px;
       display: flex;
       justify-content: flex-end;
-      
+
       .close-btn {
         background: none;
         border: none;
@@ -171,7 +171,7 @@ const goBack = () => {
         font-size: 18px;
         cursor: pointer;
         padding: 11px 16px;
-        
+
         &:hover {
           opacity: 0.7;
         }
@@ -184,7 +184,7 @@ const goBack = () => {
   flex: 1;
   padding: 48px 15px;
   overflow-y: auto;
-  
+
   .games-container {
     display: flex;
     flex-direction: column;
@@ -208,16 +208,16 @@ const goBack = () => {
   overflow: hidden;
   box-shadow: 0px 0px 7px 0px rgba(129, 67, 252, 0.8);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0px 4px 15px 0px rgba(129, 67, 252, 1);
   }
-  
+
   &:active {
     transform: translateY(0);
   }
-  
+
   .game-card-bg {
     position: absolute;
     top: 0;
@@ -228,7 +228,7 @@ const goBack = () => {
     background-position: center;
     background-repeat: no-repeat;
   }
-  
+
   .game-title {
     position: relative;
     z-index: 2;
@@ -240,13 +240,13 @@ const goBack = () => {
     margin: 0;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   }
-  
+
   .game-icon {
     position: absolute;
     top: 9px;
     right: 10px;
     z-index: 2;
-    
+
     img {
       width: 24px;
       height: 24px;
@@ -280,7 +280,7 @@ const goBack = () => {
                 rgba(129, 67, 252, 0.2);
     background-image: url('@/assets/wheel-back.webp');
   }
-  
+
   .development-overlay {
     position: absolute;
     top: 2px;
@@ -301,7 +301,7 @@ const goBack = () => {
   background: rgba(16, 21, 27, 0.25);
   backdrop-filter: blur(9px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  
+
   .back-button {
     width: 100%;
     height: 50px;
@@ -317,11 +317,11 @@ const goBack = () => {
     align-items: center;
     justify-content: center;
     transition: opacity 0.2s ease;
-    
+
     &:hover {
       opacity: 0.8;
     }
-    
+
     &:active {
       opacity: 0.6;
     }
@@ -333,10 +333,10 @@ const goBack = () => {
   .main-content {
     padding: 32px 15px;
   }
-  
+
   .game-card {
     height: 120px;
-    
+
     .game-title {
       font-size: 24px;
     }
