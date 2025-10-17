@@ -191,21 +191,15 @@ const goBack = () => {
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.4),
-                rgba(129, 67, 252, 0.4);
+                rgba(62, 29, 129, 0.4);
     backdrop-filter: blur(8px);
-    border-radius: 15px;
+    border-radius: 13px;
     z-index: 1;
   }
 
   .game-title {
-    overflow: hidden;
-    background: linear-gradient(90deg, transparent, #fff, transparent);
-    background-repeat: no-repeat;
-    background-size: 80%;
-    animation: shine 3s linear infinite;
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: rgba(255, 255, 255, 0);
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   }
 }
 
