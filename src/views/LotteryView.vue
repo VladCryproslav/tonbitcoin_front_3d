@@ -238,7 +238,7 @@ const buyTicket = async () => {
     const networkFee = 0.1 // TON
 
     const transactionData = {
-      validUntil: Date.now() + 1000 * 60 * 5, // 5 minutes
+      validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutes
       messages: [
         {
           address: receiveAddress,
@@ -374,7 +374,7 @@ const buyTicket = async () => {
         background-size: contain;
         background-position: center;
         background-repeat: no-repeat;
-        margin: 0 auto 15px;
+        margin: 20px auto 15px;
         align-self: center;
       }
 
