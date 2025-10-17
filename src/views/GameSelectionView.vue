@@ -10,8 +10,7 @@ const goToWheel = () => {
 }
 
 const goToLottery = () => {
-  // TODO: Создать страницу лотереи
-  console.log('Lottery coming soon')
+  router.push('/lottery')
 }
 
 const goToInDevelopment = () => {

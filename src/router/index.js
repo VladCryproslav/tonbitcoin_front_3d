@@ -39,6 +39,11 @@ const router = createRouter({
       name: 'wheel',
       component: () => import('@/views/WheelView.vue'),
     },
+    {
+      path: '/lottery',
+      name: 'lottery',
+      component: () => import('@/views/LotteryView.vue'),
+    },
   ],
 })
 
