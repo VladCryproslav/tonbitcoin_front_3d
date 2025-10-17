@@ -4372,27 +4372,26 @@ class BuyLotteryTicketView(APIView):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                'user_id': openapi.Schema(type=openapi.TYPE_INTEGER),
                 'wallet_address': openapi.Schema(type=openapi.TYPE_STRING),
                 'transaction_hash': openapi.Schema(type=openapi.TYPE_STRING),
                 'amount': openapi.Schema(type=openapi.TYPE_NUMBER),
             },
-            required=['user_id', 'wallet_address', 'transaction_hash', 'amount']
+            required=['wallet_address', 'transaction_hash', 'amount']
         ),
         responses={
             200: openapi.Response(description="Ticket purchased successfully"),
             400: openapi.Response(description="Bad request"),
         },
     )
+    @require_auth
     def post(self, request):
         try:
-            user_id = request.data.get('user_id')
             wallet_address = request.data.get('wallet_address')
             transaction_hash = request.data.get('transaction_hash')
             amount = request.data.get('amount')
             
             # Валидация данных
-            if not all([user_id, wallet_address, transaction_hash, amount]):
+            if not all([wallet_address, transaction_hash, amount]):
                 return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
             
             with transaction.atomic():
@@ -4412,11 +4411,8 @@ class BuyLotteryTicketView(APIView):
                 if lottery.remaining_tickets <= 0:
                     return Response({'error': 'No tickets available'}, status=status.HTTP_400_BAD_REQUEST)
                 
-                # Находим пользователя по user_id
-                try:
-                    user_profile = UserProfile.objects.get(user_id=user_id)
-                except UserProfile.DoesNotExist:
-                    return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+                # Получаем пользователя из request (уже определен через @require_auth)
+                user_profile = request.user_profile
                 
                 # Находим или создаем участника
                 participant, created = LotteryParticipant.objects.get_or_create(
