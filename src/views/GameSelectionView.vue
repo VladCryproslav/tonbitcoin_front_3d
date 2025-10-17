@@ -72,7 +72,7 @@ const goBack = () => {
   flex: 1;
   padding: 48px 15px 120px;
   overflow-y: auto;
-  background: radial-gradient(circle at 50% 0%, rgba(103, 98, 240, 1) 0%, rgba(103, 98, 240, 0) 100%), #0B150F;
+  background: radial-gradient(circle at 50% 0%, rgba(103, 98, 240, 0.8) 0%, rgba(103, 98, 240, 0) 100%), #0A0F0A;
   display: flex;
   flex-direction: column;
 
@@ -161,15 +161,15 @@ const goBack = () => {
 
   .development-overlay {
     position: absolute;
-    top: 2px;
-    left: 1px;
-    right: 1px;
-    bottom: 2px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
-                rgba(0, 0, 0, 0.2),
-                rgba(129, 67, 252, 0.2);
-    backdrop-filter: blur(10px);
-    border-radius: 13px;
+                rgba(0, 0, 0, 0.3),
+                rgba(129, 67, 252, 0.3);
+    backdrop-filter: blur(5px);
+    border-radius: 15px;
     z-index: 1;
   }
 }
