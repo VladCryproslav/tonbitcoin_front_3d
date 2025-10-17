@@ -12,6 +12,7 @@
           </div>
 
           <div class="station-info">
+            <div class="station-image"></div>
             <h3 class="station-title">Орбитальная электростанция</h3>
           </div>
 
@@ -46,24 +47,22 @@
       <div class="participants-section">
         <div class="participants-header">
           <h3 class="participants-title">Список учасников</h3>
-          <div class="participants-count">
-            <div class="count-icon"></div>
-            <span class="count-text">100 чел.</span>
-          </div>
+        </div>
+        <div class="participants-count">
+          <div class="count-icon"></div>
+          <span class="count-text">100 чел.</span>
         </div>
 
         <div class="participants-list">
           <div class="participant-card" v-for="(participant, index) in participants" :key="index">
-            <div class="participant-info">
-              <div class="participant-rank">#{{ participant.rank }}</div>
-              <div class="participant-details">
-                <div class="participant-name">{{ participant.name }}</div>
-                <div class="participant-address">{{ participant.address }}</div>
-                <div class="participant-tickets">
-                  <div class="ticket-icon"></div>
-                  <span class="ticket-count">{{ participant.tickets }}</span>
-                </div>
-              </div>
+            <div class="participant-rank">#{{ participant.rank }}</div>
+            <div class="participant-name">{{ participant.name }}</div>
+            <div class="separator"></div>
+            <div class="participant-address">{{ participant.address }}</div>
+            <div class="separator"></div>
+            <div class="participant-tickets">
+              <div class="ticket-icon"></div>
+              <span class="ticket-count">{{ participant.tickets }}</span>
             </div>
           </div>
         </div>
@@ -193,7 +192,7 @@ const buyTicket = () => {
       right: 15px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       z-index: 3;
 
       .lottery-title {
@@ -205,6 +204,8 @@ const buyTicket = () => {
       }
 
       .close-icon {
+        position: absolute;
+        right: 15px;
         width: 16px;
         height: 16px;
         background: #fff;
@@ -218,6 +219,16 @@ const buyTicket = () => {
       text-align: center;
       max-width: 262px;
       margin-top: 60px;
+
+      .station-image {
+        width: 120px;
+        height: 80px;
+        background: url('@/assets/Orbital Power Plant.webp');
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+        margin: 0 auto 15px;
+      }
 
       .station-title {
         color: #fff;
@@ -325,10 +336,7 @@ const buyTicket = () => {
   width: 100%;
 
   .participants-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 
     .participants-title {
       color: #fff;
@@ -337,26 +345,28 @@ const buyTicket = () => {
       font-weight: 700;
       margin: 0;
     }
+  }
 
-    .participants-count {
-      display: flex;
-      align-items: center;
-      gap: 4px;
+  .participants-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 12px;
 
-      .count-icon {
-        width: 16px;
-        height: 16px;
-        background: url('@/assets/participants-icon.png');
-        background-size: cover;
-        background-position: center;
-      }
+    .count-icon {
+      width: 16px;
+      height: 16px;
+      background: url('@/assets/participants-icon.png');
+      background-size: cover;
+      background-position: center;
+    }
 
-      .count-text {
-        color: #FCD909;
-        font-family: 'Inter', sans-serif;
-        font-size: 14px;
-        font-weight: 700;
-      }
+    .count-text {
+      color: #FCD909;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
     }
   }
 
@@ -368,67 +378,61 @@ const buyTicket = () => {
 
     .participant-card {
       background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.25);
       border-radius: 12px;
       padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
 
-      .participant-info {
+      .participant-rank {
+        color: #FCD909;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .participant-name {
+        color: #fff;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        letter-spacing: -0.011em;
+      }
+
+      .separator {
+        width: 100%;
+        height: 1px;
+        background: rgba(255, 255, 255, 0.25);
+      }
+
+      .participant-address {
+        color: rgba(255, 255, 255, 0.8);
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: -0.011em;
+      }
+
+      .participant-tickets {
         display: flex;
         align-items: center;
-        gap: 10px;
-        width: 100%;
+        gap: 5px;
 
-        .participant-rank {
-          color: #FCD909;
-          font-family: 'Inter', sans-serif;
-          font-size: 14px;
-          font-weight: 700;
-          min-width: 16px;
-          text-align: right;
+        .ticket-icon {
+          width: 37px;
+          height: 22px;
+          background: url('@/assets/ticket-icon-6cfb78.png');
+          background-size: cover;
+          background-position: center;
         }
 
-        .participant-details {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
-
-          .participant-name {
-            color: #fff;
-            font-family: 'Inter', sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-            letter-spacing: -0.011em;
-          }
-
-          .participant-address {
-            color: rgba(255, 255, 255, 0.8);
-            font-family: 'Inter', sans-serif;
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: -0.011em;
-          }
-
-          .participant-tickets {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-
-            .ticket-icon {
-              width: 37px;
-              height: 22px;
-              background: url('@/assets/ticket-icon-6cfb78.png');
-              background-size: cover;
-              background-position: center;
-            }
-
-            .ticket-count {
-              color: #fff;
-              font-family: 'Inter', sans-serif;
-              font-size: 14px;
-              font-weight: 400;
-              letter-spacing: -0.011em;
-            }
-          }
+        .ticket-count {
+          color: #fff;
+          font-family: 'Inter', sans-serif;
+          font-size: 14px;
+          font-weight: 400;
+          letter-spacing: -0.011em;
         }
       }
     }
