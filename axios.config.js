@@ -26,6 +26,26 @@ const host = axios.create({
   },
 })
 
+// Интерцепторы для отладки (можно включить при необходимости)
+// host.interceptors.request.use(
+//   (config) => {
+//     console.log('API Request:', config)
+//     return config
+//   },
+//   (error) => Promise.reject(error)
+// )
+
+// host.interceptors.response.use(
+//   (response) => {
+//     console.log('API Response:', response)
+//     return response
+//   },
+//   (error) => {
+//     console.error('API Response Error:', error)
+//     return Promise.reject(error)
+//   }
+// )
+
 const tonapi = axios.create({
   baseURL: "https://tonapi.io/v2/",
   headers: {

@@ -243,26 +243,13 @@ const fetchParticipants = async () => {
 
 const buyLotteryTicket = async (transactionHash) => {
   try {
-    console.log('Buying lottery ticket with data:', {
-      user_id: app.user?.id,
-      user_id_field: app.user?.user_id,
-      wallet_address: ton_address.value,
-      transaction_hash: transactionHash,
-      amount: lotteryData.value.ticketPrice || 0.01,
-      app_user: app.user,
-      app_user_keys: app.user ? Object.keys(app.user) : 'no user'
-    })
-
-    const requestData = {
+    const lottery_data = {
       wallet_address: ton_address.value,
       transaction_hash: transactionHash,
       amount: lotteryData.value.ticketPrice || 0.01
     }
 
-    console.log('Sending request data:', requestData)
-    console.log('Request headers:', host.defaults.headers)
-
-    const response = await host.post('lottery/buy-ticket/', requestData)
+    const response = await host.post('lottery/buy-ticket/', lottery_data)
 
     if (response.status === 200) {
       // Обновляем данные лотереи и участников
@@ -273,27 +260,14 @@ const buyLotteryTicket = async (transactionHash) => {
     return false
   } catch (err) {
     console.error('Error buying lottery ticket:', err)
-    console.error('Error response:', err.response?.data)
-    console.error('Error status:', err.response?.status)
-
-    // Показываем пользователю более детальную ошибку
-    if (err.response?.data?.error) {
-      showModal('error', t('notification.st_error'), `Ошибка: ${err.response.data.error}`)
-    } else if (err.message) {
-      showModal('error', t('notification.st_error'), `Ошибка: ${err.message}`)
-    } else {
-      showModal('error', t('notification.st_error'), 'Произошла неизвестная ошибка')
-    }
-
+    const errorMsg = err.response?.data?.error || err.message || t('notification.was_error')
+    showModal('error', t('notification.st_error'), errorMsg)
     return false
   }
 }
 
 const buyTicket = async () => {
   await app.initUser()
-  console.log('In buyTicket, app.user:', app.user)
-  console.log('app.user.user_id:', app.user?.user_id)
-  console.log('app.user.id:', app.user?.id)
 
   if (!ton_address.value) {
     showModal('warning', t('notification.st_attention'), t('notification.unconnected'))
@@ -314,8 +288,6 @@ const buyTicket = async () => {
     showModal('error', t('notification.st_error'), 'Все билеты распроданы')
     return
   }
-
-  // Проверка пользователя не нужна - бекенд сам определит через @require_auth
 
   if (isProcessing.value) return
   isProcessing.value = true
@@ -399,11 +371,6 @@ const updateLotteryData = async () => {
 // Загружаем данные при инициализации компонента
 onMounted(async () => {
   await app.initUser()
-  console.log('After initUser, app.user:', app.user)
-  console.log('app.user keys:', app.user ? Object.keys(app.user) : 'no user')
-  console.log('app.user.user_id:', app.user?.user_id)
-  console.log('app.user.id:', app.user?.id)
-
   await fetchLotteryData()
   await fetchParticipants()
 
