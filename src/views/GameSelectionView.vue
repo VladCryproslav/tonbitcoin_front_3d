@@ -70,7 +70,7 @@ const goBack = () => {
 
 .main-content {
   flex: 1;
-  padding: 48px 15px 0;
+  padding: 48px 15px 120px;
   overflow-y: auto;
   background: radial-gradient(circle at 50% 0%, rgba(103, 98, 240, 1) 0%, rgba(103, 98, 240, 0) 100%), #0B150F;
   display: flex;
@@ -80,7 +80,7 @@ const goBack = () => {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    max-width: 358px;
+    width: 100%;
     margin: 0 auto;
   }
 }
@@ -135,7 +135,7 @@ const goBack = () => {
 
 .wheel-card {
   .game-card-bg {
-    background: url('@/assets/wheel-icon.jpg'),
+    background: url('@/assets/wheelgamebutton.jpg'),
                 radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.2),
                 rgba(129, 67, 252, 0.2);
@@ -147,7 +147,7 @@ const goBack = () => {
 
 .lottery-card {
   .game-card-bg {
-    background: url('@/assets/lottery-icon.jpg'),
+    background: url('@/assets/lotgamebutton.jpg'),
                 radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.2),
                 rgba(129, 67, 252, 0.2);
@@ -159,7 +159,7 @@ const goBack = () => {
 
 .development-card {
   .game-card-bg {
-    background: url('@/assets/development-icon.jpg'),
+    background: url('@/assets/indevgamebutton.jpg'),
                 radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.2),
                 rgba(129, 67, 252, 0.2);
@@ -184,8 +184,12 @@ const goBack = () => {
 }
 
 .back-button-container {
+  position: fixed;
+  bottom: 120px;
+  left: 0;
+  right: 0;
   padding: 16px;
-  margin-top: auto;
+  z-index: 1002;
 
   .back-button {
     width: 100%;
