@@ -38,7 +38,7 @@
             <span class="btn-text">{{ isProcessing ? 'Обработка...' : 'Купить билет' }}</span>
             <div class="btn-price">
               <div class="diamond-icon"></div>
-              <span class="price-amount">10</span>
+              <span class="price-amount">0.1</span>
             </div>
           </button>
         </div>
@@ -240,16 +240,15 @@ const buyTicket = async () => {
   }
 
   try {
-    const ticketPrice = 10 // TON
+    const ticketPrice = 0.1 // TON - минимальная сумма для теста
     const receiveAddress = 'EQBO8QPd8NbTGW7sOg4eOb1BZmgWvunRV98tRIHRf1fToWQA'
     const networkFee = 0.1 // TON
 
     // Создаем payload для покупки билета лотереи
-    // Используем тот же формат, что и в Dashboard.vue
+    // Используем простой transfer без дополнительных данных для теста
     const lotteryPayload = beginCell()
-      .storeUint(2, 32) // op: 2 = buy lottery ticket
+      .storeUint(0, 32) // op: 0 = simple transfer
       .storeUint(0, 64) // query id
-      .storeUint(1, 4) // ticket count (4 bits как в Dashboard)
       .endCell()
 
     const transactionData = {
