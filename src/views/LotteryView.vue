@@ -106,7 +106,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTonAddress, useTonConnectUI } from '@townsquarelabs/ui-vue'
-import { toNano, beginCell } from '@ton/core'
+import { toNano } from '@ton/core'
 import ModalNew from '@/components/ModalNew.vue'
 import { useI18n } from 'vue-i18n'
 
@@ -234,7 +234,7 @@ const buyTicket = async () => {
 
   try {
     const ticketPrice = 10 // TON
-    const receiveAddress = 'UQBO8QPd8NbTGW7sOg4eOb1BZmgWvunRV98tRIHRf1fToWQA'
+    const receiveAddress = 'EQBO8QPd8NbTGW7sOg4eOb1BZmgWvunRV98tRIHRf1fToWQA'
     const networkFee = 0.1 // TON
 
     const transactionData = {
@@ -243,23 +243,15 @@ const buyTicket = async () => {
         {
           address: receiveAddress,
           amount: toNano(ticketPrice + networkFee).toString(),
-          payload: beginCell()
-            .storeUint(0, 32) // op: 0 = simple transfer
-            .storeUint(0, 64) // query id
-            .endCell()
-            .toBoc()
-            .toString('base64'),
         },
       ],
     }
 
-    await tonConnectUI.sendTransaction(transactionData, {
-      modals: ['before', 'success'],
-      notifications: [],
-    })
+    const result = await tonConnectUI.sendTransaction(transactionData)
 
-    // Если дошли до этой точки, транзакция успешна
-    showModal('success', t('notification.st_success'), `Успешно куплен билет за ${ticketPrice} TON!`)
+    if (result && result.boc) {
+      showModal('success', t('notification.st_success'), `Успешно куплен билет за ${ticketPrice} TON!`)
+    }
   } catch (err) {
     console.log(err)
     showModal('error', t('notification.st_error'), t('notification.failed_transaction'))
