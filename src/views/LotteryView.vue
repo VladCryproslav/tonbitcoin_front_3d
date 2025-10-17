@@ -21,21 +21,26 @@
             <div class="ticket-row">
               <span class="ticket-label">Всего билетов:</span>
               <div class="ticket-value">
-                <span class="ticket-count">150</span>
+                <span class="ticket-count">{{ lotteryData.totalTickets }}</span>
                 <div class="ticket-icon"></div>
               </div>
             </div>
             <div class="ticket-row">
               <span class="ticket-label">Осталось билетов:</span>
               <div class="ticket-value">
-                <span class="ticket-count">50</span>
+                <span class="ticket-count">{{ lotteryData.remainingTickets }}</span>
                 <div class="ticket-icon"></div>
               </div>
             </div>
           </div>
 
-          <button class="buy-ticket-btn" @click="buyTicket" :disabled="isProcessing">
-            <span class="btn-text">{{ isProcessing ? 'Обработка...' : 'Купить билет' }}</span>
+          <button class="buy-ticket-btn" @click="buyTicket" :disabled="isProcessing || !lotteryData.isActive || lotteryData.remainingTickets <= 0">
+            <span class="btn-text">{{
+              isProcessing ? 'Обработка...' :
+              !lotteryData.isActive ? 'Лотерея не активна' :
+              lotteryData.remainingTickets <= 0 ? 'Билеты распроданы' :
+              'Купить билет'
+            }}</span>
             <div class="btn-price">
               <div class="diamond-icon"></div>
               <span class="price-amount">0.01</span>
@@ -103,13 +108,14 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTonAddress, useTonConnectUI } from '@townsquarelabs/ui-vue'
 import { toNano, beginCell } from '@ton/core'
 import ModalNew from '@/components/ModalNew.vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
+import { host } from '../../axios.config'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -155,6 +161,13 @@ const participants = ref([
 const currentPage = ref(1)
 const itemsPerPage = 25
 const totalParticipants = computed(() => participants.value.length)
+
+// Lottery data
+const lotteryData = ref({
+  totalTickets: 150,
+  remainingTickets: 50,
+  isActive: true
+})
 
 const totalPages = computed(() => Math.ceil(totalParticipants.value / itemsPerPage))
 
@@ -218,6 +231,50 @@ const goBack = () => {
   router.back()
 }
 
+// API functions for lottery
+const fetchLotteryData = async () => {
+  try {
+    const response = await host.get('lottery/data/')
+    if (response.status === 200) {
+      lotteryData.value = response.data
+    }
+  } catch (err) {
+    console.error('Error fetching lottery data:', err)
+  }
+}
+
+const fetchParticipants = async () => {
+  try {
+    const response = await host.get('lottery/participants/')
+    if (response.status === 200) {
+      participants.value = response.data
+    }
+  } catch (err) {
+    console.error('Error fetching participants:', err)
+  }
+}
+
+const buyLotteryTicket = async (transactionHash) => {
+  try {
+    const response = await host.post('lottery/buy-ticket/', {
+      wallet_address: ton_address.value,
+      transaction_hash: transactionHash,
+      amount: 0.01
+    })
+
+    if (response.status === 200) {
+      // Обновляем данные лотереи и участников
+      await fetchLotteryData()
+      await fetchParticipants()
+      return true
+    }
+    return false
+  } catch (err) {
+    console.error('Error buying lottery ticket:', err)
+    return false
+  }
+}
+
 const buyTicket = async () => {
   if (!ton_address.value) {
     showModal('warning', t('notification.st_attention'), t('notification.unconnected'))
@@ -226,6 +283,16 @@ const buyTicket = async () => {
 
   if (!tonConnectUI) {
     showModal('error', t('notification.st_error'), 'TON Connect не инициализирован')
+    return
+  }
+
+  if (!lotteryData.value.isActive) {
+    showModal('error', t('notification.st_error'), 'Лотерея не активна')
+    return
+  }
+
+  if (lotteryData.value.remainingTickets <= 0) {
+    showModal('error', t('notification.st_error'), 'Все билеты распроданы')
     return
   }
 
@@ -263,16 +330,24 @@ const buyTicket = async () => {
     console.log('Transaction data:', transactionData)
     console.log('Amount:', toNano(transferAmount).toString())
 
-    await tonConnectUI.sendTransaction(transactionData, {
+    const result = await tonConnectUI.sendTransaction(transactionData, {
       modals: ['before', 'success'],
       notifications: [],
     })
 
-    // Если дошли до этой точки, транзакция успешна
-    showModal('success', t('notification.st_success'), `Успешно куплен билет за ${transferAmount} TON!`)
+    // Получаем хеш транзакции для отправки на бекенд
+    const transactionHash = result?.boc || 'unknown'
 
-    // Обновляем данные пользователя после успешной передачи
-    await app.initUser()
+    // Отправляем данные на бекенд
+    const success = await buyLotteryTicket(transactionHash)
+
+    if (success) {
+      showModal('success', t('notification.st_success'), `Успешно куплен билет за ${transferAmount} TON!`)
+      // Обновляем данные пользователя после успешной передачи
+      await app.initUser()
+    } else {
+      showModal('error', t('notification.st_error'), 'Ошибка при регистрации покупки билета')
+    }
   } catch (err) {
     console.log('Error in buyTicket:', err)
     showModal('error', t('notification.st_error'), t('notification.failed_transaction'))
@@ -280,6 +355,12 @@ const buyTicket = async () => {
     isProcessing.value = false
   }
 }
+
+// Загружаем данные при инициализации компонента
+onMounted(async () => {
+  await fetchLotteryData()
+  await fetchParticipants()
+})
 </script>
 
 <style lang="scss" scoped>
