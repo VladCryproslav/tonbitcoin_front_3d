@@ -54,8 +54,8 @@
         </div>
 
         <div class="participants-list">
-          <div class="participant-card" v-for="(participant, index) in participants" :key="index">
-            <div class="participant-rank">#{{ participant.rank }}</div>
+          <div class="participant-card" v-for="(participant, index) in displayedParticipants" :key="index">
+            <div class="participant-rank">#{{ (currentPage - 1) * itemsPerPage + index + 1 }}</div>
             <div class="participant-name">{{ participant.name }}</div>
             <div class="separator"></div>
             <div class="participant-address">{{ participant.address }}</div>
@@ -67,21 +67,33 @@
           </div>
         </div>
 
-        <div class="pagination">
+        <div class="pagination" v-if="totalPages > 1">
           <div class="page-numbers">
-            <div class="page-number active">1</div>
-            <div class="page-number">2</div>
-            <div class="page-number">3</div>
-            <div class="page-number">4</div>
-            <div class="page-number">5</div>
-            <span class="dots">...</span>
-            <div class="page-number">98</div>
-            <div class="page-number">99</div>
-            <div class="page-number">100</div>
+            <div
+              class="page-number"
+              :class="{ active: page === currentPage }"
+              v-for="page in pageNumbers"
+              :key="page"
+              @click="typeof page === 'number' ? currentPage = page : null"
+            >
+              {{ page }}
+            </div>
           </div>
           <div class="pagination-controls">
-            <button class="page-btn prev">Пред. страница</button>
-            <button class="page-btn next">След. страница</button>
+            <button
+              class="page-btn prev"
+              :class="{ unactive: currentPage === 1 }"
+              @click="prevPage"
+            >
+              Пред. страница
+            </button>
+            <button
+              class="page-btn next"
+              :class="{ unactive: currentPage === totalPages }"
+              @click="nextPage"
+            >
+              След. страница
+            </button>
           </div>
         </div>
       </div>
@@ -90,31 +102,93 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
 const participants = ref([
   {
-    rank: 1,
     name: 'Vadim',
     address: 'UQD4XIdaIRt-42j4d6GIFj7....',
     tickets: 20
   },
   {
-    rank: 2,
-    name: 'Vadim',
+    name: 'Alex',
     address: 'UQD4XIdaIRt-42j4d6GIFj7....',
-    tickets: 20
+    tickets: 15
   },
   {
-    rank: 2,
-    name: 'Vadim',
+    name: 'Maria',
     address: 'UQD4XIdaIRt-42j4d6GIFj7....',
-    tickets: 20
+    tickets: 30
+  },
+  {
+    name: 'John',
+    address: 'UQD4XIdaIRt-42j4d6GIFj7....',
+    tickets: 25
+  },
+  {
+    name: 'Anna',
+    address: 'UQD4XIdaIRt-42j4d6GIFj7....',
+    tickets: 18
   }
 ])
+
+const currentPage = ref(1)
+const itemsPerPage = 25
+const totalParticipants = ref(100)
+
+const totalPages = computed(() => Math.ceil(totalParticipants.value / itemsPerPage))
+
+const displayedParticipants = computed(() => {
+  return participants.value.slice(0, Math.min(itemsPerPage, participants.value.length))
+})
+
+const pageNumbers = computed(() => {
+  const pages = []
+  const total = totalPages.value
+
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i)
+    }
+  } else {
+    pages.push(1)
+    if (currentPage.value > 4) {
+      pages.push('...')
+    }
+
+    const start = Math.max(2, currentPage.value - 1)
+    const end = Math.min(total - 1, currentPage.value + 1)
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i)
+    }
+
+    if (currentPage.value < total - 3) {
+      pages.push('...')
+    }
+
+    if (total > 1) {
+      pages.push(total)
+    }
+  }
+
+  return pages
+})
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
+}
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
 
 const goBack = () => {
   router.back()
@@ -236,6 +310,7 @@ const buyTicket = () => {
         font-size: 20px;
         font-weight: 600;
         margin: 0;
+        white-space: nowrap;
       }
     }
 
@@ -283,8 +358,7 @@ const buyTicket = () => {
     }
 
     .buy-ticket-btn {
-      background: radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%),
-                  linear-gradient(180deg, #FCD909 0%, #FEA400 100%);
+      background: linear-gradient(to bottom, #fcd909, #fea400);
       border: none;
       border-radius: 10px;
       padding: 15px 19px;
@@ -520,6 +594,11 @@ const buyTicket = () => {
 
         &.prev {
           opacity: 0.6;
+        }
+
+        &.unactive {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
       }
     }

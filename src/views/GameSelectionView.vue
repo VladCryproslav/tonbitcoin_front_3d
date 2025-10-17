@@ -190,7 +190,7 @@ const goBack = () => {
     bottom: 0;
     background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.4),
-                rgba(62, 29, 129, 0.4);
+                rgba(39, 15, 86, 0.4);
     backdrop-filter: blur(8px);
     border-radius: 13px;
     z-index: 1;
