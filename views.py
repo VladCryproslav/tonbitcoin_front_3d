@@ -4419,31 +4419,20 @@ class BuyLotteryTicketView(APIView):
                 if lottery.remaining_tickets <= 0:
                     return Response({'error': 'No tickets available'}, status=status.HTTP_400_BAD_REQUEST)
                 
-                # Находим или создаем участника
-                print(f"DEBUG: Creating/finding participant for wallet: {wallet_address}")
+                # Создаем участника (как в стейкинге)
+                print(f"DEBUG: Creating participant for wallet: {wallet_address}")
                 print(f"DEBUG: User profile: {user_profile}")
                 print(f"DEBUG: Username: {user_profile.username if user_profile else 'No user'}")
                 
-                participant, created = LotteryParticipant.objects.get_or_create(
+                participant = LotteryParticipant.objects.create(
+                    user=user_profile,
+                    username=user_profile.username or 'Anonymous',
                     wallet_address=wallet_address,
-                    defaults={
-                        'user': user_profile,
-                        'username': user_profile.username or 'Anonymous',
-                        'tickets_count': 1,
-                        'transaction_hash': transaction_hash
-                    }
+                    tickets_count=1,
+                    transaction_hash=transaction_hash
                 )
                 
-                print(f"DEBUG: Participant created: {created}, participant: {participant}")
-                
-                if not created:
-                    # Участник уже существует - увеличиваем количество билетов
-                    print(f"DEBUG: Updating existing participant, new count: {participant.tickets_count + 1}")
-                    participant.tickets_count += 1
-                    participant.transaction_hash = transaction_hash
-                    participant.save()
-                else:
-                    print(f"DEBUG: Created new participant with count: {participant.tickets_count}")
+                print(f"DEBUG: Participant created: {participant}")
                 
                 # Уменьшаем количество оставшихся билетов
                 print(f"DEBUG: Updating lottery - remaining tickets: {lottery.remaining_tickets - 1}")
