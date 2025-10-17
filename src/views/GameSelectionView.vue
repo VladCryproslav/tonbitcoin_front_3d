@@ -26,26 +26,6 @@ const goBack = () => {
 
 <template>
   <div class="game-selection-screen">
-    <!-- Header -->
-    <div class="header">
-      <div class="header-content">
-        <div class="header-left">
-          <button class="cancel-btn" @click="goBack">
-            {{ t('common.cancel') }}
-          </button>
-        </div>
-        <div class="header-center">
-          <h1 class="header-title">{{ t('games.title') }}</h1>
-          <p class="header-subtitle">{{ t('games.subtitle') }}</p>
-        </div>
-        <div class="header-right">
-          <button class="close-btn" @click="goBack">
-            ✕
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- Main Content -->
     <div class="main-content">
       <div class="games-container">
@@ -53,18 +33,12 @@ const goBack = () => {
         <div class="game-card wheel-card" @click="goToWheel">
           <div class="game-card-bg"></div>
           <h2 class="game-title">{{ t('games.wheel_of_fortune') }}</h2>
-          <div class="game-icon">
-            <img src="@/assets/wheel-icon.webp" alt="Wheel" />
-          </div>
         </div>
 
         <!-- Лотерея -->
         <div class="game-card lottery-card" @click="goToLottery">
           <div class="game-card-bg"></div>
           <h2 class="game-title">{{ t('games.lottery') }}</h2>
-          <div class="game-icon">
-            <img src="@/assets/wheel-icon.webp" alt="Lottery" />
-          </div>
         </div>
 
         <!-- В разработке -->
@@ -72,9 +46,6 @@ const goBack = () => {
           <div class="game-card-bg"></div>
           <div class="development-overlay"></div>
           <h2 class="game-title">{{ t('games.in_development') }}</h2>
-          <div class="game-icon">
-            <img src="@/assets/wheel-icon.webp" alt="Development" />
-          </div>
         </div>
       </div>
     </div>
@@ -84,6 +55,34 @@ const goBack = () => {
       <button class="back-button" @click="goBack">
         {{ t('games.go_back') }}
       </button>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-navigation">
+      <div class="nav-item">
+        <div class="nav-icon"></div>
+        <span class="nav-label">Wallet</span>
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon"></div>
+        <span class="nav-label">Boost</span>
+      </div>
+      <div class="nav-item active">
+        <div class="nav-icon"></div>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon"></div>
+        <span class="nav-label">Market</span>
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon"></div>
+        <span class="nav-label">Friends</span>
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon"></div>
+        <span class="nav-label">Tasks</span>
+      </div>
     </div>
   </div>
 </template>
@@ -101,89 +100,11 @@ const goBack = () => {
   z-index: 1000;
 }
 
-.header {
-  background: rgba(16, 21, 27, 0.25);
-  backdrop-filter: blur(9px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 44px; // Status bar height
-
-  .header-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 4px 16px;
-    height: 36px;
-
-    .header-left {
-      min-width: 80px;
-
-      .cancel-btn {
-        background: none;
-        border: none;
-        color: #FFFFFF;
-        font-family: 'SF Pro', sans-serif;
-        font-weight: 400;
-        font-size: 17px;
-        cursor: pointer;
-        padding: 11px 16px;
-
-        &:hover {
-          opacity: 0.7;
-        }
-      }
-    }
-
-    .header-center {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1px;
-
-      .header-title {
-        color: #FFFFFF;
-        font-family: 'Inter', sans-serif;
-        font-weight: 400;
-        font-size: 17px;
-        margin: 0;
-        text-align: center;
-      }
-
-      .header-subtitle {
-        color: #707579;
-        font-family: 'Roboto', sans-serif;
-        font-weight: 400;
-        font-size: 13px;
-        margin: 0;
-        text-align: center;
-      }
-    }
-
-    .header-right {
-      min-width: 80px;
-      display: flex;
-      justify-content: flex-end;
-
-      .close-btn {
-        background: none;
-        border: none;
-        color: #FFFFFF;
-        font-size: 18px;
-        cursor: pointer;
-        padding: 11px 16px;
-
-        &:hover {
-          opacity: 0.7;
-        }
-      }
-    }
-  }
-}
-
 .main-content {
   flex: 1;
-  padding: 48px 15px;
+  padding: 170px 15px 0;
   overflow-y: auto;
+  background: radial-gradient(circle at 50% 0%, rgba(103, 98, 240, 1) 0%, rgba(103, 98, 240, 0) 100%), #000000;
 
   .games-container {
     display: flex;
@@ -224,6 +145,9 @@ const goBack = () => {
     left: 0;
     right: 0;
     bottom: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
+                rgba(0, 0, 0, 0.2),
+                rgba(129, 67, 252, 0.2);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -241,18 +165,6 @@ const goBack = () => {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   }
 
-  .game-icon {
-    position: absolute;
-    top: 9px;
-    right: 10px;
-    z-index: 2;
-
-    img {
-      width: 24px;
-      height: 24px;
-      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-    }
-  }
 }
 
 .wheel-card {
@@ -260,7 +172,7 @@ const goBack = () => {
     background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.2),
                 rgba(129, 67, 252, 0.2);
-    background-image: url('@/assets/wheel-back.webp');
+    /* Место для фонового изображения колеса */
   }
 }
 
@@ -269,7 +181,7 @@ const goBack = () => {
     background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.2),
                 rgba(129, 67, 252, 0.2);
-    background-image: url('@/assets/wheel-back.webp');
+    /* Место для фонового изображения лотереи */
   }
 }
 
@@ -278,7 +190,7 @@ const goBack = () => {
     background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.2),
                 rgba(129, 67, 252, 0.2);
-    background-image: url('@/assets/wheel-back.webp');
+    /* Место для фонового изображения разработки */
   }
 
   .development-overlay {
@@ -328,17 +240,67 @@ const goBack = () => {
   }
 }
 
+.bottom-navigation {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: rgba(16, 21, 27, 0.25);
+  backdrop-filter: blur(9px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 26px 25.5px;
+  z-index: 1001;
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+
+    &.active {
+      .nav-label {
+        color: #B8C9DB;
+      }
+    }
+
+    .nav-icon {
+      width: 22px;
+      height: 22px;
+      background: rgba(184, 201, 219, 0.1);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-label {
+      color: rgba(184, 201, 219, 0.25);
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 10px;
+      line-height: 1.21;
+      text-align: center;
+    }
+  }
+}
+
 // Responsive adjustments
 @media (max-width: 390px) {
   .main-content {
-    padding: 32px 15px;
+    padding: 170px 15px 0;
   }
 
   .game-card {
-    height: 120px;
+    height: 140px;
 
     .game-title {
-      font-size: 24px;
+      font-size: 30px;
     }
   }
 }
