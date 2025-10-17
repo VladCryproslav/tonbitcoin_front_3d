@@ -39,6 +39,7 @@ const goBack = () => {
         <div class="game-card lottery-card" @click="goToLottery">
           <div class="game-card-bg"></div>
           <h2 class="game-title">{{ t('games.lottery') }}</h2>
+          <div class="new-badge">New!</div>
         </div>
 
         <!-- В разработке -->
@@ -149,6 +150,29 @@ const goBack = () => {
     background-position: center;
     background-repeat: no-repeat;
   }
+
+  .new-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #ff0000;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3);
+    animation: pulse-glow 2s ease-in-out infinite;
+    z-index: 10;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 .development-card {
@@ -171,6 +195,17 @@ const goBack = () => {
     backdrop-filter: blur(8px);
     border-radius: 15px;
     z-index: 1;
+  }
+
+  .game-title {
+    overflow: hidden;
+    background: linear-gradient(90deg, transparent, #fff, transparent);
+    background-repeat: no-repeat;
+    background-size: 80%;
+    animation: shine 3s linear infinite;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: rgba(255, 255, 255, 0);
   }
 }
 
@@ -220,6 +255,37 @@ const goBack = () => {
     .game-title {
       font-size: 30px;
     }
+  }
+}
+
+// Animation keyframes
+@keyframes shine {
+  0% {
+    background-position: -500%;
+  }
+
+  100% {
+    background-position: 500%;
+  }
+}
+
+@keyframes pulse-glow {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(255, 0, 0, 0.6);
+  }
+
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3);
   }
 }
 </style>
