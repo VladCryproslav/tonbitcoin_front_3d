@@ -43,7 +43,7 @@
             }}</span>
             <div class="btn-price">
               <div class="diamond-icon"></div>
-              <span class="price-amount">0.01</span>
+              <span class="price-amount">{{ lotteryData.ticketPrice || 0.01 }}</span>
             </div>
           </button>
         </div>
@@ -140,6 +140,7 @@ const totalParticipants = computed(() => participants.value.length)
 const lotteryData = ref({
   totalTickets: 0,
   remainingTickets: 0,
+  ticketPrice: 0.01,
   isActive: false
 })
 
@@ -214,6 +215,7 @@ const fetchLotteryData = async () => {
       lotteryData.value = {
         totalTickets: response.data.total_tickets,
         remainingTickets: response.data.remaining_tickets,
+        ticketPrice: response.data.ticket_price,
         isActive: response.data.is_active
       }
     }
@@ -238,7 +240,7 @@ const buyLotteryTicket = async (transactionHash) => {
     const response = await host.post('lottery/buy-ticket/', {
       wallet_address: ton_address.value,
       transaction_hash: transactionHash,
-      amount: 0.01
+      amount: lotteryData.value.ticketPrice || 0.01
     })
 
     if (response.status === 200) {
@@ -286,7 +288,7 @@ const buyTicket = async () => {
   }
 
   try {
-    const transferAmount = 0.01 // TON - минимальная сумма для передачи
+    const transferAmount = lotteryData.value.ticketPrice || 0.01 // TON - цена билета из API
     const receiveAddress = 'UQBO8QPd8NbTGW7sOg4eOb1BZmgWvunRV98tRIHRf1fToWQA' // Указанный кошелек
 
     // Простая передача TON без дополнительных данных
