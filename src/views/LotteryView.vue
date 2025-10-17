@@ -106,7 +106,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTonAddress, useTonConnectUI } from '@townsquarelabs/ui-vue'
-import { toNano } from '@ton/core'
+import { toNano, beginCell } from '@ton/core'
 import ModalNew from '@/components/ModalNew.vue'
 import { useI18n } from 'vue-i18n'
 
@@ -238,11 +238,17 @@ const buyTicket = async () => {
     const networkFee = 0.1 // TON
 
     const transactionData = {
-      validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutes
+      validUntil: Date.now() + 1000 * 60 * 5, // 5 minutes
       messages: [
         {
           address: receiveAddress,
           amount: toNano(ticketPrice + networkFee).toString(),
+          payload: beginCell()
+            .storeUint(0, 32) // op: 0 = simple transfer
+            .storeUint(0, 64) // query id
+            .endCell()
+            .toBoc()
+            .toString('base64'),
         },
       ],
     }
@@ -356,7 +362,10 @@ const buyTicket = async () => {
     .station-info {
       text-align: center;
       max-width: 262px;
-      margin-top: 20px;
+      margin: 20px auto 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
 
       .station-image {
         width: 200px;
@@ -366,6 +375,7 @@ const buyTicket = async () => {
         background-position: center;
         background-repeat: no-repeat;
         margin: 0 auto 15px;
+        align-self: center;
       }
 
       .station-title {
