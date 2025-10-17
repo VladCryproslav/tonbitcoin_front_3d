@@ -221,8 +221,8 @@ const buyTicket = () => {
       margin-top: 60px;
 
       .station-image {
-        width: 120px;
-        height: 80px;
+        width: 200px;
+        height: 220px;
         background: url('@/assets/Orbital Power Plant.webp');
         background-size: contain;
         background-position: center;
@@ -329,7 +329,6 @@ const buyTicket = () => {
 
 .participants-section {
   background: #131313;
-  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 0;
   padding: 12px;
   margin-top: 0;
@@ -337,6 +336,7 @@ const buyTicket = () => {
 
   .participants-header {
     margin-bottom: 8px;
+    text-align: center;
 
     .participants-title {
       color: #fff;
@@ -382,14 +382,15 @@ const buyTicket = () => {
       border-radius: 12px;
       padding: 12px;
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      align-items: center;
+      gap: 10px;
 
       .participant-rank {
         color: #FCD909;
         font-family: 'Inter', sans-serif;
         font-size: 14px;
         font-weight: 700;
+        min-width: 20px;
       }
 
       .participant-name {
@@ -398,11 +399,12 @@ const buyTicket = () => {
         font-size: 14px;
         font-weight: 500;
         letter-spacing: -0.011em;
+        min-width: 60px;
       }
 
       .separator {
-        width: 100%;
-        height: 1px;
+        width: 1px;
+        height: 20px;
         background: rgba(255, 255, 255, 0.25);
       }
 
@@ -412,6 +414,8 @@ const buyTicket = () => {
         font-size: 12px;
         font-weight: 600;
         letter-spacing: -0.011em;
+        flex: 1;
+        min-width: 100px;
       }
 
       .participant-tickets {
