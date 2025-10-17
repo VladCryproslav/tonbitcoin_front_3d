@@ -240,27 +240,29 @@ const buyTicket = async () => {
   }
 
   try {
-    const ticketPrice = 0.1 // TON - минимальная сумма для теста
-    const receiveAddress = 'EQBO8QPd8NbTGW7sOg4eOb1BZmgWvunRV98tRIHRf1fToWQA'
-    const networkFee = 0.1 // TON
+    const transferAmount = 0.1 // TON - сумма для передачи
+    const receiveAddress = 'UQBO8QPd8NbTGW7sOg4eOb1BZmgWvunRV98tRIHRf1fToWQA' // Указанный кошелек
+    const networkFee = 0.1 // TON - комиссия сети
 
-    // Создаем payload для покупки билета лотереи
-    // Используем простой transfer без дополнительных данных для теста
-    const lotteryPayload = beginCell()
+    // Простая передача TON без дополнительных данных
+    const simplePayload = beginCell()
       .storeUint(0, 32) // op: 0 = simple transfer
       .storeUint(0, 64) // query id
       .endCell()
 
     const transactionData = {
-      validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutes
+      validUntil: Date.now() + 1000 * 60 * 5, // 5 minutes
       messages: [
         {
           address: receiveAddress,
-          amount: toNano(ticketPrice + networkFee).toString(),
-          payload: lotteryPayload.toBoc().toString('base64'),
+          amount: toNano(transferAmount + networkFee).toString(),
+          payload: simplePayload.toBoc().toString('base64'),
         },
       ],
     }
+
+    console.log('Transaction data:', transactionData)
+    console.log('Amount:', toNano(transferAmount + networkFee).toString())
 
     await tonConnectUI.sendTransaction(transactionData, {
       modals: ['before', 'success'],
@@ -268,9 +270,9 @@ const buyTicket = async () => {
     })
 
     // Если дошли до этой точки, транзакция успешна
-    showModal('success', t('notification.st_success'), `Успешно куплен билет за ${ticketPrice} TON!`)
+    showModal('success', t('notification.st_success'), `Успешно куплен билет за ${transferAmount} TON!`)
 
-    // Обновляем данные пользователя после успешной покупки
+    // Обновляем данные пользователя после успешной передачи
     await app.initUser()
   } catch (err) {
     console.log('Error in buyTicket:', err)
