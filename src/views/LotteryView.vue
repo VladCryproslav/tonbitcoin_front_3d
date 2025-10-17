@@ -1,4 +1,5 @@
 <template>
+  <ModalNew v-if="openModal" :status="modalStatus" :title="modalTitle" :body="modalBody" @close="openModal = false" />
   <div class="lottery-screen">
     <!-- Main Content -->
     <div class="main-content">
@@ -33,8 +34,8 @@
             </div>
           </div>
 
-          <button class="buy-ticket-btn" @click="buyTicket">
-            <span class="btn-text">Купить билет</span>
+          <button class="buy-ticket-btn" @click="buyTicket" :disabled="isProcessing">
+            <span class="btn-text">{{ isProcessing ? 'Обработка...' : 'Купить билет' }}</span>
             <div class="btn-price">
               <div class="diamond-icon"></div>
               <span class="price-amount">10</span>
@@ -104,8 +105,22 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useTonAddress, useTonConnectUI } from '@townsquarelabs/ui-vue'
+import { beginCell, toNano } from '@ton/core'
+import ModalNew from '@/components/ModalNew.vue'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
+const { t } = useI18n()
+const ton_address = useTonAddress()
+const tonConnectUI = useTonConnectUI()
+
+// Modal states
+const openModal = ref(false)
+const modalStatus = ref(null)
+const modalTitle = ref(null)
+const modalBody = ref(null)
+const isProcessing = ref(false)
 
 const participants = ref([
   {
@@ -190,13 +205,68 @@ const prevPage = () => {
   }
 }
 
+const showModal = (status, title, body) => {
+  modalStatus.value = status
+  modalTitle.value = title
+  modalBody.value = body
+  openModal.value = true
+}
+
 const goBack = () => {
   router.back()
 }
 
-const buyTicket = () => {
-  // TODO: Implement TON Connect payment
-  console.log('Buy ticket clicked')
+const buyTicket = async () => {
+  if (!ton_address.value) {
+    showModal('warning', t('notification.st_attention'), t('notification.unconnected'))
+    return
+  }
+
+  if (isProcessing.value) return
+  isProcessing.value = true
+
+  // Скидаємо стан модального вікна перед новою транзакцією
+  try {
+    await tonConnectUI.closeModal()
+  } catch {
+    // Ігноруємо помилки закриття модального вікна
+  }
+
+  try {
+    const ticketPrice = 10 // TON
+    const receiveAddress = 'UQBO8QPd8NbTGW7sOg4eOb1BZmgWvunRV98tRIHRf1fToWQA'
+    const networkFee = 0.1 // TON
+
+    const transactionData = {
+      validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutes
+      messages: [
+        {
+          address: receiveAddress,
+          amount: toNano(ticketPrice + networkFee).toString(),
+          payload: beginCell()
+            .storeUint(0, 32) // op: 0 = simple transfer
+            .storeUint(0, 64) // query id
+            .endCell()
+            .toBoc()
+            .toString('base64'),
+        },
+      ],
+    }
+
+    const result = await tonConnectUI.sendTransaction(transactionData, {
+      modals: ['before', 'success'],
+      notifications: [],
+    })
+
+    if (result && result.boc) {
+      showModal('success', t('notification.st_success'), `Успешно куплен билет за ${ticketPrice} TON!`)
+    }
+  } catch (err) {
+    console.log(err)
+    showModal('error', t('notification.st_error'), t('notification.failed_transaction'))
+  } finally {
+    isProcessing.value = false
+  }
 }
 </script>
 
@@ -369,6 +439,11 @@ const buyTicket = () => {
       justify-content: center;
       gap: 5px;
       cursor: pointer;
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
 
       .btn-text {
         color: #000;
