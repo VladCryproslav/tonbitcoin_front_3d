@@ -238,6 +238,7 @@ const fetchParticipants = async () => {
 const buyLotteryTicket = async (transactionHash) => {
   try {
     const response = await host.post('lottery/buy-ticket/', {
+      user_id: app.user?.id,
       wallet_address: ton_address.value,
       transaction_hash: transactionHash,
       amount: lotteryData.value.ticketPrice || 0.01
