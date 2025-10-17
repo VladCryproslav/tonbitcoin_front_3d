@@ -26,25 +26,39 @@ const host = axios.create({
   },
 })
 
-// Интерцепторы для отладки (можно включить при необходимости)
-// host.interceptors.request.use(
-//   (config) => {
-//     console.log('API Request:', config)
-//     return config
-//   },
-//   (error) => Promise.reject(error)
-// )
+// Интерцепторы для отладки (временно включены)
+host.interceptors.request.use(
+  (config) => {
+    console.log('API Request:', {
+      url: config.url,
+      method: config.method,
+      headers: config.headers,
+      data: config.data
+    })
+    return config
+  },
+  (error) => Promise.reject(error)
+)
 
-// host.interceptors.response.use(
-//   (response) => {
-//     console.log('API Response:', response)
-//     return response
-//   },
-//   (error) => {
-//     console.error('API Response Error:', error)
-//     return Promise.reject(error)
-//   }
-// )
+host.interceptors.response.use(
+  (response) => {
+    console.log('API Response:', {
+      url: response.config.url,
+      status: response.status,
+      data: response.data
+    })
+    return response
+  },
+  (error) => {
+    console.error('API Response Error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    })
+    return Promise.reject(error)
+  }
+)
 
 const tonapi = axios.create({
   baseURL: "https://tonapi.io/v2/",
