@@ -51,7 +51,7 @@
         </div>
         <div class="participants-count">
           <div class="count-icon"></div>
-          <span class="count-text">100 чел.</span>
+          <span class="count-text">{{ totalParticipants }} чел.</span>
         </div>
 
         <div class="participants-list">
@@ -106,7 +106,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTonAddress, useTonConnectUI } from '@townsquarelabs/ui-vue'
-import { beginCell, toNano } from '@ton/core'
+import { toNano } from '@ton/core'
 import ModalNew from '@/components/ModalNew.vue'
 import { useI18n } from 'vue-i18n'
 
@@ -123,36 +123,36 @@ const modalBody = ref(null)
 const isProcessing = ref(false)
 
 const participants = ref([
-  {
-    name: 'Vadim',
-    address: 'UQD4XIdaIRt-42j4d6GIFj7....',
-    tickets: 20
-  },
-  {
-    name: 'Alex',
-    address: 'UQD4XIdaIRt-42j4d6GIFj7....',
-    tickets: 15
-  },
-  {
-    name: 'Maria',
-    address: 'UQD4XIdaIRt-42j4d6GIFj7....',
-    tickets: 30
-  },
-  {
-    name: 'John',
-    address: 'UQD4XIdaIRt-42j4d6GIFj7....',
-    tickets: 25
-  },
-  {
-    name: 'Anna',
-    address: 'UQD4XIdaIRt-42j4d6GIFj7....',
-    tickets: 18
-  }
+  { name: 'Vadim', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 20 },
+  { name: 'Alex', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 15 },
+  { name: 'Maria', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 30 },
+  { name: 'John', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 25 },
+  { name: 'Anna', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 18 },
+  { name: 'Peter', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 22 },
+  { name: 'Lisa', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 28 },
+  { name: 'Mike', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 16 },
+  { name: 'Sara', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 35 },
+  { name: 'Tom', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 12 },
+  { name: 'Emma', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 24 },
+  { name: 'David', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 19 },
+  { name: 'Kate', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 31 },
+  { name: 'Chris', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 27 },
+  { name: 'Nina', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 14 },
+  { name: 'Mark', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 33 },
+  { name: 'Julia', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 21 },
+  { name: 'Paul', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 17 },
+  { name: 'Elena', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 29 },
+  { name: 'Steve', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 26 },
+  { name: 'Olga', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 23 },
+  { name: 'Igor', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 32 },
+  { name: 'Tanya', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 18 },
+  { name: 'Max', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 25 },
+  { name: 'Irina', address: 'UQD4XIdaIRt-42j4d6GIFj7....', tickets: 20 }
 ])
 
 const currentPage = ref(1)
 const itemsPerPage = 25
-const totalParticipants = ref(100)
+const totalParticipants = computed(() => participants.value.length)
 
 const totalPages = computed(() => Math.ceil(totalParticipants.value / itemsPerPage))
 
@@ -243,12 +243,6 @@ const buyTicket = async () => {
         {
           address: receiveAddress,
           amount: toNano(ticketPrice + networkFee).toString(),
-          payload: beginCell()
-            .storeUint(0, 32) // op: 0 = simple transfer
-            .storeUint(0, 64) // query id
-            .endCell()
-            .toBoc()
-            .toString('base64'),
         },
       ],
     }
@@ -362,7 +356,7 @@ const buyTicket = async () => {
     .station-info {
       text-align: center;
       max-width: 262px;
-      margin-top: 60px;
+      margin-top: 20px;
 
       .station-image {
         width: 200px;
@@ -381,6 +375,7 @@ const buyTicket = async () => {
         font-weight: 600;
         margin: 0;
         white-space: nowrap;
+        text-align: center;
       }
     }
 
