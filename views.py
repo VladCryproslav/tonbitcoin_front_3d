@@ -4386,12 +4386,20 @@ class BuyLotteryTicketView(APIView):
     @require_auth
     def post(self, request):
         try:
+            print(f"DEBUG: Lottery ticket purchase request received")
+            print(f"DEBUG: Request data: {request.data}")
+            print(f"DEBUG: User profile: {request.user_profile}")
+            print(f"DEBUG: User ID: {request.user_profile.user_id if request.user_profile else 'No user'}")
+            
             wallet_address = request.data.get('wallet_address')
             transaction_hash = request.data.get('transaction_hash')
             amount = request.data.get('amount')
             
+            print(f"DEBUG: Parsed data - wallet: {wallet_address}, hash: {transaction_hash}, amount: {amount}")
+            
             # Валидация данных
             if not all([wallet_address, transaction_hash, amount]):
+                print("DEBUG: Missing required fields")
                 return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
             
             with transaction.atomic():
@@ -4413,8 +4421,11 @@ class BuyLotteryTicketView(APIView):
                 
                 # Получаем пользователя из request (уже определен через @require_auth)
                 user_profile = request.user_profile
+                print(f"DEBUG: Using user profile: {user_profile}")
+                print(f"DEBUG: User username: {user_profile.username if user_profile else 'No user'}")
                 
                 # Находим или создаем участника
+                print(f"DEBUG: Creating/finding participant for wallet: {wallet_address}")
                 participant, created = LotteryParticipant.objects.get_or_create(
                     wallet_address=wallet_address,
                     defaults={
@@ -4424,22 +4435,29 @@ class BuyLotteryTicketView(APIView):
                         'transaction_hash': transaction_hash
                     }
                 )
+                print(f"DEBUG: Participant created: {created}, participant: {participant}")
                 
                 if not created:
                     # Участник уже существует - увеличиваем количество билетов
+                    print(f"DEBUG: Updating existing participant, new count: {participant.tickets_count + 1}")
                     participant.tickets_count += 1
                     participant.transaction_hash = transaction_hash
                     participant.save()
+                else:
+                    print(f"DEBUG: Created new participant with count: {participant.tickets_count}")
                 
                 # Уменьшаем количество оставшихся билетов
+                print(f"DEBUG: Updating lottery - remaining tickets: {lottery.remaining_tickets - 1}")
                 lottery.remaining_tickets -= 1
                 
                 # Если билеты закончились - деактивируем лотерею
                 if lottery.remaining_tickets <= 0:
                     lottery.is_active = False
+                    print("DEBUG: Lottery deactivated - no tickets left")
                 
                 lottery.save()
                 
+                print(f"DEBUG: Success! Returning response with tickets_count: {participant.tickets_count}")
                 return Response({
                     'success': True,
                     'message': 'Ticket purchased successfully',
@@ -4447,4 +4465,8 @@ class BuyLotteryTicketView(APIView):
                 })
                 
         except Exception as e:
+            print(f"DEBUG: Error in lottery ticket purchase: {str(e)}")
+            print(f"DEBUG: Exception type: {type(e)}")
+            import traceback
+            print(f"DEBUG: Traceback: {traceback.format_exc()}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

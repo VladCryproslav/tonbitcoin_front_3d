@@ -253,11 +253,16 @@ const buyLotteryTicket = async (transactionHash) => {
       app_user_keys: app.user ? Object.keys(app.user) : 'no user'
     })
 
-    const response = await host.post('lottery/buy-ticket/', {
+    const requestData = {
       wallet_address: ton_address.value,
       transaction_hash: transactionHash,
       amount: lotteryData.value.ticketPrice || 0.01
-    })
+    }
+
+    console.log('Sending request data:', requestData)
+    console.log('Request headers:', host.defaults.headers)
+
+    const response = await host.post('lottery/buy-ticket/', requestData)
 
     if (response.status === 200) {
       // Обновляем данные лотереи и участников
