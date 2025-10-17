@@ -48,13 +48,13 @@ const goBack = () => {
           <h2 class="game-title">{{ t('games.in_development') }}</h2>
         </div>
       </div>
-    </div>
 
-    <!-- Back Button -->
-    <div class="back-button-container">
-      <button class="back-button" @click="goBack">
-        {{ t('games.go_back') }}
-      </button>
+      <!-- Back Button -->
+      <div class="back-button-container">
+        <button class="back-button" @click="goBack">
+          {{ t('games.go_back') }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -74,9 +74,11 @@ const goBack = () => {
 
 .main-content {
   flex: 1;
-  padding: 48px 15px 120px;
+  padding: 48px 15px 0;
   overflow-y: auto;
   background: radial-gradient(circle at 50% 0%, rgba(103, 98, 240, 1) 0%, rgba(103, 98, 240, 0) 100%), #0B150F;
+  display: flex;
+  flex-direction: column;
 
   .games-container {
     display: flex;
@@ -137,10 +139,10 @@ const goBack = () => {
 
 .wheel-card {
   .game-card-bg {
-    background: url('@/assets/wheel-icon.svg'),
-                radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
+    background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.2),
-                rgba(129, 67, 252, 0.2);
+                rgba(129, 67, 252, 0.2),
+                url('@/assets/wheel-icon.svg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -149,10 +151,10 @@ const goBack = () => {
 
 .lottery-card {
   .game-card-bg {
-    background: url('@/assets/lottery-icon.svg'),
-                radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
+    background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.2),
-                rgba(129, 67, 252, 0.2);
+                rgba(129, 67, 252, 0.2),
+                url('@/assets/lottery-icon.svg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -161,10 +163,10 @@ const goBack = () => {
 
 .development-card {
   .game-card-bg {
-    background: url('@/assets/development-icon.svg'),
-                radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
+    background: radial-gradient(circle at 50% 0%, rgba(129, 67, 252, 0) 0%, rgba(129, 67, 252, 1) 100%),
                 rgba(0, 0, 0, 0.2),
-                rgba(129, 67, 252, 0.2);
+                rgba(129, 67, 252, 0.2),
+                url('@/assets/development-icon.svg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -186,15 +188,8 @@ const goBack = () => {
 }
 
 .back-button-container {
-  position: fixed;
-  bottom: 120px;
-  left: 0;
-  right: 0;
   padding: 16px;
-  background: rgba(16, 21, 27, 0.25);
-  backdrop-filter: blur(9px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  z-index: 1002;
+  margin-top: auto;
 
   .back-button {
     width: 100%;
