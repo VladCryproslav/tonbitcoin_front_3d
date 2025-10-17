@@ -21,14 +21,14 @@
             <div class="ticket-row">
               <span class="ticket-label">Всего билетов:</span>
               <div class="ticket-value">
-                <span class="ticket-count">{{ lotteryData.totalTickets }}</span>
+                <span class="ticket-count">{{ lotteryData.totalTickets || 0 }}</span>
                 <div class="ticket-icon"></div>
               </div>
             </div>
             <div class="ticket-row">
               <span class="ticket-label">Осталось билетов:</span>
               <div class="ticket-value">
-                <span class="ticket-count">{{ lotteryData.remainingTickets }}</span>
+                <span class="ticket-count">{{ lotteryData.remainingTickets || 0 }}</span>
                 <div class="ticket-icon"></div>
               </div>
             </div>
@@ -64,7 +64,7 @@
             <div class="participant-rank">#{{ (currentPage - 1) * itemsPerPage + index + 1 }}</div>
             <div class="participant-name">{{ participant.username }}</div>
             <div class="separator"></div>
-            <div class="participant-address">{{ participant.wallet_address }}</div>
+            <div class="participant-address">{{ participant.wallet_address.slice(0, 6) }}...{{ participant.wallet_address.slice(-4) }}</div>
             <div class="separator"></div>
             <div class="participant-tickets">
               <div class="ticket-icon"></div>
@@ -210,7 +210,12 @@ const fetchLotteryData = async () => {
   try {
     const response = await host.get('lottery/data/')
     if (response.status === 200) {
-      lotteryData.value = response.data
+      // Преобразуем snake_case в camelCase
+      lotteryData.value = {
+        totalTickets: response.data.total_tickets,
+        remainingTickets: response.data.remaining_tickets,
+        isActive: response.data.is_active
+      }
     }
   } catch (err) {
     console.error('Error fetching lottery data:', err)
