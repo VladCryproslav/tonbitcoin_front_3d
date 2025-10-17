@@ -4414,7 +4414,7 @@ class BuyLotteryTicketView(APIView):
                 
                 # Находим пользователя по user_id
                 try:
-                    user_profile = UserProfile.objects.get(id=user_id)
+                    user_profile = UserProfile.objects.get(user_id=user_id)
                 except UserProfile.DoesNotExist:
                     return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
                 

@@ -53,6 +53,12 @@
       <div class="participants-section">
         <div class="participants-header">
           <h3 class="participants-title">Список учасников</h3>
+          <div v-if="isUpdating" class="updating-indicator" title="Обновление данных...">
+            <div class="spinner"></div>
+          </div>
+          <div v-else class="refresh-indicator" @click="updateLotteryData" title="Обновить данные">
+            <div class="refresh-icon">↻</div>
+          </div>
         </div>
         <div class="participants-count">
           <div class="count-icon"></div>
@@ -108,7 +114,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTonAddress, useTonConnectUI } from '@townsquarelabs/ui-vue'
 import { toNano, beginCell } from '@ton/core'
@@ -239,6 +245,7 @@ const buyLotteryTicket = async (transactionHash) => {
   try {
     console.log('Buying lottery ticket with data:', {
       user_id: app.user?.id,
+      user_id_field: app.user?.user_id,
       wallet_address: ton_address.value,
       transaction_hash: transactionHash,
       amount: lotteryData.value.ticketPrice || 0.01,
@@ -246,7 +253,7 @@ const buyLotteryTicket = async (transactionHash) => {
     })
 
     const response = await host.post('lottery/buy-ticket/', {
-      user_id: app.user?.id,
+      user_id: app.user?.user_id,
       wallet_address: ton_address.value,
       transaction_hash: transactionHash,
       amount: lotteryData.value.ticketPrice || 0.01
@@ -290,7 +297,7 @@ const buyTicket = async () => {
     return
   }
 
-  if (!app.user?.id) {
+  if (!app.user?.user_id) {
     showModal('error', t('notification.st_error'), 'Пользователь не найден. Попробуйте перезагрузить страницу.')
     return
   }
@@ -355,11 +362,41 @@ const buyTicket = async () => {
   }
 }
 
+// Переменные для автоматического обновления
+let updateInterval = null
+const isUpdating = ref(false)
+
+// Функция для обновления данных
+const updateLotteryData = async () => {
+  if (isUpdating.value) return // Предотвращаем множественные обновления
+
+  try {
+    isUpdating.value = true
+    await fetchLotteryData()
+    await fetchParticipants()
+  } catch (err) {
+    console.error('Error updating lottery data:', err)
+  } finally {
+    isUpdating.value = false
+  }
+}
+
 // Загружаем данные при инициализации компонента
 onMounted(async () => {
   await app.initUser()
   await fetchLotteryData()
   await fetchParticipants()
+
+  // Запускаем автоматическое обновление каждые 30 секунд
+  updateInterval = setInterval(updateLotteryData, 30000)
+})
+
+// Очищаем интервал при размонтировании компонента
+onUnmounted(() => {
+  if (updateInterval) {
+    clearInterval(updateInterval)
+    updateInterval = null
+  }
 })
 </script>
 
@@ -584,6 +621,10 @@ onMounted(async () => {
   .participants-header {
     margin-bottom: 8px;
     text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
 
     .participants-title {
       color: #fff;
@@ -591,6 +632,46 @@ onMounted(async () => {
       font-size: 18px;
       font-weight: 700;
       margin: 0;
+    }
+
+    .updating-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top: 2px solid #ffffff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+    }
+
+    .refresh-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 50%;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .refresh-icon {
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: bold;
+        transition: transform 0.2s ease;
+      }
+
+      &:hover .refresh-icon {
+        transform: rotate(180deg);
+      }
     }
   }
 
@@ -776,5 +857,10 @@ onMounted(async () => {
       }
     }
   }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>
