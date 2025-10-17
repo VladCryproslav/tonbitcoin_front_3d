@@ -8,7 +8,7 @@
         <div class="lottery-content">
           <div class="lottery-header">
             <h2 class="lottery-title">Лотерея</h2>
-            <div class="close-icon"></div>
+            <div class="close-icon" @click="goBack"></div>
           </div>
 
           <div class="station-info">
@@ -92,6 +92,9 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const participants = ref([
   {
@@ -114,6 +117,10 @@ const participants = ref([
   }
 ])
 
+const goBack = () => {
+  router.back()
+}
+
 const buyTicket = () => {
   // TODO: Implement TON Connect payment
   console.log('Buy ticket clicked')
@@ -127,16 +134,22 @@ const buyTicket = () => {
   background: #11151A;
   display: flex;
   flex-direction: column;
-}
+  overflow-y: scroll;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
 
 .main-content {
   flex: 1;
-  padding: 20px 16px 120px;
+  padding: 0 0 120px;
   background: #0B150F;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 0;
 }
 
 .lottery-main {
@@ -146,7 +159,7 @@ const buyTicket = () => {
   border-radius: 0 0 20px 20px;
   overflow: hidden;
   margin: 0;
-  background: radial-gradient(circle at 48% 5%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%), #131313;
+  background: #131313;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-top: none;
 
@@ -304,29 +317,17 @@ const buyTicket = () => {
 }
 
 .participants-section {
-  background: radial-gradient(circle at 48% 5%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%),
-              #131313;
+  background: #131313;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 0;
   padding: 12px;
-  margin-top: 20px;
-  width: 358px;
-  margin-left: auto;
-  margin-right: auto;
-  max-height: calc(100vh - 500px);
-  overflow-y: scroll;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
+  margin-top: 0;
+  width: 100%;
 
   .participants-header {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    gap: 5px;
     margin-bottom: 12px;
 
     .participants-title {
@@ -374,14 +375,14 @@ const buyTicket = () => {
         display: flex;
         align-items: center;
         gap: 10px;
-        width: 337px;
+        width: 100%;
 
         .participant-rank {
           color: #FCD909;
           font-family: 'Inter', sans-serif;
           font-size: 14px;
           font-weight: 700;
-          width: 16px;
+          min-width: 16px;
           text-align: right;
         }
 
@@ -390,7 +391,6 @@ const buyTicket = () => {
           display: flex;
           flex-direction: column;
           gap: 5px;
-          width: 311px;
 
           .participant-name {
             color: #fff;
@@ -439,9 +439,7 @@ const buyTicket = () => {
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    width: 358px;
-    margin-left: auto;
-    margin-right: auto;
+    width: 100%;
 
     .page-numbers {
       display: flex;
