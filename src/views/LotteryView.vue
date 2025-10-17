@@ -38,7 +38,7 @@
             <span class="btn-text">{{ isProcessing ? 'Обработка...' : 'Купить билет' }}</span>
             <div class="btn-price">
               <div class="diamond-icon"></div>
-              <span class="price-amount">0.1</span>
+              <span class="price-amount">0.01</span>
             </div>
           </button>
         </div>
@@ -240,9 +240,8 @@ const buyTicket = async () => {
   }
 
   try {
-    const transferAmount = 0.1 // TON - сумма для передачи
+    const transferAmount = 0.01 // TON - минимальная сумма для передачи
     const receiveAddress = 'UQBO8QPd8NbTGW7sOg4eOb1BZmgWvunRV98tRIHRf1fToWQA' // Указанный кошелек
-    const networkFee = 0.1 // TON - комиссия сети
 
     // Простая передача TON без дополнительных данных
     const simplePayload = beginCell()
@@ -255,14 +254,14 @@ const buyTicket = async () => {
       messages: [
         {
           address: receiveAddress,
-          amount: toNano(transferAmount + networkFee).toString(),
+          amount: toNano(transferAmount).toString(), // TON сам рассчитает комиссию
           payload: simplePayload.toBoc().toString('base64'),
         },
       ],
     }
 
     console.log('Transaction data:', transactionData)
-    console.log('Amount:', toNano(transferAmount + networkFee).toString())
+    console.log('Amount:', toNano(transferAmount).toString())
 
     await tonConnectUI.sendTransaction(transactionData, {
       modals: ['before', 'success'],
