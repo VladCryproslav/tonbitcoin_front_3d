@@ -50,6 +50,7 @@ const upgModalTitle = ref(null)
 const upgModalBody = ref(null)
 const upgModalPrice = ref(null)
 const upgModalKind = ref(null)
+const upgModalStationType = ref(null)
 
 const openModal = ref(false)
 const modalBody = ref('')
@@ -336,11 +337,12 @@ const stopAnimation = () => {
   isStopped = true
 }
 
-function getUpgModal(title, body, price, kind) {
+function getUpgModal(title, body, price, kind, stationType = null) {
   upgModalTitle.value = title
   upgModalBody.value = body
   upgModalPrice.value = price
   upgModalKind.value = kind
+  upgModalStationType.value = stationType
   openUpgModal.value = true
 }
 
@@ -884,7 +886,7 @@ onUnmounted(() => {
 
 <template>
   <UpgradeModal v-if="openUpgModal" :title="upgModalTitle" :body="upgModalBody" :price="upgModalPrice"
-    :kind="upgModalKind" @close="showModal" />
+    :kind="upgModalKind" :stationType="upgModalStationType" @close="showModal" />
   <ModalNew v-if="openModal" :status="modalStatus" :title="modalTitle" :body="modalBody" @close="openModal = false" />
   <InfoModal v-if="openWalletChangeInfo" @close="openWalletChangeInfo = false">
     <template #modal-body>
@@ -969,6 +971,7 @@ onUnmounted(() => {
               )?.price_tbtc,
             },
             'station',
+            allStations?.[allStations.indexOf(app.user?.station_type) + 1]
           )" @mintstation="() => {
             if (!app.stationsNft.length && !app.user?.current_mint) {
               craft(
@@ -1336,6 +1339,7 @@ onUnmounted(() => {
                   )?.price_tbtc,
                 },
                 'station',
+                allStations?.[allStations.indexOf(app.user?.station_type) + 1]
               )
               ">
               {{ t('common.buy') }}

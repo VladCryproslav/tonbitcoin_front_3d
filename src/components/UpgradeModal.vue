@@ -15,6 +15,7 @@ const props = defineProps({
   body: String,
   price: Object,
   kind: String,
+  stationType: String, // Добавляем prop для типа станции
 })
 
 const app = useAppStore()
@@ -42,13 +43,16 @@ const confirm = () => {
 
 async function upgradeStation() {
   try {
-    const res = await host.post('upgrade-station/')
+    // Передаем тип станции на бэкенд, если он указан
+    const requestData = props.stationType ? { station_type: props.stationType } : {}
+    console.log('Upgrading station with data:', requestData) // Логирование для отладки
+    const res = await host.post('upgrade-station/', requestData)
     if (res.status == 200) {
       await app.initUser()
       emit('close', { status: 'success', title: t('notification.st_success'), body: t('modals.upgrade_modal.station_upgraded') })
     }
   } catch (err) {
-    console.log(err)
+    console.log('Upgrade station error:', err)
     emit('close', {
       status: 'error',
       title: t('notification.st_error'),
