@@ -46,6 +46,15 @@ async function upgradeStation() {
     // Обновляем данные пользователя перед запросом, чтобы получить актуальный баланс
     await app.initUser()
 
+    // Проверяем, что данные действительно обновились
+    if (!app.user || typeof app.user.energy === 'undefined') {
+      // Попробуем еще раз получить данные
+      await app.initUser()
+      if (!app.user || typeof app.user.energy === 'undefined') {
+        throw new Error('Failed to get user data')
+      }
+    }
+
     // Бэкенд сам определяет следующую станцию через get_next_station_type()
     // Не передаем station_type, так как бэкенд его не использует
     const res = await host.post('upgrade-station/', {})
