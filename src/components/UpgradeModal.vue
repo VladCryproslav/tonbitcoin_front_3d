@@ -43,43 +43,8 @@ const confirm = () => {
 
 async function upgradeStation() {
   try {
-    // Проверяем баланс перед отправкой запроса на бэкенд
-    const kwPrice = props.price?.kw
-    const tbtcPrice = props.price?.tbtc
-
-    // Приводим значения к числам для корректного сравнения
-    const numKwPrice = Number(kwPrice) || 0
-    const numTbtcPrice = Number(tbtcPrice) || 0
-    const userEnergy = Number(app?.user?.energy) || 0
-    const userTbtc = Number(app?.user?.tbtc_wallet) || 0
-
-    // Проверяем, что данные о ценах валидны
-    if ((numKwPrice <= 0 && numTbtcPrice <= 0) || (isNaN(numKwPrice) && isNaN(numTbtcPrice))) {
-      emit('close', {
-        status: 'error',
-        title: t('notification.st_error'),
-        body: t('notification.insufficient_funds'),
-      })
-      return;
-    }
-
-    // Безопасная проверка цен - убеждаемся что цены не null/undefined и больше 0
-    if (numKwPrice > 0 && userEnergy < numKwPrice) {
-      emit('close', {
-        status: 'error',
-        title: t('notification.st_error'),
-        body: t('notification.insufficient_funds'),
-      })
-      return;
-    }
-    if (numTbtcPrice > 0 && userTbtc < numTbtcPrice) {
-      emit('close', {
-        status: 'error',
-        title: t('notification.st_error'),
-        body: t('notification.insufficient_funds'),
-      })
-      return;
-    }
+    // Обновляем данные пользователя перед запросом, чтобы получить актуальный баланс
+    await app.initUser()
 
     // Бэкенд сам определяет следующую станцию через get_next_station_type()
     // Не передаем station_type, так как бэкенд его не использует
