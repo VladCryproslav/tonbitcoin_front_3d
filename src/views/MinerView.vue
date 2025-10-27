@@ -903,7 +903,10 @@ onUnmounted(() => {
       <!-- GEMS List -->
       <div v-if="activeShopTab === 'gems'" class="gems-list">
         <div class="gem-item"
-          :class="{ 'has-gold-stroke': gemItem?.hasGoldStroke }"
+          :class="{
+            'has-gold-stroke': gemItem?.hasGoldStroke,
+            'has-purple-stroke': gemItem?.hasPurpleStroke
+          }"
           v-for="gemItem in gemsSheet.filter(el => el.shop)"
           :key="gemItem">
           <div class="gem-info-icon-top">!</div>
@@ -929,27 +932,18 @@ onUnmounted(() => {
               {{ gemItem.price }}
             </span>
           </button>
-          <span class="gem-tag" :style="gemItem?.rarity == 'Special'
+          <span class="gem-tag" :style="gemItem?.buttonColor === 'gold'
             ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'
-            : gemItem?.rarity == '4 class'
-              ? 'background-color: #5D625E;'
-              : gemItem?.rarity == '3 class'
-                ? 'background-color: #009600;'
-                : gemItem?.rarity == '2 class'
-                  ? 'background-color: #0918E9;'
-                  : 'background-color: #6B25A1;'
+            : gemItem?.buttonColor === 'purple'
+              ? 'background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%), #FFC300;'
+              : gemItem?.rarity == '4 class'
+                ? 'background-color: #5D625E;'
+                : gemItem?.rarity == '3 class'
+                  ? 'background-color: #009600;'
+                  : gemItem?.rarity == '2 class'
+                    ? 'background-color: #0918E9;'
+                    : 'background-color: #6B25A1;'
             ">{{ gemItem.rarity }}</span>
-          <span v-if="gemItem?.rarity == 'Special'" class="runline" :style="gemItem?.buttonColor === 'gold'
-            ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'
-            : 'background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%), #FFC300;'">
-            <div class="backplane">
-              <div class="asic-type" :style="gemItem?.buttonColor === 'gold'
-                ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'
-                : 'background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%), #FFC300;'">
-                {{ gemItem.rarity }}
-              </div>
-            </div>
-          </span>
         </div>
       </div>
     </div>
@@ -1402,6 +1396,15 @@ onUnmounted(() => {
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 0 1px transparent;
         background-image: linear-gradient(#08150a50, #08150a50),
           linear-gradient(0deg, #FEA400 0%, #FCD909 100%);
+        background-origin: border-box;
+        background-clip: padding-box, border-box;
+        border: 1px solid transparent;
+      }
+
+      &.has-purple-stroke {
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 0 1px transparent;
+        background-image: linear-gradient(#08150a50, #08150a50),
+          linear-gradient(-90deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);
         background-origin: border-box;
         background-clip: padding-box, border-box;
         border: 1px solid transparent;

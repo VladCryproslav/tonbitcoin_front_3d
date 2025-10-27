@@ -201,6 +201,7 @@ const gemsSheet = [
     rarity: 'Special',
     description: 'Nuclear power plant',
     buttonColor: 'purple',
+    hasPurpleStroke: true,
     imagePath: '@/assets/gems/starter-pack-nft.png',
     benefits: [
       'Nuclear power plant',
