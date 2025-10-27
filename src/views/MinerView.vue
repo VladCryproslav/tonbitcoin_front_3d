@@ -18,7 +18,7 @@ import RedirectModal from '@/components/RedirectModal.vue'
 import SpecialPriceModal from '@/components/SpecialPriceModal.vue'
 import WithdrawModal from '@/components/WithdrawModal.vue'
 import ReconnectModal from '@/components/ReconnectModal.vue'
-import asicsSheet, { gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleText, getGemPrice, sortGemsBySale } from '@/services/data'
+import asicsSheet, { gemsSheet, gemsSaleActive, gemsSalePercent, getGemPrice, sortGemsBySale } from '@/services/data'
 import _ from "lodash"
 import { getAsicData } from '@/utils/asics'
 import { useI18n } from 'vue-i18n'
@@ -1023,7 +1023,7 @@ onUnmounted(() => {
               {{ getGemPrice(gemItem.price) }}
             </div>
           </button>
-          <span v-if="!(gemsSaleActive && gemItem?.enableSale !== false)" class="gem-tag"
+          <span class="gem-tag"
             :style="gemItem?.buttonColor === 'gold'
               ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'
               : gemItem?.buttonColor === 'purple'
@@ -1036,26 +1036,6 @@ onUnmounted(() => {
                       ? 'background-color: #0918E9;'
                       : 'background-color: #6B25A1;'
               ">{{ gemItem.rarity }}</span>
-          <span v-if="gemsSaleActive && gemItem?.enableSale !== false" class="gem-runline" :style="gemItem?.rarity == '4 class' || gemItem?.rarity == '3 class'
-            ? 'background-color: #009600;'
-            : gemItem?.rarity == '2 class'
-              ? 'background-color: #0918E9;'
-              : 'background-color: #6B25A1;'
-            ">
-            <div class="gem-backplane">
-              <div class="gem-type-tag" :style="gemItem?.rarity == '4 class' || gemItem?.rarity == '3 class'
-                ? 'background-color: #009600;'
-                : gemItem?.rarity == '2 class'
-                  ? 'background-color: #0918E9;'
-                  : 'background-color: #6B25A1;'
-                ">
-                {{ gemItem.rarity }}
-              </div>
-              <p v-if="locale == 'en'" class="gem-textline">{{ gemsSaleText.en }}</p>
-              <p v-if="locale == 'ru'" class="gem-textline">{{ gemsSaleText.ru }}</p>
-              <p v-if="locale == 'uk'" class="gem-textline">{{ gemsSaleText.uk }}</p>
-            </div>
-          </span>
         </div>
       </div>
     </div>
@@ -1748,69 +1728,6 @@ onUnmounted(() => {
         padding: 0.2rem 0;
         z-index: -10;
         border-radius: 0 0 1rem 1rem;
-      }
-
-      .gem-runline {
-        position: absolute;
-        bottom: 0;
-        width: 100%;
-        color: #fff;
-        font-family: 'Inter' !important;
-        text-transform: uppercase;
-        font-weight: 400;
-        font-size: 0.55rem;
-        background-color: #323232;
-        border-radius: 0 0 1rem 1rem;
-        padding: 0.2rem 0;
-        margin: 0 -1rem;
-        z-index: -10;
-        overflow: hidden;
-
-        .gem-backplane {
-          position: relative;
-          width: 100%;
-          height: 80%;
-          display: flex;
-          justify-content: start;
-          align-items: center;
-          background: #fccd08;
-
-          .gem-type-tag {
-            position: absolute;
-            left: 50%;
-            padding: 0.2rem 1rem;
-            text-align: center;
-            color: #fff;
-            font-family: 'Inter' !important;
-            text-transform: uppercase;
-            font-weight: 600;
-            font-size: 0.55rem;
-            border-radius: 0.1rem;
-            transform: translateX(-50%);
-            border-radius: 0.3rem;
-            box-shadow: inset 0 0 0 1px #ffffff40;
-            z-index: 10;
-          }
-
-          .gem-textline {
-            text-align: center;
-            color: #000;
-            text-transform: uppercase;
-            animation: gemText 8s infinite linear;
-            white-space: nowrap;
-            z-index: 1;
-          }
-
-          @keyframes gemText {
-            0% {
-              transform: translateX(0);
-            }
-
-            100% {
-              transform: translateX(-50%);
-            }
-          }
-        }
       }
     }
   }
