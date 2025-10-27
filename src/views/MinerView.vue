@@ -1383,6 +1383,7 @@ onUnmounted(() => {
     align-items: center;
     gap: 1.5rem;
     overflow-y: scroll;
+    overflow-x: hidden;
     margin-bottom: -10px;
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -1402,13 +1403,14 @@ onUnmounted(() => {
       border-radius: 1rem;
       padding: 0.7rem 1rem;
       gap: 1rem;
-      overflow: hidden;
+      overflow: visible;
 
       &.has-gold-stroke {
         border: 2px solid transparent;
         background:
           linear-gradient(#08150a50, #08150a50) padding-box,
           linear-gradient(180deg, #FEA400 0%, #FCD909 100%) border-box;
+        padding: calc(0.7rem - 2px) calc(1rem - 2px);
       }
 
       &.has-purple-stroke {
@@ -1416,6 +1418,7 @@ onUnmounted(() => {
         background:
           linear-gradient(#08150a50, #08150a50) padding-box,
           linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%) border-box;
+        padding: calc(0.7rem - 2px) calc(1rem - 2px);
       }
 
       .gem-info-icon-top {
