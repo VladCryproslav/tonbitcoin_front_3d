@@ -18,14 +18,13 @@ import RedirectModal from '@/components/RedirectModal.vue'
 import SpecialPriceModal from '@/components/SpecialPriceModal.vue'
 import WithdrawModal from '@/components/WithdrawModal.vue'
 import ReconnectModal from '@/components/ReconnectModal.vue'
-import asicsSheet from '@/services/data'
+import asicsSheet, { gemsSheet } from '@/services/data'
 import _ from "lodash"
 import { getAsicData } from '@/utils/asics'
 import { useI18n } from 'vue-i18n'
 
 import { useScreen } from '@/composables/useScreen'
 import SpeedUpModal from '@/components/SpeedUpModal.vue'
-import InfoModal from '@/components/InfoModal.vue'
 
 const app = useAppStore()
 const all_asics = computed(() => app.getAsicsFromStorage())
@@ -901,11 +900,43 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- GEMS List (placeholder) -->
+      <!-- GEMS List -->
       <div v-if="activeShopTab === 'gems'" class="gems-list">
-        <!-- GEMS items will be added here -->
-        <div class="gems-placeholder">
-          <p>{{ t('asic_shop.gems_coming_soon') }}</p>
+        <div class="gem-item" v-for="gemItem in gemsSheet.filter(el => el.shop)" :key="gemItem">
+          <div class="gem-picture">
+            <div class="gem-icon">💎</div>
+            <div class="gem-info-icon">!</div>
+          </div>
+          <div class="gem-info">
+            <span class="gem-type">{{ gemItem.type }}</span>
+            <span class="gem-description" v-for="(benefit, idx) in gemItem.benefits" :key="idx">
+              {{ benefit }}
+            </span>
+          </div>
+          <button class="gem-buy-btn" :disabled="!gemItem?.shop">
+            <span>{{ gemItem.name }}</span>
+            <span class="gem-price">
+              <img src="@/assets/TON.png" width="14px" height="14px" />
+              {{ gemItem.price }}
+            </span>
+          </button>
+          <span class="gem-tag" :style="gemItem?.rarity == 'Special'
+            ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'
+            : gemItem?.rarity == '4 class'
+              ? 'background-color: #5D625E;'
+              : gemItem?.rarity == '3 class'
+                ? 'background-color: #009600;'
+                : gemItem?.rarity == '2 class'
+                  ? 'background-color: #0918E9;'
+                  : 'background-color: #6B25A1;'
+            ">{{ gemItem.rarity }}</span>
+          <span v-if="gemItem?.rarity == 'Special'" class="runline" :style="'background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%), linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'">
+            <div class="backplane">
+              <div class="asic-type" :style="'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'">
+                {{ gemItem.rarity }}
+              </div>
+            </div>
+          </span>
         </div>
       </div>
     </div>
@@ -1341,13 +1372,128 @@ onUnmounted(() => {
       display: none;
     }
 
-    .gems-placeholder {
+    .gem-item {
+      position: relative;
+      display: flex;
+      align-items: center;
       width: 100%;
-      text-align: center;
-      padding: 2rem;
-      color: #ffffff70;
-      font-family: 'Inter' !important;
-      font-size: 14px;
+      background: #08150a50;
+      backdrop-filter: blur(5px);
+      box-shadow: inset 0 0 0 1px #ffffff25;
+      border-radius: 1rem;
+      padding: 0.7rem 1rem;
+      gap: 1rem;
+      overflow: visible;
+
+      .gem-picture {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+
+        .gem-icon {
+          font-size: 40px;
+        }
+
+        .gem-info-icon {
+          position: absolute;
+          top: 5px;
+          right: 5px;
+          width: 15px;
+          height: 15px;
+          background: #FFFFFF;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          font-weight: 700;
+          color: #000000;
+        }
+      }
+
+      .gem-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        flex: 1;
+        min-width: 0;
+
+        .gem-type {
+          font-family: 'Inter' !important;
+          font-weight: 700;
+          font-size: 15px;
+          color: #FFFFFF;
+          line-height: 1.2;
+        }
+
+        .gem-description {
+          font-family: 'Inter' !important;
+          font-weight: 400;
+          font-size: 12px;
+          color: #FFFFFF80;
+          line-height: 1.2;
+        }
+      }
+
+      .gem-buy-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.5rem;
+        background: linear-gradient(180deg, #e2f974 0%, #009600 100%);
+        border: none;
+        border-radius: 10px;
+        min-width: 70px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        > span:first-child {
+          font-family: 'Inter' !important;
+          font-weight: 700;
+          font-size: 10px;
+          color: #212121;
+          line-height: 1.2;
+        }
+
+        .gem-price {
+          display: flex;
+          align-items: center;
+          gap: 0.2rem;
+          font-family: 'Inter' !important;
+          font-weight: 700;
+          font-size: 12px;
+          color: #212121;
+        }
+      }
+
+      .gem-tag {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.2rem 0;
+        font-family: 'Inter' !important;
+        font-weight: 700;
+        font-size: 8px;
+        text-transform: uppercase;
+        color: #FFFFFF;
+        text-align: center;
+        border-radius: 0 0 15px 15px;
+      }
     }
   }
 

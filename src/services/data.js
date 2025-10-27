@@ -176,4 +176,165 @@ const asicsSheet = [
   },
 ]
 
+const gemsSheet = [
+  {
+    shop: true,
+    name: 'Buy DAO',
+    type: 'DAO Owner',
+    price: 960,
+    rarity: 'Special',
+    description: 'You buy 1% project',
+    benefits: [
+      'You buy 1% project',
+      'You get 1% revenue',
+      'Vote strategic plans'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
+    type: 'Starter Pack',
+    price: 99,
+    rarity: 'Special',
+    description: 'Nuclear power plant',
+    benefits: [
+      'Nuclear power plant',
+      'ASIC S11 XP',
+      'ASIC S15 XP',
+      'And more ...'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
+    type: 'Jarvis Bot',
+    price: 40,
+    rarity: '4 class',
+    description: 'For Energizers',
+    benefits: [
+      'For Energizers',
+      'Power plant lvl: 1-3',
+      'Duration: Eternal'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
+    type: 'Jarvis Bot',
+    price: 40,
+    rarity: '3 class',
+    description: 'For Energizers',
+    benefits: [
+      'For Energizers',
+      'Power plant lvl: 4-5',
+      'Duration: Eternal'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
+    type: 'Jarvis Bot',
+    price: 40,
+    rarity: '2 class',
+    description: 'For Energizers',
+    benefits: [
+      'For Energizers',
+      'Power plant lvl: 6-7',
+      'Duration: Eternal'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
+    type: 'Jarvis Bot',
+    price: 40,
+    rarity: '1 class',
+    description: 'For Energizers',
+    benefits: [
+      'For Energizers',
+      'Power plant lvl: 8-9',
+      'Duration: Eternal'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
+    type: 'Cryochamber',
+    price: 40,
+    rarity: '1 Class',
+    description: 'For Energizers',
+    benefits: [
+      'For Energizers',
+      'Power plant lvl: 1-10',
+      'Duration: Eternal'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
+    type: 'ASIC Manager',
+    price: 40,
+    rarity: '3 class',
+    description: 'For Miners',
+    benefits: [
+      'For Miners',
+      'Gh/s: 1-299',
+      'Duration: Eternal'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
+    type: 'ASIC Manager',
+    price: 40,
+    rarity: '2 class',
+    description: 'For Miners',
+    benefits: [
+      'For Miners',
+      'Gh/s: 300-1199',
+      'Duration: Eternal'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
+    type: 'ASIC Manager',
+    price: 40,
+    rarity: '1 class',
+    description: 'For Miners',
+    benefits: [
+      'For Miners',
+      'Gh/s: 1200+',
+      'Duration: Eternal'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
+    type: 'Magnetic ring',
+    price: 40,
+    rarity: '2 class',
+    description: 'For Miners',
+    benefits: [
+      'For Miners',
+      'Gh/s: 1-249',
+      'Duration: Eternal'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
+    type: 'Magnetic ring',
+    price: 40,
+    rarity: '1 class',
+    description: 'For Miners',
+    benefits: [
+      'For Miners',
+      'Gh/s: 250-599',
+      'Duration: Eternal'
+    ]
+  }
+]
+
+export { asicsSheet, gemsSheet }
 export default asicsSheet
