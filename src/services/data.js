@@ -217,7 +217,7 @@ const gemsSheet = [
     price: 40,
     rarity: '4 class',
     description: 'For Energizers',
-    imagePath: '@/assets/gems/Jarvis_NFT.webp',
+    imagePath: '@/assets/gems/Jarvis_NFT_4.webp',
     benefits: [
       'For Energizers',
       'Power plant lvl: 1-3',
@@ -231,7 +231,7 @@ const gemsSheet = [
     price: 40,
     rarity: '3 class',
     description: 'For Energizers',
-    imagePath: '@/assets/gems/Jarvis_NFT.webp',
+    imagePath: '@/assets/gems/Jarvis_NFT_3.webp',
     benefits: [
       'For Energizers',
       'Power plant lvl: 4-5',
@@ -245,7 +245,7 @@ const gemsSheet = [
     price: 40,
     rarity: '2 class',
     description: 'For Energizers',
-    imagePath: '@/assets/gems/Jarvis_NFT.webp',
+    imagePath: '@/assets/gems/Jarvis_NFT_2.webp',
     benefits: [
       'For Energizers',
       'Power plant lvl: 6-7',
@@ -259,7 +259,7 @@ const gemsSheet = [
     price: 40,
     rarity: '1 class',
     description: 'For Energizers',
-    imagePath: '@/assets/gems/Jarvis_NFT.webp',
+    imagePath: '@/assets/gems/Jarvis_NFT_1.webp',
     benefits: [
       'For Energizers',
       'Power plant lvl: 8-9',
