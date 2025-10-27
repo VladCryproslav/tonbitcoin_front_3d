@@ -38,7 +38,7 @@ const emitClose = () => {
             <slot name="header">{{ t('modals.redirect_modal.title') }}</slot>
           </div>
           <div class="modal-body" v-html="
-            t(props.itemClass ? 'modals.redirect_modal.message_gems' : 'modals.redirect_modal.message_mythic', {
+            t((props.itemClass || props.itemName === 'DAO Owner') ? 'modals.redirect_modal.message_gems' : 'modals.redirect_modal.message_mythic', {
               marketplace: `<b>GetGems.io</b>`,
               collection: (props.itemName || props.itemClass)
                 ? `<span style='color: #fea400; font-weight: bold'>${props.itemName || 'Unknown'}${props.itemClass ? ' - ' + props.itemClass : ''}</span>`
