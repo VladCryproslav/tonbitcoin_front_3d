@@ -943,7 +943,6 @@ onUnmounted(() => {
             </span>
           </button>
           <span class="gem-tag"
-            :class="{ 'gradient-tag': gemItem?.buttonColor === 'gold' || gemItem?.buttonColor === 'purple' }"
             :style="gemItem?.buttonColor === 'gold'
               ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'
               : gemItem?.buttonColor === 'purple'
@@ -1404,14 +1403,36 @@ onUnmounted(() => {
       gap: 1rem;
       overflow: visible;
 
-      &.has-gold-stroke {
-        border: 1px solid #FFD700;
-        box-shadow: 0 0 0 1px #FEA400;
+      &.has-gold-stroke::after {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        border-radius: 1rem;
+        padding: 2px;
+        background: linear-gradient(180deg, #FEA400 0%, #FCD909 100%);
+        -webkit-mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+        z-index: -1;
       }
 
-      &.has-purple-stroke {
-        border: 1px solid #E757EC;
-        box-shadow: 0 0 0 1px rgba(231, 87, 236, 0.8);
+      &.has-purple-stroke::after {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        border-radius: 1rem;
+        padding: 2px;
+        background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);
+        -webkit-mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+        z-index: -1;
       }
 
       .gem-info-icon-top {
@@ -1486,7 +1507,10 @@ onUnmounted(() => {
         display: flex;
         flex-direction: column;
         align-items: center;
+        min-width: max-content;
         padding: 0.2rem 0.7rem;
+        margin-right: 0.2rem;
+        margin-left: auto;
         border: none;
         border-radius: 0.7rem;
         overflow: visible;
@@ -1549,10 +1573,6 @@ onUnmounted(() => {
         margin: 0 -1rem;
         z-index: -10;
         border-radius: 0 0 1rem 1rem;
-
-        &.gradient-tag {
-          border-radius: 0;
-        }
       }
     }
   }
