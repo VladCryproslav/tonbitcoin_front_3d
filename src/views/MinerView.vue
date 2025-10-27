@@ -242,6 +242,16 @@ const imagePathAsics = (asic) => {
   return com
 }
 
+const imagePathGems = (path) => {
+  if (!path) return null
+  const com = computed(() => {
+    // Remove @/ prefix if present
+    const cleanPath = path.replace(/^@\//, '')
+    return new URL(`../${cleanPath}`, import.meta.url).href
+  })
+  return com
+}
+
 const getTimedNftData = (item) => {
   return app.timed_nfts?.find(el => el.nft_address == (item.address ?? item.nft))
 }
@@ -911,7 +921,7 @@ onUnmounted(() => {
           :key="gemItem">
           <div class="gem-info-icon-top">!</div>
           <div class="gem-picture">
-            <img v-if="gemItem?.imagePath" :src="gemItem.imagePath" class="gem-image" alt="NFT" />
+            <img v-if="gemItem?.imagePath" :src="imagePathGems(gemItem.imagePath)?.value" class="gem-image" alt="NFT" />
             <div v-else class="gem-icon">💎</div>
           </div>
           <div class="gem-info">
@@ -932,7 +942,7 @@ onUnmounted(() => {
               {{ gemItem.price }}
             </span>
           </button>
-          <span class="gem-tag" 
+          <span class="gem-tag"
             :class="{ 'gradient-tag': gemItem?.buttonColor === 'gold' || gemItem?.buttonColor === 'purple' }"
             :style="gemItem?.buttonColor === 'gold'
               ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'
@@ -1395,15 +1405,13 @@ onUnmounted(() => {
       overflow: visible;
 
       &.has-gold-stroke {
-        border: 2px solid;
-        border-image: linear-gradient(0deg, #FEA400 0%, #FCD909 100%) 1;
-        box-shadow: inset 0 0 0 1px #ffffff25;
+        border: 1px solid #FFD700;
+        box-shadow: 0 0 0 1px #FEA400;
       }
 
       &.has-purple-stroke {
-        border: 2px solid;
-        border-image: linear-gradient(-90deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%) 1;
-        box-shadow: inset 0 0 0 1px #ffffff25;
+        border: 1px solid #E757EC;
+        box-shadow: 0 0 0 1px rgba(231, 87, 236, 0.8);
       }
 
       .gem-info-icon-top {
@@ -1478,10 +1486,7 @@ onUnmounted(() => {
         display: flex;
         flex-direction: column;
         align-items: center;
-        min-width: max-content;
         padding: 0.2rem 0.7rem;
-        margin-right: 0.2rem;
-        margin-left: auto;
         border: none;
         border-radius: 0.7rem;
         overflow: visible;
@@ -1544,7 +1549,7 @@ onUnmounted(() => {
         margin: 0 -1rem;
         z-index: -10;
         border-radius: 0 0 1rem 1rem;
-        
+
         &.gradient-tag {
           border-radius: 0;
         }
