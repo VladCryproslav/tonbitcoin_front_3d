@@ -1015,12 +1015,12 @@ onUnmounted(() => {
             <span>{{ gemItem.name }}</span>
             <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive }">
               <img src="@/assets/TON.png" width="14px" height="14px" />
-              {{ gemsSaleActive ? getGemPrice(gemItem.price) : gemItem.price }}
+              {{ gemItem.price }}
             </span>
             <div v-if="gemsSaleActive" class="gem-sale-perc">-{{ gemsSalePercent }}%</div>
-            <div v-if="gemsSaleActive" class="gem-sale-originalprice">
+            <div v-if="gemsSaleActive" class="gem-sale-newprice">
               <img src="@/assets/TON.png" width="12px" height="12px" />
-              {{ gemItem.price }}
+              {{ getGemPrice(gemItem.price) }}
             </div>
           </button>
           <span class="gem-tag"
@@ -1674,18 +1674,24 @@ onUnmounted(() => {
           z-index: 15;
         }
 
-        .gem-sale-originalprice {
+        .gem-sale-newprice {
           position: absolute;
-          bottom: -20px;
-          right: 0;
+          bottom: -12px;
+          right: -8px;
           display: flex;
           justify-content: center;
           align-items: center;
           gap: 0.2rem;
-          color: #fff;
           font-family: 'Inter' !important;
-          font-weight: 700;
           font-size: 10px;
+          font-weight: bold;
+          padding: 0.1rem 0.2rem;
+          border-radius: 0.3rem;
+          box-shadow:
+            0 0 15px 2px #fccd0835,
+            -1px -1px 2px 2px #00000020;
+          background: radial-gradient(ellipse 100% 30% at bottom center, #ffffff70, transparent),
+            linear-gradient(to bottom, #fcd909, #fea400);
         }
       }
 
