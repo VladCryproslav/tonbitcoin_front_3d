@@ -1422,7 +1422,7 @@ onUnmounted(() => {
           -webkit-mask-composite: xor;
           mask-composite: exclude;
           pointer-events: none;
-          z-index: -2;
+          z-index: -20;
         }
       }
 
@@ -1441,7 +1441,7 @@ onUnmounted(() => {
           -webkit-mask-composite: xor;
           mask-composite: exclude;
           pointer-events: none;
-          z-index: -2;
+          z-index: -20;
         }
       }
 
@@ -1532,6 +1532,7 @@ onUnmounted(() => {
           linear-gradient(to bottom, #e2f974, #009600);
         cursor: pointer;
         transition: all 0.3s ease;
+        z-index: 100;
 
         &.btn-gold {
           background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent),
