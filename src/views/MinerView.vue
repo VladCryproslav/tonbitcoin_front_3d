@@ -18,7 +18,7 @@ import RedirectModal from '@/components/RedirectModal.vue'
 import SpecialPriceModal from '@/components/SpecialPriceModal.vue'
 import WithdrawModal from '@/components/WithdrawModal.vue'
 import ReconnectModal from '@/components/ReconnectModal.vue'
-import asicsSheet, { gemsSheet } from '@/services/data'
+import asicsSheet, { gemsSheet, gemsSaleActive, gemsSalePercent, getGemPrice } from '@/services/data'
 import _ from "lodash"
 import { getAsicData } from '@/utils/asics'
 import { useI18n } from 'vue-i18n'
@@ -477,7 +477,7 @@ const buyGem = async (gemItem) => {
     }
 
     try {
-      const transferAmount = gemItem.price
+      const transferAmount = gemsSaleActive ? getGemPrice(gemItem.price) : gemItem.price
       const receiveAddress = 'UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl'
 
       // Простая передача TON без дополнительных данных
@@ -1013,10 +1013,15 @@ onUnmounted(() => {
             :disabled="!gemItem?.shop"
             @click="buyGem(gemItem)">
             <span>{{ gemItem.name }}</span>
-            <span class="gem-price">
+            <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive }">
               <img src="@/assets/TON.png" width="14px" height="14px" />
-              {{ gemItem.price }}
+              {{ gemsSaleActive ? getGemPrice(gemItem.price) : gemItem.price }}
             </span>
+            <div v-if="gemsSaleActive" class="gem-sale-perc">-{{ gemsSalePercent }}%</div>
+            <div v-if="gemsSaleActive" class="gem-sale-originalprice">
+              <img src="@/assets/TON.png" width="12px" height="12px" />
+              {{ gemItem.price }}
+            </div>
           </button>
           <span class="gem-tag"
             :style="gemItem?.buttonColor === 'gold'
@@ -1647,6 +1652,40 @@ onUnmounted(() => {
           line-height: 16pt;
           font-weight: 700;
           font-family: 'Inter' !important;
+
+          &.gem-saleprice {
+            text-decoration: line-through;
+            opacity: 0.6;
+          }
+        }
+
+        .gem-sale-perc {
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          background: linear-gradient(to bottom, #fe3b59, #d42542);
+          color: #fff;
+          font-family: 'Inter' !important;
+          font-weight: 700;
+          font-size: 0.6rem;
+          padding: 2px 5px;
+          border-radius: 3px;
+          white-space: nowrap;
+          z-index: 15;
+        }
+
+        .gem-sale-originalprice {
+          position: absolute;
+          bottom: -20px;
+          right: 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 0.2rem;
+          color: #fff;
+          font-family: 'Inter' !important;
+          font-weight: 700;
+          font-size: 10px;
         }
       }
 

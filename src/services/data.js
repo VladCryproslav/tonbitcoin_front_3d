@@ -176,6 +176,10 @@ const asicsSheet = [
   },
 ]
 
+// Активность акции для GEMS (можно включать/выключать)
+const gemsSaleActive = true // Изменить на true для активации скидки
+const gemsSalePercent = 50 // Процент скидки (например 50 = -50%)
+
 const gemsSheet = [
   {
     shop: true,
@@ -364,5 +368,11 @@ const gemsSheet = [
   }
 ]
 
-export { asicsSheet, gemsSheet }
+// Функция расчета цены со скидкой
+const getGemPrice = (originalPrice) => {
+  if (!gemsSaleActive) return originalPrice
+  return originalPrice * (1 - gemsSalePercent / 100)
+}
+
+export { asicsSheet, gemsSheet, gemsSaleActive, gemsSalePercent, getGemPrice }
 export default asicsSheet
