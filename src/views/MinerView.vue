@@ -902,10 +902,14 @@ onUnmounted(() => {
 
       <!-- GEMS List -->
       <div v-if="activeShopTab === 'gems'" class="gems-list">
-        <div class="gem-item" v-for="gemItem in gemsSheet.filter(el => el.shop)" :key="gemItem">
+        <div class="gem-item"
+          :class="{ 'has-gold-stroke': gemItem?.hasGoldStroke }"
+          v-for="gemItem in gemsSheet.filter(el => el.shop)"
+          :key="gemItem">
+          <div class="gem-info-icon-top">!</div>
           <div class="gem-picture">
-            <div class="gem-icon">💎</div>
-            <div class="gem-info-icon">!</div>
+            <img v-if="gemItem?.imagePath" :src="gemItem.imagePath" class="gem-image" alt="NFT" />
+            <div v-else class="gem-icon">💎</div>
           </div>
           <div class="gem-info">
             <span class="gem-type">{{ gemItem.type }}</span>
@@ -913,7 +917,12 @@ onUnmounted(() => {
               {{ benefit }}
             </span>
           </div>
-          <button class="gem-buy-btn" :disabled="!gemItem?.shop">
+          <button class="gem-buy-btn"
+            :class="{
+              'btn-gold': gemItem?.buttonColor === 'gold',
+              'btn-purple': gemItem?.buttonColor === 'purple'
+            }"
+            :disabled="!gemItem?.shop">
             <span>{{ gemItem.name }}</span>
             <span class="gem-price">
               <img src="@/assets/TON.png" width="14px" height="14px" />
@@ -930,9 +939,13 @@ onUnmounted(() => {
                   ? 'background-color: #0918E9;'
                   : 'background-color: #6B25A1;'
             ">{{ gemItem.rarity }}</span>
-          <span v-if="gemItem?.rarity == 'Special'" class="runline" :style="'background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%), linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'">
+          <span v-if="gemItem?.rarity == 'Special'" class="runline" :style="gemItem?.buttonColor === 'gold'
+            ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'
+            : 'background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%), #FFC300;'">
             <div class="backplane">
-              <div class="asic-type" :style="'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'">
+              <div class="asic-type" :style="gemItem?.buttonColor === 'gold'
+                ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'
+                : 'background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%), #FFC300;'">
                 {{ gemItem.rarity }}
               </div>
             </div>
@@ -1385,6 +1398,32 @@ onUnmounted(() => {
       gap: 1rem;
       overflow: visible;
 
+      &.has-gold-stroke {
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 0 1px transparent;
+        background-image: linear-gradient(#08150a50, #08150a50),
+          linear-gradient(0deg, #FEA400 0%, #FCD909 100%);
+        background-origin: border-box;
+        background-clip: padding-box, border-box;
+        border: 1px solid transparent;
+      }
+
+      .gem-info-icon-top {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 15px;
+        height: 15px;
+        background: #FFFFFF;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 700;
+        color: #000000;
+        z-index: 10;
+      }
+
       .gem-picture {
         position: relative;
         display: flex;
@@ -1394,25 +1433,16 @@ onUnmounted(() => {
         height: 80px;
         background: rgba(255, 255, 255, 0.05);
         border-radius: 10px;
+        overflow: hidden;
 
         .gem-icon {
           font-size: 40px;
         }
 
-        .gem-info-icon {
-          position: absolute;
-          top: 5px;
-          right: 5px;
-          width: 15px;
-          height: 15px;
-          background: #FFFFFF;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 10px;
-          font-weight: 700;
-          color: #000000;
+        .gem-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
         }
       }
 
@@ -1452,6 +1482,14 @@ onUnmounted(() => {
         min-width: 70px;
         cursor: pointer;
         transition: all 0.3s ease;
+
+        &.btn-gold {
+          background: linear-gradient(180deg, #FCD909 0%, #FEA400 100%);
+        }
+
+        &.btn-purple {
+          background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);
+        }
 
         &:disabled {
           opacity: 0.5;

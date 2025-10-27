@@ -184,6 +184,9 @@ const gemsSheet = [
     price: 960,
     rarity: 'Special',
     description: 'You buy 1% project',
+    buttonColor: 'gold',
+    hasGoldStroke: true,
+    imagePath: '@/assets/gems/dao-nft.png',
     benefits: [
       'You buy 1% project',
       'You get 1% revenue',
@@ -197,6 +200,8 @@ const gemsSheet = [
     price: 99,
     rarity: 'Special',
     description: 'Nuclear power plant',
+    buttonColor: 'purple',
+    imagePath: '@/assets/gems/starter-pack-nft.png',
     benefits: [
       'Nuclear power plant',
       'ASIC S11 XP',
