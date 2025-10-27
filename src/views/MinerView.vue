@@ -1393,20 +1393,16 @@ onUnmounted(() => {
       overflow: visible;
 
       &.has-gold-stroke {
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 0 1px transparent;
-        background-image: linear-gradient(#08150a50, #08150a50),
-          linear-gradient(0deg, #FEA400 0%, #FCD909 100%);
-        background-origin: border-box;
-        background-clip: padding-box, border-box;
+        box-shadow: none;
+        background: linear-gradient(#08150a50, #08150a50) padding-box,
+          linear-gradient(0deg, #FEA400 0%, #FCD909 100%) border-box;
         border: 1px solid transparent;
       }
 
       &.has-purple-stroke {
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 0 1px transparent;
-        background-image: linear-gradient(#08150a50, #08150a50),
-          linear-gradient(-90deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);
-        background-origin: border-box;
-        background-clip: padding-box, border-box;
+        box-shadow: none;
+        background: linear-gradient(#08150a50, #08150a50) padding-box,
+          linear-gradient(-90deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%) border-box;
         border: 1px solid transparent;
       }
 
@@ -1430,110 +1426,123 @@ onUnmounted(() => {
       .gem-picture {
         position: relative;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        min-width: 80px;
-        height: 80px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 10px;
-        overflow: hidden;
+        max-width: 95px;
+        gap: 0;
 
         .gem-icon {
           font-size: 40px;
         }
 
         .gem-image {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
+          min-width: 115px;
+          margin: -25px 0 -10px;
+          height: auto;
         }
       }
 
       .gem-info {
         display: flex;
         flex-direction: column;
-        gap: 0.3rem;
-        flex: 1;
-        min-width: 0;
+        align-items: start;
+        justify-content: center;
+        width: 100%;
+        min-width: 110px;
+        line-height: 95%;
+        margin-bottom: 10px;
 
         .gem-type {
+          color: #fff;
           font-family: 'Inter' !important;
           font-weight: 700;
-          font-size: 15px;
-          color: #FFFFFF;
-          line-height: 1.2;
+          font-size: 1rem;
+          margin-bottom: 3px;
         }
 
         .gem-description {
+          color: #ffffff70;
           font-family: 'Inter' !important;
           font-weight: 400;
-          font-size: 12px;
-          color: #FFFFFF80;
-          line-height: 1.2;
+          font-size: 10px;
+          text-wrap: nowrap;
         }
       }
 
       .gem-buy-btn {
+        position: absolute;
+        top: 50%;
+        right: 5px;
+        transform: translateY(-50%);
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 0.3rem;
-        padding: 0.5rem;
-        background: linear-gradient(180deg, #e2f974 0%, #009600 100%);
+        min-width: max-content;
+        padding: 0.2rem 0.7rem;
+        margin-right: 0.2rem;
+        margin-left: auto;
         border: none;
-        border-radius: 10px;
-        min-width: 70px;
+        border-radius: 0.7rem;
+        overflow: visible;
+        background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent),
+          linear-gradient(to bottom, #e2f974, #009600);
         cursor: pointer;
         transition: all 0.3s ease;
 
         &.btn-gold {
-          background: linear-gradient(180deg, #FCD909 0%, #FEA400 100%);
+          background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent),
+            linear-gradient(180deg, #FCD909 0%, #FEA400 100%);
         }
 
         &.btn-purple {
-          background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);
+          background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent),
+            linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);
+        }
+
+        &:active {
+          background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent),
+            linear-gradient(to bottom, #e2f97490, #00960090);
         }
 
         &:disabled {
-          opacity: 0.5;
+          background: radial-gradient(ellipse 80% 20% at top, #ffffff50, transparent),
+            linear-gradient(to bottom, #e2e2e2, #646464);
           cursor: not-allowed;
         }
 
         > span:first-child {
+          color: #000;
           font-family: 'Inter' !important;
           font-weight: 700;
           font-size: 10px;
-          color: #212121;
-          line-height: 1.2;
         }
 
         .gem-price {
           display: flex;
+          justify-content: center;
           align-items: center;
-          gap: 0.2rem;
-          font-family: 'Inter' !important;
-          font-weight: 700;
+          gap: 0.3rem;
           font-size: 12px;
-          color: #212121;
+          line-height: 16pt;
         }
       }
 
       .gem-tag {
         position: absolute;
         bottom: 0;
-        left: 0;
-        right: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.2rem 0;
-        font-family: 'Inter' !important;
-        font-weight: 700;
-        font-size: 8px;
-        text-transform: uppercase;
-        color: #FFFFFF;
+        width: 100%;
         text-align: center;
-        border-radius: 0 0 15px 15px;
+        color: #fff;
+        font-family: 'Inter' !important;
+        text-transform: uppercase;
+        font-weight: 600;
+        font-size: 0.55rem;
+        background-color: #323232;
+        border-radius: 0 0 1rem 1rem;
+        padding: 0.2rem 0;
+        margin: 0 -1rem;
+        z-index: -10;
       }
     }
   }

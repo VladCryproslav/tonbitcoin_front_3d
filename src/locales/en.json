@@ -386,7 +386,7 @@
     "was_error": "An error occurred",
     "no_available_asics": "Failed to load available ASICs",
     "rental_off": "ASIC equipment rental is temporarily unavailable.",
-    "no_asics": "Mining equipment not detected!\nSelect equipment in ASICs Shop.",
+    "no_asics": "Mining equipment not detected!\nSelect equipment in Gems Shop.",
     "no_energy_for_mining": "To start mining, top up User wallet with {value} kW.",
     "ref_load_err": "Failed to load referrals",
     "connect_for_mine": "Connect Wallet to enable mining",
@@ -539,7 +539,7 @@
     }
   },
   "asic_shop": {
-    "title": "ASICs Shop",
+    "title": "Gems Shop",
     "speed": "Speed: ",
     "mining": "Mining: ",
     "consumption": "Consumption: ",
@@ -589,7 +589,7 @@
     "craft_tab": "NFT Craft",
     "investor_tab": "Investor",
     "miner_tab": "Miner",
-    "asics_shop": "ASICS SHOP",
+    "asics_shop": "GEMS SHOP",
     "rental_setting": "Rental Settings",
     "add_asic": "Add your ASIC",
     "rental_period": "Rental period: ",
