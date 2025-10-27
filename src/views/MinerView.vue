@@ -1521,7 +1521,8 @@ onUnmounted(() => {
         display: flex;
         flex-direction: column;
         align-items: center;
-        min-width: max-content;
+        min-width: 75px;
+        width: 75px;
         padding: 0.2rem 0.7rem;
         margin-right: 0.2rem;
         margin-left: auto;
@@ -1560,6 +1561,8 @@ onUnmounted(() => {
           font-family: 'Inter' !important;
           font-weight: 700;
           font-size: 10px;
+          text-align: center;
+          width: 100%;
         }
 
         .gem-price {
