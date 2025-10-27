@@ -217,6 +217,7 @@ const gemsSheet = [
     price: 40,
     rarity: '4 class',
     description: 'For Energizers',
+    imagePath: '@/assets/gems/jarvis-bot-4.webp',
     benefits: [
       'For Energizers',
       'Power plant lvl: 1-3',
@@ -230,6 +231,7 @@ const gemsSheet = [
     price: 40,
     rarity: '3 class',
     description: 'For Energizers',
+    imagePath: '@/assets/gems/jarvis-bot-3.webp',
     benefits: [
       'For Energizers',
       'Power plant lvl: 4-5',
@@ -243,6 +245,7 @@ const gemsSheet = [
     price: 40,
     rarity: '2 class',
     description: 'For Energizers',
+    imagePath: '@/assets/gems/jarvis-bot-2.webp',
     benefits: [
       'For Energizers',
       'Power plant lvl: 6-7',
@@ -256,6 +259,7 @@ const gemsSheet = [
     price: 40,
     rarity: '1 class',
     description: 'For Energizers',
+    imagePath: '@/assets/gems/jarvis-bot-1.webp',
     benefits: [
       'For Energizers',
       'Power plant lvl: 8-9',
@@ -269,6 +273,7 @@ const gemsSheet = [
     price: 40,
     rarity: '1 Class',
     description: 'For Energizers',
+    imagePath: '@/assets/gems/cryochamber.webp',
     benefits: [
       'For Energizers',
       'Power plant lvl: 1-10',
@@ -282,6 +287,7 @@ const gemsSheet = [
     price: 40,
     rarity: '3 class',
     description: 'For Miners',
+    imagePath: '@/assets/gems/asic-manager-3.webp',
     benefits: [
       'For Miners',
       'Gh/s: 1-299',
@@ -295,6 +301,7 @@ const gemsSheet = [
     price: 40,
     rarity: '2 class',
     description: 'For Miners',
+    imagePath: '@/assets/gems/asic-manager-2.webp',
     benefits: [
       'For Miners',
       'Gh/s: 300-1199',
@@ -308,6 +315,7 @@ const gemsSheet = [
     price: 40,
     rarity: '1 class',
     description: 'For Miners',
+    imagePath: '@/assets/gems/asic-manager-1.webp',
     benefits: [
       'For Miners',
       'Gh/s: 1200+',
@@ -321,6 +329,7 @@ const gemsSheet = [
     price: 40,
     rarity: '2 class',
     description: 'For Miners',
+    imagePath: '@/assets/gems/magnetic-ring-2.webp',
     benefits: [
       'For Miners',
       'Gh/s: 1-249',
@@ -334,6 +343,7 @@ const gemsSheet = [
     price: 40,
     rarity: '1 class',
     description: 'For Miners',
+    imagePath: '@/assets/gems/magnetic-ring-1.webp',
     benefits: [
       'For Miners',
       'Gh/s: 250-599',

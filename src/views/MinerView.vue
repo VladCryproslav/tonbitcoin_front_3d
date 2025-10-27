@@ -1393,17 +1393,15 @@ onUnmounted(() => {
       overflow: visible;
 
       &.has-gold-stroke {
-        box-shadow: none;
-        background: linear-gradient(#08150a50, #08150a50) padding-box,
-          linear-gradient(0deg, #FEA400 0%, #FCD909 100%) border-box;
-        border: 1px solid transparent;
+        border: 2px solid;
+        border-image: linear-gradient(0deg, #FEA400 0%, #FCD909 100%) 1;
+        box-shadow: inset 0 0 0 1px #ffffff25;
       }
 
       &.has-purple-stroke {
-        box-shadow: none;
-        background: linear-gradient(#08150a50, #08150a50) padding-box,
-          linear-gradient(-90deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%) border-box;
-        border: 1px solid transparent;
+        border: 2px solid;
+        border-image: linear-gradient(-90deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%) 1;
+        box-shadow: inset 0 0 0 1px #ffffff25;
       }
 
       .gem-info-icon-top {
@@ -1538,7 +1536,6 @@ onUnmounted(() => {
         text-transform: uppercase;
         font-weight: 600;
         font-size: 0.55rem;
-        background-color: #323232;
         border-radius: 0 0 1rem 1rem;
         padding: 0.2rem 0;
         margin: 0 -1rem;
