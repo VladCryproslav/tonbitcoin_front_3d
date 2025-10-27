@@ -1013,17 +1013,17 @@ onUnmounted(() => {
             :disabled="!gemItem?.shop"
             @click="buyGem(gemItem)">
             <span>{{ gemItem.name }}</span>
-            <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive }">
+            <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && gemItem?.enableSale !== false }">
               <img src="@/assets/TON.png" width="14px" height="14px" />
               {{ gemItem.price }}
             </span>
-            <div v-if="gemsSaleActive" class="gem-sale-perc">-{{ gemsSalePercent }}%</div>
-            <div v-if="gemsSaleActive" class="gem-sale-newprice">
+            <div v-if="gemsSaleActive && gemItem?.enableSale !== false" class="gem-sale-perc">-{{ gemsSalePercent }}%</div>
+            <div v-if="gemsSaleActive && gemItem?.enableSale !== false" class="gem-sale-newprice">
               <img src="@/assets/TON.png" width="12px" height="12px" />
               {{ getGemPrice(gemItem.price) }}
             </div>
           </button>
-          <span class="gem-tag"
+          <span v-if="!(gemsSaleActive && gemItem?.enableSale !== false)" class="gem-tag"
             :style="gemItem?.buttonColor === 'gold'
               ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'
               : gemItem?.buttonColor === 'purple'
@@ -1036,6 +1036,41 @@ onUnmounted(() => {
                       ? 'background-color: #0918E9;'
                       : 'background-color: #6B25A1;'
               ">{{ gemItem.rarity }}</span>
+          <span v-if="gemsSaleActive && gemItem?.enableSale !== false" class="gem-runline" :style="gemItem?.rarity == '4 class' || gemItem?.rarity == '3 class'
+            ? 'background-color: #009600;'
+            : gemItem?.rarity == '2 class'
+              ? 'background-color: #0918E9;'
+              : 'background-color: #6B25A1;'
+            ">
+            <div class="gem-backplane">
+              <div class="gem-type-tag" :style="gemItem?.rarity == '4 class' || gemItem?.rarity == '3 class'
+                ? 'background-color: #009600;'
+                : gemItem?.rarity == '2 class'
+                  ? 'background-color: #0918E9;'
+                  : 'background-color: #6B25A1;'
+                ">
+                {{ gemItem.rarity }}
+              </div>
+              <p v-if="locale == 'en'" class="gem-textline">
+                - BEst choise now - Sale - BEst choise now - Sale - BEst choise now - Sale - BEst
+                choise now - Sale - BEst choise now - Sale - BEst choise now - Sale - BEst choise
+                now - Sale - BEst choise now - Sale
+              </p>
+              <p v-if="locale == 'ru'" class="gem-textline">
+                - Лучший выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа
+                - Лучший
+                выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа - Лучший
+                выбор
+                сейчас - Распродажа - Лучший выбор сейчас - Распродажа
+              </p>
+              <p v-if="locale == 'uk'" class="gem-textline">
+                - Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз -
+                Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий вибір
+                зараз - Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий
+                вибір зараз - Розпродаж
+              </p>
+            </div>
+          </span>
         </div>
       </div>
     </div>
@@ -1654,24 +1689,43 @@ onUnmounted(() => {
           font-family: 'Inter' !important;
 
           &.gem-saleprice {
-            text-decoration: line-through;
-            opacity: 0.6;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #000;
+
+            &::before {
+              content: '';
+              position: absolute;
+              left: -5%;
+              right: 0;
+              bottom: 40%;
+              height: 3px;
+              width: 110%;
+              background: linear-gradient(to right, #7a060690, #e00b0b 40%, #e00b0b);
+              border-radius: 1rem;
+              z-index: 1;
+              pointer-events: none;
+            }
           }
         }
 
         .gem-sale-perc {
           position: absolute;
-          top: -8px;
-          right: -8px;
-          background: linear-gradient(to bottom, #fe3b59, #d42542);
-          color: #fff;
+          left: -10px;
+          top: -15px;
+          padding: 0.1rem 0.2rem;
+          transform: rotate(-10deg);
+          border-radius: 0.3rem;
           font-family: 'Inter' !important;
-          font-weight: 700;
-          font-size: 0.6rem;
-          padding: 2px 5px;
-          border-radius: 3px;
-          white-space: nowrap;
-          z-index: 15;
+          font-size: 12px;
+          font-weight: bold;
+          box-shadow:
+            0 0 15px 2px #fccd0835,
+            0 0 2px 2px #00000020;
+          background: radial-gradient(ellipse 100% 30% at bottom center, #ffffff70, transparent),
+            linear-gradient(to bottom, #fcd909, #fea400);
         }
 
         .gem-sale-newprice {
@@ -1709,6 +1763,69 @@ onUnmounted(() => {
         padding: 0.2rem 0;
         z-index: -10;
         border-radius: 0 0 1rem 1rem;
+      }
+
+      .gem-runline {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        color: #fff;
+        font-family: 'Inter' !important;
+        text-transform: uppercase;
+        font-weight: 400;
+        font-size: 0.55rem;
+        background-color: #323232;
+        border-radius: 0 0 1rem 1rem;
+        padding: 0.2rem 0;
+        margin: 0 -1rem;
+        z-index: -10;
+        overflow: hidden;
+
+        .gem-backplane {
+          position: relative;
+          width: 100%;
+          height: 80%;
+          display: flex;
+          justify-content: start;
+          align-items: center;
+          background: #fccd08;
+
+          .gem-type-tag {
+            position: absolute;
+            left: 50%;
+            padding: 0.2rem 1rem;
+            text-align: center;
+            color: #fff;
+            font-family: 'Inter' !important;
+            text-transform: uppercase;
+            font-weight: 600;
+            font-size: 0.55rem;
+            border-radius: 0.1rem;
+            transform: translateX(-50%);
+            border-radius: 0.3rem;
+            box-shadow: inset 0 0 0 1px #ffffff40;
+            z-index: 10;
+          }
+
+          .gem-textline {
+            text-align: center;
+            color: #000;
+            text-transform: uppercase;
+            animation: gemText 8s infinite linear;
+            white-space: nowrap;
+            z-index: 1;
+          }
+
+          @keyframes gemText {
+            0% {
+              transform: translateX(0);
+            }
+
+            100% {
+              transform: translateX(-50%);
+            }
+          }
+        }
       }
     }
   }
