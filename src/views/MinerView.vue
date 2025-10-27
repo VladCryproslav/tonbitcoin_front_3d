@@ -61,6 +61,8 @@ const showModal = (status, title, body) => {
 
 const openRedirectModal = ref(false)
 const redirectLink = ref(null)
+const redirectItemName = ref(null)
+const redirectItemClass = ref(null)
 
 const openReconnectModal = ref(false)
 const reconnectExample = ref(null)
@@ -512,6 +514,8 @@ const buyGem = async (gemItem) => {
     // Для всех остальных - редирект на getgems.io
     const link = gemItem?.link || 'https://getgems.io'
     redirectLink.value = link
+    redirectItemName.value = gemItem?.type || gemItem?.name
+    redirectItemClass.value = gemItem?.rarity || ''
     openRedirectModal.value = true
   }
 }
@@ -828,7 +832,7 @@ onUnmounted(() => {
 
 <template>
   <SpeedUpModal v-if="openNftSpeedUp" :address="speedUpAddress" @close="openNftSpeedUp = false" />
-  <RedirectModal v-if="openRedirectModal" :link="redirectLink" @close="openRedirectModal = false" />
+  <RedirectModal v-if="openRedirectModal" :link="redirectLink" :itemName="redirectItemName" :itemClass="redirectItemClass" @close="openRedirectModal = false" />
   <ReconnectModal v-if="openReconnectModal" :example="reconnectExample" @close="checkReconnect" />
   <SpecialPriceModal v-if="openSpecialModal" :saleAsic="currBuyAsic" @close="specialModalResponse" />
   <ModalNew v-if="openModal" :status="modalStatus" :title="modalTitle" :body="modalBody" @close="openModal = false" />

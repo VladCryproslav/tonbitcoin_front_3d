@@ -10,6 +10,8 @@ const { t } = useI18n()
 
 const props = defineProps({
   link: String,
+  itemName: String,
+  itemClass: String,
 })
 
 const confirm = () => {
@@ -36,9 +38,9 @@ const emitClose = () => {
             <slot name="header">{{ t('modals.redirect_modal.title') }}</slot>
           </div>
           <div class="modal-body" v-html="
-            t('modals.redirect_modal.message', { 
-              marketplace: `<b>GetGems.io</b>`, 
-              collection: `<span style='color: #fea400; font-weight: bold'>Asic SX Ultra Pro</span>`
+            t('modals.redirect_modal.message', {
+              marketplace: `<b>GetGems.io</b>`,
+              collection: `<span style='color: #fea400; font-weight: bold'>${props.itemName}${props.itemClass ? ' - ' + props.itemClass : ''}</span>`
             })">
           </div>
           <div class="buttons-group">
