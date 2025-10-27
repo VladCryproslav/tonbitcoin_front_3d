@@ -451,6 +451,71 @@ const buyAsics = async (item, price, link, sale, shop = true) => {
   }
 }
 
+const buyGem = async (gemItem) => {
+  if (!gemItem?.shop) return
+
+  // Если это стартер пакет - используем отправку TON
+  if (gemItem?.type === 'Starter Pack') {
+    if (isProcessing.value) return
+    isProcessing.value = true
+
+    if (!ton_address.value) {
+      showModal('warning', t('notification.st_attention'), t('notification.unconnected'))
+      isProcessing.value = false
+      return
+    }
+
+    // Скидаємо стан модального вікна перед новою транзакцією
+    try {
+      await tonConnectUI.closeModal()
+    } catch {
+      // Ігноруємо помилки закриття модального вікна
+    }
+
+    try {
+      const transferAmount = gemItem.price
+      const receiveAddress = 'UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl'
+
+      // Простая передача TON без дополнительных данных
+      const simplePayload = beginCell()
+        .storeUint(0, 32) // op: 0 = simple transfer
+        .storeUint(0, 64) // query id
+        .endCell()
+
+      const transactionData = {
+        validUntil: Date.now() + 1000 * 60 * 5, // 5 minutes
+        messages: [
+          {
+            address: receiveAddress,
+            amount: toNano(transferAmount).toString(),
+            payload: simplePayload.toBoc().toString('base64'),
+          },
+        ],
+      }
+
+      const result = await tonConnectUI.sendTransaction(transactionData, {
+        modals: ['before', 'success'],
+        notifications: [],
+      })
+
+      if (result?.boc) {
+        showModal('success', t('notification.st_success'), `Успешно куплен Starter Pack за ${transferAmount} TON!`)
+        await app.initUser()
+      }
+    } catch (err) {
+      console.log('Error in buyGem:', err)
+      showModal('error', t('notification.st_error'), t('notification.failed_transaction'))
+        } finally {
+      isProcessing.value = false
+    }
+  } else {
+    // Для всех остальных - редирект на getgems.io
+    const link = gemItem?.link || 'https://getgems.io'
+    redirectLink.value = link
+    openRedirectModal.value = true
+  }
+}
+
 function openAsics(side = true) {
   let opt = side == true ? true : false
   asicsIsOpen.setOpenAsicsShop(opt)
@@ -938,7 +1003,8 @@ onUnmounted(() => {
               'btn-gold': gemItem?.buttonColor === 'gold',
               'btn-purple': gemItem?.buttonColor === 'purple'
             }"
-            :disabled="!gemItem?.shop">
+            :disabled="!gemItem?.shop"
+            @click="buyGem(gemItem)">
             <span>{{ gemItem.name }}</span>
             <span class="gem-price">
               <img src="@/assets/TON.png" width="14px" height="14px" />

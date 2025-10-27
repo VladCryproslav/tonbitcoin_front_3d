@@ -187,6 +187,7 @@ const gemsSheet = [
     buttonColor: 'gold',
     hasGoldStroke: true,
     imagePath: '@/assets/gems/DAO_Owner.webp',
+    link: 'https://getgems.io/tbtc?filter=%7B%22q%22%3A%22TonBitcoin+1%25+DAO+Owner%22%2C%22saleType%22%3A%22fix_price%22%7D',
     benefits: [
       'You buy 1% project',
       'You get 1% revenue',
@@ -203,6 +204,7 @@ const gemsSheet = [
     buttonColor: 'purple',
     hasPurpleStroke: true,
     imagePath: '@/assets/gems/Starter_pack.webp',
+    link: '', // Not used - uses TON payment instead
     benefits: [
       'Nuclear power plant',
       'ASIC S11 XP',
@@ -218,6 +220,7 @@ const gemsSheet = [
     rarity: '4 class',
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_4.webp',
+    link: 'https://getgems.io/tbtc?filter=%7B%22q%22%3A%22Jarvis+Bot+%284+class%29%22%2C%22saleType%22%3A%22fix_price%22%7D',
     benefits: [
       'For Energizers',
       'Power plant lvl: 1-3',
@@ -232,6 +235,7 @@ const gemsSheet = [
     rarity: '3 class',
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_3.webp',
+    link: 'https://getgems.io/tbtc?filter=%7B%22q%22%3A%22Jarvis+Bot+%283+class%29%22%2C%22saleType%22%3A%22fix_price%22%7D',
     benefits: [
       'For Energizers',
       'Power plant lvl: 4-5',
@@ -246,6 +250,7 @@ const gemsSheet = [
     rarity: '2 class',
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_2.webp',
+    link: 'https://getgems.io/tbtc?filter=%7B%22q%22%3A%22Jarvis+Bot+%282+class%29%22%2C%22saleType%22%3A%22fix_price%22%7D',
     benefits: [
       'For Energizers',
       'Power plant lvl: 6-7',
@@ -260,6 +265,7 @@ const gemsSheet = [
     rarity: '1 class',
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_1.webp',
+    link: 'https://getgems.io/tbtc?filter=%7B%22q%22%3A%22Jarvis+Bot+%281+class%29%22%2C%22saleType%22%3A%22fix_price%22%7D',
     benefits: [
       'For Energizers',
       'Power plant lvl: 8-9',
@@ -274,6 +280,7 @@ const gemsSheet = [
     rarity: '1 Class',
     description: 'For Energizers',
     imagePath: '@/assets/gems/Cryo_NFT.webp',
+    link: 'https://getgems.io/tbtc?filter=%7B%22q%22%3A%22Cryochamber%22%2C%22saleType%22%3A%22fix_price%22%7D&sideBar=opened',
     benefits: [
       'For Energizers',
       'Power plant lvl: 1-10',
@@ -288,6 +295,7 @@ const gemsSheet = [
     rarity: '3 class',
     description: 'For Miners',
     imagePath: '@/assets/gems/ASIC_M_3.webp',
+    link: 'https://getgems.io/tbtc?filter=%7B%22q%22%3A%22ASIC+Manager+%283+class%29%22%2C%22saleType%22%3A%22fix_price%22%7D&sideBar=opened',
     benefits: [
       'For Miners',
       'Gh/s: 1-299',
@@ -302,6 +310,7 @@ const gemsSheet = [
     rarity: '2 class',
     description: 'For Miners',
     imagePath: '@/assets/gems/ASIC_M_2.webp',
+    link: 'https://getgems.io/tbtc?filter=%7B%22q%22%3A%22ASIC+Manager+%282+class%29%22%2C%22saleType%22%3A%22fix_price%22%7D&sideBar=opened',
     benefits: [
       'For Miners',
       'Gh/s: 300-1199',
@@ -316,6 +325,7 @@ const gemsSheet = [
     rarity: '1 class',
     description: 'For Miners',
     imagePath: '@/assets/gems/ASIC_M_1.webp',
+    link: 'https://getgems.io/tbtc?filter=%7B%22q%22%3A%22ASIC+Manager+%281+class%29%22%2C%22saleType%22%3A%22fix_price%22%7D&sideBar=opened',
     benefits: [
       'For Miners',
       'Gh/s: 1200+',
@@ -330,6 +340,7 @@ const gemsSheet = [
     rarity: '2 class',
     description: 'For Miners',
     imagePath: '@/assets/gems/Magnetic_2.webp',
+    link: 'https://getgems.io/tbtc?filter=%7B%22q%22%3A%22Magnetic+ring+%282+class%29%22%2C%22saleType%22%3A%22fix_price%22%7D&sideBar=opened',
     benefits: [
       'For Miners',
       'Gh/s: 1-249',
@@ -344,6 +355,7 @@ const gemsSheet = [
     rarity: '1 class',
     description: 'For Miners',
     imagePath: '@/assets/gems/Magnetic_1.webp',
+    link: 'https://getgems.io/tbtc?filter=%7B%22q%22%3A%22Magnetic+ring+%281+class%29%22%2C%22saleType%22%3A%22fix_price%22%7D&sideBar=opened',
     benefits: [
       'For Miners',
       'Gh/s: 250-599',
