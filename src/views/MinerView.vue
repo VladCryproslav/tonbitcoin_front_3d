@@ -1002,7 +1002,7 @@ onUnmounted(() => {
           <div class="gem-info">
             <span class="gem-type">{{ gemItem.type }}</span>
             <span class="gem-description" v-for="(benefit, idx) in gemItem.benefits" :key="idx">
-              {{ benefit }}
+              {{ t(`gems.${benefit}`) }}
             </span>
           </div>
           <button class="gem-buy-btn"

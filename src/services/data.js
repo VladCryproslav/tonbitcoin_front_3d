@@ -201,9 +201,9 @@ const gemsSheet = [
     imagePath: '@/assets/gems/DAO_Owner.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Rarity%22%3A%5B%22DAO%22%5D%7D%7D',
     benefits: [
-      'You buy 1% project',
-      'You get 1% revenue',
-      'Vote strategic plans'
+      'dao_owner_benefit_1',
+      'dao_owner_benefit_2',
+      'dao_owner_benefit_3'
     ]
   },
   {
@@ -219,10 +219,10 @@ const gemsSheet = [
     imagePath: '@/assets/gems/Starter_pack.webp',
     link: '', // Not used - uses TON payment instead
     benefits: [
-      'Nuclear power plant',
-      'ASIC S11 XP',
-      'ASIC S15 XP',
-      'And more ...'
+      'starter_pack_benefit_1',
+      'starter_pack_benefit_2',
+      'starter_pack_benefit_3',
+      'starter_pack_benefit_4'
     ]
   },
   {
@@ -236,9 +236,9 @@ const gemsSheet = [
     imagePath: '@/assets/gems/Jarvis_NFT_4.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%221-2-3%22%5D%7D%7D',
     benefits: [
-      'For Energizers',
-      'Power plant lvl: 1-3',
-      'Duration: Eternal'
+      'for_energizers',
+      'power_plant_lvl: 1-3',
+      'duration_eternal'
     ]
   },
   {
@@ -252,9 +252,9 @@ const gemsSheet = [
     imagePath: '@/assets/gems/Jarvis_NFT_3.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%224-5%22%5D%7D%7D',
     benefits: [
-      'For Energizers',
-      'Power plant lvl: 4-5',
-      'Duration: Eternal'
+      'for_energizers',
+      'power_plant_lvl: 4-5',
+      'duration_eternal'
     ]
   },
   {
@@ -268,9 +268,9 @@ const gemsSheet = [
     imagePath: '@/assets/gems/Jarvis_NFT_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%226-7%22%5D%7D%7D',
     benefits: [
-      'For Energizers',
-      'Power plant lvl: 6-7',
-      'Duration: Eternal'
+      'for_energizers',
+      'power_plant_lvl: 6-7',
+      'duration_eternal'
     ]
   },
   {
@@ -284,9 +284,9 @@ const gemsSheet = [
     imagePath: '@/assets/gems/Jarvis_NFT_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%228-9%22%5D%7D%7D',
     benefits: [
-      'For Energizers',
-      'Power plant lvl: 8-9',
-      'Duration: Eternal'
+      'for_energizers',
+      'power_plant_lvl: 8-9',
+      'duration_eternal'
     ]
   },
   {
@@ -300,9 +300,9 @@ const gemsSheet = [
     imagePath: '@/assets/gems/Cryo_NFT.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%22All+stations%22%5D%7D%7D',
     benefits: [
-      'For Energizers',
-      'Power plant lvl: 1-10',
-      'Duration: Eternal'
+      'for_energizers',
+      'power_plant_lvl: 1-10',
+      'duration_eternal'
     ]
   },
   {
@@ -316,9 +316,9 @@ const gemsSheet = [
     imagePath: '@/assets/gems/ASIC_M_3.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%221-299+Gh%2Fs%22%5D%7D%7D',
     benefits: [
-      'For Miners',
-      'Gh/s: 1-299',
-      'Duration: Eternal'
+      'for_miners',
+      'gh_s: 1-299',
+      'duration_eternal'
     ]
   },
   {
@@ -332,9 +332,9 @@ const gemsSheet = [
     imagePath: '@/assets/gems/ASIC_M_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%22300-1199+Gh%2Fs%22%5D%7D%7D',
     benefits: [
-      'For Miners',
-      'Gh/s: 300-1199',
-      'Duration: Eternal'
+      'for_miners',
+      'gh_s: 300-1199',
+      'duration_eternal'
     ]
   },
   {
@@ -348,9 +348,9 @@ const gemsSheet = [
     imagePath: '@/assets/gems/ASIC_M_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%221200%2B+Gh%2Fs%22%5D%7D%7D',
     benefits: [
-      'For Miners',
-      'Gh/s: 1200+',
-      'Duration: Eternal'
+      'for_miners',
+      'gh_s: 1200+',
+      'duration_eternal'
     ]
   },
   {
@@ -364,9 +364,9 @@ const gemsSheet = [
     imagePath: '@/assets/gems/Magnetic_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%221-249+Gh%2Fs%22%5D%7D%7D',
     benefits: [
-      'For Miners',
-      'Gh/s: 1-249',
-      'Duration: Eternal'
+      'for_miners',
+      'gh_s: 1-249',
+      'duration_eternal'
     ]
   },
   {
@@ -380,9 +380,9 @@ const gemsSheet = [
     imagePath: '@/assets/gems/Magnetic_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%22250-599+Gh%2Fs%22%5D%7D%7D',
     benefits: [
-      'For Miners',
-      'Gh/s: 250-599',
-      'Duration: Eternal'
+      'for_miners',
+      'gh_s: 250-599',
+      'duration_eternal'
     ]
   }
 ]
