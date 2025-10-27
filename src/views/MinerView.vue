@@ -923,7 +923,7 @@ onUnmounted(() => {
           <div class="gem-info-icon-top">!</div>
           <div class="gem-picture">
             <img v-if="gemItem?.imagePath" :src="imagePathGems(gemItem.imagePath)?.value" class="gem-image"
-              :class="{ 'hide-under-tag': gemItem?.buttonColor !== 'gold' && gemItem?.buttonColor !== 'purple' }"
+              :class="{ 'hide-under-tag': gemItem?.buttonColor !== 'gold' && gemItem?.buttonColor !== 'purple' && gemItem?.type !== 'Cryochamber' }"
               alt="NFT" />
             <div v-else class="gem-icon">💎</div>
           </div>
@@ -1408,19 +1408,41 @@ onUnmounted(() => {
       overflow: visible;
 
       &.has-gold-stroke {
-        border: 2px solid transparent;
-        background:
-          #08150a50 padding-box,
-          linear-gradient(180deg, #FEA400 0%, #FCD909 100%) border-box;
         padding: calc(0.7rem - 2px) calc(1rem - 2px);
+        position: relative;
+
+        &::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 1rem;
+          padding: 2px;
+          background: linear-gradient(180deg, #FEA400 0%, #FCD909 100%);
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          z-index: 1;
+        }
       }
 
       &.has-purple-stroke {
-        border: 2px solid transparent;
-        background:
-          #08150a50 padding-box,
-          linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%) border-box;
         padding: calc(0.7rem - 2px) calc(1rem - 2px);
+        position: relative;
+
+        &::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 1rem;
+          padding: 2px;
+          background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          z-index: 1;
+        }
       }
 
       .gem-info-icon-top {
