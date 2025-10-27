@@ -549,7 +549,10 @@
     "recommend": "Рекомендовано",
     "epic": "Епічний",
     "legendary": "Легендарний",
-    "mythic": "Міфічний"
+    "mythic": "Міфічний",
+    "gems": "GEMS",
+    "asics_short": "ASICs",
+    "gems_coming_soon": "GEMS скоро будуть доступні"
   },
   "miner": {
     "start_mine_btn": "Почати майнінг",

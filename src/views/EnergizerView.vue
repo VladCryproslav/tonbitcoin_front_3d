@@ -50,7 +50,6 @@ const upgModalTitle = ref(null)
 const upgModalBody = ref(null)
 const upgModalPrice = ref(null)
 const upgModalKind = ref(null)
-const upgModalStationType = ref(null)
 
 const openModal = ref(false)
 const modalBody = ref('')
@@ -337,12 +336,11 @@ const stopAnimation = () => {
   isStopped = true
 }
 
-function getUpgModal(title, body, price, kind, stationType = null) {
+function getUpgModal(title, body, price, kind) {
   upgModalTitle.value = title
   upgModalBody.value = body
   upgModalPrice.value = price
   upgModalKind.value = kind
-  upgModalStationType.value = stationType
   openUpgModal.value = true
 }
 
@@ -886,7 +884,7 @@ onUnmounted(() => {
 
 <template>
   <UpgradeModal v-if="openUpgModal" :title="upgModalTitle" :body="upgModalBody" :price="upgModalPrice"
-    :kind="upgModalKind" :stationType="upgModalStationType" @close="showModal" />
+    :kind="upgModalKind" @close="showModal" />
   <ModalNew v-if="openModal" :status="modalStatus" :title="modalTitle" :body="modalBody" @close="openModal = false" />
   <InfoModal v-if="openWalletChangeInfo" @close="openWalletChangeInfo = false">
     <template #modal-body>
@@ -971,7 +969,6 @@ onUnmounted(() => {
               )?.price_tbtc,
             },
             'station',
-            allStations?.[allStations.indexOf(app.user?.station_type) + 1]
           )" @mintstation="() => {
             if (!app.stationsNft.length && !app.user?.current_mint) {
               craft(
@@ -1291,8 +1288,7 @@ onUnmounted(() => {
               app.user?.generation_level == findMaxLevel(app.stations?.gen_configs) &&
               app.user?.station_type !== allStations?.[allStations.length - 1] &&
               allStations?.indexOf(app.user?.station_type) >= 3 &&
-              (!app.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) &&
-              (allStations?.indexOf(app.user?.station_type) == 3 || (app.stationsNft.length && app.user?.current_mint))
+              (!app.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0)
             " class="upg-btn"
               :class="{ 'mint': (app.stationsNft.length && app.user?.current_mint) || allStations?.indexOf(app.user?.station_type) == 3, 'upg-btn-unactive': (!app.stationsNft.length || !app.user?.current_mint) && allStations?.indexOf(app.user?.station_type) !== 3 }"
               @click="() => {
@@ -1339,7 +1335,6 @@ onUnmounted(() => {
                   )?.price_tbtc,
                 },
                 'station',
-                allStations?.[allStations.indexOf(app.user?.station_type) + 1]
               )
               ">
               {{ t('common.buy') }}
@@ -1816,7 +1811,7 @@ onUnmounted(() => {
 
   <div class="screen-box">
     <div class="panel">
-      <div class="wheel" @click="router.push('/games')">
+      <div class="wheel" @click="router.push('/wheel')">
         <img src="@/assets/wheel-icon.webp" class="wheel-image" />
         <p>
           <span>{{ t('wheel.home_btn_1') }}<br /></span>{{ t('wheel.home_btn_2') }}

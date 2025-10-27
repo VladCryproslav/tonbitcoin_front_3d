@@ -15,7 +15,6 @@ const props = defineProps({
   body: String,
   price: Object,
   kind: String,
-  stationType: String, // Добавляем prop для типа станции
 })
 
 const app = useAppStore()
@@ -43,27 +42,13 @@ const confirm = () => {
 
 async function upgradeStation() {
   try {
-    // Обновляем данные пользователя перед запросом, чтобы получить актуальный баланс
-    await app.initUser()
-
-    // Проверяем, что данные действительно обновились
-    if (!app.user || typeof app.user.energy === 'undefined') {
-      // Попробуем еще раз получить данные
-      await app.initUser()
-      if (!app.user || typeof app.user.energy === 'undefined') {
-        throw new Error('Failed to get user data')
-      }
-    }
-
-    // Бэкенд сам определяет следующую станцию через get_next_station_type()
-    // Не передаем station_type, так как бэкенд его не использует
-    const res = await host.post('upgrade-station/', {})
+    const res = await host.post('upgrade-station/')
     if (res.status == 200) {
       await app.initUser()
       emit('close', { status: 'success', title: t('notification.st_success'), body: t('modals.upgrade_modal.station_upgraded') })
     }
   } catch (err) {
-    console.log('Upgrade station error:', err)
+    console.log(err)
     emit('close', {
       status: 'error',
       title: t('notification.st_error'),

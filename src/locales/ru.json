@@ -549,7 +549,10 @@
     "recommend": "Рекомендуется",
     "epic": "Эпический",
     "legendary": "Легендарный",
-    "mythic": "Мифический"
+    "mythic": "Мифический",
+    "gems": "GEMS",
+    "asics_short": "ASICs",
+    "gems_coming_soon": "GEMS скоро будут доступны"
   },
   "miner": {
     "start_mine_btn": "Начать майнинг",

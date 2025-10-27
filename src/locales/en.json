@@ -549,7 +549,10 @@
     "recommend": "Recommended",
     "epic": "Epic",
     "legendary": "Legendary",
-    "mythic": "Mythic"
+    "mythic": "Mythic",
+    "gems": "GEMS",
+    "asics_short": "ASICs",
+    "gems_coming_soon": "GEMS coming soon"
   },
   "miner": {
     "start_mine_btn": "Start mining",

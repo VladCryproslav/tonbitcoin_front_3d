@@ -713,6 +713,12 @@ const openNftSpeedUpInfo = ref(false)
 const openNftSpeedUp = ref(false)
 const speedUpAddress = ref(null)
 
+const activeShopTab = ref('gems')
+
+const toggleShopTab = () => {
+  activeShopTab.value = activeShopTab.value === 'gems' ? 'asics' : 'gems'
+}
+
 const speedUpNft = (item) => {
   speedUpAddress.value = item.nft ? item.nft : item.address
   openNftSpeedUp.value = true
@@ -773,7 +779,27 @@ onUnmounted(() => {
           <Exit :width="16" style="color: #fff" />
         </button>
       </div>
-      <div class="asics-list" ref="asicsList">
+
+      <!-- Shop Tab Switcher -->
+      <div class="shop-tabs">
+        <button
+          class="tab-btn"
+          :class="{ active: activeShopTab === 'gems' }"
+          @click="toggleShopTab"
+        >
+          {{ t('asic_shop.gems') }}
+        </button>
+        <button
+          class="tab-btn"
+          :class="{ active: activeShopTab === 'asics' }"
+          @click="toggleShopTab"
+        >
+          {{ t('asic_shop.asics_short') }}
+        </button>
+      </div>
+
+      <!-- ASICs List -->
+      <div v-if="activeShopTab === 'asics'" class="asics-list" ref="asicsList">
         <div class="item" v-for="(asicItem, index) in asicsSheet.filter(el => el.shop)" :key="asicItem">
           <div class="picture">
             <!-- <Asics :width="62" :height="62" /> -->
@@ -872,6 +898,14 @@ onUnmounted(() => {
               </p>
             </div>
           </span>
+        </div>
+      </div>
+
+      <!-- GEMS List (placeholder) -->
+      <div v-if="activeShopTab === 'gems'" class="gems-list">
+        <!-- GEMS items will be added here -->
+        <div class="gems-placeholder">
+          <p>{{ t('asic_shop.gems_coming_soon') }}</p>
         </div>
       </div>
     </div>
@@ -1259,6 +1293,61 @@ onUnmounted(() => {
       display: flex;
       align-items: center;
       justify-content: end;
+    }
+  }
+
+  .shop-tabs {
+    display: flex;
+    width: 90%;
+    margin: 0.5rem 0;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 20px;
+    padding: 3px;
+    gap: 3px;
+
+    .tab-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 17px;
+      background: transparent;
+      border: none;
+      color: #FFFFFF;
+      font-family: 'Inter' !important;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &.active {
+        background: #31CFFF;
+        color: #000000;
+      }
+    }
+  }
+
+  .gems-list {
+    display: flex;
+    width: 90%;
+    flex-direction: column;
+    padding: 10px 0;
+    align-items: center;
+    gap: 1.5rem;
+    overflow-y: scroll;
+    margin-bottom: -10px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    .gems-placeholder {
+      width: 100%;
+      text-align: center;
+      padding: 2rem;
+      color: #ffffff70;
+      font-family: 'Inter' !important;
+      font-size: 14px;
     }
   }
 
