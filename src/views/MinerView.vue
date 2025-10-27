@@ -415,7 +415,7 @@ const buyAsics = async (item, price, link, sale, shop = true) => {
   }
   if (link) {
     redirectLink.value = link
-    redirectItemName.value = null
+    redirectItemName.value = asicsSheet[item]?.name || null
     redirectItemClass.value = null
     openRedirectModal.value = true
     return
