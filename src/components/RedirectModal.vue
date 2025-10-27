@@ -37,11 +37,11 @@ const emitClose = () => {
           <div class="modal-header">
             <slot name="header">{{ t('modals.redirect_modal.title') }}</slot>
           </div>
-          <div class="modal-body" v-html="
-            t('modals.redirect_modal.message', {
-              marketplace: `<b>GetGems.io</b>`,
-              collection: `<span style='color: #fea400; font-weight: bold'>${props.itemName}${props.itemClass ? ' - ' + props.itemClass : ''}</span>`
-            })">
+          <div class="modal-body">
+            <span v-html="t('modals.redirect_modal.message', { marketplace: `<b>GetGems.io</b>` })"></span>
+            <span v-if="props.itemName || props.itemClass" style="display: block; margin-top: 5px;">
+              <span style='color: #fea400; font-weight: bold'>{{ props.itemName }}{{ props.itemClass ? ' - ' + props.itemClass : '' }}</span>
+            </span>
           </div>
           <div class="buttons-group">
             <button class="confirm" @click="confirm">{{ t('modals.redirect_modal.go') }}</button>

@@ -415,6 +415,8 @@ const buyAsics = async (item, price, link, sale, shop = true) => {
   }
   if (link) {
     redirectLink.value = link
+    redirectItemName.value = null
+    redirectItemClass.value = null
     openRedirectModal.value = true
     return
   }
@@ -515,7 +517,8 @@ const buyGem = async (gemItem) => {
     const link = gemItem?.link || 'https://getgems.io'
     redirectLink.value = link
     redirectItemName.value = gemItem?.type || gemItem?.name
-    redirectItemClass.value = gemItem?.rarity || ''
+    // Передаём класс только для GEMS (не для DAO)
+    redirectItemClass.value = (gemItem?.type !== 'DAO Owner' && gemItem?.rarity) ? gemItem?.rarity : ''
     openRedirectModal.value = true
   }
 }

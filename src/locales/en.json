@@ -206,7 +206,7 @@
     },
     "redirect_modal": {
       "title": "Warning!",
-      "message": "You will be redirected to the largest NFT marketplace {marketplace}, which features the entire {collection} collection, each with a unique appearance.",
+      "message": "You will be redirected to the largest NFT marketplace {marketplace}.",
       "go": "Go",
       "cancel": "Cancel"
     },
