@@ -18,7 +18,7 @@ import RedirectModal from '@/components/RedirectModal.vue'
 import SpecialPriceModal from '@/components/SpecialPriceModal.vue'
 import WithdrawModal from '@/components/WithdrawModal.vue'
 import ReconnectModal from '@/components/ReconnectModal.vue'
-import asicsSheet, { gemsSheet, gemsSaleActive, gemsSalePercent, getGemPrice } from '@/services/data'
+import asicsSheet, { gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleText, getGemPrice, sortGemsBySale } from '@/services/data'
 import _ from "lodash"
 import { getAsicData } from '@/utils/asics'
 import { useI18n } from 'vue-i18n'
@@ -990,7 +990,7 @@ onUnmounted(() => {
             'has-gold-stroke': gemItem?.hasGoldStroke,
             'has-purple-stroke': gemItem?.hasPurpleStroke
           }"
-          v-for="gemItem in gemsSheet.filter(el => el.shop)"
+          v-for="gemItem in sortGemsBySale(gemsSheet.filter(el => el.shop))"
           :key="gemItem">
           <div class="gem-info-icon-top">!</div>
           <div class="gem-picture">
@@ -1051,24 +1051,9 @@ onUnmounted(() => {
                 ">
                 {{ gemItem.rarity }}
               </div>
-              <p v-if="locale == 'en'" class="gem-textline">
-                - BEst choise now - Sale - BEst choise now - Sale - BEst choise now - Sale - BEst
-                choise now - Sale - BEst choise now - Sale - BEst choise now - Sale - BEst choise
-                now - Sale - BEst choise now - Sale
-              </p>
-              <p v-if="locale == 'ru'" class="gem-textline">
-                - Лучший выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа
-                - Лучший
-                выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа - Лучший
-                выбор
-                сейчас - Распродажа - Лучший выбор сейчас - Распродажа
-              </p>
-              <p v-if="locale == 'uk'" class="gem-textline">
-                - Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз -
-                Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий вибір
-                зараз - Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий
-                вибір зараз - Розпродаж
-              </p>
+              <p v-if="locale == 'en'" class="gem-textline">{{ gemsSaleText.en }}</p>
+              <p v-if="locale == 'ru'" class="gem-textline">{{ gemsSaleText.ru }}</p>
+              <p v-if="locale == 'uk'" class="gem-textline">{{ gemsSaleText.uk }}</p>
             </div>
           </span>
         </div>

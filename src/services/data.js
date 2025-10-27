@@ -180,6 +180,13 @@ const asicsSheet = [
 const gemsSaleActive = true // Изменить на true для активации скидки
 const gemsSalePercent = 50 // Процент скидки (например 50 = -50%)
 
+// Текст для бегущей строки акции GEMS
+const gemsSaleText = {
+  en: '- BEst choise now - Sale - BEst choise now - Sale - BEst choise now - Sale - BEst choise now - Sale - BEst choise now - Sale - BEst choise now - Sale - BEst choise now - Sale - BEst choise now - Sale',
+  ru: '- Лучший выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа',
+  uk: '- Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз - Розпродаж - Найкращий вибір зараз - Розпродаж'
+}
+
 const gemsSheet = [
   {
     shop: true,
@@ -208,6 +215,7 @@ const gemsSheet = [
     description: 'Nuclear power plant',
     buttonColor: 'purple',
     hasPurpleStroke: true,
+    enableSale: true,
     imagePath: '@/assets/gems/Starter_pack.webp',
     link: '', // Not used - uses TON payment instead
     benefits: [
@@ -223,6 +231,7 @@ const gemsSheet = [
     type: 'Jarvis Bot',
     price: 99,
     rarity: '4 class',
+    enableSale: true,
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_4.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%221-2-3%22%5D%7D%7D',
@@ -238,6 +247,7 @@ const gemsSheet = [
     type: 'Jarvis Bot',
     price: 199,
     rarity: '3 class',
+    enableSale: true,
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_3.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%224-5%22%5D%7D%7D',
@@ -253,6 +263,7 @@ const gemsSheet = [
     type: 'Jarvis Bot',
     price: 399,
     rarity: '2 class',
+    enableSale: true,
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%226-7%22%5D%7D%7D',
@@ -268,6 +279,7 @@ const gemsSheet = [
     type: 'Jarvis Bot',
     price: 699,
     rarity: '1 class',
+    enableSale: true,
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%228-9%22%5D%7D%7D',
@@ -283,6 +295,7 @@ const gemsSheet = [
     type: 'Cryochamber',
     price: 99,
     rarity: '1 Class',
+    enableSale: true,
     description: 'For Energizers',
     imagePath: '@/assets/gems/Cryo_NFT.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%22All+stations%22%5D%7D%7D',
@@ -298,6 +311,7 @@ const gemsSheet = [
     type: 'ASIC Manager',
     price: 49,
     rarity: '3 class',
+    enableSale: true,
     description: 'For Miners',
     imagePath: '@/assets/gems/ASIC_M_3.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%221-299+Gh%2Fs%22%5D%7D%7D',
@@ -313,6 +327,7 @@ const gemsSheet = [
     type: 'ASIC Manager',
     price: 99,
     rarity: '2 class',
+    enableSale: true,
     description: 'For Miners',
     imagePath: '@/assets/gems/ASIC_M_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%22300-1199+Gh%2Fs%22%5D%7D%7D',
@@ -328,6 +343,7 @@ const gemsSheet = [
     type: 'ASIC Manager',
     price: 199,
     rarity: '1 class',
+    enableSale: true,
     description: 'For Miners',
     imagePath: '@/assets/gems/ASIC_M_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%221200%2B+Gh%2Fs%22%5D%7D%7D',
@@ -343,6 +359,7 @@ const gemsSheet = [
     type: 'Magnetic ring',
     price: 99,
     rarity: '2 class',
+    enableSale: true,
     description: 'For Miners',
     imagePath: '@/assets/gems/Magnetic_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%221-249+Gh%2Fs%22%5D%7D%7D',
@@ -358,6 +375,7 @@ const gemsSheet = [
     type: 'Magnetic ring',
     price: 199,
     rarity: '1 class',
+    enableSale: true,
     description: 'For Miners',
     imagePath: '@/assets/gems/Magnetic_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%22250-599+Gh%2Fs%22%5D%7D%7D',
@@ -375,5 +393,22 @@ const getGemPrice = (originalPrice) => {
   return originalPrice * (1 - gemsSalePercent / 100)
 }
 
-export { asicsSheet, gemsSheet, gemsSaleActive, gemsSalePercent, getGemPrice }
+// Функция для сортировки GEMS (элементы с акцией вверх, без акции вниз)
+const sortGemsBySale = (gems) => {
+  return [...gems].sort((a, b) => {
+    // Если акция активна
+    if (gemsSaleActive) {
+      const aInSale = a.enableSale !== false
+      const bInSale = b.enableSale !== false
+
+      // Элементы с акцией идут первыми
+      if (aInSale && !bInSale) return -1
+      if (!aInSale && bInSale) return 1
+    }
+
+    return 0
+  })
+}
+
+export { asicsSheet, gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleText, getGemPrice, sortGemsBySale }
 export default asicsSheet
