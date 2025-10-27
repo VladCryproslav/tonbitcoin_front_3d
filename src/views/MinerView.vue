@@ -932,18 +932,20 @@ onUnmounted(() => {
               {{ gemItem.price }}
             </span>
           </button>
-          <span class="gem-tag" :style="gemItem?.buttonColor === 'gold'
-            ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'
-            : gemItem?.buttonColor === 'purple'
-              ? 'background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%), #FFC300;'
-              : gemItem?.rarity == '4 class'
-                ? 'background-color: #5D625E;'
-                : gemItem?.rarity == '3 class'
-                  ? 'background-color: #009600;'
-                  : gemItem?.rarity == '2 class'
-                    ? 'background-color: #0918E9;'
-                    : 'background-color: #6B25A1;'
-            ">{{ gemItem.rarity }}</span>
+          <span class="gem-tag" 
+            :class="{ 'gradient-tag': gemItem?.buttonColor === 'gold' || gemItem?.buttonColor === 'purple' }"
+            :style="gemItem?.buttonColor === 'gold'
+              ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'
+              : gemItem?.buttonColor === 'purple'
+                ? 'background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%), #FFC300;'
+                : gemItem?.rarity == '4 class'
+                  ? 'background-color: #5D625E;'
+                  : gemItem?.rarity == '3 class'
+                    ? 'background-color: #009600;'
+                    : gemItem?.rarity == '2 class'
+                      ? 'background-color: #0918E9;'
+                      : 'background-color: #6B25A1;'
+              ">{{ gemItem.rarity }}</span>
         </div>
       </div>
     </div>
@@ -1523,6 +1525,8 @@ onUnmounted(() => {
           gap: 0.3rem;
           font-size: 12px;
           line-height: 16pt;
+          font-weight: 700;
+          font-family: 'Inter' !important;
         }
       }
 
@@ -1536,10 +1540,14 @@ onUnmounted(() => {
         text-transform: uppercase;
         font-weight: 600;
         font-size: 0.55rem;
-        border-radius: 0 0 1rem 1rem;
         padding: 0.2rem 0;
         margin: 0 -1rem;
         z-index: -10;
+        border-radius: 0 0 1rem 1rem;
+        
+        &.gradient-tag {
+          border-radius: 0;
+        }
       }
     }
   }

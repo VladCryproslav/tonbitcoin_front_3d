@@ -186,7 +186,7 @@ const gemsSheet = [
     description: 'You buy 1% project',
     buttonColor: 'gold',
     hasGoldStroke: true,
-    imagePath: '@/assets/gems/dao-nft.png',
+    imagePath: '@/assets/gems/DAO_Owner.webp',
     benefits: [
       'You buy 1% project',
       'You get 1% revenue',
@@ -202,7 +202,7 @@ const gemsSheet = [
     description: 'Nuclear power plant',
     buttonColor: 'purple',
     hasPurpleStroke: true,
-    imagePath: '@/assets/gems/starter-pack-nft.png',
+    imagePath: '@/assets/gems/Starter_pack.webp',
     benefits: [
       'Nuclear power plant',
       'ASIC S11 XP',
@@ -217,7 +217,7 @@ const gemsSheet = [
     price: 40,
     rarity: '4 class',
     description: 'For Energizers',
-    imagePath: '@/assets/gems/jarvis-bot-4.webp',
+    imagePath: '@/assets/gems/Jarvis_NFT.webp',
     benefits: [
       'For Energizers',
       'Power plant lvl: 1-3',
@@ -231,7 +231,7 @@ const gemsSheet = [
     price: 40,
     rarity: '3 class',
     description: 'For Energizers',
-    imagePath: '@/assets/gems/jarvis-bot-3.webp',
+    imagePath: '@/assets/gems/Jarvis_NFT.webp',
     benefits: [
       'For Energizers',
       'Power plant lvl: 4-5',
@@ -245,7 +245,7 @@ const gemsSheet = [
     price: 40,
     rarity: '2 class',
     description: 'For Energizers',
-    imagePath: '@/assets/gems/jarvis-bot-2.webp',
+    imagePath: '@/assets/gems/Jarvis_NFT.webp',
     benefits: [
       'For Energizers',
       'Power plant lvl: 6-7',
@@ -259,7 +259,7 @@ const gemsSheet = [
     price: 40,
     rarity: '1 class',
     description: 'For Energizers',
-    imagePath: '@/assets/gems/jarvis-bot-1.webp',
+    imagePath: '@/assets/gems/Jarvis_NFT.webp',
     benefits: [
       'For Energizers',
       'Power plant lvl: 8-9',
@@ -273,7 +273,7 @@ const gemsSheet = [
     price: 40,
     rarity: '1 Class',
     description: 'For Energizers',
-    imagePath: '@/assets/gems/cryochamber.webp',
+    imagePath: '@/assets/gems/Cryo_NFT.webp',
     benefits: [
       'For Energizers',
       'Power plant lvl: 1-10',
@@ -287,7 +287,7 @@ const gemsSheet = [
     price: 40,
     rarity: '3 class',
     description: 'For Miners',
-    imagePath: '@/assets/gems/asic-manager-3.webp',
+    imagePath: '@/assets/gems/ASIC_M_3.webp',
     benefits: [
       'For Miners',
       'Gh/s: 1-299',
@@ -301,7 +301,7 @@ const gemsSheet = [
     price: 40,
     rarity: '2 class',
     description: 'For Miners',
-    imagePath: '@/assets/gems/asic-manager-2.webp',
+    imagePath: '@/assets/gems/ASIC_M_2.webp',
     benefits: [
       'For Miners',
       'Gh/s: 300-1199',
@@ -315,7 +315,7 @@ const gemsSheet = [
     price: 40,
     rarity: '1 class',
     description: 'For Miners',
-    imagePath: '@/assets/gems/asic-manager-1.webp',
+    imagePath: '@/assets/gems/ASIC_M_1.webp',
     benefits: [
       'For Miners',
       'Gh/s: 1200+',
@@ -329,7 +329,7 @@ const gemsSheet = [
     price: 40,
     rarity: '2 class',
     description: 'For Miners',
-    imagePath: '@/assets/gems/magnetic-ring-2.webp',
+    imagePath: '@/assets/gems/Magnetic_2.webp',
     benefits: [
       'For Miners',
       'Gh/s: 1-249',
@@ -343,7 +343,7 @@ const gemsSheet = [
     price: 40,
     rarity: '1 class',
     description: 'For Miners',
-    imagePath: '@/assets/gems/magnetic-ring-1.webp',
+    imagePath: '@/assets/gems/Magnetic_1.webp',
     benefits: [
       'For Miners',
       'Gh/s: 250-599',
