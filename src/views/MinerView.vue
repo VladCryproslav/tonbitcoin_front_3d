@@ -1319,7 +1319,7 @@ onUnmounted(() => {
       transition: all 0.3s ease;
 
       &.active {
-        background: #31CFFF;
+        background: linear-gradient(to bottom, #e2f974, #009600);
         color: #000000;
       }
     }

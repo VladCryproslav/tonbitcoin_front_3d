@@ -1811,7 +1811,7 @@ onUnmounted(() => {
 
   <div class="screen-box">
     <div class="panel">
-      <div class="wheel" @click="router.push('/wheel')">
+      <div class="wheel" @click="router.push('/games')">
         <img src="@/assets/wheel-icon.webp" class="wheel-image" />
         <p>
           <span>{{ t('wheel.home_btn_1') }}<br /></span>{{ t('wheel.home_btn_2') }}
