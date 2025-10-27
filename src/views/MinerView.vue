@@ -1422,7 +1422,7 @@ onUnmounted(() => {
           -webkit-mask-composite: xor;
           mask-composite: exclude;
           pointer-events: none;
-          z-index: 1;
+          z-index: -2;
         }
       }
 
@@ -1441,7 +1441,7 @@ onUnmounted(() => {
           -webkit-mask-composite: xor;
           mask-composite: exclude;
           pointer-events: none;
-          z-index: 1;
+          z-index: -2;
         }
       }
 
