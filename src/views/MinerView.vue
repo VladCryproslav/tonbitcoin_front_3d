@@ -247,7 +247,8 @@ const imagePathGems = (path) => {
   const com = computed(() => {
     // Remove @/ prefix if present
     const cleanPath = path.replace(/^@\//, '')
-    return new URL(`../${cleanPath}`, import.meta.url).href
+    const fileName = cleanPath.replace(/.*\//, '')
+    return new URL(`../assets/gems/${fileName}`, import.meta.url).href
   })
   return com
 }
@@ -1401,38 +1402,20 @@ onUnmounted(() => {
       border-radius: 1rem;
       padding: 0.7rem 1rem;
       gap: 1rem;
-      overflow: visible;
+      overflow: hidden;
 
-      &.has-gold-stroke::after {
-        content: '';
-        position: absolute;
-        inset: -2px;
-        border-radius: 1rem;
-        padding: 2px;
-        background: linear-gradient(180deg, #FEA400 0%, #FCD909 100%);
-        -webkit-mask:
-          linear-gradient(#fff 0 0) content-box,
-          linear-gradient(#fff 0 0);
-        -webkit-mask-composite: xor;
-        mask-composite: exclude;
-        pointer-events: none;
-        z-index: -1;
+      &.has-gold-stroke {
+        border: 2px solid transparent;
+        background:
+          linear-gradient(#08150a50, #08150a50) padding-box,
+          linear-gradient(180deg, #FEA400 0%, #FCD909 100%) border-box;
       }
 
-      &.has-purple-stroke::after {
-        content: '';
-        position: absolute;
-        inset: -2px;
-        border-radius: 1rem;
-        padding: 2px;
-        background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);
-        -webkit-mask:
-          linear-gradient(#fff 0 0) content-box,
-          linear-gradient(#fff 0 0);
-        -webkit-mask-composite: xor;
-        mask-composite: exclude;
-        pointer-events: none;
-        z-index: -1;
+      &.has-purple-stroke {
+        border: 2px solid transparent;
+        background:
+          linear-gradient(#08150a50, #08150a50) padding-box,
+          linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%) border-box;
       }
 
       .gem-info-icon-top {
@@ -1561,8 +1544,9 @@ onUnmounted(() => {
 
       .gem-tag {
         position: absolute;
-        bottom: 0;
-        width: 100%;
+        bottom: -1px;
+        left: -1px;
+        right: -1px;
         text-align: center;
         color: #fff;
         font-family: 'Inter' !important;
@@ -1570,7 +1554,6 @@ onUnmounted(() => {
         font-weight: 600;
         font-size: 0.55rem;
         padding: 0.2rem 0;
-        margin: 0 -1rem;
         z-index: -10;
         border-radius: 0 0 1rem 1rem;
       }
