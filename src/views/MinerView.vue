@@ -922,7 +922,9 @@ onUnmounted(() => {
           :key="gemItem">
           <div class="gem-info-icon-top">!</div>
           <div class="gem-picture">
-            <img v-if="gemItem?.imagePath" :src="imagePathGems(gemItem.imagePath)?.value" class="gem-image" alt="NFT" />
+            <img v-if="gemItem?.imagePath" :src="imagePathGems(gemItem.imagePath)?.value" class="gem-image"
+              :class="{ 'hide-under-tag': gemItem?.buttonColor !== 'gold' && gemItem?.buttonColor !== 'purple' }"
+              alt="NFT" />
             <div v-else class="gem-icon">💎</div>
           </div>
           <div class="gem-info">
@@ -1408,7 +1410,7 @@ onUnmounted(() => {
       &.has-gold-stroke {
         border: 2px solid transparent;
         background:
-          linear-gradient(#08150a50, #08150a50) padding-box,
+          #08150a50 padding-box,
           linear-gradient(180deg, #FEA400 0%, #FCD909 100%) border-box;
         padding: calc(0.7rem - 2px) calc(1rem - 2px);
       }
@@ -1416,7 +1418,7 @@ onUnmounted(() => {
       &.has-purple-stroke {
         border: 2px solid transparent;
         background:
-          linear-gradient(#08150a50, #08150a50) padding-box,
+          #08150a50 padding-box,
           linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%) border-box;
         padding: calc(0.7rem - 2px) calc(1rem - 2px);
       }
@@ -1455,6 +1457,10 @@ onUnmounted(() => {
           min-width: 115px;
           margin: -25px 0 -10px;
           height: auto;
+
+          &.hide-under-tag {
+            z-index: -15;
+          }
         }
       }
 
