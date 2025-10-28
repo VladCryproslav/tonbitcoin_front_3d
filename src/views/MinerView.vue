@@ -990,13 +990,12 @@ onUnmounted(() => {
         <div class="starter-pack-text">
           {{ t('gems.starter_pack_title') }}<br><br>
           • {{ t('gems.starter_pack_item_1') }}<br>
-          {{ t('gems.starter_pack_item_2') }}<br>
+          • {{ t('gems.starter_pack_item_2') }}<br>
           • {{ t('gems.starter_pack_item_3') }}<br>
           • {{ t('gems.starter_pack_item_4') }}<br>
           • {{ t('gems.starter_pack_item_5') }}<br>
           • {{ t('gems.starter_pack_item_6') }}<br>
-          • {{ t('gems.starter_pack_item_7') }}<br>
-          • {{ t('gems.starter_pack_item_8') }}<br><br>
+          • {{ t('gems.starter_pack_item_7') }}<br><br>
           {{ t('gems.starter_pack_price_info') }}<br>
           {{ t('gems.starter_pack_price_offer', { price: getStarterPackPrice() }) }}
         </div>
