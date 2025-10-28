@@ -15,6 +15,7 @@ import { useAppStore } from '@/stores/app'
 import StationSlider from '@/components/StationSlider.vue'
 import { useTonAddress } from '@townsquarelabs/ui-vue'
 import { useTelegram } from '@/services/telegram'
+import { halloweenActive } from '@/services/data'
 import ModalNew from '@/components/ModalNew.vue'
 import MintModal from '@/components/MintModal.vue'
 import UpgradeModal from '@/components/UpgradeModal.vue'
@@ -1835,7 +1836,8 @@ onUnmounted(() => {
         <button class="claim-btn" @click="claim">{{ t('general.top_nav.mint_btn').toUpperCase() }}</button>
       </div>
       <div class="shop" @click="openAsics">
-        <img src="@/assets/thirst-block2222.png" class="asic-image" />
+        <img v-if="halloweenActive" src="@/assets/Halloween.png" class="asic-image halloween-image" />
+        <img v-else src="@/assets/thirst-block2222.png" class="asic-image" />
         <p>
           <span>{{ t('general.top_nav.asics_shop_1') }}<br /></span>{{ t('general.top_nav.asics_shop_2') }}
         </p>
@@ -3285,6 +3287,27 @@ onUnmounted(() => {
     .asic-image {
       margin: -15px;
       width: 70px;
+    }
+
+    .halloween-image {
+      position: relative;
+      filter: drop-shadow(0 8px 16px rgba(254, 164, 0, 0.4))
+              drop-shadow(0 0 20px rgba(254, 164, 0, 0.3))
+              drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+      animation: halloween-glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes halloween-glow {
+      0% {
+        filter: drop-shadow(0 8px 16px rgba(254, 164, 0, 0.4))
+                drop-shadow(0 0 20px rgba(254, 164, 0, 0.3))
+                drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+      }
+      100% {
+        filter: drop-shadow(0 12px 24px rgba(254, 164, 0, 0.6))
+                drop-shadow(0 0 30px rgba(254, 164, 0, 0.5))
+                drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+      }
     }
 
     p {
