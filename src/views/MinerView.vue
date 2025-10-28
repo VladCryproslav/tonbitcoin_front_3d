@@ -856,27 +856,27 @@ onUnmounted(() => {
           <img src="@/assets/TON.png" width="22px" height="22px" />
           <span class="amount">{{ (app?.tonBalance / 10 ** 9).toFixed(3) || 0 }}</span>
         </div>
-        <h1>{{ t('asic_shop.title') }}</h1>
+
+        <!-- Shop Tab Switcher -->
+        <div class="shop-tabs">
+          <button
+            class="tab-btn"
+            :class="{ active: activeShopTab === 'gems' }"
+            @click="toggleShopTab"
+          >
+            {{ t('asic_shop.gems') }}
+          </button>
+          <button
+            class="tab-btn"
+            :class="{ active: activeShopTab === 'asics' }"
+            @click="toggleShopTab"
+          >
+            {{ t('asic_shop.asics_short') }}
+          </button>
+        </div>
+
         <button class="close" @click="openAsics(false)">
           <Exit :width="16" style="color: #fff" />
-        </button>
-      </div>
-
-      <!-- Shop Tab Switcher -->
-      <div class="shop-tabs">
-        <button
-          class="tab-btn"
-          :class="{ active: activeShopTab === 'gems' }"
-          @click="toggleShopTab"
-        >
-          {{ t('asic_shop.gems') }}
-        </button>
-        <button
-          class="tab-btn"
-          :class="{ active: activeShopTab === 'asics' }"
-          @click="toggleShopTab"
-        >
-          {{ t('asic_shop.asics_short') }}
         </button>
       </div>
 
@@ -1388,6 +1388,7 @@ onUnmounted(() => {
     width: 90%;
     padding: 1rem 0 .5rem;
     align-items: center;
+    justify-content: space-between;
 
     .ton {
       display: flex;
@@ -1428,25 +1429,27 @@ onUnmounted(() => {
 
   .shop-tabs {
     display: flex;
-    width: 90%;
-    margin: 0.5rem 0;
+    width: auto;
+    margin: 0;
     background: rgba(0, 0, 0, 0.5);
     border-radius: 20px;
     padding: 3px;
     gap: 3px;
+    min-width: 120px;
 
     .tab-btn {
       flex: 1;
-      padding: 8px;
+      padding: 6px 12px;
       border-radius: 17px;
       background: transparent;
       border: none;
       color: #FFFFFF;
       font-family: 'Inter' !important;
       font-weight: 600;
-      font-size: 16px;
+      font-size: 14px;
       cursor: pointer;
       transition: all 0.3s ease;
+      white-space: nowrap;
 
       &.active {
         background: linear-gradient(to bottom, #e2f974, #009600);
