@@ -19,7 +19,6 @@ import SpecialPriceModal from '@/components/SpecialPriceModal.vue'
 import WithdrawModal from '@/components/WithdrawModal.vue'
 import ReconnectModal from '@/components/ReconnectModal.vue'
 import InfoModal from '@/components/InfoModal.vue'
-import StarterPackModal from '@/components/StarterPackModal.vue'
 import asicsSheet, { gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, getGemPrice, sortGemsBySale } from '@/services/data'
 import _ from "lodash"
 import { getAsicData } from '@/utils/asics'
@@ -73,7 +72,7 @@ const openSpecialModal = ref(false)
 const openClaim = ref(false)
 const openGemInfo = ref(false)
 const gemInfoText = ref('')
-const openStarterPackModal = ref(false)
+const openStarterPackInfo = ref(false)
 
 const currBuyAsic = ref(null)
 
@@ -883,7 +882,7 @@ const updateSaleTimer = () => {
 
 const handleGemInfoClick = (gemItem) => {
   if (gemItem?.info === 'starter_pack_modal') {
-    openStarterPackModal.value = true
+    openStarterPackInfo.value = true
   } else {
     gemInfoText.value = gemItem?.info || ''
     openGemInfo.value = true
@@ -896,7 +895,7 @@ const buyStarterPack = () => {
   if (starterPack) {
     buyGem(starterPack)
   }
-  openStarterPackModal.value = false
+  openStarterPackInfo.value = false
 }
 
 
@@ -940,7 +939,36 @@ onUnmounted(() => {
       {{ t(gemInfoText) }}
     </template>
   </InfoModal>
-  <StarterPackModal v-if="openStarterPackModal" @close="openStarterPackModal = false" @buy="buyStarterPack" />
+  <InfoModal v-if="openStarterPackInfo" :confirm-label="t('common.buy')" @close="(e) => { if (e?.check) buyStarterPack(); openStarterPackInfo = false }">
+    <template #header>
+      {{ t('asic_shop.information') }}
+    </template>
+    <template #modal-body>
+      <div class="starter-pack-content">
+        <div class="starter-pack-title">
+          {{ t('gems.starter_pack_title') }}
+        </div>
+        <ul class="starter-pack-list">
+          <li>{{ t('gems.starter_pack_item_1') }}</li>
+          <li>{{ t('gems.starter_pack_item_2') }}</li>
+          <li>{{ t('gems.starter_pack_item_3') }}</li>
+          <li>{{ t('gems.starter_pack_item_4') }}</li>
+          <li>{{ t('gems.starter_pack_item_5') }}</li>
+          <li>{{ t('gems.starter_pack_item_6') }}</li>
+          <li>{{ t('gems.starter_pack_item_7') }}</li>
+          <li>{{ t('gems.starter_pack_item_8') }}</li>
+        </ul>
+        <div class="starter-pack-price">
+          <div class="price-info">
+            {{ t('gems.starter_pack_price_info') }}
+          </div>
+          <div class="price-offer">
+            {{ t('gems.starter_pack_price_offer') }}
+          </div>
+        </div>
+      </div>
+    </template>
+  </InfoModal>
   <!-- <InfoModal v-if="openMiningStopped" @close="openMiningStopped = false">
     <template #modal-body>
       {{ t('modals.mining_stopped.message') }}

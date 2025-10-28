@@ -6,6 +6,12 @@ const Exit = defineAsyncComponent(() => import('@/assets/upg-modal-close.svg'))
 const { t } = useI18n()
 
 const emit = defineEmits(['close'])
+const props = defineProps({
+  confirmLabel: {
+    type: String,
+    default: ''
+  }
+})
 
 const emitClose = () => {
   emit('close', { check: false })
@@ -30,7 +36,7 @@ const emitConfirm = () => {
             <slot name="modal-body"></slot>
           </div>
           <div class="buttons-group">
-            <button class="confirm" @click="emitConfirm">{{ t('modals.info_modal.confirm') }}</button>
+            <button class="confirm" @click="emitConfirm">{{ props.confirmLabel || t('modals.info_modal.confirm') }}</button>
             <button class="cancel" @click="emitClose">{{ t('modals.info_modal.cancel') }}</button>
           </div>
         </div>
