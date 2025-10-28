@@ -549,15 +549,15 @@ watch(currFilter, async () => {
                   <span class="asic-buy-price-value">{{ item.price }}</span>
                   <img src="@/assets/TON.png" width="16px" height="16px" alt="" />
                 </div>
-                <button class="asic-buy-btn" @click="buyAsics(index, item?.price, item?.link, item?.sale)">
-                  <h1 class="asic-buy-btn-text">{{ t('common.buy') }}</h1>
+                <button class="asic-buy-btn" @click="buyAsics(index, item?.price, item?.link, item?.sale)" :disabled="item?.sold_out">
+                  <h1 class="asic-buy-btn-text">{{ item?.sold_out ? t('common.sold_out') : t('common.buy') }}</h1>
                   <img src="@/assets/shopping_cart.png" width="12px" />
                 </button>
               </div>
               <img class="asic-image" :class="{ fading: revealBuy == item?.name }"
                 :src="imagePathAsics(item?.name).value" alt="" />
               <p class="asic-title">{{ item?.name }}</p>
-              <button v-if="revealBuy !== item?.name" class="buy-reveal" @click="setReveal(item?.name)">
+              <button v-if="revealBuy !== item?.name && !item?.sold_out" class="buy-reveal" @click="setReveal(item?.name)">
                 <img src="@/assets/buy-reveal.png" alt="" />
               </button>
             </div>
