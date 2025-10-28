@@ -3293,6 +3293,8 @@ onUnmounted(() => {
       position: relative;
       width: 70px;
       margin: -15px;
+      z-index: 0; /* под текстом */
+      pointer-events: none; /* не перехватывать клики */
       filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
               drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
               drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
@@ -3313,6 +3315,8 @@ onUnmounted(() => {
     }
 
     p {
+      position: relative;
+      z-index: 1; /* над изображением */
       color: #fff;
       font-size: 6px;
       text-transform: uppercase;
