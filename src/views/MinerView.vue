@@ -73,6 +73,7 @@ const openClaim = ref(false)
 const openGemInfo = ref(false)
 const gemInfoText = ref('')
 const openStarterPackInfo = ref(false)
+const openDaoOwnerInfo = ref(false)
 
 const currBuyAsic = ref(null)
 
@@ -883,6 +884,8 @@ const updateSaleTimer = () => {
 const handleGemInfoClick = (gemItem) => {
   if (gemItem?.info === 'starter_pack_modal') {
     openStarterPackInfo.value = true
+  } else if (gemItem?.info === 'gems.dao_owner_info') {
+    openDaoOwnerInfo.value = true
   } else {
     gemInfoText.value = gemItem?.info || ''
     openGemInfo.value = true
@@ -899,6 +902,25 @@ const getStarterPackPrice = () => {
     return Math.round(discountedPrice * 10) / 10
   }
   return starterPack.price
+}
+
+const getDaoOwnerPrice = () => {
+  const daoOwner = gemsSheet.find(gem => gem.type === 'DAO Owner')
+  if (!daoOwner) return 960
+
+  if (gemsSaleActive && daoOwner.enableSale !== false) {
+    const discountedPrice = getGemPrice(daoOwner)
+    return Math.round(discountedPrice * 10) / 10
+  }
+  return daoOwner.price
+}
+
+const buyDaoOwner = () => {
+  // Находим DAO Owner в списке GEMS
+  const daoOwner = gemsSheet.find(gem => gem.type === 'DAO Owner')
+  if (daoOwner) {
+    buyGem(daoOwner)
+  }
 }
 
 const buyStarterPack = () => {
@@ -969,6 +991,27 @@ onUnmounted(() => {
           • {{ t('gems.starter_pack_item_8') }}<br><br>
           {{ t('gems.starter_pack_price_info') }}<br>
           {{ t('gems.starter_pack_price_offer', { price: getStarterPackPrice() }) }}
+        </div>
+      </div>
+    </template>
+  </InfoModal>
+  <InfoModal v-if="openDaoOwnerInfo" :confirm-label="t('common.buy')" @close="(e) => { if (e?.check) buyDaoOwner(); openDaoOwnerInfo = false }">
+    <template #header>
+      {{ t('asic_shop.information') }}
+    </template>
+    <template #modal-body>
+      <div class="dao-owner-content">
+        <div class="dao-owner-text">
+          {{ t('gems.dao_owner_title') }}<br><br>
+          • {{ t('gems.dao_owner_item_1') }}<br>
+          • {{ t('gems.dao_owner_item_2') }}<br>
+          • {{ t('gems.dao_owner_item_3') }}<br>
+          • {{ t('gems.dao_owner_item_4') }}<br>
+          • {{ t('gems.dao_owner_item_5') }}<br>
+          • {{ t('gems.dao_owner_item_6') }}<br>
+          • {{ t('gems.dao_owner_item_7') }}<br><br>
+          {{ t('gems.dao_owner_price_info') }}<br>
+          {{ t('gems.dao_owner_price_offer', { price: getDaoOwnerPrice() }) }}
         </div>
       </div>
     </template>
@@ -3101,6 +3144,20 @@ onUnmounted(() => {
 }
 
 .starter-pack-text {
+  font-family: 'Inter' !important;
+  font-weight: 500;
+  font-size: 13.5px;
+  line-height: 1.2;
+  color: #8b898b;
+  text-align: left;
+}
+
+.dao-owner-content {
+  text-align: left;
+  width: 100%;
+}
+
+.dao-owner-text {
   font-family: 'Inter' !important;
   font-weight: 500;
   font-size: 13.5px;
