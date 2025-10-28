@@ -324,7 +324,7 @@ const gemsSheet = [
     description: 'For Miners',
     imagePath: '@/assets/gems/ASIC_M_3.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%221-299+Gh%2Fs%22%5D%7D%7D',
-    info: 'gems.asic_manager_info_3',
+    info: 'gems.asic_manager_info',
     benefits: [
       'for_miners',
       'gh_s: 1-299',
@@ -341,7 +341,7 @@ const gemsSheet = [
     description: 'For Miners',
     imagePath: '@/assets/gems/ASIC_M_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%22300-1199+Gh%2Fs%22%5D%7D%7D',
-    info: 'gems.asic_manager_info_2',
+    info: 'gems.asic_manager_info',
     benefits: [
       'for_miners',
       'gh_s: 300-1199',
@@ -358,7 +358,7 @@ const gemsSheet = [
     description: 'For Miners',
     imagePath: '@/assets/gems/ASIC_M_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%221200%2B+Gh%2Fs%22%5D%7D%7D',
-    info: 'gems.asic_manager_info_1',
+    info: 'gems.asic_manager_info',
     benefits: [
       'for_miners',
       'gh_s: 1200+',
@@ -375,7 +375,7 @@ const gemsSheet = [
     description: 'For Miners',
     imagePath: '@/assets/gems/Magnetic_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%221-249+Gh%2Fs%22%5D%7D%7D',
-    info: 'gems.magnetic_ring_info_2',
+    info: 'gems.magnetic_ring_info',
     benefits: [
       'for_miners',
       'gh_s: 1-249',
@@ -392,7 +392,7 @@ const gemsSheet = [
     description: 'For Miners',
     imagePath: '@/assets/gems/Magnetic_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%22250-599+Gh%2Fs%22%5D%7D%7D',
-    info: 'gems.magnetic_ring_info_1',
+    info: 'gems.magnetic_ring_info',
     benefits: [
       'for_miners',
       'gh_s: 250-599',

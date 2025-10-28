@@ -590,12 +590,9 @@
     "dao_owner_info": "",
     "starter_pack_info": "",
     "jarvis_bot_info": "Featuring the most advanced cryogenic technology with AI, this booster completely eliminates the occurrence of overheating in your power plant while the AI handles energy harvesting on its own. The best choice for the best results.",
-    "cryochamber_info": "",
-    "asic_manager_info_1": "",
-    "asic_manager_info_2": "",
-    "asic_manager_info_3": "",
-    "magnetic_ring_info_1": "",
-    "magnetic_ring_info_2": ""
+    "cryochamber_info": "The use of a cryochamber in your power plant will completely eliminate the occurrence of overheating.",
+    "asic_manager_info": "An experienced miner that will help you forget about downtime of your equipment due to internet outages! It automatically starts mining as soon as your connection is lost, ensuring uninterrupted mining.",
+    "magnetic_ring_info": "An advanced innovation that reduces the power consumption of connected ASIC hardware by 20%."
   },
   "miner": {
     "start_mine_btn": "Start mining",
