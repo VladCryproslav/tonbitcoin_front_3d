@@ -72,6 +72,7 @@ const openSpecialModal = ref(false)
 const openClaim = ref(false)
 const openGemInfo = ref(false)
 const gemInfoText = ref('')
+const currentGemItem = ref(null)
 const openStarterPackInfo = ref(false)
 const openDaoOwnerInfo = ref(false)
 
@@ -888,6 +889,7 @@ const handleGemInfoClick = (gemItem) => {
     openDaoOwnerInfo.value = true
   } else {
     gemInfoText.value = gemItem?.info || ''
+    currentGemItem.value = gemItem
     openGemInfo.value = true
   }
 }
@@ -913,6 +915,12 @@ const getDaoOwnerPrice = () => {
     return Math.round(discountedPrice * 10) / 10
   }
   return daoOwner.price
+}
+
+const buyCurrentGem = () => {
+  if (currentGemItem.value) {
+    buyGem(currentGemItem.value)
+  }
 }
 
 const buyDaoOwner = () => {
@@ -965,7 +973,7 @@ onUnmounted(() => {
   <ReconnectModal v-if="openReconnectModal" :example="reconnectExample" @close="checkReconnect" />
   <SpecialPriceModal v-if="openSpecialModal" :saleAsic="currBuyAsic" @close="specialModalResponse" />
   <ModalNew v-if="openModal" :status="modalStatus" :title="modalTitle" :body="modalBody" @close="openModal = false" />
-  <InfoModal v-if="openGemInfo" @close="openGemInfo = false">
+  <InfoModal v-if="openGemInfo" :confirm-label="t('common.buy')" @close="(e) => { if (e?.check) buyCurrentGem(); openGemInfo = false }">
     <template #header>
       {{ t('asic_shop.information') }}
     </template>
@@ -1009,9 +1017,7 @@ onUnmounted(() => {
           • {{ t('gems.dao_owner_item_4') }}<br>
           • {{ t('gems.dao_owner_item_5') }}<br>
           • {{ t('gems.dao_owner_item_6') }}<br>
-          • {{ t('gems.dao_owner_item_7') }}<br><br>
-          {{ t('gems.dao_owner_price_info') }}<br>
-          {{ t('gems.dao_owner_price_offer', { price: getDaoOwnerPrice() }) }}
+          • {{ t('gems.dao_owner_item_7') }}
         </div>
       </div>
     </template>
