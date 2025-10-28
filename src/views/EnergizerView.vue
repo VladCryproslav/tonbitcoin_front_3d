@@ -3299,67 +3299,59 @@ onUnmounted(() => {
       filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
               drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
               drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
-      animation: halloween-pumpkin-dance 5.6s ease-in-out infinite;
+      animation: halloween-pumpkin-dance 6.8s ease-in-out infinite;
       transform-origin: center bottom;
       will-change: transform, filter;
     }
 
     @keyframes halloween-pumpkin-dance {
-      /* Фаза A — качание (бОльшая амплитуда) */
+      /* Фаза A — плавное качание (бОльшая амплитуда) */
       0% {
         transform: translateX(0) translateY(0) rotate(0deg);
         filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
                 drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
                 drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
       }
+      4% { transform: translateX(-1.5px) translateY(-0.5px) rotate(-1deg); }
       8% { transform: translateX(-3px) translateY(-1px) rotate(-2deg); }
-      16% { transform: translateX(3px) translateY(-1px) rotate(2deg); }
-      20% { transform: translateX(0.5px) translateY(-0.5px) rotate(0.6deg); }
+      12% { transform: translateX(-1.5px) translateY(-0.5px) rotate(-1deg); }
+      16% { transform: translateX(1.5px) translateY(-0.5px) rotate(1deg); }
+      20% { transform: translateX(3px) translateY(-1px) rotate(2deg); }
+      24% { transform: translateX(1.5px) translateY(-0.5px) rotate(1deg); }
+      28% { transform: translateX(0.5px) translateY(-0.3px) rotate(0.3deg); }
 
-      /* Фаза B — подпрыгивание №1 */
-      25% {
-        transform: translateX(0) translateY(-6px) rotate(0deg);
-        filter: drop-shadow(0 10px 14px rgba(254, 164, 0, 0.28))
-                drop-shadow(0 0 18px rgba(254, 164, 0, 0.23))
-                drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
+      /* Фаза B — мягкое подпрыгивание №1 */
+      32% { transform: translateX(0) translateY(-3px) rotate(0deg); }
+      36% {
+        transform: translateX(0) translateY(-4px) rotate(0deg);
+        filter: drop-shadow(0 8px 12px rgba(254, 164, 0, 0.25))
+                drop-shadow(0 0 15px rgba(254, 164, 0, 0.2))
+                drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
       }
-      30% {
-        transform: translateX(-1px) translateY(-3px) rotate(-0.4deg);
-        filter: drop-shadow(0 9px 13px rgba(254, 164, 0, 0.26))
-                drop-shadow(0 0 16px rgba(254, 164, 0, 0.21))
-                drop-shadow(0 5px 9px rgba(0, 0, 0, 0.32));
-      }
-      35% {
-        transform: translateX(1px) translateY(-1px) rotate(0.8deg);
-        filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
-                drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
-                drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
-      }
+      40% { transform: translateX(0) translateY(-3px) rotate(0deg); }
+      44% { transform: translateX(-0.5px) translateY(-1.5px) rotate(-0.2deg); }
+      48% { transform: translateX(0.5px) translateY(-0.8px) rotate(0.3deg); }
 
-      /* Фаза C — качание (меньшая амплитуда, более плавно) */
-      48% { transform: translateX(-1.8px) translateY(-0.6px) rotate(-1.1deg); }
-      60% { transform: translateX(1.8px) translateY(-0.6px) rotate(1.1deg); }
-      65% { transform: translateX(0.3px) translateY(-0.3px) rotate(0.4deg); }
+      /* Фаза C — мягкое качание (меньшая амплитуда) */
+      52% { transform: translateX(-1px) translateY(-0.4px) rotate(-0.6deg); }
+      56% { transform: translateX(-1.8px) translateY(-0.6px) rotate(-1.1deg); }
+      60% { transform: translateX(-1px) translateY(-0.4px) rotate(-0.6deg); }
+      64% { transform: translateX(1px) translateY(-0.4px) rotate(0.6deg); }
+      68% { transform: translateX(1.8px) translateY(-0.6px) rotate(1.1deg); }
+      72% { transform: translateX(1px) translateY(-0.4px) rotate(0.6deg); }
+      76% { transform: translateX(0.3px) translateY(-0.2px) rotate(0.2deg); }
 
-      /* Фаза D — подпрыгивание №2 */
-      75% {
-        transform: translateX(0) translateY(-6px) rotate(0deg);
-        filter: drop-shadow(0 10px 14px rgba(254, 164, 0, 0.28))
-                drop-shadow(0 0 18px rgba(254, 164, 0, 0.23))
-                drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
+      /* Фаза D — мягкое подпрыгивание №2 */
+      80% { transform: translateX(0) translateY(-3px) rotate(0deg); }
+      84% {
+        transform: translateX(0) translateY(-4px) rotate(0deg);
+        filter: drop-shadow(0 8px 12px rgba(254, 164, 0, 0.25))
+                drop-shadow(0 0 15px rgba(254, 164, 0, 0.2))
+                drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
       }
-      82% {
-        transform: translateX(1px) translateY(-2px) rotate(0.6deg);
-        filter: drop-shadow(0 7px 11px rgba(254, 164, 0, 0.24))
-                drop-shadow(0 0 14px rgba(254, 164, 0, 0.19))
-                drop-shadow(0 4px 7px rgba(0, 0, 0, 0.28));
-      }
-      92% {
-        transform: translateX(-1px) translateY(-1px) rotate(-0.6deg);
-        filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
-                drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
-                drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
-      }
+      88% { transform: translateX(0) translateY(-3px) rotate(0deg); }
+      92% { transform: translateX(0.5px) translateY(-1px) rotate(0.3deg); }
+      96% { transform: translateX(-0.3px) translateY(-0.5px) rotate(-0.2deg); }
       100% {
         transform: translateX(0) translateY(0) rotate(0deg);
         filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
