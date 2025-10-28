@@ -518,7 +518,7 @@ const buyGem = async (gemItem) => {
     redirectLink.value = link
     redirectItemName.value = gemItem?.type || gemItem?.name
     // Передаём класс только для GEMS (не для DAO)
-    redirectItemClass.value = (gemItem?.type !== 'DAO Owner' && gemItem?.rarity) ? gemItem?.rarity : ''
+    redirectItemClass.value = (gemItem?.type !== 'DAO Owner' && gemItem?.rarity) ? t(`gems.${gemItem.rarity}`) : ''
     openRedirectModal.value = true
   }
 }
