@@ -948,23 +948,17 @@ onUnmounted(() => {
         <div class="starter-pack-title">
           {{ t('gems.starter_pack_title') }}
         </div>
-        <ul class="starter-pack-list">
-          <li>{{ t('gems.starter_pack_item_1') }}</li>
-          <li>{{ t('gems.starter_pack_item_2') }}</li>
-          <li>{{ t('gems.starter_pack_item_3') }}</li>
-          <li>{{ t('gems.starter_pack_item_4') }}</li>
-          <li>{{ t('gems.starter_pack_item_5') }}</li>
-          <li>{{ t('gems.starter_pack_item_6') }}</li>
-          <li>{{ t('gems.starter_pack_item_7') }}</li>
-          <li>{{ t('gems.starter_pack_item_8') }}</li>
-        </ul>
-        <div class="starter-pack-price">
-          <div class="price-info">
-            {{ t('gems.starter_pack_price_info') }}
-          </div>
-          <div class="price-offer">
-            {{ t('gems.starter_pack_price_offer') }}
-          </div>
+        <div class="starter-pack-text">
+          {{ t('gems.starter_pack_item_1') }}<br>
+          {{ t('gems.starter_pack_item_2') }}<br>
+          {{ t('gems.starter_pack_item_3') }}<br>
+          {{ t('gems.starter_pack_item_4') }}<br>
+          {{ t('gems.starter_pack_item_5') }}<br>
+          {{ t('gems.starter_pack_item_6') }}<br>
+          {{ t('gems.starter_pack_item_7') }}<br>
+          {{ t('gems.starter_pack_item_8') }}<br><br>
+          {{ t('gems.starter_pack_price_info') }}<br>
+          {{ t('gems.starter_pack_price_offer') }}
         </div>
       </div>
     </template>
@@ -3088,5 +3082,29 @@ onUnmounted(() => {
         linear-gradient(to bottom, #fcd90990, #fea40090);
     }
   }
+}
+
+/* Стили для стартер пакета в модалке */
+.starter-pack-content {
+  text-align: left;
+  width: 100%;
+}
+
+.starter-pack-title {
+  font-family: 'Inter' !important;
+  font-weight: 700;
+  font-size: 18px;
+  color: #ffffff;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.starter-pack-text {
+  font-family: 'Inter' !important;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: left;
 }
 </style>
