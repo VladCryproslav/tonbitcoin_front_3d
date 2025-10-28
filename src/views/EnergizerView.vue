@@ -3299,19 +3299,70 @@ onUnmounted(() => {
       filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
               drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
               drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
-      animation: halloween-glow 3s ease-in-out infinite alternate;
+      animation: halloween-pumpkin-dance 4s ease-in-out infinite;
+      transform-origin: center bottom;
     }
 
-    @keyframes halloween-glow {
-      0% {
-        filter: drop-shadow(0 5px 8px rgba(254, 164, 0, 0.18))
-                drop-shadow(0 0 8px rgba(254, 164, 0, 0.14))
-                drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-      }
-      100% {
-        filter: drop-shadow(0 8px 14px rgba(254, 164, 0, 0.28))
-                drop-shadow(0 0 16px rgba(254, 164, 0, 0.22))
+    @keyframes halloween-pumpkin-dance {
+      0%, 100% {
+        transform: translateX(0px) translateY(0px) rotate(0deg);
+        filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
+                drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
                 drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
+      }
+      10% {
+        transform: translateX(-2px) translateY(-3px) rotate(-1deg);
+        filter: drop-shadow(0 8px 12px rgba(254, 164, 0, 0.25))
+                drop-shadow(0 0 15px rgba(254, 164, 0, 0.2))
+                drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+      }
+      20% {
+        transform: translateX(2px) translateY(-2px) rotate(1deg);
+        filter: drop-shadow(0 7px 11px rgba(254, 164, 0, 0.24))
+                drop-shadow(0 0 14px rgba(254, 164, 0, 0.19))
+                drop-shadow(0 3px 7px rgba(0, 0, 0, 0.28));
+      }
+      30% {
+        transform: translateX(-1px) translateY(-4px) rotate(-0.5deg);
+        filter: drop-shadow(0 9px 13px rgba(254, 164, 0, 0.26))
+                drop-shadow(0 0 16px rgba(254, 164, 0, 0.21))
+                drop-shadow(0 5px 9px rgba(0, 0, 0, 0.32));
+      }
+      40% {
+        transform: translateX(1px) translateY(-1px) rotate(0.5deg);
+        filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
+                drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
+                drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
+      }
+      50% {
+        transform: translateX(0px) translateY(-5px) rotate(0deg);
+        filter: drop-shadow(0 10px 14px rgba(254, 164, 0, 0.28))
+                drop-shadow(0 0 18px rgba(254, 164, 0, 0.23))
+                drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
+      }
+      60% {
+        transform: translateX(-1px) translateY(-2px) rotate(-0.5deg);
+        filter: drop-shadow(0 7px 11px rgba(254, 164, 0, 0.24))
+                drop-shadow(0 0 14px rgba(254, 164, 0, 0.19))
+                drop-shadow(0 4px 7px rgba(0, 0, 0, 0.28));
+      }
+      70% {
+        transform: translateX(2px) translateY(-3px) rotate(1deg);
+        filter: drop-shadow(0 8px 12px rgba(254, 164, 0, 0.25))
+                drop-shadow(0 0 15px rgba(254, 164, 0, 0.2))
+                drop-shadow(0 5px 8px rgba(0, 0, 0, 0.3));
+      }
+      80% {
+        transform: translateX(-2px) translateY(-1px) rotate(-1deg);
+        filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
+                drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
+                drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
+      }
+      90% {
+        transform: translateX(1px) translateY(-2px) rotate(0.5deg);
+        filter: drop-shadow(0 7px 11px rgba(254, 164, 0, 0.24))
+                drop-shadow(0 0 14px rgba(254, 164, 0, 0.19))
+                drop-shadow(0 4px 7px rgba(0, 0, 0, 0.28));
       }
     }
 
