@@ -1,6 +1,6 @@
 const asicsSheet = [
   {
-    shop: false,
+    shop: true,
     rarity: 'Common',
     name: 'ASIC S1',
     hash_rate: 100,
