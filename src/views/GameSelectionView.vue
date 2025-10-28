@@ -34,8 +34,8 @@ const goBack = () => {
           <h2 class="game-title">{{ t('games.wheel_of_fortune') }}</h2>
         </div>
 
-        <!-- Лотерея -->
-        <div class="game-card lottery-card" @click="goToLottery">
+        <!-- Лотерея @click="goToLottery" -->
+        <div class="game-card lottery-card" >
           <div class="game-card-bg"></div>
           <h2 class="game-title">{{ t('games.lottery') }}</h2>
           <div class="new-badge">Coming soon!</div>
