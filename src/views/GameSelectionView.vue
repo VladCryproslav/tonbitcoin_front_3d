@@ -38,7 +38,7 @@ const goBack = () => {
         <div class="game-card lottery-card" @click="goToLottery">
           <div class="game-card-bg"></div>
           <h2 class="game-title">{{ t('games.lottery') }}</h2>
-          <div class="new-badge">New!</div>
+          <div class="new-badge">Coming soon!</div>
         </div>
 
         <!-- В разработке -->

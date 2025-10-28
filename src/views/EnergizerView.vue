@@ -3305,65 +3305,60 @@ onUnmounted(() => {
     }
 
     @keyframes halloween-pumpkin-dance {
-      /* 1) Двойной плавный кивок в начале цикла: влево -> сразу вправо */
+      /* Фаза A — качание (бОльшая амплитуда) */
       0% {
         transform: translateX(0) translateY(0) rotate(0deg);
         filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
                 drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
                 drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
       }
-      6% {
-        transform: translateX(-3px) translateY(-2px) rotate(-2deg);
-      }
-      12% {
-        transform: translateX(3px) translateY(-2px) rotate(2deg);
-      }
-      16% {
-        transform: translateX(0.5px) translateY(-1px) rotate(0.6deg);
-      }
+      8% { transform: translateX(-3px) translateY(-1px) rotate(-2deg); }
+      16% { transform: translateX(3px) translateY(-1px) rotate(2deg); }
+      20% { transform: translateX(0.5px) translateY(-0.5px) rotate(0.6deg); }
 
-      /* 2) Далее — плавное покачивание и лёгкое подпрыгивание без доп. кивков */
-      30% {
-        transform: translateX(-1px) translateY(-5px) rotate(-0.4deg);
-        filter: drop-shadow(0 9px 13px rgba(254, 164, 0, 0.26))
-                drop-shadow(0 0 16px rgba(254, 164, 0, 0.21))
-                drop-shadow(0 5px 9px rgba(0, 0, 0, 0.32));
-      }
-      40% {
-        transform: translateX(1px) translateY(-1px) rotate(0.8deg);
-        filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
-                drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
-                drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
-      }
-      50% {
+      /* Фаза B — подпрыгивание №1 */
+      25% {
         transform: translateX(0) translateY(-6px) rotate(0deg);
         filter: drop-shadow(0 10px 14px rgba(254, 164, 0, 0.28))
                 drop-shadow(0 0 18px rgba(254, 164, 0, 0.23))
                 drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
       }
-      60% {
-        transform: translateX(1.2px) translateY(-2px) rotate(0.9deg);
-        filter: drop-shadow(0 7px 11px rgba(254, 164, 0, 0.24))
-                drop-shadow(0 0 14px rgba(254, 164, 0, 0.19))
-                drop-shadow(0 4px 7px rgba(0, 0, 0, 0.28));
+      30% {
+        transform: translateX(-1px) translateY(-3px) rotate(-0.4deg);
+        filter: drop-shadow(0 9px 13px rgba(254, 164, 0, 0.26))
+                drop-shadow(0 0 16px rgba(254, 164, 0, 0.21))
+                drop-shadow(0 5px 9px rgba(0, 0, 0, 0.32));
       }
-      70% {
-        transform: translateX(2.5px) translateY(-3px) rotate(1.4deg);
-        filter: drop-shadow(0 8px 12px rgba(254, 164, 0, 0.25))
-                drop-shadow(0 0 15px rgba(254, 164, 0, 0.2))
-                drop-shadow(0 5px 8px rgba(0, 0, 0, 0.3));
-      }
-      80% {
-        transform: translateX(-2px) translateY(-1px) rotate(-1deg);
+      35% {
+        transform: translateX(1px) translateY(-1px) rotate(0.8deg);
         filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
                 drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
                 drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
       }
-      90% {
+
+      /* Фаза C — качание (меньшая амплитуда, более плавно) */
+      48% { transform: translateX(-1.8px) translateY(-0.6px) rotate(-1.1deg); }
+      60% { transform: translateX(1.8px) translateY(-0.6px) rotate(1.1deg); }
+      65% { transform: translateX(0.3px) translateY(-0.3px) rotate(0.4deg); }
+
+      /* Фаза D — подпрыгивание №2 */
+      75% {
+        transform: translateX(0) translateY(-6px) rotate(0deg);
+        filter: drop-shadow(0 10px 14px rgba(254, 164, 0, 0.28))
+                drop-shadow(0 0 18px rgba(254, 164, 0, 0.23))
+                drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
+      }
+      82% {
         transform: translateX(1px) translateY(-2px) rotate(0.6deg);
         filter: drop-shadow(0 7px 11px rgba(254, 164, 0, 0.24))
                 drop-shadow(0 0 14px rgba(254, 164, 0, 0.19))
                 drop-shadow(0 4px 7px rgba(0, 0, 0, 0.28));
+      }
+      92% {
+        transform: translateX(-1px) translateY(-1px) rotate(-0.6deg);
+        filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
+                drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
+                drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
       }
       100% {
         transform: translateX(0) translateY(0) rotate(0deg);
