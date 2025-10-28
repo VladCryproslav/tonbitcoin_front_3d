@@ -202,6 +202,7 @@ const gemsSheet = [
     enableSale: false, // DAO не участвует в акции
     imagePath: '@/assets/gems/DAO_Owner.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Rarity%22%3A%5B%22DAO%22%5D%7D%7D',
+    info: 'Информация о DAO Owner', // Текст для модалки
     benefits: [
       'dao_owner_benefit_1',
       'dao_owner_benefit_2',

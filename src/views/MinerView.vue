@@ -18,6 +18,7 @@ import RedirectModal from '@/components/RedirectModal.vue'
 import SpecialPriceModal from '@/components/SpecialPriceModal.vue'
 import WithdrawModal from '@/components/WithdrawModal.vue'
 import ReconnectModal from '@/components/ReconnectModal.vue'
+import InfoModal from '@/components/InfoModal.vue'
 import asicsSheet, { gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, getGemPrice, sortGemsBySale } from '@/services/data'
 import _ from "lodash"
 import { getAsicData } from '@/utils/asics'
@@ -69,6 +70,8 @@ const reconnectExample = ref(null)
 
 const openSpecialModal = ref(false)
 const openClaim = ref(false)
+const openGemInfo = ref(false)
+const gemInfoText = ref('')
 
 const currBuyAsic = ref(null)
 
@@ -914,6 +917,11 @@ onUnmounted(() => {
   <ReconnectModal v-if="openReconnectModal" :example="reconnectExample" @close="checkReconnect" />
   <SpecialPriceModal v-if="openSpecialModal" :saleAsic="currBuyAsic" @close="specialModalResponse" />
   <ModalNew v-if="openModal" :status="modalStatus" :title="modalTitle" :body="modalBody" @close="openModal = false" />
+  <InfoModal v-if="openGemInfo" @close="openGemInfo = false">
+    <template #modal-body>
+      {{ gemInfoText }}
+    </template>
+  </InfoModal>
   <!-- <InfoModal v-if="openMiningStopped" @close="openMiningStopped = false">
     <template #modal-body>
       {{ t('modals.mining_stopped.message') }}
@@ -1095,7 +1103,7 @@ onUnmounted(() => {
           }"
           v-for="gemItem in sortGemsBySale(gemsSheet.filter(el => el.shop))"
           :key="gemItem">
-          <div class="gem-info-icon-top">!</div>
+          <div class="gem-info-icon-top" @click="gemInfoText = gemItem?.info || ''; openGemInfo = true">i</div>
           <div class="gem-picture">
             <img v-if="gemItem?.imagePath" :src="imagePathGems(gemItem.imagePath)?.value" class="gem-image"
               :class="{ 'hide-under-tag': gemItem?.buttonColor !== 'gold' && gemItem?.buttonColor !== 'purple' && gemItem?.type !== 'Cryochamber' }"
@@ -1715,18 +1723,25 @@ onUnmounted(() => {
       .gem-info-icon-top {
         position: absolute;
         top: 5px;
-        right: 5px;
-        width: 15px;
-        height: 15px;
-        background: #FFFFFF;
-        border-radius: 50%;
+        right: -5px;
+        width: 20px;
+        height: 20px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 10px;
+        background: #FFFFFF;
+        border-radius: 50%;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
         font-weight: 700;
+        font-size: 10px;
         color: #000000;
         z-index: 10;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.8);
+        }
       }
 
       .gem-picture {
@@ -1855,7 +1870,7 @@ onUnmounted(() => {
               left: -5%;
               right: 0;
               bottom: 40%;
-              height: 3px;
+              height: 2px;
               width: 110%;
               background: linear-gradient(to right, #7a060690, #e00b0b 40%, #e00b0b);
               border-radius: 1rem;
