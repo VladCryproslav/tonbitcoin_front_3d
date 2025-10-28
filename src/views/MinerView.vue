@@ -1727,8 +1727,8 @@ onUnmounted(() => {
         position: absolute;
         top: 5px;
         right: 8px;
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1737,7 +1737,7 @@ onUnmounted(() => {
         cursor: pointer;
         font-family: 'Inter', sans-serif;
         font-weight: 700;
-        font-size: 10px;
+        font-size: 9px;
         color: #000000;
         z-index: 10;
         transition: all 0.2s ease;
