@@ -1435,7 +1435,7 @@ onUnmounted(() => {
     border-radius: 20px;
     padding: 3px;
     gap: 3px;
-    min-width: 140px;
+    min-width: 160px;
 
     .tab-btn {
       flex: 1;
