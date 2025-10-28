@@ -945,18 +945,16 @@ onUnmounted(() => {
     </template>
     <template #modal-body>
       <div class="starter-pack-content">
-        <div class="starter-pack-title">
-          {{ t('gems.starter_pack_title') }}
-        </div>
         <div class="starter-pack-text">
-          {{ t('gems.starter_pack_item_1') }}<br>
+          {{ t('gems.starter_pack_title') }}<br><br>
+          • {{ t('gems.starter_pack_item_1') }}<br>
           {{ t('gems.starter_pack_item_2') }}<br>
-          {{ t('gems.starter_pack_item_3') }}<br>
-          {{ t('gems.starter_pack_item_4') }}<br>
-          {{ t('gems.starter_pack_item_5') }}<br>
-          {{ t('gems.starter_pack_item_6') }}<br>
-          {{ t('gems.starter_pack_item_7') }}<br>
-          {{ t('gems.starter_pack_item_8') }}<br><br>
+          • {{ t('gems.starter_pack_item_3') }}<br>
+          • {{ t('gems.starter_pack_item_4') }}<br>
+          • {{ t('gems.starter_pack_item_5') }}<br>
+          • {{ t('gems.starter_pack_item_6') }}<br>
+          • {{ t('gems.starter_pack_item_7') }}<br>
+          • {{ t('gems.starter_pack_item_8') }}<br><br>
           {{ t('gems.starter_pack_price_info') }}<br>
           {{ t('gems.starter_pack_price_offer') }}
         </div>
@@ -3088,15 +3086,6 @@ onUnmounted(() => {
 .starter-pack-content {
   text-align: left;
   width: 100%;
-}
-
-.starter-pack-title {
-  font-family: 'Inter' !important;
-  font-weight: 700;
-  font-size: 18px;
-  color: #ffffff;
-  text-align: center;
-  margin-bottom: 15px;
 }
 
 .starter-pack-text {
