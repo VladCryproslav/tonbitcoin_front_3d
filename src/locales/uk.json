@@ -586,7 +586,19 @@
     "gh_s: 300-1199": "Gh/s: 300-1199",
     "gh_s: 1200+": "Gh/s: 1200+",
     "gh_s: 1-249": "Gh/s: 1-249",
-    "gh_s: 250-599": "Gh/s: 250-599"
+    "gh_s: 250-599": "Gh/s: 250-599",
+    "dao_owner_info": "",
+    "starter_pack_info": "",
+    "jarvis_bot_info_1": "",
+    "jarvis_bot_info_2": "",
+    "jarvis_bot_info_3": "",
+    "jarvis_bot_info_4": "",
+    "cryochamber_info": "",
+    "asic_manager_info_1": "",
+    "asic_manager_info_2": "",
+    "asic_manager_info_3": "",
+    "magnetic_ring_info_1": "",
+    "magnetic_ring_info_2": ""
   },
   "miner": {
     "start_mine_btn": "Почати майнінг",

@@ -922,7 +922,7 @@ onUnmounted(() => {
       {{ t('asic_shop.information') }}
     </template>
     <template #modal-body>
-      {{ gemInfoText }}
+      {{ t(gemInfoText) }}
     </template>
   </InfoModal>
   <!-- <InfoModal v-if="openMiningStopped" @close="openMiningStopped = false">
