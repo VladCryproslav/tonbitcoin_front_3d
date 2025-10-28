@@ -1187,7 +1187,7 @@ onUnmounted(() => {
           </button>
           <span class="gem-tag"
             :style="gemItem?.buttonColor === 'gold'
-              ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'
+              ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300; color: #000000;'
               : gemItem?.buttonColor === 'purple'
                 ? 'background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%), #FFC300;'
                 : gemItem?.rarity == 'class_4'
@@ -3103,9 +3103,9 @@ onUnmounted(() => {
 .starter-pack-text {
   font-family: 'Inter' !important;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 1.2;
-  color: rgba(255, 255, 255, 0.5);
+  color: #8b898b;
   text-align: left;
 }
 </style>
