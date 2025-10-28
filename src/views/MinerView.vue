@@ -19,6 +19,7 @@ import SpecialPriceModal from '@/components/SpecialPriceModal.vue'
 import WithdrawModal from '@/components/WithdrawModal.vue'
 import ReconnectModal from '@/components/ReconnectModal.vue'
 import InfoModal from '@/components/InfoModal.vue'
+import StarterPackModal from '@/components/StarterPackModal.vue'
 import asicsSheet, { gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, getGemPrice, sortGemsBySale } from '@/services/data'
 import _ from "lodash"
 import { getAsicData } from '@/utils/asics'
@@ -72,6 +73,7 @@ const openSpecialModal = ref(false)
 const openClaim = ref(false)
 const openGemInfo = ref(false)
 const gemInfoText = ref('')
+const openStarterPackModal = ref(false)
 
 const currBuyAsic = ref(null)
 
@@ -879,9 +881,22 @@ const updateSaleTimer = () => {
   }
 }
 
-const speedUpNft = (item) => {
-  speedUpAddress.value = item.nft ? item.nft : item.address
-  openNftSpeedUp.value = true
+const handleGemInfoClick = (gemItem) => {
+  if (gemItem?.info === 'starter_pack_modal') {
+    openStarterPackModal.value = true
+  } else {
+    gemInfoText.value = gemItem?.info || ''
+    openGemInfo.value = true
+  }
+}
+
+const buyStarterPack = () => {
+  // Находим стартер пакет в списке GEMS
+  const starterPack = gemsSheet.find(gem => gem.type === 'Starter Pack')
+  if (starterPack) {
+    buyGem(starterPack)
+  }
+  openStarterPackModal.value = false
 }
 
 
@@ -925,6 +940,7 @@ onUnmounted(() => {
       {{ t(gemInfoText) }}
     </template>
   </InfoModal>
+  <StarterPackModal v-if="openStarterPackModal" @close="openStarterPackModal = false" @buy="buyStarterPack" />
   <!-- <InfoModal v-if="openMiningStopped" @close="openMiningStopped = false">
     <template #modal-body>
       {{ t('modals.mining_stopped.message') }}
@@ -1106,7 +1122,7 @@ onUnmounted(() => {
           }"
           v-for="gemItem in sortGemsBySale(gemsSheet.filter(el => el.shop))"
           :key="gemItem">
-          <div class="gem-info-icon-top" @click="gemInfoText = gemItem?.info || ''; openGemInfo = true">i</div>
+          <div class="gem-info-icon-top" @click="handleGemInfoClick(gemItem)">i</div>
           <div class="gem-picture">
             <img v-if="gemItem?.imagePath" :src="imagePathGems(gemItem.imagePath)?.value" class="gem-image"
               :class="{ 'hide-under-tag': gemItem?.buttonColor !== 'gold' && gemItem?.buttonColor !== 'purple' && gemItem?.type !== 'Cryochamber' }"

@@ -221,7 +221,7 @@ const gemsSheet = [
     enableSale: true,
     imagePath: '@/assets/gems/Starter_pack.webp',
     link: '', // Not used - uses TON payment instead
-    info: 'gems.starter_pack_info',
+    info: 'starter_pack_modal',
     benefits: [
       'starter_pack_benefit_1',
       'starter_pack_benefit_2',
