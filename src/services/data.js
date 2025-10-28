@@ -239,7 +239,7 @@ const gemsSheet = [
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_4.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%221-2-3%22%5D%7D%7D',
-    info: 'gems.jarvis_bot_info_4',
+    info: 'gems.jarvis_bot_info',
     benefits: [
       'for_energizers',
       'power_plant_lvl: 1-3',
@@ -256,7 +256,7 @@ const gemsSheet = [
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_3.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%224-5%22%5D%7D%7D',
-    info: 'gems.jarvis_bot_info_3',
+    info: 'gems.jarvis_bot_info',
     benefits: [
       'for_energizers',
       'power_plant_lvl: 4-5',
@@ -273,7 +273,7 @@ const gemsSheet = [
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%226-7%22%5D%7D%7D',
-    info: 'gems.jarvis_bot_info_2',
+    info: 'gems.jarvis_bot_info',
     benefits: [
       'for_energizers',
       'power_plant_lvl: 6-7',
@@ -290,7 +290,7 @@ const gemsSheet = [
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%228-9%22%5D%7D%7D',
-    info: 'gems.jarvis_bot_info_1',
+    info: 'gems.jarvis_bot_info',
     benefits: [
       'for_energizers',
       'power_plant_lvl: 8-9',
