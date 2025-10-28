@@ -1028,14 +1028,14 @@ onUnmounted(() => {
               ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300;'
               : gemItem?.buttonColor === 'purple'
                 ? 'background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%), #FFC300;'
-                : gemItem?.rarity == '4 class'
+                : gemItem?.rarity == 'class_4'
                   ? 'background-color: #5D625E;'
-                  : gemItem?.rarity == '3 class'
+                  : gemItem?.rarity == 'class_3'
                     ? 'background-color: #009600;'
-                    : gemItem?.rarity == '2 class'
+                    : gemItem?.rarity == 'class_2'
                       ? 'background-color: #0918E9;'
                       : 'background-color: #6B25A1;'
-              ">{{ gemItem.rarity }}</span>
+              ">{{ t(`gems.${gemItem.rarity}`) }}</span>
         </div>
       </div>
     </div>
