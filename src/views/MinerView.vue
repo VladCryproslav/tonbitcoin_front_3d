@@ -820,6 +820,39 @@ const saleTimeRemaining = ref({
   seconds: 0
 })
 
+// Function to get correct plural form for Russian/Ukrainian
+const getPluralForm = (count, forms) => {
+  const n = Math.abs(count) % 100
+  const n1 = n % 10
+  if (n > 10 && n < 20) return forms[2]
+  if (n1 > 1 && n1 < 5) return forms[1]
+  if (n1 === 1) return forms[0]
+  return forms[2]
+}
+
+const getTimeUnitText = (count, type) => {
+  if (locale.value === 'ru') {
+    const forms = {
+      days: ['день', 'дня', 'дней'],
+      hours: ['час', 'часа', 'часов'],
+      minutes: ['минута', 'минуты', 'минут'],
+      seconds: ['секунда', 'секунды', 'секунд']
+    }
+    return getPluralForm(count, forms[type])
+  } else if (locale.value === 'uk') {
+    const forms = {
+      days: ['день', 'дні', 'днів'],
+      hours: ['година', 'години', 'годин'],
+      minutes: ['хвилина', 'хвилини', 'хвилин'],
+      seconds: ['секунда', 'секунди', 'секунд']
+    }
+    return getPluralForm(count, forms[type])
+  } else {
+    // English
+    return count === 1 ? type.slice(0, -1) : type
+  }
+}
+
 const updateSaleTimer = () => {
   const now = new Date()
   const endDate = new Date(gemsSaleEndDate)
@@ -927,25 +960,25 @@ onUnmounted(() => {
         <div class="sale-timer-content">
           <span class="sale-timer-text">{{ t('asic_shop.sale_ends_in') }}</span>
           <div class="sale-timer-countdown">
-            <span class="timer-unit">
+            <div class="timer-unit">
               <span class="timer-value">{{ saleTimeRemaining.days }}</span>
-              <span class="timer-label-inline">{{ t('common.days') }}</span>
-            </span>
+              <span class="timer-label">{{ getTimeUnitText(parseInt(saleTimeRemaining.days), 'days') }}</span>
+            </div>
             <span class="timer-separator">:</span>
-            <span class="timer-unit">
+            <div class="timer-unit">
               <span class="timer-value">{{ saleTimeRemaining.hours }}</span>
-              <span class="timer-label-inline">{{ t('common.hours') }}</span>
-            </span>
+              <span class="timer-label">{{ getTimeUnitText(parseInt(saleTimeRemaining.hours), 'hours') }}</span>
+            </div>
             <span class="timer-separator">:</span>
-            <span class="timer-unit">
+            <div class="timer-unit">
               <span class="timer-value">{{ saleTimeRemaining.minutes }}</span>
-              <span class="timer-label-inline">{{ t('common.minutes') }}</span>
-            </span>
+              <span class="timer-label">{{ getTimeUnitText(parseInt(saleTimeRemaining.minutes), 'minutes') }}</span>
+            </div>
             <span class="timer-separator">:</span>
-            <span class="timer-unit">
+            <div class="timer-unit">
               <span class="timer-value">{{ saleTimeRemaining.seconds }}</span>
-              <span class="timer-label-inline">{{ t('common.seconds') }}</span>
-            </span>
+              <span class="timer-label">{{ getTimeUnitText(parseInt(saleTimeRemaining.seconds), 'seconds') }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1438,12 +1471,12 @@ onUnmounted(() => {
 
 .asics-shop {
   position: absolute;
-  bottom: -110px;
+  bottom: -50px;
   z-index: 100;
   width: 100%;
   height: 100%;
   display: flex;
-  padding-bottom: 120px;
+  padding-bottom: 60px;
   flex-direction: column;
   align-items: center;
   border-radius: 1rem 1rem 0 0;
@@ -1542,37 +1575,39 @@ onUnmounted(() => {
 
         .timer-unit {
           display: flex;
+          flex-direction: column;
           align-items: center;
-          gap: 6px;
-          min-width: 35px;
+          min-width: 50px;
+          background: linear-gradient(180deg, #FCD909 0%, #FEA400 100%); /* жёлтый фрейм как -50% */
+          border-radius: 10px;
+          padding: 8px 6px;
+          gap: 2px;
 
           .timer-value {
-            background: linear-gradient(180deg, #FCD909 0%, #FEA400 100%); /* жёлтые как -50% */
             color: #000000;
             font-family: 'Inter' !important;
             font-weight: 800;
-            font-size: 18px;
-            padding: 6px 10px;
-            border-radius: 8px;
-            min-width: 40px;
-            text-align: center;
+            font-size: 20px;
             line-height: 1;
+            text-align: center;
           }
 
-          .timer-label-inline {
-            color: #ffffff;
+          .timer-label {
+            color: #000000;
             font-family: 'Inter' !important;
             font-weight: 600;
-            font-size: 12px;
+            font-size: 10px;
+            text-align: center;
+            line-height: 1;
           }
         }
 
         .timer-separator {
-          color: #31ff80;
+          color: #ffffff; /* белые разделители */
           font-family: 'Inter' !important;
           font-weight: 700;
-          font-size: 16px;
-          margin: 0 2px;
+          font-size: 18px;
+          margin: 0 4px;
         }
       }
     }
