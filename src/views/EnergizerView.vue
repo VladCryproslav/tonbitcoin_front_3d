@@ -3291,22 +3291,24 @@ onUnmounted(() => {
 
     .halloween-image {
       position: relative;
-      filter: drop-shadow(0 8px 16px rgba(254, 164, 0, 0.4))
-              drop-shadow(0 0 20px rgba(254, 164, 0, 0.3))
-              drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-      animation: halloween-glow 2s ease-in-out infinite alternate;
+      width: 70px;
+      margin: -15px;
+      filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
+              drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
+              drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
+      animation: halloween-glow 3s ease-in-out infinite alternate;
     }
 
     @keyframes halloween-glow {
       0% {
-        filter: drop-shadow(0 8px 16px rgba(254, 164, 0, 0.4))
-                drop-shadow(0 0 20px rgba(254, 164, 0, 0.3))
-                drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        filter: drop-shadow(0 5px 8px rgba(254, 164, 0, 0.18))
+                drop-shadow(0 0 8px rgba(254, 164, 0, 0.14))
+                drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
       }
       100% {
-        filter: drop-shadow(0 12px 24px rgba(254, 164, 0, 0.6))
-                drop-shadow(0 0 30px rgba(254, 164, 0, 0.5))
-                drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+        filter: drop-shadow(0 8px 14px rgba(254, 164, 0, 0.28))
+                drop-shadow(0 0 16px rgba(254, 164, 0, 0.22))
+                drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
       }
     }
 
