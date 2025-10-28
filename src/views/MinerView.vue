@@ -1430,7 +1430,7 @@ onUnmounted(() => {
   .shop-tabs {
     display: flex;
     width: auto;
-    margin: 0 0 0 15px;
+    margin: 0 0 0 30px;
     background: rgba(0, 0, 0, 0.5);
     border-radius: 20px;
     padding: 3px;
