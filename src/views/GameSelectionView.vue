@@ -135,7 +135,7 @@ const goBack = () => {
 
 .wheel-card {
   .game-card-bg {
-    background: url('@/assets/wheelgamebutton.jpg');
+    background: url('@/assets/wheelgamebutton.webp');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -144,7 +144,7 @@ const goBack = () => {
 
 .lottery-card {
   .game-card-bg {
-    background: url('@/assets/lotgamebutton.jpg');
+    background: url('@/assets/lotgamebutton.webp');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -176,7 +176,7 @@ const goBack = () => {
 
 .development-card {
   .game-card-bg {
-    background: url('@/assets/indevgamebutton.jpg');
+    background: url('@/assets/indevgamebutton.webp');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
