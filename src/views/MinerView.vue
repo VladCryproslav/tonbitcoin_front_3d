@@ -894,7 +894,9 @@ const getStarterPackPrice = () => {
   if (!starterPack) return 99
 
   if (gemsSaleActive && starterPack.enableSale !== false) {
-    return getGemPrice(starterPack)
+    const discountedPrice = getGemPrice(starterPack)
+    // Округляем до десятых (1 знак после запятой)
+    return Math.round(discountedPrice * 10) / 10
   }
   return starterPack.price
 }
@@ -1177,7 +1179,7 @@ onUnmounted(() => {
               <img src="@/assets/TON.png" width="14px" height="14px" />
               {{ gemItem.price }}
             </span>
-            <div v-if="gemsSaleActive && gemItem?.enableSale !== false" class="gem-sale-perc">-{{ gemsSalePercent }}%</div>
+            <div v-if="gemsSaleActive && gemItem?.enableSale !== false" class="gem-sale-perc">-{{ gemItem.salePercent || gemsSalePercent }}%</div>
             <div v-if="gemsSaleActive && gemItem?.enableSale !== false" class="gem-sale-newprice">
               <img src="@/assets/TON.png" width="12px" height="12px" />
               {{ getGemPrice(gemItem) }}

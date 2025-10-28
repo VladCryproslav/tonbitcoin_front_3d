@@ -420,7 +420,10 @@ const getGemPrice = (gem) => {
 
   // Используем кастомный процент скидки для этого GEMS или глобальный
   const salePercent = gem.salePercent || gemsSalePercent
-  return gem.price * (1 - salePercent / 100)
+  const discountedPrice = gem.price * (1 - salePercent / 100)
+
+  // Округляем до десятых (1 знак после запятой)
+  return Math.round(discountedPrice * 10) / 10
 }
 
 // Функция для сортировки GEMS (элементы с акцией вверх, без акции вниз)
