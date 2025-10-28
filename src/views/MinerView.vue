@@ -918,6 +918,9 @@ onUnmounted(() => {
   <SpecialPriceModal v-if="openSpecialModal" :saleAsic="currBuyAsic" @close="specialModalResponse" />
   <ModalNew v-if="openModal" :status="modalStatus" :title="modalTitle" :body="modalBody" @close="openModal = false" />
   <InfoModal v-if="openGemInfo" @close="openGemInfo = false">
+    <template #header>
+      {{ t('asic_shop.information') }}
+    </template>
     <template #modal-body>
       {{ gemInfoText }}
     </template>
@@ -1723,7 +1726,7 @@ onUnmounted(() => {
       .gem-info-icon-top {
         position: absolute;
         top: 5px;
-        right: -5px;
+        right: 8px;
         width: 20px;
         height: 20px;
         display: flex;

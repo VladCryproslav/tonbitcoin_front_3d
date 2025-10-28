@@ -556,7 +556,8 @@
     "gems": "GEMS",
     "asics_short": "ASICs",
     "gems_coming_soon": "GEMS скоро будуть доступні",
-    "sale_ends_in": "Акція закінчиться через:"
+    "sale_ends_in": "Акція закінчиться через:",
+    "information": "Інформація"
   },
   "gems": {
     "dao_owner_benefit_1": "Ви купуєте 1% проекту",
