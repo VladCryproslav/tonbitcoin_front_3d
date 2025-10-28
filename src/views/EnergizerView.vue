@@ -3291,7 +3291,7 @@ onUnmounted(() => {
 
     .halloween-image {
       position: relative;
-      width: 65px;
+      width: 60px;
       margin: -15px;
       padding-bottom: 10px;
       z-index: 0; /* под текстом */
