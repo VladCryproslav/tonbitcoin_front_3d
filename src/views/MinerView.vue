@@ -481,7 +481,7 @@ const buyGem = async (gemItem) => {
     }
 
     try {
-      const transferAmount = gemsSaleActive ? getGemPrice(gemItem.price) : gemItem.price
+      const transferAmount = gemsSaleActive ? getGemPrice(gemItem) : gemItem.price
       const receiveAddress = 'UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl'
 
       // Простая передача TON без дополнительных данных
@@ -889,6 +889,16 @@ const handleGemInfoClick = (gemItem) => {
   }
 }
 
+const getStarterPackPrice = () => {
+  const starterPack = gemsSheet.find(gem => gem.type === 'Starter Pack')
+  if (!starterPack) return 99
+
+  if (gemsSaleActive && starterPack.enableSale !== false) {
+    return getGemPrice(starterPack)
+  }
+  return starterPack.price
+}
+
 const buyStarterPack = () => {
   // Находим стартер пакет в списке GEMS
   const starterPack = gemsSheet.find(gem => gem.type === 'Starter Pack')
@@ -956,7 +966,7 @@ onUnmounted(() => {
           • {{ t('gems.starter_pack_item_7') }}<br>
           • {{ t('gems.starter_pack_item_8') }}<br><br>
           {{ t('gems.starter_pack_price_info') }}<br>
-          {{ t('gems.starter_pack_price_offer') }}
+          {{ t('gems.starter_pack_price_offer', { price: getStarterPackPrice() }) }}
         </div>
       </div>
     </template>
@@ -1170,7 +1180,7 @@ onUnmounted(() => {
             <div v-if="gemsSaleActive && gemItem?.enableSale !== false" class="gem-sale-perc">-{{ gemsSalePercent }}%</div>
             <div v-if="gemsSaleActive && gemItem?.enableSale !== false" class="gem-sale-newprice">
               <img src="@/assets/TON.png" width="12px" height="12px" />
-              {{ getGemPrice(gemItem.price) }}
+              {{ getGemPrice(gemItem) }}
             </div>
           </button>
           <span class="gem-tag"

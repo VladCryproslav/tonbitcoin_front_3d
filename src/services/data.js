@@ -199,7 +199,8 @@ const gemsSheet = [
     description: 'You buy 1% project',
     buttonColor: 'gold',
     hasGoldStroke: true,
-    enableSale: false, // DAO не участвует в акции
+    enableSale: true, // DAO не участвует в акции
+    salePercent: 10,
     imagePath: '@/assets/gems/DAO_Owner.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Rarity%22%3A%5B%22DAO%22%5D%7D%7D',
     info: 'gems.dao_owner_info', // Ключ локализации для модалки
@@ -219,6 +220,7 @@ const gemsSheet = [
     buttonColor: 'purple',
     hasPurpleStroke: true,
     enableSale: true,
+    salePercent: 10, // Кастомная скидка для этого GEMS (50%)
     imagePath: '@/assets/gems/Starter_pack.webp',
     link: '', // Not used - uses TON payment instead
     info: 'starter_pack_modal',
@@ -236,6 +238,7 @@ const gemsSheet = [
     price: 99,
     rarity: 'class_4',
     enableSale: true,
+    salePercent: 50,
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_4.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%221-2-3%22%5D%7D%7D',
@@ -253,6 +256,7 @@ const gemsSheet = [
     price: 199,
     rarity: 'class_3',
     enableSale: true,
+    salePercent: 50,
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_3.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%224-5%22%5D%7D%7D',
@@ -270,6 +274,7 @@ const gemsSheet = [
     price: 399,
     rarity: 'class_2',
     enableSale: true,
+    salePercent: 50,
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%226-7%22%5D%7D%7D',
@@ -287,6 +292,7 @@ const gemsSheet = [
     price: 699,
     rarity: 'class_1',
     enableSale: true,
+    salePercent: 50,
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%228-9%22%5D%7D%7D',
@@ -304,6 +310,7 @@ const gemsSheet = [
     price: 99,
     rarity: 'class_1',
     enableSale: true,
+    salePercent: 50,
     description: 'For Energizers',
     imagePath: '@/assets/gems/Cryo_NFT.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%22All+stations%22%5D%7D%7D',
@@ -321,6 +328,7 @@ const gemsSheet = [
     price: 49,
     rarity: 'class_3',
     enableSale: true,
+    salePercent: 50,
     description: 'For Miners',
     imagePath: '@/assets/gems/ASIC_M_3.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%221-299+Gh%2Fs%22%5D%7D%7D',
@@ -338,6 +346,7 @@ const gemsSheet = [
     price: 99,
     rarity: 'class_2',
     enableSale: true,
+    salePercent: 50,
     description: 'For Miners',
     imagePath: '@/assets/gems/ASIC_M_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%22300-1199+Gh%2Fs%22%5D%7D%7D',
@@ -355,6 +364,7 @@ const gemsSheet = [
     price: 199,
     rarity: 'class_1',
     enableSale: true,
+    salePercent: 50,
     description: 'For Miners',
     imagePath: '@/assets/gems/ASIC_M_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%221200%2B+Gh%2Fs%22%5D%7D%7D',
@@ -372,6 +382,7 @@ const gemsSheet = [
     price: 99,
     rarity: 'class_2',
     enableSale: true,
+    salePercent: 50,
     description: 'For Miners',
     imagePath: '@/assets/gems/Magnetic_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%221-249+Gh%2Fs%22%5D%7D%7D',
@@ -389,6 +400,7 @@ const gemsSheet = [
     price: 199,
     rarity: 'class_1',
     enableSale: true,
+    salePercent: 50,
     description: 'For Miners',
     imagePath: '@/assets/gems/Magnetic_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%22250-599+Gh%2Fs%22%5D%7D%7D',
@@ -402,9 +414,13 @@ const gemsSheet = [
 ]
 
 // Функция расчета цены со скидкой
-const getGemPrice = (originalPrice) => {
-  if (!gemsSaleActive) return originalPrice
-  return originalPrice * (1 - gemsSalePercent / 100)
+const getGemPrice = (gem) => {
+  if (!gemsSaleActive) return gem.price
+  if (gem.enableSale === false) return gem.price
+
+  // Используем кастомный процент скидки для этого GEMS или глобальный
+  const salePercent = gem.salePercent || gemsSalePercent
+  return gem.price * (1 - salePercent / 100)
 }
 
 // Функция для сортировки GEMS (элементы с акцией вверх, без акции вниз)
