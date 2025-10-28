@@ -180,6 +180,7 @@ const asicsSheet = [
 // Активность акции для GEMS (можно включать/выключать)
 const gemsSaleActive = true // Изменить на true для активации скидки
 const gemsSalePercent = 50 // Процент скидки (например 50 = -50%)
+const gemsSaleEndDate = new Date('2024-12-31T23:59:59') // Дата окончания акции
 
 // Текст для бегущей строки акции GEMS
 const gemsSaleText = {
@@ -411,5 +412,5 @@ const sortGemsBySale = (gems) => {
   })
 }
 
-export { asicsSheet, gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleText, getGemPrice, sortGemsBySale }
+export { asicsSheet, gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, gemsSaleText, getGemPrice, sortGemsBySale }
 export default asicsSheet

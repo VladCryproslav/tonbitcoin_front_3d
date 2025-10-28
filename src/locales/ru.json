@@ -553,7 +553,8 @@
     "mythic": "Мифический",
     "gems": "GEMS",
     "asics_short": "ASICs",
-    "gems_coming_soon": "GEMS скоро будут доступны"
+    "gems_coming_soon": "GEMS скоро будут доступны",
+    "sale_ends_in": "Акция закончится через:"
   },
   "gems": {
     "dao_owner_benefit_1": "Вы покупаете 1% проекта",

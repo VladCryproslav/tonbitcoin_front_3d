@@ -18,7 +18,7 @@ import RedirectModal from '@/components/RedirectModal.vue'
 import SpecialPriceModal from '@/components/SpecialPriceModal.vue'
 import WithdrawModal from '@/components/WithdrawModal.vue'
 import ReconnectModal from '@/components/ReconnectModal.vue'
-import asicsSheet, { gemsSheet, gemsSaleActive, gemsSalePercent, getGemPrice, sortGemsBySale } from '@/services/data'
+import asicsSheet, { gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, getGemPrice, sortGemsBySale } from '@/services/data'
 import _ from "lodash"
 import { getAsicData } from '@/utils/asics'
 import { useI18n } from 'vue-i18n'
@@ -690,6 +690,16 @@ onMounted(() => {
   if (app.isMining) {
     startTimer()
   }
+
+  // Initialize sale timer
+  updateSaleTimer()
+  const saleTimerInterval = setInterval(updateSaleTimer, 1000)
+
+  onUnmounted(() => {
+    if (saleTimerInterval) {
+      clearInterval(saleTimerInterval)
+    }
+  })
 })
 
 async function startInfoUpdate() {
@@ -801,6 +811,38 @@ const toggleShopTab = () => {
   activeShopTab.value = activeShopTab.value === 'gems' ? 'asics' : 'gems'
 }
 
+// Sale timer logic
+const showSaleTimer = ref(true)
+const saleTimeRemaining = ref({
+  days: 0,
+  hours: 0,
+  minutes: 0,
+  seconds: 0
+})
+
+const updateSaleTimer = () => {
+  const now = new Date()
+  const endDate = new Date(gemsSaleEndDate)
+  const diffMs = endDate - now
+
+  if (diffMs <= 0) {
+    showSaleTimer.value = false
+    return
+  }
+
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((diffMs % (1000 * 60)) / 1000)
+
+  saleTimeRemaining.value = {
+    days: days.toString().padStart(2, '0'),
+    hours: hours.toString().padStart(2, '0'),
+    minutes: minutes.toString().padStart(2, '0'),
+    seconds: seconds.toString().padStart(2, '0')
+  }
+}
+
 const speedUpNft = (item) => {
   speedUpAddress.value = item.nft ? item.nft : item.address
   openNftSpeedUp.value = true
@@ -878,6 +920,34 @@ onUnmounted(() => {
         <button class="close" @click="openAsics(false)">
           <Exit :width="16" style="color: #fff" />
         </button>
+      </div>
+
+      <!-- Sale Timer -->
+      <div v-if="gemsSaleActive && showSaleTimer" class="sale-timer">
+        <div class="sale-timer-content">
+          <span class="sale-timer-text">{{ t('asic_shop.sale_ends_in') }}</span>
+          <div class="sale-timer-countdown">
+            <span class="timer-unit">
+              <span class="timer-value">{{ saleTimeRemaining.days }}</span>
+              <span class="timer-label">{{ t('common.days') }}</span>
+            </span>
+            <span class="timer-separator">:</span>
+            <span class="timer-unit">
+              <span class="timer-value">{{ saleTimeRemaining.hours }}</span>
+              <span class="timer-label">{{ t('common.hours') }}</span>
+            </span>
+            <span class="timer-separator">:</span>
+            <span class="timer-unit">
+              <span class="timer-value">{{ saleTimeRemaining.minutes }}</span>
+              <span class="timer-label">{{ t('common.minutes') }}</span>
+            </span>
+            <span class="timer-separator">:</span>
+            <span class="timer-unit">
+              <span class="timer-value">{{ saleTimeRemaining.seconds }}</span>
+              <span class="timer-label">{{ t('common.seconds') }}</span>
+            </span>
+          </div>
+        </div>
       </div>
 
       <!-- ASICs List -->
@@ -1427,10 +1497,79 @@ onUnmounted(() => {
     }
   }
 
+  .sale-timer {
+    display: flex;
+    width: 90%;
+    justify-content: center;
+    margin: 0.5rem 0;
+
+    .sale-timer-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 15px;
+      padding: 12px 20px;
+      border: 1px solid rgba(49, 255, 128, 0.3);
+
+      .sale-timer-text {
+        color: #31ff80;
+        font-family: 'Inter' !important;
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 8px;
+        text-align: center;
+      }
+
+      .sale-timer-countdown {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .timer-unit {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          min-width: 35px;
+
+          .timer-value {
+            background: linear-gradient(to bottom, #e2f974, #009600);
+            color: #000000;
+            font-family: 'Inter' !important;
+            font-weight: 700;
+            font-size: 18px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            min-width: 30px;
+            text-align: center;
+            line-height: 1;
+          }
+
+          .timer-label {
+            color: #ffffff;
+            font-family: 'Inter' !important;
+            font-weight: 500;
+            font-size: 10px;
+            margin-top: 2px;
+            text-align: center;
+          }
+        }
+
+        .timer-separator {
+          color: #31ff80;
+          font-family: 'Inter' !important;
+          font-weight: 700;
+          font-size: 16px;
+          margin: 0 2px;
+        }
+      }
+    }
+  }
+
   .shop-tabs {
     display: flex;
     width: auto;
-    margin: 0 0 0 30px;
+    margin: 0 0 0 20px;
     background: rgba(0, 0, 0, 0.5);
     border-radius: 20px;
     padding: 3px;
