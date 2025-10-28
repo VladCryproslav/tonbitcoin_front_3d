@@ -916,7 +916,7 @@ onUnmounted(() => {
           </div>
           <button @click="buyAsics(index, asicItem?.price, asicItem?.link, asicItem?.sale, asicItem?.shop)"
             :disabled="!asicItem?.shop">
-            <span>{{ t('asic_shop.buy_asic') }}</span>
+            <span>{{ asicItem?.shop ? t('asic_shop.buy_asic') : t('common.sold_out') }}</span>
             <span class="price" :class="{ saleprice: asicItem?.new_price }">
               <img src="@/assets/TON.png" width="14px" height="14px" />
               {{ asicItem?.price }}
