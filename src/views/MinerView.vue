@@ -929,22 +929,22 @@ onUnmounted(() => {
           <div class="sale-timer-countdown">
             <span class="timer-unit">
               <span class="timer-value">{{ saleTimeRemaining.days }}</span>
-              <span class="timer-label">{{ t('common.days') }}</span>
+              <span class="timer-label-inline">{{ t('common.days') }}</span>
             </span>
             <span class="timer-separator">:</span>
             <span class="timer-unit">
               <span class="timer-value">{{ saleTimeRemaining.hours }}</span>
-              <span class="timer-label">{{ t('common.hours') }}</span>
+              <span class="timer-label-inline">{{ t('common.hours') }}</span>
             </span>
             <span class="timer-separator">:</span>
             <span class="timer-unit">
               <span class="timer-value">{{ saleTimeRemaining.minutes }}</span>
-              <span class="timer-label">{{ t('common.minutes') }}</span>
+              <span class="timer-label-inline">{{ t('common.minutes') }}</span>
             </span>
             <span class="timer-separator">:</span>
             <span class="timer-unit">
               <span class="timer-value">{{ saleTimeRemaining.seconds }}</span>
-              <span class="timer-label">{{ t('common.seconds') }}</span>
+              <span class="timer-label-inline">{{ t('common.seconds') }}</span>
             </span>
           </div>
         </div>
@@ -1507,16 +1507,30 @@ onUnmounted(() => {
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: rgba(0, 0, 0, 0.6);
+      /* как карточки gems/asics */
+      background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff20, transparent), rgba(0,0,0,0.6);
       border-radius: 15px;
       padding: 12px 20px;
-      border: 1px solid rgba(49, 255, 128, 0.3);
+      /* жёлтая обводка как -50% */
+      position: relative;
+      border: none;
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 15px;
+        padding: 1px;
+        background: linear-gradient(180deg, #FEA400 0%, #FCD909 100%);
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+                mask-composite: exclude;
+      }
 
       .sale-timer-text {
-        color: #31ff80;
+        color: #FFFFFF; /* белый заголовок */
         font-family: 'Inter' !important;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 16px; /* как заголовки */
         margin-bottom: 8px;
         text-align: center;
       }
@@ -1528,30 +1542,28 @@ onUnmounted(() => {
 
         .timer-unit {
           display: flex;
-          flex-direction: column;
           align-items: center;
+          gap: 6px;
           min-width: 35px;
 
           .timer-value {
-            background: linear-gradient(to bottom, #e2f974, #009600);
+            background: linear-gradient(180deg, #FCD909 0%, #FEA400 100%); /* жёлтые как -50% */
             color: #000000;
             font-family: 'Inter' !important;
-            font-weight: 700;
+            font-weight: 800;
             font-size: 18px;
-            padding: 4px 8px;
+            padding: 6px 10px;
             border-radius: 8px;
-            min-width: 30px;
+            min-width: 40px;
             text-align: center;
             line-height: 1;
           }
 
-          .timer-label {
+          .timer-label-inline {
             color: #ffffff;
             font-family: 'Inter' !important;
-            font-weight: 500;
-            font-size: 10px;
-            margin-top: 2px;
-            text-align: center;
+            font-weight: 600;
+            font-size: 12px;
           }
         }
 
