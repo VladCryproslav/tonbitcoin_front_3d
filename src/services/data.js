@@ -183,7 +183,7 @@ const gemsSalePercent = 50 // Процент скидки (например 50 =
 const gemsSaleEndDate = new Date('2024-10-31T23:59:59') // Дата окончания акции
 
 // Halloween статус для кнопки ASICs Shop в EnergizerView
-const halloweenActive = false // Изменить на true для активации Halloween кнопки
+const halloweenActive = true // Изменить на true для активации Halloween кнопки
 
 // Текст для бегущей строки акции GEMS
 const gemsSaleText = {
