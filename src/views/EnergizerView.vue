@@ -3291,8 +3291,9 @@ onUnmounted(() => {
 
     .halloween-image {
       position: relative;
-      width: 70px;
+      width: 55px;
       margin: -15px;
+      padding-bottom: 10px;
       z-index: 0; /* под текстом */
       pointer-events: none; /* не перехватывать клики */
       filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
