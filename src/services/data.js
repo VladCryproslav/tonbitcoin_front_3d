@@ -290,7 +290,7 @@ const gemsSheet = [
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%228-9%22%5D%7D%7D',
-    info: 'Информация о DAO Owner',
+    info: 'gems.jarvis_bot_info_1',
     benefits: [
       'for_energizers',
       'power_plant_lvl: 8-9',
