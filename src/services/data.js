@@ -221,6 +221,7 @@ const gemsSheet = [
     enableSale: true,
     imagePath: '@/assets/gems/Starter_pack.webp',
     link: '', // Not used - uses TON payment instead
+    info: 'Информация о DAO Owner',
     benefits: [
       'starter_pack_benefit_1',
       'starter_pack_benefit_2',
@@ -238,6 +239,7 @@ const gemsSheet = [
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_4.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%221-2-3%22%5D%7D%7D',
+    info: 'Информация о DAO Owner',
     benefits: [
       'for_energizers',
       'power_plant_lvl: 1-3',
@@ -254,6 +256,7 @@ const gemsSheet = [
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_3.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%224-5%22%5D%7D%7D',
+    info: 'Информация о DAO Owner',
     benefits: [
       'for_energizers',
       'power_plant_lvl: 4-5',
@@ -270,6 +273,7 @@ const gemsSheet = [
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%226-7%22%5D%7D%7D',
+    info: 'Информация о DAO Owner',
     benefits: [
       'for_energizers',
       'power_plant_lvl: 6-7',
@@ -286,6 +290,7 @@ const gemsSheet = [
     description: 'For Energizers',
     imagePath: '@/assets/gems/Jarvis_NFT_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%228-9%22%5D%7D%7D',
+    info: 'Информация о DAO Owner',
     benefits: [
       'for_energizers',
       'power_plant_lvl: 8-9',
@@ -302,6 +307,7 @@ const gemsSheet = [
     description: 'For Energizers',
     imagePath: '@/assets/gems/Cryo_NFT.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%22All+stations%22%5D%7D%7D',
+    info: 'Информация о DAO Owner',
     benefits: [
       'for_energizers',
       'power_plant_lvl: 1-10',
@@ -318,6 +324,7 @@ const gemsSheet = [
     description: 'For Miners',
     imagePath: '@/assets/gems/ASIC_M_3.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%221-299+Gh%2Fs%22%5D%7D%7D',
+    info: 'Информация о DAO Owner',
     benefits: [
       'for_miners',
       'gh_s: 1-299',
@@ -334,6 +341,7 @@ const gemsSheet = [
     description: 'For Miners',
     imagePath: '@/assets/gems/ASIC_M_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%22300-1199+Gh%2Fs%22%5D%7D%7D',
+    info: 'Информация о DAO Owner',
     benefits: [
       'for_miners',
       'gh_s: 300-1199',
@@ -350,6 +358,7 @@ const gemsSheet = [
     description: 'For Miners',
     imagePath: '@/assets/gems/ASIC_M_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%221200%2B+Gh%2Fs%22%5D%7D%7D',
+    info: 'Информация о DAO Owner',
     benefits: [
       'for_miners',
       'gh_s: 1200+',
@@ -366,6 +375,7 @@ const gemsSheet = [
     description: 'For Miners',
     imagePath: '@/assets/gems/Magnetic_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%221-249+Gh%2Fs%22%5D%7D%7D',
+    info: 'Информация о DAO Owner',
     benefits: [
       'for_miners',
       'gh_s: 1-249',
@@ -382,6 +392,7 @@ const gemsSheet = [
     description: 'For Miners',
     imagePath: '@/assets/gems/Magnetic_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Mining+power%22%3A%5B%22250-599+Gh%2Fs%22%5D%7D%7D',
+    info: 'Информация о DAO Owner',
     benefits: [
       'for_miners',
       'gh_s: 250-599',
