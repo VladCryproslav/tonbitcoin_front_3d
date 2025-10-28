@@ -558,7 +558,7 @@
   "gems": {
     "dao_owner_benefit_1": "Ви купуєте 1% проекту",
     "dao_owner_benefit_2": "Ви отримуєте 1% доходу",
-    "dao_owner_benefit_3": "Голосуєте за стратегічні плани",
+    "dao_owner_benefit_3": "Голосуєте за стратег. плани",
     "starter_pack_benefit_1": "Атомна електростанція",
     "starter_pack_benefit_2": "ASIC S11 XP",
     "starter_pack_benefit_3": "ASIC S15 XP",
@@ -566,7 +566,7 @@
     "for_energizers": "Для Енерджайзерів",
     "power_plant_lvl": "Рівень станції",
     "duration": "Тривалість",
-    "duration_eternal": "Тривалість: Вічна",
+    "duration_eternal": "Тривалість: Вічний",
     "for_miners": "Для Майнерів",
     "class_4": "4 клас",
     "class_3": "3 клас",
