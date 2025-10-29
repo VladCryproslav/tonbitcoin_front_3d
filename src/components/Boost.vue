@@ -648,7 +648,7 @@ onUnmounted(() => {
       </label>
     </div>
     <div class="payment-radio-container">
-      <div class="radio-payment">
+     <!-- <div class="radio-payment">
         <input name="radio-group" id="radio2" v-model="paymentRadio" value="ton" class="radio-payment__input"
           type="radio">
         <label for="radio2" class="radio-payment__label">
@@ -656,7 +656,7 @@ onUnmounted(() => {
           <span v-if="paymentRadio == 'ton'">{{ t('boost.eternal') }}</span>
           <span class="radio-payment__custom"></span>
         </label>
-      </div>
+      </div> -->
       <div class="radio-payment">
         <input name="radio-group" id="radio1" v-model="paymentRadio" value="fbtc" class="radio-payment__input"
           type="radio">
