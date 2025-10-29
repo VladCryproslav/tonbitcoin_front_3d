@@ -217,7 +217,7 @@ const gemsSheet = [
     shop: true,
     name: 'Buy NFT',
     type: 'Starter Pack',
-    price: 0.0001,
+    price: 99,
     rarity: 'special',
     description: 'Nuclear power plant',
     buttonColor: 'purple',
