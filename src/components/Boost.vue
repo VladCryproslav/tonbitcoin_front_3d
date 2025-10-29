@@ -648,10 +648,19 @@ onUnmounted(() => {
       </label>
     </div>
     <div class="payment-radio-container">
-      <div class="radio-payment">
-        <input name="radio-group" id="radio1" v-model="paymentRadio" value="fbtc" class="radio-payment__input"
+     <!-- <div class="radio-payment">
+        <input name="radio-group" id="radio2" v-model="paymentRadio" value="ton" class="radio-payment__input"
           type="radio">
-        <label for="radio1" class="radio-payment__label temp">
+        <label for="radio2" class="radio-payment__label">
+          <img src="@/assets/TON.png" width="28px" />
+          <span v-if="paymentRadio == 'ton'">{{ t('boost.eternal') }}</span>
+          <span class="radio-payment__custom"></span>
+        </label>
+      </div> -->
+      <div class="radio-payment">
+        <input name="radio-group" id="radio2" v-model="paymentRadio" value="fbtc" class="radio-payment__input"
+          type="radio">
+        <label for="radio2" class="radio-payment__label temp">
           <img src="@/assets/fBTC.webp" width="28px" />
           <span v-if="paymentRadio == 'fbtc'">{{ t('boost.temporary') }}</span>
           <span class="radio-payment__custom"></span>
@@ -666,15 +675,6 @@ onUnmounted(() => {
           <span class="radio-payment__custom"></span>
         </label>
       </div>
-       <!-- <div class="radio-payment">
-        <input name="radio-group" id="radio2" v-model="paymentRadio" value="ton" class="radio-payment__input"
-          type="radio">
-        <label for="radio2" class="radio-payment__label">
-          <img src="@/assets/TON.png" width="28px" />
-          <span v-if="paymentRadio == 'ton'">{{ t('boost.eternal') }}</span>
-          <span class="radio-payment__custom"></span>
-        </label>
-      </div> -->
     </div>
     <div class="boost-list" ref="boostList">
       <div class="boost-list-item" v-for="(item, index) in filteredBoosters" :key="index">
