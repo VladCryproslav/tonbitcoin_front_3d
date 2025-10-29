@@ -15,7 +15,7 @@ const { tg } = useTelegram()
 const { t, locale } = useI18n()
 const loc_add = computed(() => locale.value == 'uk' ? '' : locale.value == 'ru' ? '_ru' : '_en')
 const isMiners = ref(false)
-const paymentRadio = ref('ton')
+const paymentRadio = ref('fbtc')
 
 const modalStatus = ref(null)
 const modalTitle = ref(null)
@@ -660,7 +660,7 @@ onUnmounted(() => {
       <div class="radio-payment">
         <input name="radio-group" id="radio1" v-model="paymentRadio" value="fbtc" class="radio-payment__input"
           type="radio">
-        <label for="radio1" class="radio-payment__label">
+        <label for="radio1" class="radio-payment__label temp">
           <img src="@/assets/fBTC.webp" width="28px" />
           <span v-if="paymentRadio == 'fbtc'">{{ t('boost.temporary') }}</span>
           <span class="radio-payment__custom"></span>
