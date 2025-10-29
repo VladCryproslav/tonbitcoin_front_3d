@@ -997,7 +997,8 @@ onUnmounted(() => {
           • {{ t('gems.starter_pack_item_6') }}<br>
           • {{ t('gems.starter_pack_item_7') }}<br><br>
           {{ t('gems.starter_pack_price_info') }}<br>
-          {{ t('gems.starter_pack_price_offer', { price: getStarterPackPrice() }) }}
+          {{ t('gems.starter_pack_price_offer', { price: getStarterPackPrice() }) }}<br>
+          {{ t('gems.starter_pack_item_8') }}
         </div>
       </div>
     </template>
