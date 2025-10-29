@@ -658,9 +658,9 @@ onUnmounted(() => {
         </label>
       </div> -->
       <div class="radio-payment">
-        <input name="radio-group" id="radio2" v-model="paymentRadio" value="fbtc" class="radio-payment__input"
+        <input name="radio-group" id="radio1" v-model="paymentRadio" value="fbtc" class="radio-payment__input"
           type="radio">
-        <label for="radio2" class="radio-payment__label temp">
+        <label for="radio1" class="radio-payment__label">
           <img src="@/assets/fBTC.webp" width="28px" />
           <span v-if="paymentRadio == 'fbtc'">{{ t('boost.temporary') }}</span>
           <span class="radio-payment__custom"></span>
