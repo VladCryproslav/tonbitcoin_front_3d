@@ -1254,7 +1254,7 @@ onUnmounted(() => {
             <div v-else class="gem-icon">💎</div>
           </div>
           <div class="gem-info">
-            <span class="gem-type">{{ gemItem.type }}</span>
+            <span class="gem-type">{{ gemItem.type === 'Hydroelectric Power Plant' ? 'Hydroelectric\nPower Plant' : gemItem.type }}</span>
             <span class="gem-description" v-for="(benefit, idx) in gemItem.benefits" :key="idx">
               {{ t(`gems.${benefit}`) }}
             </span>
@@ -1949,6 +1949,7 @@ onUnmounted(() => {
           font-weight: 700;
           font-size: 1rem;
           margin-bottom: 3px;
+          white-space: pre-line;
         }
 
         .gem-description {
@@ -3239,6 +3240,20 @@ onUnmounted(() => {
 }
 
 .dao-owner-text {
+  font-family: 'Inter' !important;
+  font-weight: 500;
+  font-size: 13.5px;
+  line-height: 1.2;
+  color: #8b898b;
+  text-align: left;
+}
+
+.hydroelectric-content {
+  text-align: left;
+  width: 100%;
+}
+
+.hydroelectric-text {
   font-family: 'Inter' !important;
   font-weight: 500;
   font-size: 13.5px;
