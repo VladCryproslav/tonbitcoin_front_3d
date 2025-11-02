@@ -567,6 +567,10 @@
     "starter_pack_benefit_2": "ASIC S11 XP",
     "starter_pack_benefit_3": "ASIC S15 XP",
     "starter_pack_benefit_4": "And more...",
+    "hydroelectric_benefit_1": "Storage capacity: 1000 kW",
+    "hydroelectric_benefit_2": "Generation speed: 250 kW/h",
+    "hydroelectric_benefit_3": "Engineers: Level 30",
+    "hydroelectric_benefit_4": "Tap power: 0.361 kW",
     "for_energizers": "For Energizers",
     "power_plant_lvl": "Power plant lvl",
     "duration": "Duration",
@@ -613,7 +617,16 @@
     "jarvis_bot_info": "Featuring the most advanced cryogenic technology with AI, this booster completely eliminates the occurrence of overheating in your power plant while the AI handles energy harvesting on its own. The best choice for the best results.",
     "cryochamber_info": "The use of a cryochamber in your power plant will completely eliminate the occurrence of overheating.",
     "asic_manager_info": "An experienced miner that will help you forget about downtime of your equipment due to internet outages! It automatically starts mining as soon as your connection is lost, ensuring uninterrupted mining.",
-    "magnetic_ring_info": "An advanced innovation that reduces the power consumption of connected ASIC hardware by 20%."
+    "magnetic_ring_info": "An advanced innovation that reduces the power consumption of connected ASIC hardware by 20%.",
+    "hydroelectric_title": "Limited Special Class Power Station",
+    "hydroelectric_description": "Released in limited quantity of only 30 units.",
+    "hydroelectric_item_1": "Storage capacity: 1000 kW",
+    "hydroelectric_item_2": "Generation speed: 250 kW/h or 6000 kW/d",
+    "hydroelectric_item_3": "Equipped with engineers: Level 30",
+    "hydroelectric_item_4": "Tap power: 0.361 kW",
+    "hydroelectric_item_5": "This station mines kW token directly, bypassing the \"yellow\" energy mining stage",
+    "hydroelectric_info_1": "Building other stations, buying engineers using the mining output of this station is not possible.",
+    "hydroelectric_info_2": "All your progress before installing this station is preserved, and if you sell it, you will continue from where you left off"
   },
   "miner": {
     "start_mine_btn": "Start mining",

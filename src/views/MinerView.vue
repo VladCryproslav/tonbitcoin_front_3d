@@ -75,6 +75,7 @@ const gemInfoText = ref('')
 const currentGemItem = ref(null)
 const openStarterPackInfo = ref(false)
 const openDaoOwnerInfo = ref(false)
+const openHydroelectricInfo = ref(false)
 
 const currBuyAsic = ref(null)
 
@@ -887,6 +888,8 @@ const handleGemInfoClick = (gemItem) => {
     openStarterPackInfo.value = true
   } else if (gemItem?.info === 'gems.dao_owner_info') {
     openDaoOwnerInfo.value = true
+  } else if (gemItem?.info === 'hydroelectric_power_plant_modal') {
+    openHydroelectricInfo.value = true
   } else {
     gemInfoText.value = gemItem?.info || ''
     currentGemItem.value = gemItem
@@ -938,6 +941,25 @@ const buyStarterPack = () => {
     buyGem(starterPack)
   }
   openStarterPackInfo.value = false
+}
+
+const getHydroelectricPrice = () => {
+  const hydroelectric = gemsSheet.find(gem => gem.type === 'Hydroelectric Power Plant')
+  if (!hydroelectric) return 99
+
+  if (gemsSaleActive && hydroelectric.enableSale !== false) {
+    const discountedPrice = getGemPrice(hydroelectric)
+    return Math.round(discountedPrice * 10) / 10
+  }
+  return hydroelectric.price
+}
+
+const buyHydroelectric = () => {
+  const hydroelectric = gemsSheet.find(gem => gem.type === 'Hydroelectric Power Plant')
+  if (hydroelectric) {
+    buyGem(hydroelectric)
+  }
+  openHydroelectricInfo.value = false
 }
 
 
@@ -1018,6 +1040,26 @@ onUnmounted(() => {
           • {{ t('gems.dao_owner_item_5') }}<br>
           • {{ t('gems.dao_owner_item_6') }}<br>
           • {{ t('gems.dao_owner_item_7') }}
+        </div>
+      </div>
+    </template>
+  </InfoModal>
+  <InfoModal v-if="openHydroelectricInfo" :confirm-label="t('common.buy')" @close="(e) => { if (e?.check) buyHydroelectric(); openHydroelectricInfo = false }">
+    <template #header>
+      {{ t('asic_shop.information') }}
+    </template>
+    <template #modal-body>
+      <div class="hydroelectric-content">
+        <div class="hydroelectric-text">
+          {{ t('gems.hydroelectric_title') }}<br><br>
+          {{ t('gems.hydroelectric_description') }}<br><br>
+          • {{ t('gems.hydroelectric_item_1') }}<br>
+          • {{ t('gems.hydroelectric_item_2') }}<br>
+          • {{ t('gems.hydroelectric_item_3') }}<br>
+          • {{ t('gems.hydroelectric_item_4') }}<br>
+          • {{ t('gems.hydroelectric_item_5') }}<br><br>
+          • {{ t('gems.hydroelectric_info_1') }}<br>
+          • {{ t('gems.hydroelectric_info_2') }}
         </div>
       </div>
     </template>
@@ -1199,14 +1241,15 @@ onUnmounted(() => {
         <div class="gem-item"
           :class="{
             'has-gold-stroke': gemItem?.hasGoldStroke,
-            'has-purple-stroke': gemItem?.hasPurpleStroke
+            'has-purple-stroke': gemItem?.hasPurpleStroke,
+            'has-blue-stroke': gemItem?.hasBlueStroke
           }"
           v-for="gemItem in sortGemsBySale(gemsSheet.filter(el => el.shop))"
           :key="gemItem">
           <div class="gem-info-icon-top" @click="handleGemInfoClick(gemItem)">i</div>
           <div class="gem-picture">
             <img v-if="gemItem?.imagePath" :src="imagePathGems(gemItem.imagePath)?.value" class="gem-image"
-              :class="{ 'hide-under-tag': gemItem?.buttonColor !== 'gold' && gemItem?.buttonColor !== 'purple' && gemItem?.type !== 'Cryochamber' }"
+              :class="{ 'hide-under-tag': gemItem?.buttonColor !== 'gold' && gemItem?.buttonColor !== 'purple' && gemItem?.buttonColor !== 'blue' && gemItem?.type !== 'Cryochamber' }"
               alt="NFT" />
             <div v-else class="gem-icon">💎</div>
           </div>
@@ -1219,7 +1262,8 @@ onUnmounted(() => {
           <button class="gem-buy-btn"
             :class="{
               'btn-gold': gemItem?.buttonColor === 'gold',
-              'btn-purple': gemItem?.buttonColor === 'purple'
+              'btn-purple': gemItem?.buttonColor === 'purple',
+              'btn-blue': gemItem?.buttonColor === 'blue'
             }"
             :disabled="!gemItem?.shop"
             @click="buyGem(gemItem)">
@@ -1239,13 +1283,15 @@ onUnmounted(() => {
               ? 'background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%), #FFC300; color: #000000;'
               : gemItem?.buttonColor === 'purple'
                 ? 'background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%), #FFC300;'
-                : gemItem?.rarity == 'class_4'
-                  ? 'background-color: #5D625E;'
-                  : gemItem?.rarity == 'class_3'
-                    ? 'background-color: #009600;'
-                    : gemItem?.rarity == 'class_2'
-                      ? 'background-color: #0918E9;'
-                      : 'background-color: #6B25A1;'
+                : gemItem?.buttonColor === 'blue'
+                  ? 'background: linear-gradient(270deg, rgba(49, 207, 255, 1) 0%, rgba(31, 255, 255, 1) 100%), #31CFFF; color: #000000;'
+                  : gemItem?.rarity == 'class_4'
+                    ? 'background-color: #5D625E;'
+                    : gemItem?.rarity == 'class_3'
+                      ? 'background-color: #009600;'
+                      : gemItem?.rarity == 'class_2'
+                        ? 'background-color: #0918E9;'
+                        : 'background-color: #6B25A1;'
               ">{{ t(`gems.${gemItem.rarity}`) }}</span>
         </div>
       </div>
@@ -1820,6 +1866,25 @@ onUnmounted(() => {
         }
       }
 
+      &.has-blue-stroke {
+        padding: calc(0.7rem - 2px) calc(1rem - 2px);
+        position: relative;
+
+        &::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 1rem;
+          padding: 2px;
+          background: linear-gradient(270deg, rgba(49, 207, 255, 1) 0%, rgba(31, 255, 255, 1) 100%);
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          z-index: -20;
+        }
+      }
+
       .gem-info-icon-top {
         position: absolute;
         top: 5px;
@@ -1927,6 +1992,15 @@ onUnmounted(() => {
             linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);
         }
 
+        &.btn-blue {
+          background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent),
+            linear-gradient(270deg, rgba(49, 207, 255, 1) 0%, rgba(31, 255, 255, 1) 100%);
+
+          .gem-price {
+            color: #000;
+          }
+        }
+
         &:active {
           background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent),
             linear-gradient(to bottom, #e2f97490, #00960090);
@@ -1956,6 +2030,7 @@ onUnmounted(() => {
           line-height: 16pt;
           font-weight: 700;
           font-family: 'Inter' !important;
+          color: #fff;
 
           &.gem-saleprice {
             position: relative;

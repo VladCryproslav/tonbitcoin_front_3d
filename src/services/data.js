@@ -237,6 +237,27 @@ const gemsSheet = [
   {
     shop: true,
     name: 'Buy NFT',
+    type: 'Hydroelectric Power Plant',
+    price: 99,
+    rarity: 'special',
+    description: 'Storage: 1000 kW',
+    buttonColor: 'blue',
+    hasBlueStroke: true,
+    enableSale: true,
+    salePercent: 10, // Кастомная скидка для этого GEMS (50%)
+    imagePath: '@/assets/gems/Hydroelectric_power_plant.webp',
+    link: 'https://getgems.io/collection/EQB-pBhnWEYPbIu25uM1Yp5MqGFjQ-8Jes5CT2Dr-OVd705u?filter=%7B%22q%22%3A%22Hydroelectric+Power+Station%22%2C%22saleType%22%3A%22fix_price%22%7D&contentView=grid', // Not used - uses TON payment instead
+    info: 'hydroelectric_power_plant_modal',
+    benefits: [
+      'hydroelectric_benefit_1',
+      'hydroelectric_benefit_2',
+      'hydroelectric_benefit_3',
+      'hydroelectric_benefit_4'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
     type: 'Jarvis Bot',
     price: 99,
     rarity: 'class_4',
