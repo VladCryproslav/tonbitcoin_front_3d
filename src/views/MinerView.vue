@@ -1051,13 +1051,14 @@ onUnmounted(() => {
     <template #modal-body>
       <div class="hydroelectric-content">
         <div class="hydroelectric-text">
-          {{ t('gems.hydroelectric_title') }}<br><br>
           {{ t('gems.hydroelectric_description') }}<br><br>
+          {{ t('gems.hydroelecrtic_characteristics') }}<br>
           • {{ t('gems.hydroelectric_item_1') }}<br>
           • {{ t('gems.hydroelectric_item_2') }}<br>
           • {{ t('gems.hydroelectric_item_3') }}<br>
-          • {{ t('gems.hydroelectric_item_4') }}<br>
-          • {{ t('gems.hydroelectric_item_5') }}<br><br>
+          • {{ t('gems.hydroelectric_item_4') }}<br><br>
+          {{ t('gems.hydroelectric_important') }}<br>
+          • {{ t('gems.hydroelectric_item_5') }}<br>
           • {{ t('gems.hydroelectric_info_1') }}<br>
           • {{ t('gems.hydroelectric_info_2') }}
         </div>
