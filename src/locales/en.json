@@ -640,7 +640,7 @@
     "orbital_unique": "The station not only produces a huge amount of kW tokens, but also 'yellow' energy required for developing standard power plants, upgrades, and hiring engineers.",
     "orbital_progress": "With this station, you can easily reach level 7 in Dyson Sphere power plant development.",
     "orbital_instruction_btn": "Instruction",
-    "copy_instruction_btn": "Copy instruction",
+    "copy_instruction_btn": "Copy",
     "instruction_copied": "Instruction copied",
     "orbital_instruction_title": "Craft instruction",
     "orbital_instruction_intro": "To craft the Orbital Power Plant, follow these steps:",

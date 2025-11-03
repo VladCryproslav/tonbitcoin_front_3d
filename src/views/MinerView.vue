@@ -1027,7 +1027,6 @@ onUnmounted(() => {
       <div class="hydroelectric-content">
         <div class="hydroelectric-text">
           {{ t('gems.orbital_description') }}<br><br>
-          {{ t('gems.orbital_characteristics') }}<br>
           • {{ t('gems.orbital_item_1') }}<br>
           • {{ t('gems.orbital_item_2') }}<br>
           • {{ t('gems.orbital_item_3') }}<br>
