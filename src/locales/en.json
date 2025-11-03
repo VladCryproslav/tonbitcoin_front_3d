@@ -646,6 +646,8 @@
     "orbital_instruction_title": "Craft instruction",
     "orbital_instruction_intro": "To craft the Orbital Power Plant, follow these steps:",
     "orbital_step_1": "Send two Hydroelectric Power Station NFTs to the burn wallet:",
+    "orbital_step_1_part1": "Send two",
+    "orbital_step_1_part2": " NFTs to the burn wallet:",
     "orbital_burn_address": "UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJKZ",
     "orbital_step_2": "Pay 2000 fBTC for crafting to the Project Development Fund address:",
     "orbital_fund_address": "UQB0ukWTZXHQhlhztL91277hD8xbFFKXiHVvSBNw-gcBKHfO",

@@ -1025,8 +1025,9 @@ onUnmounted(() => {
       <div class="hydroelectric-content">
         <div class="hydroelectric-text">
           {{ t('gems.orbital_instruction_intro') }}<br><br>
-          1. {{ t('gems.orbital_step_1').replace('Hydroelectric Power Station','') }}
-          <span class="link-hydro" @click="buyHydroelectric()">Hydroelectric Power Station</span><br>
+          1. {{ t('gems.orbital_step_1_part1') }}
+          <span class="link-hydro" @click="buyHydroelectric()">Hydroelectric Power Station</span>
+          {{ t('gems.orbital_step_1_part2') }}<br>
           <span class="copyable-address" @click="copyAddress(t('gems.orbital_burn_address'))">
             <b class="address-text">{{ t('gems.orbital_burn_address') }}</b>
             <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
