@@ -2032,6 +2032,10 @@ onUnmounted(() => {
         &.btn-gold {
           background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent),
             linear-gradient(180deg, #FCD909 0%, #FEA400 100%);
+
+          .gem-price {
+            color: #000;
+          }
         }
 
         &.btn-purple {
