@@ -262,8 +262,9 @@ const gemsSheet = [
     price: 'NFT',
     rarity: 'special',
     description: 'Storage: 2320 kW',
-    buttonColor: 'blue',
-    hasBlueStroke: true,
+    buttonColor: 'gold',
+    hasGoldStroke: true,
+    hasBlueStroke: false,
     enableSale: false,
     salePercent: 10, // Кастомная скидка для этого GEMS (50%)
     imagePath: '@/assets/gems/Orbital_power_plant.webp',
