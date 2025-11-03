@@ -957,6 +957,13 @@ const buyHydroelectric = () => {
   openHydroelectricInfo.value = false
 }
 
+const buyHydroelectricFromCraft = () => {
+  openOrbitalCraftInfo.value = false
+  setTimeout(() => {
+    buyHydroelectric()
+  }, 300)
+}
+
 
 watch(
   [isProcessing, () => tabs.openDashboard],
@@ -1026,7 +1033,7 @@ onUnmounted(() => {
         <div class="hydroelectric-text">
           {{ t('gems.orbital_instruction_intro') }}<br><br>
           1. {{ t('gems.orbital_step_1_part1') }}
-          <span class="link-hydro" @click="buyHydroelectric()">Hydroelectric Power Station</span>
+          <span class="link-hydro" @click="buyHydroelectricFromCraft()">Hydroelectric Power Station</span>
           {{ t('gems.orbital_step_1_part2') }}<br>
           <span class="copyable-address" @click="copyAddress(t('gems.orbital_burn_address'))">
             <b class="address-text">{{ t('gems.orbital_burn_address') }}</b>
