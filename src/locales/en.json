@@ -404,6 +404,7 @@
     "gen_upd_max": "Your station's generation upgraded to maximum level!",
     "eng_add": "Engineer hired, single tap power increased!",
     "invite_copied": "Referral link copied",
+    "address_copied": "Address copied",
     "bonus_withdrawed": "Referral bonus withdrawn to in-game wallet",
     "task_completed": "Task completed! {value} has been credited to your internal wallet!",
     "task_uncompleted": "Task conditions not met. Please fulfill the specified conditions and try again.",

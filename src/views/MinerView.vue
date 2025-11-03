@@ -693,10 +693,9 @@ const copyInvite = () => {
   return navigator.clipboard.writeText(link)
 }
 
-const copyOrbitalInstruction = () => {
-  const instruction = t('gems.orbital_instruction_full')
-  navigator.clipboard.writeText(instruction)
-  showModal('success', t('notification.st_success'), t('gems.instruction_copied'))
+const copyAddress = async (address) => {
+  await navigator.clipboard.writeText(address)
+  showModal('success', t('notification.st_success'), t('notification.address_copied'))
 }
 
 let isPaused = ref(false)
@@ -1038,7 +1037,7 @@ onUnmounted(() => {
       </div>
     </template>
   </InfoModal>
-  <InfoModal v-if="openOrbitalCraftInfo" :confirm-label="t('gems.copy_instruction_btn')" @close="(e) => { if (e?.check) copyOrbitalInstruction(); openOrbitalCraftInfo = false }">
+  <InfoModal v-if="openOrbitalCraftInfo" :confirm-label="t('modals.info_modal.confirm')" @close="(e) => { openOrbitalCraftInfo = false }">
     <template #header>
       {{ t('gems.orbital_instruction_title') }}
     </template>
@@ -1047,9 +1046,13 @@ onUnmounted(() => {
         <div class="hydroelectric-text">
           {{ t('gems.orbital_instruction_intro') }}<br><br>
           1. {{ t('gems.orbital_step_1') }}<br>
-          <b>{{ t('gems.orbital_burn_address') }}</b><br><br>
+          <span class="copyable-address" @click="copyAddress(t('gems.orbital_burn_address'))">
+            <b>{{ t('gems.orbital_burn_address') }}</b>
+          </span><br><br>
           2. {{ t('gems.orbital_step_2') }}<br>
-          <b>{{ t('gems.orbital_fund_address') }}</b><br><br>
+          <span class="copyable-address" @click="copyAddress(t('gems.orbital_fund_address'))">
+            <b>{{ t('gems.orbital_fund_address') }}</b>
+          </span><br><br>
           {{ t('gems.orbital_note') }}
         </div>
       </div>
@@ -3314,5 +3317,23 @@ onUnmounted(() => {
   line-height: 1.2;
   color: #8b898b;
   text-align: left;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.copyable-address {
+  cursor: pointer;
+  word-break: break-all;
+  display: inline-block;
+  max-width: 100%;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  &:active {
+    opacity: 0.6;
+  }
 }
 </style>
