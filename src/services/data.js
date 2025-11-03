@@ -241,8 +241,9 @@ const gemsSheet = [
     price: 99,
     rarity: 'special',
     description: 'Storage: 1000 kW',
-    buttonColor: 'blue',
-    hasBlueStroke: true,
+    buttonColor: 'gold',
+    hasGoldStroke: true,
+    hasBlueStroke: false,
     enableSale: false,
     salePercent: 10, // Кастомная скидка для этого GEMS (50%)
     imagePath: '@/assets/gems/Hydroelectric_power_plant.webp',

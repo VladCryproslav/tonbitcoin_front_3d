@@ -650,7 +650,8 @@
     "orbital_step_2": "Pay 2000 fBTC for crafting to the Project Development Fund address:",
     "orbital_fund_address": "UQB0ukWTZXHQhlhztL91277hD8xbFFKXiHVvSBNw-gcBKHfO",
     "orbital_note": "Important! Within 1 day, the Orbital Power Plant will be crafted and sent back to your wallet.",
-    "orbital_instruction_full": "Orbital Power Plant craft instruction:\n\n1) Send two Hydroelectric Power Station NFTs to the burn wallet:\nUQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJKZ\n\n2) Pay 2000 fBTC for crafting to the Project Development Fund address:\nUQB0ukWTZXHQhlhztL91277hD8xbFFKXiHVvSBNw-gcBKHfO\n\nImportant! Within 1 day, the Orbital Power Plant will be crafted and sent back to your wallet."
+    "orbital_instruction_full": "Orbital Power Plant craft instruction:\n\n1) Send two Hydroelectric Power Station NFTs to the burn wallet:\nUQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJKZ\n\n2) Pay 2000 fBTC for crafting to the Project Development Fund address:\nUQB0ukWTZXHQhlhztL91277hD8xbFFKXiHVvSBNw-gcBKHfO\n\nImportant! Within 1 day, the Orbital Power Plant will be crafted and sent back to your wallet.",
+    "buy_hydroelectric_btn": "Buy Hydroelectric Power Station"
   },
   "miner": {
     "start_mine_btn": "Start mining",
