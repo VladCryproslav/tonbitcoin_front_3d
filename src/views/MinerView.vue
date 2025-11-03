@@ -1002,7 +1002,7 @@ onUnmounted(() => {
     <template #header>
       {{ t('asic_shop.information') }}
     </template>
-    <template #modal-body>
+    <template #modal-body></template>
       <div class="hydroelectric-content">
         <div class="hydroelectric-text">
           {{ t('gems.orbital_description') }}<br><br>
@@ -1017,7 +1017,7 @@ onUnmounted(() => {
       </div>
     </template>
   </InfoModal>
-  <InfoModal v-if="openOrbitalCraftInfo" :confirm-label="t('gems.buy_hydroelectric_btn')" @close="(e) => { if (e?.check) openHydroelectricInfo = true; openOrbitalCraftInfo = false }">
+  <InfoModal v-if="openOrbitalCraftInfo" :confirm-label="t('gems.buy_hydroelectric_btn')" @close="(e) => { if (e?.check) buyHydroelectric(); openOrbitalCraftInfo = false }">
     <template #header>
       {{ t('gems.orbital_instruction_title') }}
     </template>
@@ -1026,7 +1026,7 @@ onUnmounted(() => {
         <div class="hydroelectric-text">
           {{ t('gems.orbital_instruction_intro') }}<br><br>
           1. {{ t('gems.orbital_step_1').replace('Hydroelectric Power Station','') }}
-          <span class="link-hydro" @click="openHydroelectricInfo = true">Hydroelectric Power Station</span><br>
+          <span class="link-hydro" @click="buyHydroelectric()">Hydroelectric Power Station</span><br>
           <span class="copyable-address" @click="copyAddress(t('gems.orbital_burn_address'))">
             <b class="address-text">{{ t('gems.orbital_burn_address') }}</b>
             <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -3341,7 +3341,7 @@ onUnmounted(() => {
 }
 
 .link-hydro {
-  color: #ffc300;
+  color: #2eb5de;
   text-decoration: underline;
   cursor: pointer;
 }

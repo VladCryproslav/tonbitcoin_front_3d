@@ -651,7 +651,7 @@
     "orbital_fund_address": "UQB0ukWTZXHQhlhztL91277hD8xbFFKXiHVvSBNw-gcBKHfO",
     "orbital_note": "Важно! В течении 1 дня произойдет крафт Орбитальной электростанции, которая будет в ответ отправлена вам на кошелек.",
     "orbital_instruction_full": "Инструкция крафта Орбитальной электростанции:\n\n1) Отправьте две NFT типа Hydroelectric Power Station на кошелек сжигания:\nUQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJKZ\n\n2) Оплатите крафт в размере 2000 fBTC на адрес Фонда Развития Проекта:\nUQB0ukWTZXHQhlhztL91277hD8xbFFKXiHVvSBNw-gcBKHfO\n\nВажно! В течении 1 дня произойдет крафт Орбитальной электростанции, которая будет в ответ отправлена вам на кошелек.",
-    "buy_hydroelectric_btn": "Купить Hydroelectric Power Station"
+    "buy_hydroelectric_btn": "Купить Hydro..."
   },
   "miner": {
     "start_mine_btn": "Начать майнинг",
