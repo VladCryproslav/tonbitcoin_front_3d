@@ -256,6 +256,26 @@ const gemsSheet = [
   },
   {
     shop: true,
+    name: 'Craft NFT',
+    type: 'Orbital Power Plant',
+    price: '99 + 99',
+    rarity: 'special',
+    description: 'Storage: 1000 kW',
+    buttonColor: 'blue',
+    hasBlueStroke: true,
+    enableSale: false,
+    salePercent: 10, // Кастомная скидка для этого GEMS (50%)
+    imagePath: '@/assets/gems/Hydroelectric_power_plant.webp',
+    link: 'https://getgems.io/collection/EQB-pBhnWEYPbIu25uM1Yp5MqGFjQ-8Jes5CT2Dr-OVd705u?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQASp_CpNEoFI-HvTurh74NTxdV_vuXGGd1PzsJsinnJjUkp%22%7D%2C%22attributes%22%3A%7B%22Level%22%3A%5B%22Special%22%5D%7D%7D', // Not used - uses TON payment instead
+    info: 'hydroelectric_power_plant_modal',
+    benefits: [
+      'hydroelectric_benefit_1',
+      'hydroelectric_benefit_2',
+      'hydroelectric_benefit_3'
+    ]
+  },
+  {
+    shop: true,
     name: 'Buy NFT',
     type: 'Jarvis Bot',
     price: 99,
