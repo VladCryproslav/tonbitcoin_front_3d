@@ -76,6 +76,8 @@ const currentGemItem = ref(null)
 const openStarterPackInfo = ref(false)
 const openDaoOwnerInfo = ref(false)
 const openHydroelectricInfo = ref(false)
+const openOrbitalInfo = ref(false)
+const openOrbitalCraftInfo = ref(false)
 
 const currBuyAsic = ref(null)
 
@@ -465,6 +467,12 @@ const buyAsics = async (item, price, link, sale, shop = true) => {
 const buyGem = async (gemItem) => {
   if (!gemItem?.shop) return
 
+  // Orbital Power Plant: открываем модалку инструкции крафта
+  if (gemItem?.type === 'Orbital Power Plant') {
+    openOrbitalCraftInfo.value = true
+    return
+  }
+
   // Если это стартер пакет - используем отправку TON
   if (gemItem?.type === 'Starter Pack') {
     if (isProcessing.value) return
@@ -685,6 +693,12 @@ const copyInvite = () => {
   return navigator.clipboard.writeText(link)
 }
 
+const copyOrbitalInstruction = () => {
+  const instruction = t('gems.orbital_instruction_full')
+  navigator.clipboard.writeText(instruction)
+  showModal('success', t('notification.st_success'), t('gems.instruction_copied'))
+}
+
 let isPaused = ref(false)
 let timeoutId = null
 
@@ -890,6 +904,8 @@ const handleGemInfoClick = (gemItem) => {
     openDaoOwnerInfo.value = true
   } else if (gemItem?.info === 'hydroelectric_power_plant_modal') {
     openHydroelectricInfo.value = true
+  } else if (gemItem?.info === 'orbital_power_plant_modal') {
+    openOrbitalInfo.value = true
   } else {
     gemInfoText.value = gemItem?.info || ''
     currentGemItem.value = gemItem
@@ -1001,6 +1017,43 @@ onUnmounted(() => {
     </template>
     <template #modal-body>
       {{ t(gemInfoText) }}
+    </template>
+  </InfoModal>
+  <InfoModal v-if="openOrbitalInfo" :confirm-label="t('gems.orbital_instruction_btn')" @close="(e) => { if (e?.check) { openOrbitalCraftInfo = true } openOrbitalInfo = false }">
+    <template #header>
+      {{ t('asic_shop.information') }}
+    </template>
+    <template #modal-body>
+      <div class="hydroelectric-content">
+        <div class="hydroelectric-text">
+          {{ t('gems.orbital_description') }}<br><br>
+          {{ t('gems.orbital_characteristics') }}<br>
+          • {{ t('gems.orbital_item_1') }}<br>
+          • {{ t('gems.orbital_item_2') }}<br>
+          • {{ t('gems.orbital_item_3') }}<br>
+          • {{ t('gems.orbital_item_4') }}<br><br>
+          {{ t('gems.orbital_income') }}<br><br>
+          {{ t('gems.orbital_unique') }}<br><br>
+          {{ t('gems.orbital_progress') }}
+        </div>
+      </div>
+    </template>
+  </InfoModal>
+  <InfoModal v-if="openOrbitalCraftInfo" :confirm-label="t('gems.copy_instruction_btn')" @close="(e) => { if (e?.check) copyOrbitalInstruction(); openOrbitalCraftInfo = false }">
+    <template #header>
+      {{ t('gems.orbital_instruction_title') }}
+    </template>
+    <template #modal-body>
+      <div class="hydroelectric-content">
+        <div class="hydroelectric-text">
+          {{ t('gems.orbital_instruction_intro') }}<br><br>
+          1. {{ t('gems.orbital_step_1') }}<br>
+          <b>{{ t('gems.orbital_burn_address') }}</b><br><br>
+          2. {{ t('gems.orbital_step_2') }}<br>
+          <b>{{ t('gems.orbital_fund_address') }}</b><br><br>
+          {{ t('gems.orbital_note') }}
+        </div>
+      </div>
     </template>
   </InfoModal>
   <InfoModal v-if="openStarterPackInfo" :confirm-label="t('common.buy')" @close="(e) => { if (e?.check) buyStarterPack(); openStarterPackInfo = false }">
@@ -1269,10 +1322,11 @@ onUnmounted(() => {
             :disabled="!gemItem?.shop"
             @click="buyGem(gemItem)">
             <span>{{ gemItem.name }}</span>
-            <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && gemItem?.enableSale !== false }">
+            <span v-if="gemItem?.type !== 'Orbital Power Plant'" class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && gemItem?.enableSale !== false }">
               <img src="@/assets/TON.png" width="14px" height="14px" />
               {{ gemItem.price }}
             </span>
+            <span v-else class="gem-price">{{ gemItem.price }}</span>
             <div v-if="gemsSaleActive && gemItem?.enableSale !== false" class="gem-sale-perc">-{{ gemItem.salePercent || gemsSalePercent }}%</div>
             <div v-if="gemsSaleActive && gemItem?.enableSale !== false" class="gem-sale-newprice">
               <img src="@/assets/TON.png" width="12px" height="12px" />
