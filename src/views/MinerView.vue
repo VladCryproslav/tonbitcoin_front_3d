@@ -924,16 +924,6 @@ const getStarterPackPrice = () => {
   return starterPack.price
 }
 
-const getDaoOwnerPrice = () => {
-  const daoOwner = gemsSheet.find(gem => gem.type === 'DAO Owner')
-  if (!daoOwner) return 960
-
-  if (gemsSaleActive && daoOwner.enableSale !== false) {
-    const discountedPrice = getGemPrice(daoOwner)
-    return Math.round(discountedPrice * 10) / 10
-  }
-  return daoOwner.price
-}
 
 const buyCurrentGem = () => {
   if (currentGemItem.value) {
@@ -958,16 +948,6 @@ const buyStarterPack = () => {
   openStarterPackInfo.value = false
 }
 
-const getHydroelectricPrice = () => {
-  const hydroelectric = gemsSheet.find(gem => gem.type === 'Hydroelectric Power Plant')
-  if (!hydroelectric) return 99
-
-  if (gemsSaleActive && hydroelectric.enableSale !== false) {
-    const discountedPrice = getGemPrice(hydroelectric)
-    return Math.round(discountedPrice * 10) / 10
-  }
-  return hydroelectric.price
-}
 
 const buyHydroelectric = () => {
   const hydroelectric = gemsSheet.find(gem => gem.type === 'Hydroelectric Power Plant')
@@ -1048,10 +1028,18 @@ onUnmounted(() => {
           1. {{ t('gems.orbital_step_1') }}<br>
           <span class="copyable-address" @click="copyAddress(t('gems.orbital_burn_address'))">
             <b>{{ t('gems.orbital_burn_address') }}</b>
+            <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 1H4C2.895 1 2 1.895 2 3V15H4V3H16V1Z" fill="#ffc300"/>
+              <path d="M20 5H8C6.895 5 6 5.895 6 7V21C6 22.105 6.895 23 8 23H20C21.105 23 22 22.105 22 21V7C22 5.895 21.105 5 20 5ZM20 21H8V7H20V21Z" fill="#ffc300"/>
+            </svg>
           </span><br><br>
           2. {{ t('gems.orbital_step_2') }}<br>
           <span class="copyable-address" @click="copyAddress(t('gems.orbital_fund_address'))">
             <b>{{ t('gems.orbital_fund_address') }}</b>
+            <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 1H4C2.895 1 2 1.895 2 3V15H4V3H16V1Z" fill="#ffc300"/>
+              <path d="M20 5H8C6.895 5 6 5.895 6 7V21C6 22.105 6.895 23 8 23H20C21.105 23 22 22.105 22 21V7C22 5.895 21.105 5 20 5ZM20 21H8V7H20V21Z" fill="#ffc300"/>
+            </svg>
           </span><br><br>
           {{ t('gems.orbital_note') }}
         </div>
@@ -3327,6 +3315,8 @@ onUnmounted(() => {
   display: inline-block;
   max-width: 100%;
   transition: opacity 0.2s;
+  color: #ffc300;
+  vertical-align: middle;
 
   &:hover {
     opacity: 0.8;
@@ -3335,5 +3325,10 @@ onUnmounted(() => {
   &:active {
     opacity: 0.6;
   }
+}
+
+.copy-icon {
+  margin-left: 6px;
+  vertical-align: text-bottom;
 }
 </style>
