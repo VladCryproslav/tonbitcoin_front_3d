@@ -1027,7 +1027,7 @@ onUnmounted(() => {
           {{ t('gems.orbital_instruction_intro') }}<br><br>
           1. {{ t('gems.orbital_step_1') }}<br>
           <span class="copyable-address" @click="copyAddress(t('gems.orbital_burn_address'))">
-            <b>{{ t('gems.orbital_burn_address') }}</b>
+            <b class="address-text">{{ t('gems.orbital_burn_address') }}</b>
             <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M16 1H4C2.895 1 2 1.895 2 3V15H4V3H16V1Z" fill="#ffc300"/>
               <path d="M20 5H8C6.895 5 6 5.895 6 7V21C6 22.105 6.895 23 8 23H20C21.105 23 22 22.105 22 21V7C22 5.895 21.105 5 20 5ZM20 21H8V7H20V21Z" fill="#ffc300"/>
@@ -1035,7 +1035,7 @@ onUnmounted(() => {
           </span><br><br>
           2. {{ t('gems.orbital_step_2') }}<br>
           <span class="copyable-address" @click="copyAddress(t('gems.orbital_fund_address'))">
-            <b>{{ t('gems.orbital_fund_address') }}</b>
+            <b class="address-text">{{ t('gems.orbital_fund_address') }}</b>
             <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M16 1H4C2.895 1 2 1.895 2 3V15H4V3H16V1Z" fill="#ffc300"/>
               <path d="M20 5H8C6.895 5 6 5.895 6 7V21C6 22.105 6.895 23 8 23H20C21.105 23 22 22.105 22 21V7C22 5.895 21.105 5 20 5ZM20 21H8V7H20V21Z" fill="#ffc300"/>
@@ -3311,12 +3311,13 @@ onUnmounted(() => {
 
 .copyable-address {
   cursor: pointer;
-  word-break: break-all;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   max-width: 100%;
   transition: opacity 0.2s;
   color: #ffc300;
-  vertical-align: middle;
+  gap: 6px;
+  flex-wrap: wrap;
 
   &:hover {
     opacity: 0.8;
@@ -3327,8 +3328,14 @@ onUnmounted(() => {
   }
 }
 
+.address-text {
+  word-break: break-all;
+  flex: 1;
+  min-width: 0;
+}
+
 .copy-icon {
-  margin-left: 6px;
-  vertical-align: text-bottom;
+  flex-shrink: 0;
+  align-self: center;
 }
 </style>
