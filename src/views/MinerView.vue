@@ -1002,7 +1002,7 @@ onUnmounted(() => {
     <template #header>
       {{ t('asic_shop.information') }}
     </template>
-    <template #modal-body></template>
+    <template #modal-body>
       <div class="hydroelectric-content">
         <div class="hydroelectric-text">
           {{ t('gems.orbital_description') }}<br><br>
