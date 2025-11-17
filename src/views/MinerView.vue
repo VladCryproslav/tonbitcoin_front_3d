@@ -2089,7 +2089,7 @@ onUnmounted(() => {
           line-height: 16pt;
           font-weight: 700;
           font-family: 'Inter' !important;
-          color: #fff;
+          color: #000;
 
           &.gem-saleprice {
             position: relative;
@@ -2382,6 +2382,7 @@ onUnmounted(() => {
           gap: 0.3rem;
           font-size: 12px;
           line-height: 16pt;
+          color: #000;
 
           &.saleprice {
             position: relative;
