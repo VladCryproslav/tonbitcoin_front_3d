@@ -38,6 +38,9 @@ const connectedAddressString = useTonAddress(false)
 const asicsIsOpen = useTabsStore()
 const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= new Date())
 
+// Состояние для закрытия промо-плашки
+const promoBannerClosed = ref(false)
+
 let controller = null
 
 const miningTime = ref(0)
@@ -1265,6 +1268,28 @@ onUnmounted(() => {
         </div>
       </div>
 
+      <!-- Маркетинговая плашка с акцией -->
+      <Transition name="promo-banner">
+        <div v-if="activeShopTab === 'asics' && asicsSaleActive && !promoBannerClosed" class="promo-banner">
+          <div class="promo-banner-shine-wrapper">
+            <div class="promo-banner-shine"></div>
+          </div>
+          <button class="promo-banner-close" @click="promoBannerClosed = true">
+            <Exit :width="14" style="color: rgba(255, 255, 255, 0.8)" />
+          </button>
+          <div class="promo-banner-content">
+            <div class="promo-banner-text">
+              <div class="promo-banner-title">
+                <span class="promo-banner-icon-inline">🔥</span>
+                {{ t('asic_shop.promo_banner_title') }}
+                <span class="promo-banner-icon-inline">🔥</span>
+              </div>
+              <div class="promo-banner-description">{{ t('asic_shop.promo_banner_text') }}</div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
       <!-- ASICs List -->
       <div v-if="activeShopTab === 'asics'" class="asics-list" ref="asicsList">
         <div class="item" v-for="(asicItem, index) in asicsSheet.filter(el => el.shop)" :key="asicItem">
@@ -1898,6 +1923,335 @@ onUnmounted(() => {
         }
       }
     }
+  }
+
+  .promo-banner {
+    position: relative;
+    width: 90%;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg,
+      rgba(252, 217, 9, 0.15) 0%,
+      rgba(254, 164, 0, 0.15) 50%,
+      rgba(226, 249, 116, 0.1) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(252, 217, 9, 0.3);
+    border-radius: 1rem;
+    padding: 1.2rem 1rem;
+    min-height: auto;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    animation: promoPulse 4s ease-in-out infinite;
+    box-shadow:
+      0 4px 20px rgba(252, 217, 9, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+    .promo-banner-shine-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      border-radius: 1rem;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg,
+        rgba(252, 217, 9, 0.2) 0%,
+        rgba(254, 164, 0, 0.2) 50%,
+        rgba(226, 249, 116, 0.15) 100%);
+      border-radius: 1rem;
+      opacity: 0;
+      z-index: -1;
+      animation: promoGlow 3s ease-in-out infinite;
+      transition: opacity 0.3s ease;
+    }
+
+    @keyframes promoPulse {
+      0%, 100% {
+        box-shadow:
+          0 4px 20px rgba(252, 217, 9, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        border-color: rgba(252, 217, 9, 0.3);
+      }
+      50% {
+        box-shadow:
+          0 8px 35px rgba(252, 217, 9, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        border-color: rgba(252, 217, 9, 0.6);
+      }
+    }
+
+    @keyframes promoGlow {
+      0%, 100% {
+        opacity: 0;
+      }
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    .promo-banner-shine {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        transparent 30%,
+        rgba(255, 255, 255, 0.25) 50%,
+        transparent 70%,
+        transparent 100%
+      );
+      animation: shine 4s ease-in-out infinite;
+      pointer-events: none;
+      transform: translateX(-100%);
+
+      @keyframes shine {
+        0% {
+          transform: translateX(-100%) skewX(-15deg);
+        }
+        50% {
+          transform: translateX(200%) skewX(-15deg);
+        }
+        100% {
+          transform: translateX(200%) skewX(-15deg);
+        }
+      }
+    }
+
+    .promo-banner-close {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      transition: background 0.3s ease,
+                  transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      will-change: transform, background;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.5);
+        transform: translateZ(0) scale(1.15);
+      }
+
+      &:active {
+        transform: translateZ(0) scale(0.95);
+        transition: transform 0.1s ease;
+      }
+
+      &:not(:hover):not(:active) {
+        transform: translateZ(0) scale(1);
+      }
+    }
+
+    .promo-banner-icon-inline {
+      display: inline-block;
+      font-size: 1.2rem;
+      margin: 0 0.3rem;
+      animation: iconBounce 2.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite,
+                 iconGlow 2s ease-in-out infinite;
+      vertical-align: middle;
+      filter: drop-shadow(0 0 4px rgba(252, 217, 9, 0.6));
+
+      @keyframes iconBounce {
+        0%, 100% {
+          transform: translateY(0) scale(1) rotate(0deg);
+        }
+        25% {
+          transform: translateY(-5px) scale(1.15) rotate(-5deg);
+        }
+        50% {
+          transform: translateY(-8px) scale(1.2) rotate(0deg);
+        }
+        75% {
+          transform: translateY(-5px) scale(1.15) rotate(5deg);
+        }
+      }
+
+      @keyframes iconGlow {
+        0%, 100% {
+          filter: drop-shadow(0 0 4px rgba(252, 217, 9, 0.6));
+        }
+        50% {
+          filter: drop-shadow(0 0 8px rgba(252, 217, 9, 0.9));
+        }
+      }
+
+      &:last-child {
+        animation-delay: 0.4s;
+      }
+    }
+
+    .promo-banner-content {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      z-index: 2;
+      width: 100%;
+      flex: 1;
+      padding: 0 0.5rem;
+      min-height: 100%;
+
+      .promo-banner-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        flex: 1;
+        min-width: 0;
+        width: 100%;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        overflow: visible;
+
+        .promo-banner-title {
+          color: #fcd909;
+          font-family: 'Inter' !important;
+          font-weight: 700;
+          font-size: clamp(14px, 4vw, 18px);
+          line-height: 1.4;
+          text-shadow: 0 2px 8px rgba(252, 217, 9, 0.4);
+          letter-spacing: 0.02em;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          white-space: normal;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-wrap: wrap;
+          gap: 0.2rem;
+        }
+
+        .promo-banner-description {
+          color: rgba(255, 255, 255, 0.9);
+          font-family: 'Inter' !important;
+          font-weight: 500;
+          font-size: clamp(11px, 3vw, 13px);
+          line-height: 1.6;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          white-space: normal;
+          width: 100%;
+          display: block;
+          text-align: center;
+          will-change: auto;
+          backface-visibility: hidden;
+          transform: translateZ(0);
+        }
+      }
+    }
+
+    @media (max-width: 420px) {
+      padding: 1rem 0.75rem;
+
+      .promo-banner-close {
+        top: 0.5rem;
+        right: 0.5rem;
+        width: 24px;
+        height: 24px;
+      }
+
+      .promo-banner-icon-inline {
+        font-size: 1rem;
+        margin: 0 0.2rem;
+      }
+
+      .promo-banner-content {
+        gap: 0.5rem;
+        align-items: flex-start;
+        padding: 0 0.5rem;
+
+        .promo-banner-text {
+          gap: 0.4rem;
+
+          .promo-banner-title {
+            line-height: 1.3;
+            font-size: clamp(13px, 3.5vw, 16px);
+          }
+
+          .promo-banner-description {
+            line-height: 1.5;
+          }
+        }
+      }
+    }
+  }
+
+  // Анимации для плашки
+  .promo-banner-enter-active {
+    transition: opacity 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+                transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 0.6s ease-out;
+  }
+
+  .promo-banner-leave-active {
+    transition: opacity 0.3s ease-out,
+                transform 0.3s ease-out,
+                filter 0.3s ease-out,
+                margin-bottom 0.3s ease-out,
+                height 0.3s ease-out,
+                padding 0.3s ease-out;
+    pointer-events: none;
+  }
+
+  .promo-banner-enter-from {
+    opacity: 0;
+    transform: translateY(-15px);
+    filter: blur(4px);
+  }
+
+  .promo-banner-enter-to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+
+  .promo-banner-leave-from {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+    margin-bottom: 1rem;
+    height: auto;
+    padding: 1.2rem 1rem;
+  }
+
+  .promo-banner-leave-to {
+    opacity: 0;
+    transform: translateY(-10px);
+    filter: blur(3px);
+    margin-bottom: 0;
+    height: 0;
+    padding: 0;
+    overflow: hidden;
   }
 
   .shop-tabs {
