@@ -1835,7 +1835,7 @@ onUnmounted(() => {
         </div>
         <button class="claim-btn" @click="claim">{{ t('general.top_nav.mint_btn').toUpperCase() }}</button>
       </div>
-      <div class="shop" @click="openAsics">
+      <div class="shop" :class="{ 'gems-shop-active': !halloweenActive }" @click="openAsics">
         <img v-if="halloweenActive" src="@/assets/Halloween.png" class="asic-image halloween-image" />
         <img v-else src="@/assets/gems_shop_icon.png" class="asic-image" />
         <p>
@@ -3275,6 +3275,11 @@ onUnmounted(() => {
     aspect-ratio: 1/1;
     border-radius: 0.8rem;
     overflow: visible;
+
+    &.gems-shop-active {
+      background: linear-gradient(180deg, rgba(222, 211, 183, 1) 0%, rgba(209, 139, 0, 1) 100%);
+      box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+    }
 
     &:active {
       opacity: 0.5;
