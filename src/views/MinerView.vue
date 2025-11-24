@@ -19,7 +19,7 @@ import SpecialPriceModal from '@/components/SpecialPriceModal.vue'
 import WithdrawModal from '@/components/WithdrawModal.vue'
 import ReconnectModal from '@/components/ReconnectModal.vue'
 import InfoModal from '@/components/InfoModal.vue'
-import asicsSheet, { gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, getGemPrice, sortGemsBySale, asicsSaleActive, asicsSalePercent, asicsSaleEndDate, getAsicPrice } from '@/services/data'
+import asicsSheet, { gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, getGemPrice, sortGemsBySale, asicsSaleActive, asicsSalePercent, asicsSaleEndDate, getAsicPrice, isAsicInSale } from '@/services/data'
 import _ from "lodash"
 import { getAsicData } from '@/utils/asics'
 import { useI18n } from 'vue-i18n'
@@ -187,9 +187,15 @@ const boostActive = (boost) => {
 const specialModalResponse = async (res) => {
   openSpecialModal.value = false
   if (res.check) {
+    const asicIndex = asicsSheet.findIndex((el) => el.name == currBuyAsic.value.name)
+    const asicItem = asicsSheet[asicIndex]
+    const finalPrice = isAsicInSale(asicItem) ? getAsicPrice(asicItem) : asicItem?.price
     await buyAsics(
-      asicsSheet.findIndex((el) => el.name == currBuyAsic.value.name),
-      currBuyAsic.value?.price,
+      asicIndex,
+      finalPrice,
+      asicItem?.link,
+      false, // Не показываем модальное окно повторно
+      asicItem?.shop
     )
   }
 }
@@ -417,16 +423,23 @@ const buyAsics = async (item, price, link, sale, shop = true) => {
   if (!shop) {
     return
   }
-  if (sale) {
-    currBuyAsic.value = asicsSheet[item]
-    openSpecialModal.value = true
-    return
-  }
+  // Для SX ULTRA PRO всегда редиректим на GetGems (не показываем модальное окно с акцией)
   if (link) {
     redirectLink.value = link
     redirectItemName.value = asicsSheet[item]?.name || null
     redirectItemClass.value = null
     openRedirectModal.value = true
+    return
+  }
+  if (sale) {
+    const asicItem = asicsSheet[item]
+    // Подготавливаем данные для модального окна
+    currBuyAsic.value = {
+      ...asicItem,
+      new_price: getAsicPrice(asicItem),
+      perc: asicsSalePercent
+    }
+    openSpecialModal.value = true
     return
   }
   if (isProcessing.value) return
@@ -1286,20 +1299,20 @@ onUnmounted(() => {
                   'kW'
               }) }}</span>
           </div>
-          <button @click="buyAsics(index, asicsSaleActive ? getAsicPrice(asicItem) : asicItem?.price, asicItem?.link, asicsSaleActive || asicItem?.sale, asicItem?.shop)"
+          <button @click="buyAsics(index, isAsicInSale(asicItem) ? getAsicPrice(asicItem) : asicItem?.price, asicItem?.link, isAsicInSale(asicItem) || asicItem?.sale, asicItem?.shop)"
             :disabled="asicItem?.sold_out">
             <span>{{ asicItem?.sold_out ? t('common.sold_out') : t('asic_shop.buy_asic') }}</span>
-            <span class="price" :class="{ saleprice: asicsSaleActive || asicItem?.new_price }">
+            <span class="price" :class="{ saleprice: isAsicInSale(asicItem) || asicItem?.new_price }">
               <img src="@/assets/TON.png" width="14px" height="14px" />
               {{ asicItem?.price }}
             </span>
-            <div v-if="asicsSaleActive || asicItem?.perc" class="sale-perc">-{{ asicsSaleActive ? asicsSalePercent : asicItem?.perc }}%</div>
-            <div v-if="asicsSaleActive || asicItem?.new_price" class="sale-newprice">
+            <div v-if="isAsicInSale(asicItem) || asicItem?.perc" class="sale-perc">-{{ isAsicInSale(asicItem) ? asicsSalePercent : asicItem?.perc }}%</div>
+            <div v-if="isAsicInSale(asicItem) || asicItem?.new_price" class="sale-newprice">
               <img src="@/assets/TON.png" width="12px" height="12px" />
-              {{ asicsSaleActive ? getAsicPrice(asicItem) : asicItem?.new_price }}
+              {{ isAsicInSale(asicItem) ? getAsicPrice(asicItem) : asicItem?.new_price }}
             </div>
           </button>
-          <span v-if="asicsSaleActive || (!asicsSaleActive && !asicItem?.sale)" class="tag" :style="asicItem?.rarity == 'Common'
+          <span v-if="isAsicInSale(asicItem) || (!isAsicInSale(asicItem) && !asicItem?.sale)" class="tag" :style="asicItem?.rarity == 'Common'
             ? 'background-color: #5D625E'
             : asicItem?.rarity == 'Rare'
               ? 'background-color: #009600;'
@@ -1309,7 +1322,7 @@ onUnmounted(() => {
                   ? 'background-color: #E98509;'
                   : 'background-color: #6B25A1;'
             ">{{ t(`asic_shop.${asicItem?.rarity.toLowerCase()}`) }}</span>
-          <span v-if="!asicsSaleActive && asicItem?.sale" class="runline" :style="asicItem?.rarity == 'Common'
+          <span v-if="!isAsicInSale(asicItem) && asicItem?.sale" class="runline" :style="asicItem?.rarity == 'Common'
             ? 'background-color: #5D625E'
             : asicItem?.rarity == 'Rare'
               ? 'background-color: #009600;'

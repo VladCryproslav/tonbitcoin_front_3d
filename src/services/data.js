@@ -497,11 +497,22 @@ const sortGemsBySale = (gems) => {
 const getAsicPrice = (asic) => {
   if (!asicsSaleActive) return asic.price
   if (asic.sold_out) return asic.price
+  // Исключаем ASIC S1 и SX ULTRA PRO из акции
+  if (asic.name === 'ASIC S1' || asic.name === 'ASIC SX ULTRA PRO') return asic.price
 
   const discountedPrice = asic.price * (1 - asicsSalePercent / 100)
   // Округляем до целого числа
   return Math.round(discountedPrice)
 }
 
-export { asicsSheet, gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, gemsSaleText, getGemPrice, sortGemsBySale, halloweenActive, asicsSaleActive, asicsSalePercent, asicsSaleEndDate, getAsicPrice }
+// Функция проверки, участвует ли ASIC в акции
+const isAsicInSale = (asic) => {
+  if (!asicsSaleActive) return false
+  if (asic.sold_out) return false
+  // Исключаем ASIC S1 и SX ULTRA PRO из акции
+  if (asic.name === 'ASIC S1' || asic.name === 'ASIC SX ULTRA PRO') return false
+  return true
+}
+
+export { asicsSheet, gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, gemsSaleText, getGemPrice, sortGemsBySale, halloweenActive, asicsSaleActive, asicsSalePercent, asicsSaleEndDate, getAsicPrice, isAsicInSale }
 export default asicsSheet
