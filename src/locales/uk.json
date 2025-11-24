@@ -281,7 +281,7 @@
     },
     "special_price_modal": {
       "title": "Увага!",
-      "mint_price_message": "Ціна мінту в смарт контракті становить {price} TON. Знижка в розмірі {discount} TON ({percentage}) буде відправлена вам протягом 1 години після мінту {name}",
+      "mint_price_message": "Ціна мінту в смарт контракті становить {price} TON. Знижка в розмірі {discount} TON ({percentage}) буде відправлена вам протягом 12 годин після мінту {name}",
       "proceed": "Перейти",
       "cancel": "Скасувати"
     },

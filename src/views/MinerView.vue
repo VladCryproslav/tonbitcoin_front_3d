@@ -192,7 +192,8 @@ const specialModalResponse = async (res) => {
   if (res.check) {
     const asicIndex = asicsSheet.findIndex((el) => el.name == currBuyAsic.value.name)
     const asicItem = asicsSheet[asicIndex]
-    const finalPrice = isAsicInSale(asicItem) ? getAsicPrice(asicItem) : asicItem?.price
+    // ВАЖНО: Используем оригинальную цену без скидки для транзакции в смартконтракт
+    const finalPrice = asicItem?.price
     await buyAsics(
       asicIndex,
       finalPrice,
