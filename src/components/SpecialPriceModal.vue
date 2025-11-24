@@ -33,7 +33,7 @@ const emitClose = () => {
           <div class="modal-body" v-html="t('modals.special_price_modal.mint_price_message', {
               price: props.saleAsic?.price || 0,
               discount: `<span style='color: #fea400; font-weight: bold'>${props.saleAsic?.new_price && props.saleAsic?.price ? (+props.saleAsic.price - +props.saleAsic.new_price).toFixed(1) : 0}</span>`,
-              percentage: `<span style='color: #fea400; font-weight: bold'>${props.saleAsic?.perc || 0}</span>`,
+              percentage: `<span style='color: #fea400; font-weight: bold'>-${props.saleAsic?.perc || 0}%</span>`,
               name: `<span style='color: #fea400; font-weight: bold'>${props.saleAsic?.name || ''}</span>`
             })"></div>
           <div class="buttons-group">

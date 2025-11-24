@@ -281,7 +281,7 @@
     },
     "special_price_modal": {
       "title": "Attention!",
-      "mint_price_message": "The mint price in the smart contract is {price} TON. A discount of {discount} TON (-{percentage}%) will be sent to you within 1 hour after minting {name}",
+      "mint_price_message": "The mint price in the smart contract is {price} TON. A discount of {discount} TON ({percentage}) will be sent to you within 1 hour after minting {name}",
       "proceed": "Proceed",
       "cancel": "Cancel"
     },
