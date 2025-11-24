@@ -1837,7 +1837,7 @@ onUnmounted(() => {
       </div>
       <div class="shop" @click="openAsics">
         <img v-if="halloweenActive" src="@/assets/Halloween.png" class="asic-image halloween-image" />
-        <img v-else src="@/assets/thirst-block2222.png" class="asic-image" />
+        <img v-else src="@/assets/gems_shop_icon.png" class="asic-image" />
         <p>
           <span>{{ t('general.top_nav.asics_shop_1') }}<br /></span>{{ t('general.top_nav.asics_shop_2') }}
         </p>
