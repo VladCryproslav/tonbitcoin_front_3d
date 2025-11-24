@@ -19,7 +19,7 @@ import SpecialPriceModal from '@/components/SpecialPriceModal.vue'
 import WithdrawModal from '@/components/WithdrawModal.vue'
 import ReconnectModal from '@/components/ReconnectModal.vue'
 import InfoModal from '@/components/InfoModal.vue'
-import asicsSheet, { gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, getGemPrice, sortGemsBySale } from '@/services/data'
+import asicsSheet, { gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, getGemPrice, sortGemsBySale, asicsSaleActive, asicsSalePercent, asicsSaleEndDate, getAsicPrice } from '@/services/data'
 import _ from "lodash"
 import { getAsicData } from '@/utils/asics'
 import { useI18n } from 'vue-i18n'
@@ -711,13 +711,19 @@ onMounted(() => {
     startTimer()
   }
 
-  // Initialize sale timer
+  // Initialize sale timers
   updateSaleTimer()
   const saleTimerInterval = setInterval(updateSaleTimer, 1000)
+
+  updateAsicsSaleTimer()
+  const asicsSaleTimerInterval = setInterval(updateAsicsSaleTimer, 1000)
 
   onUnmounted(() => {
     if (saleTimerInterval) {
       clearInterval(saleTimerInterval)
+    }
+    if (asicsSaleTimerInterval) {
+      clearInterval(asicsSaleTimerInterval)
     }
   })
 })
@@ -825,15 +831,24 @@ const openNftSpeedUpInfo = ref(false)
 const openNftSpeedUp = ref(false)
 const speedUpAddress = ref(null)
 
-const activeShopTab = ref('gems')
+const activeShopTab = ref('asics')
 
 const toggleShopTab = () => {
   activeShopTab.value = activeShopTab.value === 'gems' ? 'asics' : 'gems'
 }
 
-// Sale timer logic
+// Sale timer logic for GEMS
 const showSaleTimer = ref(true)
 const saleTimeRemaining = ref({
+  days: 0,
+  hours: 0,
+  minutes: 0,
+  seconds: 0
+})
+
+// Sale timer logic for ASICs
+const showAsicsSaleTimer = ref(true)
+const asicsSaleTimeRemaining = ref({
   days: 0,
   hours: 0,
   minutes: 0,
@@ -889,6 +904,29 @@ const updateSaleTimer = () => {
   const seconds = Math.floor((diffMs % (1000 * 60)) / 1000)
 
   saleTimeRemaining.value = {
+    days: days.toString().padStart(2, '0'),
+    hours: hours.toString().padStart(2, '0'),
+    minutes: minutes.toString().padStart(2, '0'),
+    seconds: seconds.toString().padStart(2, '0')
+  }
+}
+
+const updateAsicsSaleTimer = () => {
+  const now = new Date()
+  const endDate = new Date(asicsSaleEndDate)
+  const diffMs = endDate - now
+
+  if (diffMs <= 0) {
+    showAsicsSaleTimer.value = false
+    return
+  }
+
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((diffMs % (1000 * 60)) / 1000)
+
+  asicsSaleTimeRemaining.value = {
     days: days.toString().padStart(2, '0'),
     hours: hours.toString().padStart(2, '0'),
     minutes: minutes.toString().padStart(2, '0'),
@@ -1158,8 +1196,8 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <!-- Sale Timer -->
-      <div v-if="gemsSaleActive && showSaleTimer" class="sale-timer">
+      <!-- Sale Timer for GEMS -->
+      <div v-if="activeShopTab === 'gems' && gemsSaleActive && showSaleTimer" class="sale-timer">
         <div class="sale-timer-content">
           <span class="sale-timer-text">{{ t('asic_shop.sale_ends_in') }}</span>
           <div class="sale-timer-countdown">
@@ -1181,6 +1219,34 @@ onUnmounted(() => {
             <div class="timer-unit">
               <span class="timer-value">{{ saleTimeRemaining.seconds }}</span>
               <span class="timer-label">{{ getTimeUnitText(parseInt(saleTimeRemaining.seconds), 'seconds') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sale Timer for ASICs -->
+      <div v-if="activeShopTab === 'asics' && asicsSaleActive && showAsicsSaleTimer" class="sale-timer">
+        <div class="sale-timer-content">
+          <span class="sale-timer-text">{{ t('asic_shop.sale_ends_in') }}</span>
+          <div class="sale-timer-countdown">
+            <div class="timer-unit">
+              <span class="timer-value">{{ asicsSaleTimeRemaining.days }}</span>
+              <span class="timer-label">{{ getTimeUnitText(parseInt(asicsSaleTimeRemaining.days), 'days') }}</span>
+            </div>
+            <span class="timer-separator">:</span>
+            <div class="timer-unit">
+              <span class="timer-value">{{ asicsSaleTimeRemaining.hours }}</span>
+              <span class="timer-label">{{ getTimeUnitText(parseInt(asicsSaleTimeRemaining.hours), 'hours') }}</span>
+            </div>
+            <span class="timer-separator">:</span>
+            <div class="timer-unit">
+              <span class="timer-value">{{ asicsSaleTimeRemaining.minutes }}</span>
+              <span class="timer-label">{{ getTimeUnitText(parseInt(asicsSaleTimeRemaining.minutes), 'minutes') }}</span>
+            </div>
+            <span class="timer-separator">:</span>
+            <div class="timer-unit">
+              <span class="timer-value">{{ asicsSaleTimeRemaining.seconds }}</span>
+              <span class="timer-label">{{ getTimeUnitText(parseInt(asicsSaleTimeRemaining.seconds), 'seconds') }}</span>
             </div>
           </div>
         </div>
@@ -1220,20 +1286,20 @@ onUnmounted(() => {
                   'kW'
               }) }}</span>
           </div>
-          <button @click="buyAsics(index, asicItem?.price, asicItem?.link, asicItem?.sale, asicItem?.shop)"
+          <button @click="buyAsics(index, asicsSaleActive ? getAsicPrice(asicItem) : asicItem?.price, asicItem?.link, asicsSaleActive || asicItem?.sale, asicItem?.shop)"
             :disabled="asicItem?.sold_out">
             <span>{{ asicItem?.sold_out ? t('common.sold_out') : t('asic_shop.buy_asic') }}</span>
-            <span class="price" :class="{ saleprice: asicItem?.new_price }">
+            <span class="price" :class="{ saleprice: asicsSaleActive || asicItem?.new_price }">
               <img src="@/assets/TON.png" width="14px" height="14px" />
               {{ asicItem?.price }}
             </span>
-            <div v-if="asicItem?.perc" class="sale-perc">-{{ asicItem?.perc }}%</div>
-            <div v-if="asicItem?.new_price" class="sale-newprice">
+            <div v-if="asicsSaleActive || asicItem?.perc" class="sale-perc">-{{ asicsSaleActive ? asicsSalePercent : asicItem?.perc }}%</div>
+            <div v-if="asicsSaleActive || asicItem?.new_price" class="sale-newprice">
               <img src="@/assets/TON.png" width="12px" height="12px" />
-              {{ asicItem?.new_price }}
+              {{ asicsSaleActive ? getAsicPrice(asicItem) : asicItem?.new_price }}
             </div>
           </button>
-          <span v-if="!asicItem?.sale" class="tag" :style="asicItem?.rarity == 'Common'
+          <span v-if="asicsSaleActive || (!asicsSaleActive && !asicItem?.sale)" class="tag" :style="asicItem?.rarity == 'Common'
             ? 'background-color: #5D625E'
             : asicItem?.rarity == 'Rare'
               ? 'background-color: #009600;'
@@ -1243,7 +1309,7 @@ onUnmounted(() => {
                   ? 'background-color: #E98509;'
                   : 'background-color: #6B25A1;'
             ">{{ t(`asic_shop.${asicItem?.rarity.toLowerCase()}`) }}</span>
-          <span v-if="asicItem?.sale" class="runline" :style="asicItem?.rarity == 'Common'
+          <span v-if="!asicsSaleActive && asicItem?.sale" class="runline" :style="asicItem?.rarity == 'Common'
             ? 'background-color: #5D625E'
             : asicItem?.rarity == 'Rare'
               ? 'background-color: #009600;'
@@ -1267,9 +1333,9 @@ onUnmounted(() => {
                 {{ t(`asic_shop.${asicItem?.rarity.toLowerCase()}`) }}
               </div>
               <p v-if="locale == 'en'" class="textline">
-                - BEst choise now - Sale - BEst choise now - Sale - BEst choise now - Sale - BEst
-                choise now - Sale - BEst choise now - Sale - BEst choise now - Sale - BEst choise
-                now - Sale - BEst choise now - Sale
+                - Best choise now - Sale - Best choise now - Sale - Best choise now - Sale - Best
+                choise now - Sale - Best choise now - Sale - Best choise now - Sale - Best choise
+                now - Sale - Best choise now - Sale
               </p>
               <p v-if="locale == 'ru'" class="textline">
                 - Лучший выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа - Лучший выбор сейчас - Распродажа

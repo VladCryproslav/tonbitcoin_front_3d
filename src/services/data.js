@@ -182,6 +182,11 @@ const gemsSaleActive = false // Изменить на true для активац
 const gemsSalePercent = 50 // Процент скидки (например 50 = -50%)
 const gemsSaleEndDate = new Date('2024-10-31T23:59:59') // Дата окончания акции
 
+// Активность акции для ASICs (можно включать/выключать)
+const asicsSaleActive = true // Изменить на true для активации скидки
+const asicsSalePercent = 50 // Процент скидки (например 50 = -50%)
+const asicsSaleEndDate = new Date('2024-12-31T23:59:59') // Дата окончания акции
+
 // Halloween статус для кнопки ASICs Shop в EnergizerView
 const halloweenActive = false // Изменить на true для активации Halloween кнопки
 
@@ -488,5 +493,15 @@ const sortGemsBySale = (gems) => {
   })
 }
 
-export { asicsSheet, gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, gemsSaleText, getGemPrice, sortGemsBySale, halloweenActive }
+// Функция расчета цены ASIC со скидкой
+const getAsicPrice = (asic) => {
+  if (!asicsSaleActive) return asic.price
+  if (asic.sold_out) return asic.price
+
+  const discountedPrice = asic.price * (1 - asicsSalePercent / 100)
+  // Округляем до целого числа
+  return Math.round(discountedPrice)
+}
+
+export { asicsSheet, gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, gemsSaleText, getGemPrice, sortGemsBySale, halloweenActive, asicsSaleActive, asicsSalePercent, asicsSaleEndDate, getAsicPrice }
 export default asicsSheet
