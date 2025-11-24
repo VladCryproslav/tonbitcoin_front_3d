@@ -557,6 +557,10 @@ const buyGem = async (gemItem) => {
 function openAsics(side = true) {
   let opt = side == true ? true : false
   asicsIsOpen.setOpenAsicsShop(opt)
+  // Сбрасываем состояние закрытия промо-плашки при открытии магазина
+  if (opt) {
+    promoBannerClosed.value = false
+  }
   if (tg.platform === 'android') {
     tg.HapticFeedback.notificationOccurred('success');
   } else {
@@ -1207,26 +1211,9 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <!-- Правая часть (кнопка уведомления) -->
-        <div class="top-panel-right">
-          <Transition name="promo-button">
-            <button
-              v-if="activeShopTab === 'asics' && asicsSaleActive && promoBannerClosed"
-              class="promo-button-compact"
-              @click="promoBannerClosed = false"
-              :title="t('asic_shop.promo_banner_title')"
-            >
-              <svg class="promo-button-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="18" cy="5" r="3" fill="#fcd909" stroke="currentColor" stroke-width="1.5"/>
-              </svg>
-            </button>
-          </Transition>
-          <button class="close" @click="openAsics(false)">
-            <Exit :width="16" style="color: #fff" />
-          </button>
-        </div>
+        <button class="close" @click="openAsics(false)">
+          <Exit :width="16" style="color: #fff" />
+        </button>
       </div>
 
       <!-- Sale Timer for GEMS -->
@@ -1851,103 +1838,12 @@ onUnmounted(() => {
       text-wrap: nowrap;
     }
 
-    .top-panel-right {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      justify-content: flex-end;
-    }
-
     .close {
-      width: auto;
+      width: 20%;
       display: flex;
       align-items: center;
       justify-content: end;
     }
-  }
-
-  .promo-button-compact {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: none;
-    background: linear-gradient(135deg,
-      rgba(252, 217, 9, 0.2) 0%,
-      rgba(254, 164, 0, 0.2) 50%,
-      rgba(226, 249, 116, 0.15) 100%);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(252, 217, 9, 0.4);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow:
-      0 4px 15px rgba(252, 217, 9, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
-    z-index: 10;
-    flex-shrink: 0;
-
-    &:hover {
-      transform: scale(1.1);
-      box-shadow:
-        0 6px 20px rgba(252, 217, 9, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-      border-color: rgba(252, 217, 9, 0.6);
-    }
-
-    &:active {
-      transform: scale(0.95);
-    }
-
-    .promo-button-icon {
-      color: #ffffff;
-      filter: drop-shadow(0 2px 4px rgba(255, 255, 255, 0.3));
-      animation: iconPulse 2.5s ease-in-out infinite,
-                 iconShake 3s ease-in-out infinite;
-
-      @keyframes iconPulse {
-        0%, 100% {
-          transform: scale(1);
-          opacity: 1;
-        }
-        50% {
-          transform: scale(1.15);
-          opacity: 0.95;
-        }
-      }
-
-      @keyframes iconShake {
-        0%, 100% {
-          transform: rotate(0deg);
-        }
-        10%, 30%, 50%, 70%, 90% {
-          transform: rotate(-3deg);
-        }
-        20%, 40%, 60%, 80% {
-          transform: rotate(3deg);
-        }
-      }
-    }
-  }
-
-  // Анимации для круглой кнопки
-  .promo-button-enter-active {
-    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .promo-button-leave-active {
-    transition: all 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19);
-  }
-
-  .promo-button-enter-from {
-    opacity: 0;
-    transform: scale(0) rotate(-180deg);
-  }
-
-  .promo-button-leave-to {
-    opacity: 0;
-    transform: scale(0) rotate(180deg);
   }
 
   .sale-timer {
