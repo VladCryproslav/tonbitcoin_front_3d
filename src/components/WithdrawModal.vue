@@ -38,26 +38,6 @@ const totalCommission = computed(() => {
   return withdraw_amount.value < 100 ? 1 : +(withdraw_amount.value * commissionRate.value).toFixed(2)
 })
 
-const isS21SX = computed(() => {
-  return +((app?.wallet_info?.tbtc_amount_s21 || 0) + (app?.wallet_info?.tbtc_amount_sx || 0))
-})
-
-// Об'єднаний баланс всіх асиків (S1-S19 + S21-SX)
-const totalAsicsBalance = computed(() => {
-  const totalWithdraw = withdraw_amount.value || 0
-  if (totalWithdraw <= 0) return 0
-
-  const s1s19Available = app?.wallet_info?.tbtc_amount || 0
-  const s21sxAvailable = isS21SX.value
-
-  if (s1s19Available + s21sxAvailable === 0) return 0
-
-  // Застосовуємо комісію до всієї суми
-  const totalAfterCommission = totalWithdraw - (totalWithdraw * commissionRate.value)
-
-  return +totalAfterCommission.toFixed(2)
-})
-
 // 100% йде в гаманець (всі токени після комісії)
 const toWalletAmount = computed(() => {
   const totalWithdraw = withdraw_amount.value || 0
@@ -197,12 +177,6 @@ async function withdrawTBTC() {
                 <img class="ml-1" src="@/assets/fBTC.webp" width="16px" height="16px" /> {{
                   ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt &&
                     app?.user?.has_gold_sbt_nft) || premiumActive) ? `(${premiumActive ? t('boost.king') : 'SBT'})` : "" }}
-              </span>
-            </div>
-            <div class="tbtc-price">
-              <span>{{ t('modals.withdraw_modal.asics_s1_s19') }} + {{ t('modals.withdraw_modal.asics_s21_sx') }}</span>
-              <span class="font-semibold flex gap-1">{{ totalAsicsBalance }}<img class="ml-1" src="@/assets/fBTC.webp"
-                  width="16px" height="16px" />
               </span>
             </div>
             <div class="tbtc-price">
