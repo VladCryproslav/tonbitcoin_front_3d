@@ -1,0 +1,24 @@
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mj8WZWeX1ThWuYF
+      POSTGRES_DB: mydb
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: redis_cache
+    command: ["redis-server", "--requirepass", "mj8WZWeX1ThWuYF"]
+    environment:
+      - REDIS_PASSWORD=mj8WZWeX1ThWuYF
+    ports:
+      - "127.0.0.1:6379:6379"
+
+volumes:
+  postgres_data:

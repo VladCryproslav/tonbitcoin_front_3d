@@ -1,0 +1,104 @@
+from pytoniq_core import Address
+
+from tonutils.client import TonapiClient
+from tonutils.nft import CollectionEditable
+from tonutils.nft.content import CollectionOffchainContent
+from tonutils.nft.royalty_params import RoyaltyParams
+from tonutils.wallet import WalletV5R1
+
+# API key for accessing the Tonapi (obtainable from https://tonconsole.com)
+API_KEY = "AH35FSWXEP7HOCQAAAAOYJLEKFZJ3KC24F6AO7LIVDG3HX7L45KYUX34C3PHRGN7QQB4LKI"
+
+# Set to True for test network, False for main network
+IS_TESTNET = True
+
+# Mnemonic phrase used to connect the wallet
+MNEMONIC: list[str] = (
+    """panther
+fluid
+predict
+library
+protect
+excite
+since
+more
+consider
+gravity
+essay
+donor
+hour
+forest
+atom
+oval
+hand
+enrich
+avocado
+flag
+guitar
+gain
+pepper
+lonely""".split()
+)
+
+# Address of the owner of the NFT collection
+OWNER_ADDRESS = "0QDVyeMeq4F6_3FX1AGG4KS6HqscNnPfchmTZd2Tgukra04O"
+
+# URI of the collection's metadata
+# https://github.com/ton-blockchain/TEPs/blob/master/text/0064-token-data-standard.md#nft-collection-metadata-example-offchain
+URI = "https://pastebin.com/raw/xdnNBQKv"
+PREFIX_URI = "https://pastebin.com/raw/"
+
+# Royalty parameters: base and factor for calculating the royalty
+ROYALTY_BASE = 0
+ROYALTY_FACTOR = 0  # 5.5% royalty
+
+
+async def main() -> None:
+    client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+    wallet, _, _, _ = WalletV5R1.from_mnemonic(client, MNEMONIC)
+
+    collection = CollectionEditable(
+        owner_address=Address(OWNER_ADDRESS),
+        next_item_index=0,
+        content=CollectionOffchainContent(uri=URI, prefix_uri=PREFIX_URI),
+        royalty_params=RoyaltyParams(
+            base=ROYALTY_BASE,
+            factor=ROYALTY_FACTOR,
+            address=Address(OWNER_ADDRESS),
+        ),
+    )
+
+    """ If you want the option to withdraw extra balance in the future and store collection and NFT data on-chain,
+        you can use `CollectionEditableModified`. It removes the need for `prefix_uri` because NFTs minted in this
+        format include a direct link to the metadata for each item, rather than using a shared prefix for all items.
+
+    Example:
+
+    collection = CollectionEditableModified(
+        owner_address=Address(OWNER_ADDRESS),
+        next_item_index=0,
+        content=CollectionModifiedOffchainContent(uri=URI),  # URI example: `https://example.com/nft/collection.json`.
+        royalty_params=RoyaltyParams(
+            base=ROYALTY_BASE,
+            factor=ROYALTY_FACTOR,
+            address=Address(OWNER_ADDRESS),
+        ),
+    )
+    """
+
+    tx_hash = await wallet.transfer(
+        destination=collection.address,
+        amount=0.05,
+        state_init=collection.state_init,
+    )
+
+    print(
+        f"Successfully deployed NFT Collection at address: {collection.address.to_str()}"
+    )
+    print(f"Transaction hash: {tx_hash}")
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())

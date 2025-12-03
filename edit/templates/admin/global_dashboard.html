@@ -1,0 +1,17 @@
+{% extends "admin/base_site.html" %} {% block content %}
+<h1>Глобальний дашборд</h1>
+<ul>
+  <li>Загальний баланс Енергії: {{ total_energy }}</li>
+  <li>Загальний баланс kW: {{ total_kw }}</li>
+  <li>Загальний баланс tBTC: {{ total_tbtc }}</li>
+  <li>Загальний обсяг намайненого tBTC: {{ total_unclaimed_tbtc }}</li>
+  <li>Загальний баланс kW від рефералів: {{ total_ref_kw }}</li>
+  <li>Загальний tBTC від рефералів (майнінг): {{ total_ref_tbtc_mining }}</li>
+  <li>Загальний tBTC від рефералів (стейкінг): {{ total_ref_tbtc_staking }}</li>
+  <li>Загальна швидкість майнінгу (Th/s): {{ total_mining_speed }}</li>
+  <li>Фактична швидкість майнінгу (Th/s): {{ actual_mining_speed }}</li>
+  <li>Кількість підключених до майнінгу ASIC-ів: {{ connected_asics }}</li>
+  <li>Кількість ASIC-ів, що вже добувають монети: {{ mining_asics }}</li>
+  <li>Кількість ASIC-ів на налаштуванні: {{ setup_asics }}</li>
+</ul>
+{% endblock %}

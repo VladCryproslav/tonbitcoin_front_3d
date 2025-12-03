@@ -1,0 +1,10 @@
+import json
+from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+# test bot
+BOT_TOKEN = "7872489683:AAH_j2T7wYgsMJTAxRI0ezafb4Zn0kXsyH8"
+
+ADMINS = [5119362846, 5100403147, 5141702856]

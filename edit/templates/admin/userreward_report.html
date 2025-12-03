@@ -1,0 +1,57 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_list %}
+
+{% block extrastyle %}{{ block.super }}{{ media.css }}{% endblock %}
+{% block extrahead %}{{ block.super }}{{ media.js }}{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <h1>{{ title }}</h1>
+
+  <div id="changelist" class="module filtered">
+
+      <!-- блок фільтрів -->
+      <div id="changelist-filter">
+          {% if cl.has_filters %}
+              <h2>{% trans 'Filter' %}</h2>
+              {% for spec in cl.filter_specs %}
+                  {% admin_list_filter cl spec %}
+              {% endfor %}
+          {% endif %}
+      </div>
+
+      <!-- блок таблиці -->
+      <div id="changelist-results">
+          <table class="vertical-table">
+            <thead>
+              <tr>
+                <th>{% trans "Parameter name" %}</th>
+                <th>{% trans "Spent kW" %}</th>
+                <th>{% trans "Won for kW" %}</th>
+                <th>{% trans "Spent tBTC" %}</th>
+                <th>{% trans "Won for tBTC" %}</th>
+                <th>{% trans "Spent Stars" %}</th>
+                <th>{% trans "Won for Stars" %}</th>
+                <th>{% trans "Spins count" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in report %}
+              <tr>
+                <td>{{ row.parameter_name }}</td>
+                <td>{{ row.spent_kW|default:0 }}</td>
+                <td>{{ row.won_kW|default:0 }}</td>
+                <td>{{ row.spent_tBTC|default:0 }}</td>
+                <td>{{ row.won_tBTC|default:0 }}</td>
+                <td>{{ row.spent_Stars|default:0 }}</td>
+                <td>{{ row.won_Stars|default:0 }}</td>
+                <td>{{ row.spins_count }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+      </div>
+
+  </div>
+</div>
+{% endblock %}

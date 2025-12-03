@@ -1,0 +1,33 @@
+
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<h1>Global Stats</h1>
+
+<table class="vertical-table">
+    <tr><th>Parameter name</th><th>Value</th></tr>
+    <tr><td>Total Energy (taps)</td><td>{{ stats.total_energy }}</td></tr>
+    <tr><td>Total kW (internal)</td><td>{{ stats.total_kw }}</td></tr>
+    <tr><td>Total tBTC</td><td>{{ stats.total_tbtc }}</td></tr>
+    <tr><td>Total Unclaimed tBTC</td><td>{{ stats.total_unclaimed_tbtc }}</td></tr>
+    <tr><td>Total Ref kW</td><td>{{ stats.total_ref_kw }}</td></tr>
+    <tr><td>Total Ref tBTC Mining</td><td>{{ stats.total_ref_tbtc_mining }}</td></tr>
+    <tr><td>Total Ref tBTC Staking</td><td>{{ stats.total_ref_tbtc_staking }}</td></tr>
+    <tr><td>Total Mining Speed</td><td>{{ stats.total_mining_speed }}</td></tr>
+    <tr><td>Actual Mining Speed</td><td>{{ stats.actual_mining_speed }}</td></tr>
+    <tr><td>Connected ASICs</td><td>{{ stats.connected_asics }}</td></tr>
+    <tr><td>Mining ASICs</td><td>{{ stats.mining_asics }}</td></tr>
+    <tr><td>Setup ASICs</td><td>{{ stats.setup_asics }}</td></tr>
+</table>
+
+<style>
+.vertical-table {
+    border-collapse: collapse;
+    width: 50%;
+}
+.vertical-table th, .vertical-table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+}
+</style>
+{% endblock %}
