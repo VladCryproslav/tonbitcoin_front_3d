@@ -1,2 +1,2 @@
-TOKEN = "8437761744:AAFP1qsYtc88lgosZVzaI1-A8nIXpmhtilw"
+TOKEN = "7464987414:AAEse9SF51zOJ3kBj192fZujrNtg3jEbZxg"
 WEB_APP = "https://eleven-worms-shop.loca.lt/"
