@@ -8,7 +8,6 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ModalNew from '../ModalNew.vue';
 import StakingPercentModal from '../StakingPercentModal.vue';
-import ForkModal from '../ForkModal.vue';
 import StakingHistoryModal from '../StakingHistoryModal.vue';
 import { host, tonapi } from '../../../axios.config';
 
@@ -42,7 +41,6 @@ const stakingConfig = computed(() => {
 });
 
 const openPercentModal = ref(false)
-const openForkModal = ref(false)
 const openHistoryModal = ref(false)
 
 const openModal = ref(false)
@@ -215,7 +213,6 @@ onUnmounted(() => {
 <template>
   <ModalNew v-if="openModal" :status="modalStatus" :title="modalTitle" :body="modalBody" @close="openModal = false" />
   <StakingPercentModal v-if="openPercentModal" @close="openPercentModal = false" />
-  <ForkModal v-if="openForkModal" @close="openForkModal = false" />
   <StakingHistoryModal v-if="openHistoryModal" @close="openHistoryModal = false" />
   <div class="staking">
     <div class="staking-radio-perc">
@@ -277,9 +274,6 @@ onUnmounted(() => {
       <div class="staking-pannel-btn-group">
         <button @click="openPercentModal = true">
           {{ t('investor.perc_tab') }} <img src="@/assets/percent.png" width="22px" />
-        </button>
-        <button class="fire" @click="openForkModal = true">
-          <img src="@/assets/fire.png" width="22px" />
         </button>
         <button @click="openHistoryModal = true">
           {{ t('investor.history_tab') }} <img src="@/assets/history.png" width="22px" />
@@ -424,12 +418,6 @@ onUnmounted(() => {
         font-size: clamp(14px, 4dvw, 18px);
         letter-spacing: 0px;
         transition: all 100ms ease;
-
-        &.fire {
-          min-width: 58px;
-          flex: 1;
-          background: #8143fc;
-        }
 
         &:active {
           opacity: 0.5;
