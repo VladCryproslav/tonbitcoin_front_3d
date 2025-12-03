@@ -42,8 +42,8 @@ const isS21SX = computed(() => {
   return +((app?.wallet_info?.tbtc_amount_s21 || 0) + (app?.wallet_info?.tbtc_amount_sx || 0))
 })
 
-// Виправляємо обчислення балансів
-const s1s19Balance = computed(() => {
+// Об'єднаний баланс всіх асиків (S1-S19 + S21-SX)
+const totalAsicsBalance = computed(() => {
   const totalWithdraw = withdraw_amount.value || 0
   if (totalWithdraw <= 0) return 0
 
@@ -52,83 +52,22 @@ const s1s19Balance = computed(() => {
 
   if (s1s19Available + s21sxAvailable === 0) return 0
 
-  // Розподіляємо вибрану суму пропорційно
-  const s1s19Ratio = s1s19Available / (s1s19Available + s21sxAvailable)
-  const s1s19Part = totalWithdraw * s1s19Ratio
+  // Застосовуємо комісію до всієї суми
+  const totalAfterCommission = totalWithdraw - (totalWithdraw * commissionRate.value)
 
-  // Застосовуємо комісію
-  const s1s19AfterCommission = s1s19Part - (s1s19Part * commissionRate.value)
-
-  return +s1s19AfterCommission.toFixed(2)
+  return +totalAfterCommission.toFixed(2)
 })
 
-const s21sxBalance = computed(() => {
-  const totalWithdraw = withdraw_amount.value || 0
-  if (totalWithdraw <= 0) return 0
-
-  const s1s19Available = app?.wallet_info?.tbtc_amount || 0
-  const s21sxAvailable = isS21SX.value
-
-  if (s1s19Available + s21sxAvailable === 0) return 0
-
-  // Розподіляємо вибрану суму пропорційно
-  const s21sxRatio = s21sxAvailable / (s1s19Available + s21sxAvailable)
-  const s21sxPart = totalWithdraw * s21sxRatio
-
-  // Застосовуємо комісію
-  const s21sxAfterCommission = s21sxPart - (s21sxPart * commissionRate.value)
-
-  return +s21sxAfterCommission.toFixed(2)
-})
-
+// 100% йде в гаманець (всі токени після комісії)
 const toWalletAmount = computed(() => {
   const totalWithdraw = withdraw_amount.value || 0
   if (totalWithdraw <= 0) return 0
 
-  // Розподіляємо суму пропорційно до доступних балансів
-  const s1s19Available = app?.wallet_info?.tbtc_amount || 0
-  const s21sxAvailable = isS21SX.value
-
-  if (s1s19Available + s21sxAvailable === 0) return 0
-
-  // Розподіляємо вибрану суму пропорційно
-  const s1s19Ratio = s1s19Available / (s1s19Available + s21sxAvailable)
-  const s21sxRatio = s21sxAvailable / (s1s19Available + s21sxAvailable)
-
-  const s1s19Part = totalWithdraw * s1s19Ratio
-  const s21sxPart = totalWithdraw * s21sxRatio
-
   // Застосовуємо комісію
-  const s1s19AfterCommission = s1s19Part - (s1s19Part * commissionRate.value)
-  const s21sxAfterCommission = s21sxPart - (s21sxPart * commissionRate.value)
+  const totalAfterCommission = totalWithdraw - (totalWithdraw * commissionRate.value)
 
-  // 25% від S21/SX йде в гаманець
-  const s21sxToWallet = s21sxAfterCommission * 0.50
-
-  return +((s1s19AfterCommission + s21sxToWallet)).toFixed(2)
-})
-
-const toStakingAmount = computed(() => {
-  const totalWithdraw = withdraw_amount.value || 0
-  if (totalWithdraw <= 0) return 0
-
-  const s1s19Available = app?.wallet_info?.tbtc_amount || 0
-  const s21sxAvailable = isS21SX.value
-
-  if (s1s19Available + s21sxAvailable === 0) return 0
-
-  // Розподіляємо вибрану суму пропорційно
-  const s21sxRatio = s21sxAvailable / (s1s19Available + s21sxAvailable)
-
-  const s21sxPart = totalWithdraw * s21sxRatio
-
-  // Застосовуємо комісію
-  const s21sxAfterCommission = s21sxPart - (s21sxPart * commissionRate.value)
-
-  // 75% від S21/SX йде в стейкінг
-  const s21sxToStaking = s21sxAfterCommission * 0.50
-
-  return +s21sxToStaking.toFixed(2)
+  // 100% йде в гаманець
+  return +totalAfterCommission.toFixed(2)
 })
 
 // Додаємо watch для оновлення withdraw_amount при зміні available
@@ -261,14 +200,8 @@ async function withdrawTBTC() {
               </span>
             </div>
             <div class="tbtc-price">
-              <span>{{ t('modals.withdraw_modal.asics_s1_s19') }}</span>
-              <span class="font-semibold flex gap-1">{{ s1s19Balance }}<img class="ml-1" src="@/assets/fBTC.webp"
-                  width="16px" height="16px" />
-              </span>
-            </div>
-            <div class="tbtc-price">
-              <span>{{ t('modals.withdraw_modal.asics_s21_sx') }}</span>
-              <span class="font-semibold flex gap-1">{{ s21sxBalance }}<img class="ml-1" src="@/assets/fBTC.webp"
+              <span>{{ t('modals.withdraw_modal.asics_s1_s19') }} + {{ t('modals.withdraw_modal.asics_s21_sx') }}</span>
+              <span class="font-semibold flex gap-1">{{ totalAsicsBalance }}<img class="ml-1" src="@/assets/fBTC.webp"
                   width="16px" height="16px" />
               </span>
             </div>
@@ -277,12 +210,6 @@ async function withdrawTBTC() {
               <span class="font-semibold flex gap-1">
                 {{ toWalletAmount }}
                 <img class="ml-1" src="@/assets/fBTC.webp" width="16px" height="16px" />
-              </span>
-            </div>
-            <div class="tbtc-price">
-              <span>{{ t('modals.withdraw_modal.staking_amount') }}</span>
-              <span class="font-semibold flex gap-1">{{ toStakingAmount }}<img class="ml-1" src="@/assets/fBTC.webp"
-                  width="16px" height="16px" />
               </span>
             </div>
             <div class="tbtc-price">
