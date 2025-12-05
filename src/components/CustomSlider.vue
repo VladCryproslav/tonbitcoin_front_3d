@@ -9,18 +9,18 @@
     <!-- Сіра -->
     <div class="slider-interval" :style="{
       left: percent(modelValue) + '%',
-      width: (percent(available) - percent(modelValue)) + '%'
+      width: (Math.min(percent(props.available), 100) - percent(modelValue)) + '%'
     }"></div>
     <!-- Бордова -->
     <div class="slider-rail slider-rail-right" :style="{
-      left: percent(available) + '%',
-      width: (percent(max) - percent(Math.min(available, max))) + '%'
+      left: Math.min(percent(props.available), 100) + '%',
+      width: (100 - Math.min(percent(props.available), 100)) + '%'
     }"></div>
     <!-- Перша ручка -->
     <div class="slider-dot" :style="{ left: percent(modelValue) + '%' }" tabindex="0" @mousedown="startDrag"
       @touchstart="startDrag" :class="{ 'slider-dot-disabled': props.disabled }"></div>
     <!-- Друга ручка (фіксована) -->
-    <div class="slider-dot slider-dot-fixed" :style="{ left: percent(available) + '%' }"></div>
+    <div class="slider-dot slider-dot-fixed" :style="{ left: Math.min(percent(props.available), 100) + '%' }"></div>
   </div>
 </template>
 
@@ -37,7 +37,15 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 function percent(val) {
+  // Используем max для расчета процентов (ползунок ограничен max)
   return ((val - props.min) / (props.max - props.min)) * 100
+}
+
+function percentAvailable(val) {
+  // Для визуализации available используем max, если available больше max
+  // Это позволяет показывать, что доступно больше, но ползунок останавливается на max
+  const visualMax = Math.max(props.max, props.available)
+  return ((val - props.min) / (visualMax - props.min)) * 100
 }
 
 let dragging = false
@@ -66,8 +74,8 @@ function handleTrackClick(e) {
   percentPos = Math.max(0, Math.min(1, percentPos))
   let newValue = Math.round(props.min + percentPos * (props.max - props.min))
 
-  // Обмежуємо рух лише до available
-  if (newValue > props.available) newValue = props.available
+  // Обмежуємо рух до min і max (max може бути менше available)
+  if (newValue > props.max) newValue = props.max
   if (newValue < props.min) newValue = props.min
 
   emit('update:modelValue', newValue)
@@ -83,8 +91,8 @@ function onDrag(e) {
   let percentPos = (clientX - rect.left) / rect.width
   percentPos = Math.max(0, Math.min(1, percentPos))
   let newValue = Math.round(props.min + percentPos * (props.max - props.min))
-  // Обмежуємо рух лише до available
-  if (newValue > props.available) newValue = props.available
+  // Обмежуємо рух до min і max (max може бути менше available)
+  if (newValue > props.max) newValue = props.max
   if (newValue < props.min) newValue = props.min
   emit('update:modelValue', newValue)
 }

@@ -25,11 +25,29 @@ const totalBalance = computed(() => {
 const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= new Date())
 
 const min = computed(() => props?.claim ? app.withdraw_config?.min_claim || 2 : app.withdraw_config?.min_tbtc || 50)
-const max = computed(() => Math.min(max_fbtc, Math.floor(props.claim ? totalBalance.value : app?.user?.tbtc_wallet)))
-const available = computed(() => Math.max(0, Math.min(max_fbtc, Math.floor(app?.wallet_info?.tbtc_amount + app?.wallet_info?.tbtc_amount_s21 + app?.wallet_info?.tbtc_amount_sx), max.value)))
+// Для claim показываем все доступное, но ограничиваем max на 3000
+// Для обычного withdraw ограничиваем и available и max
+const available = computed(() => {
+  const fullAvailable = Math.floor(app?.wallet_info?.tbtc_amount + app?.wallet_info?.tbtc_amount_s21 + app?.wallet_info?.tbtc_amount_sx)
+  if (props?.claim) {
+    // Для claim показываем все доступное без ограничения
+    return Math.max(0, Math.min(fullAvailable, Math.floor(props.claim ? totalBalance.value : app?.user?.tbtc_wallet)))
+  } else {
+    // Для обычного withdraw ограничиваем max_fbtc
+    return Math.max(0, Math.min(max_fbtc, fullAvailable, Math.floor(app?.user?.tbtc_wallet)))
+  }
+})
+const max = computed(() => {
+  if (props?.claim) {
+    // Для claim ограничиваем только max на 3000, но показываем все доступное
+    return Math.min(max_fbtc, Math.floor(totalBalance.value))
+  } else {
+    return Math.min(max_fbtc, Math.floor(app?.user?.tbtc_wallet))
+  }
+})
 
 // Виправляємо ініціалізацію withdraw_amount
-const withdraw_amount = ref(Math.min(max_fbtc, available.value, max.value)?.toFixed(2))
+const withdraw_amount = ref(Math.min(max.value, available.value)?.toFixed(2))
 
 const commissionRate = computed(() => {
   return (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) ? 0.0085 : ((app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) ? 0.007 : 0.01
@@ -54,9 +72,10 @@ const toWalletAmount = computed(() => {
 // Додаємо watch для оновлення withdraw_amount при зміні available
 watch(available, (newAvailable) => {
   if (props?.claim) {
-    withdraw_amount.value = +Math.min(max_fbtc, newAvailable, totalBalance.value)?.toFixed(2)
+    // Для claim ограничиваем только max (3000), но разрешаем выбирать меньше
+    withdraw_amount.value = +Math.min(max.value, newAvailable)?.toFixed(2)
   } else {
-    withdraw_amount.value = +Math.min(max_fbtc, app?.user?.tbtc_wallet, newAvailable)?.toFixed(2)
+    withdraw_amount.value = +Math.min(max.value, newAvailable)?.toFixed(2)
   }
 })
 
@@ -161,7 +180,7 @@ async function withdrawTBTC() {
                 })
             }}
           </div>
-          <CustomSlider v-model="withdraw_amount" :min="min" :max="Math.min(max_fbtc, Math.max(max, available))" :available="available"
+          <CustomSlider v-model="withdraw_amount" :min="min" :max="max" :available="available"
             disabled />
           <div class="price">
             <div class="tbtc-price">
