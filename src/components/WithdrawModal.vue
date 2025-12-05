@@ -90,8 +90,9 @@ async function withdrawTBTC() {
   const user_id = user?.id
   const receiveWallet = ton_address.value
   // Жёстко ограничиваем по max_fbtc и округляем до 2 знаков
-  const tbtcToWithdraw = Math.min(max.value, +withdraw_amount.value || 0)
-  const finalAmount = +tbtcToWithdraw.toFixed(2)
+  const raw = Number(withdraw_amount.value) || 0
+  const limited = Math.min(max.value, raw)
+  const finalAmount = Number(limited.toFixed(2))
   const mining = props?.claim ? true : false
   const reqData = {
     user_id: user_id,
