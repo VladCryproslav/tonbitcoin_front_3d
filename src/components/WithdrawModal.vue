@@ -39,19 +39,23 @@ const max = computed(() => {
   }
 })
 
-// Инициализация withdraw_amount - ограничиваем только по max (который уже ограничен 3000)
-const withdraw_amount = ref(Math.min(max.value, max_fbtc))
+// Жёсткий лимит, чтобы не было никаких выходов за 3000 из-за вычислений
+const maxLimit = computed(() => Math.min(max_fbtc, Math.max(0, max.value || 0)))
+
+// Отображаемый available, чтобы шкала не уезжала за пределы 3000
+const availableDisplay = computed(() => Math.min(available.value, maxLimit.value))
+
+// Инициализация withdraw_amount - ограничиваем только по maxLimit
+const withdraw_amount = ref(Math.min(maxLimit.value, max_fbtc))
 
 function clampAmount(val) {
   const numeric = Number(val) || 0
-  // Ограничиваем только по max (который уже ограничен max_fbtc) и min
-  // available может быть больше, но выбор ограничен max
-  const upper = Math.max(0, max.value || 0)
+  const upper = maxLimit.value || max_fbtc
   const lower = Math.max(0, min.value || 0)
   return Math.min(upper, Math.max(lower, numeric))
 }
 
-watch([available, max], () => {
+watch([available, maxLimit], () => {
   const clamped = clampAmount(withdraw_amount.value)
   if (clamped !== withdraw_amount.value) {
     withdraw_amount.value = clamped
@@ -107,7 +111,8 @@ async function withdrawTBTC() {
   const user_id = user?.id
   const receiveWallet = ton_address.value
   // Жёстко ограничиваем по max_fbtc напрямую (не через max.value)
-  const finalAmount = Number(clampAmount(withdraw_amount.value).toFixed(2))
+  // Финальная сумма: жёстко обрезаем 3000 и maxLimit
+  const finalAmount = Number(Math.min(max_fbtc, maxLimit.value || max_fbtc, Number(withdraw_amount.value) || 0).toFixed(2))
   const mining = props?.claim ? true : false
   const reqData = {
     user_id: user_id,
@@ -180,7 +185,7 @@ async function withdrawTBTC() {
                 })
             }}
           </div>
-          <CustomSlider v-model="withdraw_amount" :min="min" :max="max" :available="available" />
+          <CustomSlider v-model="withdraw_amount" :min="min" :max="maxLimit" :available="availableDisplay" />
           <div class="price">
             <div class="tbtc-price">
               <span>{{ t('modals.withdraw_modal.volume') }}</span>

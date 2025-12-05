@@ -961,44 +961,60 @@ def common_withdrawal(request):
             token_type = "tbtc"
             if is_mining:
                 with transaction.atomic():
+                    try:
+                        requested_amount = float(token_amount)
+                    except (TypeError, ValueError):
+                        return Response(
+                            {"error": "Invalid token_amount"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
                     total_mined_tokens_balance = (
                         user_profile.total_mined_tokens_balance()
                     )
-                    if (
-                        # total_mined_tokens_balance < token_amount
-                        total_mined_tokens_balance
-                        <= min_claim
-                    ):
+                    if total_mined_tokens_balance <= 0:
                         return Response(
                             {"error": "Not enough tBTC in wallet 2"},
                             status=status.HTTP_400_BAD_REQUEST,
                         )
 
+                    withdraw_gross = min(requested_amount, total_mined_tokens_balance)
+
+                    if withdraw_gross < min_claim:
+                        return Response(
+                            {"error": "Not enough tBTC in wallet 2"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    ratio = withdraw_gross / total_mined_tokens_balance if total_mined_tokens_balance else 0
+
+                    mined_main_take = user_profile.mined_tokens_balance * ratio
+                    mined_s21_take = user_profile.mined_tokens_balance_s21 * ratio
+                    mined_sx_take = user_profile.mined_tokens_balance_sx * ratio
+
                     commision_percent = user_profile.sbt_get_claim_commision()
-                    low_sum = total_mined_tokens_balance < 100
+                    low_sum = withdraw_gross < 100
                     apply_comission = lambda t: t - 1 if low_sum else t * (1-commision_percent)
 
-                    token_amount_s21 = (1-commision_percent) * user_profile.mined_tokens_balance_s21
-                    token_amount_sx = (1-commision_percent) * user_profile.mined_tokens_balance_sx
+                    token_amount_s21 = (1-commision_percent) * mined_s21_take
+                    token_amount_sx = (1-commision_percent) * mined_sx_take
                     token_amount = (
-                        apply_comission(user_profile.mined_tokens_balance)
+                        apply_comission(mined_main_take)
                         + token_amount_s21
                         + token_amount_sx
                     )
                     UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                        # mined_tokens_balance=F("mined_tokens_balance")
-                        # - token_amount,
-                        mined_tokens_balance=0,
-                        mined_tokens_balance_s21=0,
-                        mined_tokens_balance_sx=0,
+                        mined_tokens_balance=F("mined_tokens_balance") - mined_main_take,
+                        mined_tokens_balance_s21=F("mined_tokens_balance_s21") - mined_s21_take,
+                        mined_tokens_balance_sx=F("mined_tokens_balance_sx") - mined_sx_take,
                         tbtc_claimed_period=F("tbtc_claimed_period") + token_amount,
                     )
                     WalletInfo.objects.filter(
                         user=user_profile, wallet=user_profile.ton_wallet
                     ).update(
-                        tbtc_amount=F("tbtc_amount") - user_profile.mined_tokens_balance,
-                        tbtc_amount_s21=F("tbtc_amount_s21") - user_profile.mined_tokens_balance_s21,
-                        tbtc_amount_sx=F("tbtc_amount_sx") - user_profile.mined_tokens_balance_sx
+                        tbtc_amount=F("tbtc_amount") - mined_main_take,
+                        tbtc_amount_s21=F("tbtc_amount_s21") - mined_s21_take,
+                        tbtc_amount_sx=F("tbtc_amount_sx") - mined_sx_take
                     )
 
                     # today = timezone.now().date()
