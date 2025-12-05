@@ -3,7 +3,7 @@ const Exit = defineAsyncComponent(() => import('@/assets/upg-modal-close.svg'))
 import { useTelegram } from '@/services/telegram'
 import { useAppStore } from '@/stores/app'
 import { useTonAddress } from '@townsquarelabs/ui-vue'
-import { computed, defineAsyncComponent, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, ref } from 'vue'
 import { host } from '../../axios.config'
 import { useI18n } from 'vue-i18n'
 import CustomSlider from './CustomSlider.vue'
@@ -38,7 +38,7 @@ const max = computed(() => {
   }
 })
 
-// Виправляємо ініціалізацію withdraw_amount (храним как число)
+// Инициализация withdraw_amount (как в MintModal - просто число)
 const withdraw_amount = ref(Math.min(max.value, available.value))
 
 const commissionRate = computed(() => {
@@ -46,13 +46,12 @@ const commissionRate = computed(() => {
 })
 
 const totalCommission = computed(() => {
-  const amount = typeof withdraw_amount.value === 'number' ? withdraw_amount.value : parseFloat(withdraw_amount.value) || 0
-  return amount < 100 ? 1 : +(amount * commissionRate.value).toFixed(2)
+  return withdraw_amount.value < 100 ? 1 : +(withdraw_amount.value * commissionRate.value).toFixed(2)
 })
 
 // 100% йде в гаманець (всі токени після комісії)
 const toWalletAmount = computed(() => {
-  const totalWithdraw = typeof withdraw_amount.value === 'number' ? withdraw_amount.value : parseFloat(withdraw_amount.value) || 0
+  const totalWithdraw = withdraw_amount.value || 0
   if (totalWithdraw <= 0) return 0
 
   // Застосовуємо комісію
@@ -61,19 +60,6 @@ const toWalletAmount = computed(() => {
   // 100% йде в гаманець
   return +totalAfterCommission.toFixed(2)
 })
-
-// Додаємо watch на сам withdraw_amount, щоб гарантувати, що він ніколи не перевищує max
-// Это единственный watch, который ограничивает значение сверху
-watch(withdraw_amount, (newValue) => {
-  const numValue = typeof newValue === 'string' ? parseFloat(newValue) : (typeof newValue === 'number' ? newValue : 0)
-  const maxValue = max.value
-  if (numValue > maxValue) {
-    // Проверяем, чтобы не создавать бесконечный цикл
-    if (withdraw_amount.value !== maxValue) {
-      withdraw_amount.value = maxValue
-    }
-  }
-}, { immediate: false })
 
 const { user } = useTelegram()
 const ton_address = useTonAddress()
@@ -103,31 +89,13 @@ function getTimeUntil(date) {
 async function withdrawTBTC() {
   const user_id = user?.id
   const receiveWallet = ton_address.value
-  // Ограничиваем значение до max перед отправкой и округляем до 2 знаков
-  // Убеждаемся, что значение - это число, а не строка
-  const numAmount = typeof withdraw_amount.value === 'string' ? parseFloat(withdraw_amount.value) : Number(withdraw_amount.value) || 0
-  const maxValue = max.value
-  const tbtcToWithdraw = Math.min(numAmount, maxValue)
-  // Округляем до 2 знаков после запятой
-  const finalAmount = Math.round(tbtcToWithdraw * 100) / 100
-
-  // Отладочная информация
-  if (props?.claim) {
-    console.log('Claim fBTC:', {
-      withdraw_amount_value: withdraw_amount.value,
-      withdraw_amount_type: typeof withdraw_amount.value,
-      numAmount,
-      maxValue,
-      tbtcToWithdraw,
-      finalAmount
-    })
-  }
-
+  // Используем значение напрямую, как в MintModal
+  const tbtcToWithdraw = +withdraw_amount.value
   const mining = props?.claim ? true : false
   const reqData = {
     user_id: user_id,
     wallet_address: receiveWallet,
-    token_amount: finalAmount,
+    token_amount: tbtcToWithdraw,
     token_contract_address: 'EQBOqBiArR45GUlifxdzZ40ZahdVhjtU7GjY-lVtqruHvQEc',
     is_mining: mining,
   }
@@ -136,11 +104,11 @@ async function withdrawTBTC() {
       .post('create-withdrawal-request/', reqData)
       .then((res) => {
         if (res.status == 200) {
-          const timeText = finalAmount < (props?.claim ? app.withdraw_config?.max_auto_claim : app.withdraw_config?.max_auto_tbtc) ? t('modals.withdraw_modal.several_minutes') : t('modals.withdraw_modal.24_hours')
+          const timeText = tbtcToWithdraw < (props?.claim ? app.withdraw_config?.max_auto_claim : app.withdraw_config?.max_auto_tbtc) ? t('modals.withdraw_modal.several_minutes') : t('modals.withdraw_modal.24_hours')
           emit('close', {
             status: 'success',
             title: t('notification.st_success'),
-            body: props?.claim ? t('modals.withdraw_modal.claim_request_accepted', { amount: finalAmount, time: timeText }) : t('modals.withdraw_modal.withdraw_request_accepted', { amount: finalAmount, time: timeText }),
+            body: props?.claim ? t('modals.withdraw_modal.claim_request_accepted', { amount: tbtcToWithdraw, time: timeText }) : t('modals.withdraw_modal.withdraw_request_accepted', { amount: tbtcToWithdraw, time: timeText }),
           })
         }
       })
@@ -199,7 +167,7 @@ async function withdrawTBTC() {
           <div class="price">
             <div class="tbtc-price">
               <span>{{ t('modals.withdraw_modal.volume') }}</span>
-              <span class="font-semibold flex gap-1">{{ typeof withdraw_amount === 'number' ? withdraw_amount.toFixed(2) : withdraw_amount }}<img class="ml-1" src="@/assets/fBTC.webp"
+              <span class="font-semibold flex gap-1">{{ withdraw_amount?.toFixed(2) }}<img class="ml-1" src="@/assets/fBTC.webp"
                   width="16px" height="16px" /></span>
             </div>
             <div class="tbtc-price">
