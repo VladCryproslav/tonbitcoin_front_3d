@@ -38,20 +38,21 @@ const max = computed(() => {
   }
 })
 
-// Виправляємо ініціалізацію withdraw_amount
-const withdraw_amount = ref(Math.min(max.value, available.value)?.toFixed(2))
+// Виправляємо ініціалізацію withdraw_amount (храним как число)
+const withdraw_amount = ref(Math.min(max.value, available.value))
 
 const commissionRate = computed(() => {
   return (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) ? 0.0085 : ((app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) ? 0.007 : 0.01
 })
 
 const totalCommission = computed(() => {
-  return withdraw_amount.value < 100 ? 1 : +(withdraw_amount.value * commissionRate.value).toFixed(2)
+  const amount = typeof withdraw_amount.value === 'number' ? withdraw_amount.value : parseFloat(withdraw_amount.value) || 0
+  return amount < 100 ? 1 : +(amount * commissionRate.value).toFixed(2)
 })
 
 // 100% йде в гаманець (всі токени після комісії)
 const toWalletAmount = computed(() => {
-  const totalWithdraw = withdraw_amount.value || 0
+  const totalWithdraw = typeof withdraw_amount.value === 'number' ? withdraw_amount.value : parseFloat(withdraw_amount.value) || 0
   if (totalWithdraw <= 0) return 0
 
   // Застосовуємо комісію
@@ -63,18 +64,17 @@ const toWalletAmount = computed(() => {
 
 // Додаємо watch для оновлення withdraw_amount при зміні available или max
 watch([available, max], ([newAvailable, newMax]) => {
-  withdraw_amount.value = +Math.min(newMax, newAvailable)?.toFixed(2)
+  withdraw_amount.value = Math.min(newMax, newAvailable)
 })
 
 // Додаємо watch на сам withdraw_amount, щоб гарантувати, що він ніколи не перевищує max
 watch(withdraw_amount, (newValue) => {
-  const numValue = +newValue
+  const numValue = typeof newValue === 'string' ? +newValue : newValue
   const maxValue = max.value
   if (numValue > maxValue) {
-    const correctedValue = +maxValue.toFixed(2)
     // Проверяем, чтобы не создавать бесконечный цикл
-    if (withdraw_amount.value !== correctedValue) {
-      withdraw_amount.value = correctedValue
+    if (withdraw_amount.value !== maxValue) {
+      withdraw_amount.value = maxValue
     }
   }
 }, { immediate: false })
@@ -108,7 +108,8 @@ async function withdrawTBTC() {
   const user_id = user?.id
   const receiveWallet = ton_address.value
   // Ограничиваем значение до max перед отправкой и округляем до 2 знаков
-  const numAmount = +withdraw_amount.value || 0
+  // Убеждаемся, что значение - это число, а не строка
+  const numAmount = typeof withdraw_amount.value === 'string' ? parseFloat(withdraw_amount.value) : Number(withdraw_amount.value) || 0
   const maxValue = max.value
   const tbtcToWithdraw = Math.min(numAmount, maxValue)
   // Округляем до 2 знаков после запятой
@@ -116,7 +117,14 @@ async function withdrawTBTC() {
 
   // Отладочная информация
   if (props?.claim) {
-    console.log('Claim fBTC:', { numAmount, maxValue, tbtcToWithdraw, finalAmount })
+    console.log('Claim fBTC:', {
+      withdraw_amount_value: withdraw_amount.value,
+      withdraw_amount_type: typeof withdraw_amount.value,
+      numAmount,
+      maxValue,
+      tbtcToWithdraw,
+      finalAmount
+    })
   }
 
   const mining = props?.claim ? true : false
@@ -195,7 +203,7 @@ async function withdrawTBTC() {
           <div class="price">
             <div class="tbtc-price">
               <span>{{ t('modals.withdraw_modal.volume') }}</span>
-              <span class="font-semibold flex gap-1">{{ withdraw_amount }}<img class="ml-1" src="@/assets/fBTC.webp"
+              <span class="font-semibold flex gap-1">{{ typeof withdraw_amount === 'number' ? withdraw_amount.toFixed(2) : withdraw_amount }}<img class="ml-1" src="@/assets/fBTC.webp"
                   width="16px" height="16px" /></span>
             </div>
             <div class="tbtc-price">
