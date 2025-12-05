@@ -62,14 +62,10 @@ const toWalletAmount = computed(() => {
   return +totalAfterCommission.toFixed(2)
 })
 
-// Додаємо watch для оновлення withdraw_amount при зміні available или max
-watch([available, max], ([newAvailable, newMax]) => {
-  withdraw_amount.value = Math.min(newMax, newAvailable)
-})
-
 // Додаємо watch на сам withdraw_amount, щоб гарантувати, що він ніколи не перевищує max
+// Это единственный watch, который ограничивает значение сверху
 watch(withdraw_amount, (newValue) => {
-  const numValue = typeof newValue === 'string' ? +newValue : newValue
+  const numValue = typeof newValue === 'string' ? parseFloat(newValue) : (typeof newValue === 'number' ? newValue : 0)
   const maxValue = max.value
   if (numValue > maxValue) {
     // Проверяем, чтобы не создавать бесконечный цикл
