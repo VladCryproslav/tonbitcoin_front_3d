@@ -89,13 +89,14 @@ function getTimeUntil(date) {
 async function withdrawTBTC() {
   const user_id = user?.id
   const receiveWallet = ton_address.value
-  // Используем значение напрямую, как в MintModal
-  const tbtcToWithdraw = +withdraw_amount.value
+  // Жёстко ограничиваем по max_fbtc и округляем до 2 знаков
+  const tbtcToWithdraw = Math.min(max.value, +withdraw_amount.value || 0)
+  const finalAmount = +tbtcToWithdraw.toFixed(2)
   const mining = props?.claim ? true : false
   const reqData = {
     user_id: user_id,
     wallet_address: receiveWallet,
-    token_amount: tbtcToWithdraw,
+    token_amount: finalAmount,
     token_contract_address: 'EQBOqBiArR45GUlifxdzZ40ZahdVhjtU7GjY-lVtqruHvQEc',
     is_mining: mining,
   }
@@ -104,11 +105,11 @@ async function withdrawTBTC() {
       .post('create-withdrawal-request/', reqData)
       .then((res) => {
         if (res.status == 200) {
-          const timeText = tbtcToWithdraw < (props?.claim ? app.withdraw_config?.max_auto_claim : app.withdraw_config?.max_auto_tbtc) ? t('modals.withdraw_modal.several_minutes') : t('modals.withdraw_modal.24_hours')
+          const timeText = finalAmount < (props?.claim ? app.withdraw_config?.max_auto_claim : app.withdraw_config?.max_auto_tbtc) ? t('modals.withdraw_modal.several_minutes') : t('modals.withdraw_modal.24_hours')
           emit('close', {
             status: 'success',
             title: t('notification.st_success'),
-            body: props?.claim ? t('modals.withdraw_modal.claim_request_accepted', { amount: tbtcToWithdraw, time: timeText }) : t('modals.withdraw_modal.withdraw_request_accepted', { amount: tbtcToWithdraw, time: timeText }),
+            body: props?.claim ? t('modals.withdraw_modal.claim_request_accepted', { amount: finalAmount, time: timeText }) : t('modals.withdraw_modal.withdraw_request_accepted', { amount: finalAmount, time: timeText }),
           })
         }
       })
