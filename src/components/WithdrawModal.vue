@@ -66,6 +66,19 @@ watch([available, max], ([newAvailable, newMax]) => {
   withdraw_amount.value = +Math.min(newMax, newAvailable)?.toFixed(2)
 })
 
+// Додаємо watch на сам withdraw_amount, щоб гарантувати, що він ніколи не перевищує max
+watch(withdraw_amount, (newValue) => {
+  const numValue = +newValue
+  const maxValue = max.value
+  if (numValue > maxValue) {
+    const correctedValue = +maxValue.toFixed(2)
+    // Проверяем, чтобы не создавать бесконечный цикл
+    if (withdraw_amount.value !== correctedValue) {
+      withdraw_amount.value = correctedValue
+    }
+  }
+}, { immediate: false })
+
 const { user } = useTelegram()
 const ton_address = useTonAddress()
 
@@ -94,13 +107,23 @@ function getTimeUntil(date) {
 async function withdrawTBTC() {
   const user_id = user?.id
   const receiveWallet = ton_address.value
-  // Ограничиваем значение до max перед отправкой
-  const tbtcToWithdraw = Math.min(+withdraw_amount.value, max.value)
+  // Ограничиваем значение до max перед отправкой и округляем до 2 знаков
+  const numAmount = +withdraw_amount.value || 0
+  const maxValue = max.value
+  const tbtcToWithdraw = Math.min(numAmount, maxValue)
+  // Округляем до 2 знаков после запятой
+  const finalAmount = Math.round(tbtcToWithdraw * 100) / 100
+
+  // Отладочная информация
+  if (props?.claim) {
+    console.log('Claim fBTC:', { numAmount, maxValue, tbtcToWithdraw, finalAmount })
+  }
+
   const mining = props?.claim ? true : false
   const reqData = {
     user_id: user_id,
     wallet_address: receiveWallet,
-    token_amount: tbtcToWithdraw,
+    token_amount: finalAmount,
     token_contract_address: 'EQBOqBiArR45GUlifxdzZ40ZahdVhjtU7GjY-lVtqruHvQEc',
     is_mining: mining,
   }
@@ -109,11 +132,11 @@ async function withdrawTBTC() {
       .post('create-withdrawal-request/', reqData)
       .then((res) => {
         if (res.status == 200) {
-          const timeText = tbtcToWithdraw < (props?.claim ? app.withdraw_config?.max_auto_claim : app.withdraw_config?.max_auto_tbtc) ? t('modals.withdraw_modal.several_minutes') : t('modals.withdraw_modal.24_hours')
+          const timeText = finalAmount < (props?.claim ? app.withdraw_config?.max_auto_claim : app.withdraw_config?.max_auto_tbtc) ? t('modals.withdraw_modal.several_minutes') : t('modals.withdraw_modal.24_hours')
           emit('close', {
             status: 'success',
             title: t('notification.st_success'),
-            body: props?.claim ? t('modals.withdraw_modal.claim_request_accepted', { amount: tbtcToWithdraw, time: timeText }) : t('modals.withdraw_modal.withdraw_request_accepted', { amount: tbtcToWithdraw, time: timeText }),
+            body: props?.claim ? t('modals.withdraw_modal.claim_request_accepted', { amount: finalAmount, time: timeText }) : t('modals.withdraw_modal.withdraw_request_accepted', { amount: finalAmount, time: timeText }),
           })
         }
       })
