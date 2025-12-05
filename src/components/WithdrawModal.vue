@@ -61,9 +61,9 @@ const toWalletAmount = computed(() => {
   return +totalAfterCommission.toFixed(2)
 })
 
-// Додаємо watch для оновлення withdraw_amount при зміні available
-watch(available, (newAvailable) => {
-  withdraw_amount.value = +Math.min(max.value, newAvailable)?.toFixed(2)
+// Додаємо watch для оновлення withdraw_amount при зміні available или max
+watch([available, max], ([newAvailable, newMax]) => {
+  withdraw_amount.value = +Math.min(newMax, newAvailable)?.toFixed(2)
 })
 
 const { user } = useTelegram()
@@ -94,7 +94,8 @@ function getTimeUntil(date) {
 async function withdrawTBTC() {
   const user_id = user?.id
   const receiveWallet = ton_address.value
-  const tbtcToWithdraw = withdraw_amount.value
+  // Ограничиваем значение до max перед отправкой
+  const tbtcToWithdraw = Math.min(+withdraw_amount.value, max.value)
   const mining = props?.claim ? true : false
   const reqData = {
     user_id: user_id,
