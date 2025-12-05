@@ -89,9 +89,10 @@ function getTimeUntil(date) {
 async function withdrawTBTC() {
   const user_id = user?.id
   const receiveWallet = ton_address.value
-  // Жёстко ограничиваем по max_fbtc и округляем до 2 знаков
+  // Жёстко ограничиваем по max_fbtc напрямую (не через max.value)
   const raw = Number(withdraw_amount.value) || 0
-  const limited = Math.min(max.value, raw)
+  // Для claim всегда ограничиваем max_fbtc, для обычного withdraw тоже
+  const limited = Math.min(max_fbtc, raw)
   const finalAmount = Number(limited.toFixed(2))
   const mining = props?.claim ? true : false
   const reqData = {
