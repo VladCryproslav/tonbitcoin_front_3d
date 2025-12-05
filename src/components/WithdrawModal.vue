@@ -3,7 +3,7 @@ const Exit = defineAsyncComponent(() => import('@/assets/upg-modal-close.svg'))
 import { useTelegram } from '@/services/telegram'
 import { useAppStore } from '@/stores/app'
 import { useTonAddress } from '@townsquarelabs/ui-vue'
-import { computed, defineAsyncComponent, ref } from 'vue'
+import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { host } from '../../axios.config'
 import { useI18n } from 'vue-i18n'
 import CustomSlider from './CustomSlider.vue'
@@ -30,16 +30,33 @@ const available = computed(() => {
   return Math.max(0, Math.floor(app?.wallet_info?.tbtc_amount + app?.wallet_info?.tbtc_amount_s21 + app?.wallet_info?.tbtc_amount_sx))
 })
 const max = computed(() => {
+  // Всегда ограничиваем max на 3000, независимо от баланса
+  // Пользователь может выбрать любое значение от min до 3000
   if (props?.claim) {
-    // Для claim ограничиваем только max на 3000
     return Math.min(max_fbtc, Math.floor(totalBalance.value))
   } else {
     return Math.min(max_fbtc, Math.floor(app?.user?.tbtc_wallet))
   }
 })
 
-// Инициализация withdraw_amount (как в MintModal - просто число)
-const withdraw_amount = ref(Math.min(max.value, available.value))
+// Инициализация withdraw_amount - ограничиваем только по max (который уже ограничен 3000)
+const withdraw_amount = ref(Math.min(max.value, max_fbtc))
+
+function clampAmount(val) {
+  const numeric = Number(val) || 0
+  // Ограничиваем только по max (который уже ограничен max_fbtc) и min
+  // available может быть больше, но выбор ограничен max
+  const upper = Math.max(0, max.value || 0)
+  const lower = Math.max(0, min.value || 0)
+  return Math.min(upper, Math.max(lower, numeric))
+}
+
+watch([available, max], () => {
+  const clamped = clampAmount(withdraw_amount.value)
+  if (clamped !== withdraw_amount.value) {
+    withdraw_amount.value = clamped
+  }
+})
 
 const commissionRate = computed(() => {
   return (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) ? 0.0085 : ((app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) ? 0.007 : 0.01
@@ -90,10 +107,7 @@ async function withdrawTBTC() {
   const user_id = user?.id
   const receiveWallet = ton_address.value
   // Жёстко ограничиваем по max_fbtc напрямую (не через max.value)
-  const raw = Number(withdraw_amount.value) || 0
-  // Для claim всегда ограничиваем max_fbtc, для обычного withdraw тоже
-  const limited = Math.min(max_fbtc, raw)
-  const finalAmount = Number(limited.toFixed(2))
+  const finalAmount = Number(clampAmount(withdraw_amount.value).toFixed(2))
   const mining = props?.claim ? true : false
   const reqData = {
     user_id: user_id,
