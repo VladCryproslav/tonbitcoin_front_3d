@@ -12,9 +12,9 @@ import { max_kw } from '@/services/data'
 const app = useAppStore()
 const { t } = useI18n()
 const min = computed(() => app.withdraw_config?.min_kw || 300)
-// available показывает все доступное количество на балансе без ограничения max_kw
-const available = computed(() => Math.max(0, Math.min(Math.floor(app?.wallet_info?.kw_amount), Math.floor(app?.user?.energy))))
-// max ограничиваем на max_kw для ползунка (останавливает ползунок на 20000)
+// available — полный баланс без ограничения max_kw
+const available = computed(() => Math.max(0, Math.floor(app?.wallet_info?.kw_amount)))
+// max ограничивает ход ползунка (останавливается на 20000)
 const max = computed(() => Math.min(max_kw, Math.floor(app?.user?.energy)))
 const amount = ref(Math.min(max.value, available.value))
 

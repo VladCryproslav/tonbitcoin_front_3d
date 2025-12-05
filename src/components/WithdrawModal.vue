@@ -25,21 +25,13 @@ const totalBalance = computed(() => {
 const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= new Date())
 
 const min = computed(() => props?.claim ? app.withdraw_config?.min_claim || 2 : app.withdraw_config?.min_tbtc || 50)
-// Для claim показываем все доступное, но ограничиваем max на 3000
-// Для обычного withdraw ограничиваем и available и max
+// available всегда показывает полное доступное количество
 const available = computed(() => {
-  const fullAvailable = Math.floor(app?.wallet_info?.tbtc_amount + app?.wallet_info?.tbtc_amount_s21 + app?.wallet_info?.tbtc_amount_sx)
-  if (props?.claim) {
-    // Для claim показываем все доступное без ограничения
-    return Math.max(0, Math.min(fullAvailable, Math.floor(props.claim ? totalBalance.value : app?.user?.tbtc_wallet)))
-  } else {
-    // Для обычного withdraw ограничиваем max_fbtc
-    return Math.max(0, Math.min(max_fbtc, fullAvailable, Math.floor(app?.user?.tbtc_wallet)))
-  }
+  return Math.max(0, Math.floor(app?.wallet_info?.tbtc_amount + app?.wallet_info?.tbtc_amount_s21 + app?.wallet_info?.tbtc_amount_sx))
 })
 const max = computed(() => {
   if (props?.claim) {
-    // Для claim ограничиваем только max на 3000, но показываем все доступное
+    // Для claim ограничиваем только max на 3000
     return Math.min(max_fbtc, Math.floor(totalBalance.value))
   } else {
     return Math.min(max_fbtc, Math.floor(app?.user?.tbtc_wallet))
@@ -71,12 +63,7 @@ const toWalletAmount = computed(() => {
 
 // Додаємо watch для оновлення withdraw_amount при зміні available
 watch(available, (newAvailable) => {
-  if (props?.claim) {
-    // Для claim ограничиваем только max (3000), но разрешаем выбирать меньше
-    withdraw_amount.value = +Math.min(max.value, newAvailable)?.toFixed(2)
-  } else {
-    withdraw_amount.value = +Math.min(max.value, newAvailable)?.toFixed(2)
-  }
+  withdraw_amount.value = +Math.min(max.value, newAvailable)?.toFixed(2)
 })
 
 const { user } = useTelegram()
@@ -180,8 +167,7 @@ async function withdrawTBTC() {
                 })
             }}
           </div>
-          <CustomSlider v-model="withdraw_amount" :min="min" :max="max" :available="available"
-            disabled />
+          <CustomSlider v-model="withdraw_amount" :min="min" :max="max" :available="available" />
           <div class="price">
             <div class="tbtc-price">
               <span>{{ t('modals.withdraw_modal.volume') }}</span>
