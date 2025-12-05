@@ -190,6 +190,10 @@ const asicsSaleEndDate = new Date('2024-12-31T23:59:59') // Дата оконч�
 // Halloween статус для кнопки ASICs Shop в EnergizerView
 const halloweenActive = false // Изменить на true для активации Halloween кнопки
 
+// Максимальные значения для вывода
+const max_fbtc = 3000 // Максимальное количество fBTC для вывода
+const max_kw = 20000 // Максимальное количество kW для вывода
+
 // Текст для бегущей строки акции GEMS
 const gemsSaleText = {
   en: '- 🎃 Best Choice Now - Halloween SALE 👻 -50% - 🕸️ Best Choice Now - Halloween SALE 👻 -50% - 🎃 Best Choice Now - Halloween SALE 👻 -50% - 🕸️ Best Choice Now - Halloween SALE 👻 -50% - 🎃 Best Choice Now - Halloween SALE 👻 -50% - 🕸️ Best Choice Now - Halloween SALE 👻 -50%',
@@ -514,5 +518,5 @@ const isAsicInSale = (asic) => {
   return true
 }
 
-export { asicsSheet, gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, gemsSaleText, getGemPrice, sortGemsBySale, halloweenActive, asicsSaleActive, asicsSalePercent, asicsSaleEndDate, getAsicPrice, isAsicInSale }
+export { asicsSheet, gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, gemsSaleText, getGemPrice, sortGemsBySale, halloweenActive, asicsSaleActive, asicsSalePercent, asicsSaleEndDate, getAsicPrice, isAsicInSale, max_fbtc, max_kw }
 export default asicsSheet

@@ -7,13 +7,14 @@ import { computed, defineAsyncComponent, ref } from 'vue'
 import { host } from '../../axios.config'
 import { useI18n } from 'vue-i18n'
 import CustomSlider from './CustomSlider.vue'
+import { max_kw } from '@/services/data'
 
 const app = useAppStore()
 const { t } = useI18n()
 const min = computed(() => app.withdraw_config?.min_kw || 300)
-const max = computed(() => Math.floor(app?.user?.energy))
-const available = computed(() => Math.max(0, Math.min(Math.floor(app?.wallet_info?.kw_amount), max.value)))
-const amount = ref(Math.min(available.value, max.value))
+const max = computed(() => Math.min(max_kw, Math.floor(app?.user?.energy)))
+const available = computed(() => Math.max(0, Math.min(max_kw, Math.floor(app?.wallet_info?.kw_amount), max.value)))
+const amount = ref(Math.min(max_kw, available.value, max.value))
 
 const { user } = useTelegram()
 const ton_address = useTonAddress()
@@ -110,7 +111,7 @@ async function claim() {
             address: ton_address?.slice(0, 5) + '...' +
               ton_address.slice(-5)
           }) }}</div>
-          <CustomSlider v-model="amount" :min="min" :max="Math.max(max, available)" :available="available" />
+          <CustomSlider v-model="amount" :min="min" :max="Math.min(max_kw, Math.max(max, available))" :available="available" />
           <!-- <VueSlider v-model="amount" :height="8" :dotSize="25" :dotStyle="{ boxShadow: 'none' }" :width="'100%'"
             :min="min" :max="max" :tooltip="'none'" :enableCross="false"
             :processStyle="{ backgroundColor: '#31FF80' }" :intervalStyle="[{ backgroundColor: '#6c6c6c' }]"

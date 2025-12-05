@@ -7,6 +7,7 @@ import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { host } from '../../axios.config'
 import { useI18n } from 'vue-i18n'
 import CustomSlider from './CustomSlider.vue'
+import { max_fbtc } from '@/services/data'
 
 const { t } = useI18n()
 
@@ -24,11 +25,11 @@ const totalBalance = computed(() => {
 const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= new Date())
 
 const min = computed(() => props?.claim ? app.withdraw_config?.min_claim || 2 : app.withdraw_config?.min_tbtc || 50)
-const max = computed(() => Math.floor(props.claim ? totalBalance.value : app?.user?.tbtc_wallet))
-const available = computed(() => Math.max(0, Math.min(Math.floor(app?.wallet_info?.tbtc_amount + app?.wallet_info?.tbtc_amount_s21 + app?.wallet_info?.tbtc_amount_sx), max.value)))
+const max = computed(() => Math.min(max_fbtc, Math.floor(props.claim ? totalBalance.value : app?.user?.tbtc_wallet)))
+const available = computed(() => Math.max(0, Math.min(max_fbtc, Math.floor(app?.wallet_info?.tbtc_amount + app?.wallet_info?.tbtc_amount_s21 + app?.wallet_info?.tbtc_amount_sx), max.value)))
 
 // Виправляємо ініціалізацію withdraw_amount
-const withdraw_amount = ref(Math.min(available.value, max.value)?.toFixed(2))
+const withdraw_amount = ref(Math.min(max_fbtc, available.value, max.value)?.toFixed(2))
 
 const commissionRate = computed(() => {
   return (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) ? 0.0085 : ((app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) ? 0.007 : 0.01
@@ -53,9 +54,9 @@ const toWalletAmount = computed(() => {
 // Додаємо watch для оновлення withdraw_amount при зміні available
 watch(available, (newAvailable) => {
   if (props?.claim) {
-    withdraw_amount.value = +Math.min(newAvailable, totalBalance.value)?.toFixed(2)
+    withdraw_amount.value = +Math.min(max_fbtc, newAvailable, totalBalance.value)?.toFixed(2)
   } else {
-    withdraw_amount.value = +Math.min(app?.user?.tbtc_wallet, newAvailable)?.toFixed(2)
+    withdraw_amount.value = +Math.min(max_fbtc, app?.user?.tbtc_wallet, newAvailable)?.toFixed(2)
   }
 })
 
@@ -160,7 +161,7 @@ async function withdrawTBTC() {
                 })
             }}
           </div>
-          <CustomSlider v-model="withdraw_amount" :min="min" :max="Math.max(max, available)" :available="available"
+          <CustomSlider v-model="withdraw_amount" :min="min" :max="Math.min(max_fbtc, Math.max(max, available))" :available="available"
             disabled />
           <div class="price">
             <div class="tbtc-price">
