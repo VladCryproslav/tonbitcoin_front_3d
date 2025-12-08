@@ -1,8 +1,16 @@
-<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g shape-rendering="crispEdges">
-    <!-- Vertical toggle switch body (rotated 90 degrees from horizontal) -->
-    <rect x="8" y="2" width="4" height="16" rx="2" fill="none" stroke="#FF4646" stroke-width="1"/>
-    <!-- Toggle switch thumb (circle on the top for "off" state) -->
-    <circle cx="10" cy="6" r="3.5" fill="#FF4646"/>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g filter="url(#shadow)">
+    <!-- outer ring -->
+    <circle cx="12" cy="12" r="8" fill="none" stroke="#FF4646" stroke-width="2" />
+    <!-- inner filled circle -->
+    <circle cx="12" cy="12" r="5" fill="#FF4646" />
   </g>
+  <defs>
+    <filter id="shadow" x="-6" y="-2" width="36" height="36" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <!-- soft dark shadow -->
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.45"/>
+      <!-- subtle colored glow -->
+      <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="#FF4646" flood-opacity="0.35"/>
+    </filter>
+  </defs>
 </svg>
