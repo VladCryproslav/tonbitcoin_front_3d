@@ -3741,7 +3741,7 @@ onUnmounted(() => {
     image-rendering: crisp-edges;
     flex-shrink: 0;
     display: block;
-    margin-top: 4px;
+    margin-top: 6px;
   }
 
   &.special {
