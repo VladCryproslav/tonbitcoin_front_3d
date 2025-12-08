@@ -3776,17 +3776,13 @@ onUnmounted(() => {
       linear-gradient(165deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0) 100%),
       linear-gradient(180deg, rgba(226, 226, 226, 1) 0%, rgba(100, 100, 100, 1) 100%),
       #B7B7B6;
-    box-shadow:
-      0px 2px 0px 0px rgba(89, 102, 154, 1),
-      0px 2px 0px 0px rgba(255, 70, 70, 1);
+    box-shadow: 0px 2px 0px 0px rgba(255, 70, 70, 1);
     border: 1px solid #FF4646;
 
     &:active {
       opacity: 0.85;
       transform: translateY(1px);
-      box-shadow:
-        0px 1px 0px 0px rgba(89, 102, 154, 1),
-        0px 1px 0px 0px rgba(255, 70, 70, 1);
+      box-shadow: 0px 1px 0px 0px rgba(255, 70, 70, 1);
     }
   }
 }
