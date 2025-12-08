@@ -1133,13 +1133,13 @@ onUnmounted(() => {
               {{ t('common.lvl') }} {{ app.user.storage_level }}
             </div>
             <div
-              v-if="!app.user.has_hydro_station && !app.user.has_orbital_station && app.user.storage_level == 3 && allStations.indexOf(app.user.station_type) !== allStations.length - 1"
+              v-if="!app.user.has_hydro_station && (!app.user.has_orbital_station || app.user.orbital_force_basic) && app.user.storage_level == 3 && allStations.indexOf(app.user.station_type) !== allStations.length - 1"
               class="level-upgrade-station">
               {{ t('modals.upgrade.next_station') }}
             </div>
             <div class="service-title">
               {{
-                app.user.storage_level == 3 && !app.user.has_hydro_station && !app.user.has_orbital_station &&
+                app.user.storage_level == 3 && !app.user.has_hydro_station && (!app.user.has_orbital_station || app.user.orbital_force_basic) &&
                   allStations.indexOf(app.user.station_type) !== allStations.length - 1
                   ? t(`stations.${allStations?.[allStations.indexOf(app.user?.station_type) + 1]}`)
                   : t('modals.upgrade.upg_station')
@@ -1156,7 +1156,7 @@ onUnmounted(() => {
                 {{ t('modals.upgrade.incr_capacity') }}
               </div>
               <div
-                v-if="app.user?.storage_level == findMaxLevel(app.stations?.storage_configs) && !app.user.has_hydro_station && !app.user.has_orbital_station"
+                v-if="app.user?.storage_level == findMaxLevel(app.stations?.storage_configs) && !app.user.has_hydro_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)"
                 class="service-title-loc">
                 {{ t('modals.upgrade.upd_station') }}
               </div>
@@ -1196,7 +1196,7 @@ onUnmounted(() => {
               </div>
             </div>
             <div
-              v-if="app.user?.storage_level < findMaxLevel(app.stations?.storage_configs) && !app.user.has_hydro_station && !app.user.has_orbital_station"
+              v-if="app.user?.storage_level < findMaxLevel(app.stations?.storage_configs) && !app.user.has_hydro_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)"
               class="upgrade-price">
               <div class="upgrade-price-item col-span-2">
                 <div class="flex items-center justify-center gap-1">
@@ -1250,7 +1250,7 @@ onUnmounted(() => {
               </div>
             </div>
             <div v-if="
-              !app.user.has_orbital_station &&
+              (!app.user.has_orbital_station || app.user.orbital_force_basic) &&
               !app.user.has_hydro_station &&
               app.user?.storage_level == findMaxLevel(app.stations?.storage_configs) &&
               app.user?.station_type !== allStations?.[allStations.length - 1]
@@ -1314,7 +1314,7 @@ onUnmounted(() => {
             </div>
             <button v-if="app.user?.building_until && getTimeRemaining(app.user?.building_until).remain > 0"
               class="upg-btn-unactive"> {{ getTimeRemaining(app.user?.building_until).time }}</button>
-            <button v-if="app.user?.storage_level < findMaxLevel(app.stations?.storage_configs) && (!app.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0)
+            <button v-if="app.user?.storage_level < findMaxLevel(app.stations?.storage_configs) && (!app.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !app.user.has_hydro_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)
             " class="upg-btn" @click="upgrade('storage')">
               {{ t('common.upg') }}
             </button>
@@ -1397,7 +1397,7 @@ onUnmounted(() => {
             " class="upg-btn-max">
               {{ t('common.maximum') }}
             </button>
-            <button v-else-if="app.user.has_hydro_station || app.user.has_orbital_station" class="upg-btn-unactive">
+            <button v-else-if="app.user.has_hydro_station || (app.user.has_orbital_station && !app.user.orbital_force_basic)" class="upg-btn-unactive">
               {{ t('common.unavailable') }}
             </button>
           </div>
@@ -1432,7 +1432,7 @@ onUnmounted(() => {
                   {{ t('common.per_h', { value: "kW" }) }}</span>
               </div>
             </div>
-            <div v-if="app.user.generation_level < findMaxLevel(app.stations?.gen_configs)" class="upgrade-price">
+            <div v-if="app.user.generation_level < findMaxLevel(app.stations?.gen_configs) && !app.user.has_hydro_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)" class="upgrade-price">
               <!-- <Energy v-if="app.stations?.gen_configs?.find(el => el?.station_type == app.user?.station_type &&
                 el?.level == app.user?.generation_level + 1)?.price_kw > 0" :width="10" /> -->
               <div class="upgrade-price-item col-span-2">
@@ -1488,7 +1488,7 @@ onUnmounted(() => {
             </div>
             <button v-if="app.user?.building_until && getTimeRemaining(app.user?.building_until).remain > 0"
               class="upg-btn-unactive"> {{ getTimeRemaining(app.user?.building_until).time }}</button>
-            <button v-if="app.user?.generation_level < findMaxLevel(app.stations?.gen_configs) && (!app.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0)
+            <button v-if="app.user?.generation_level < findMaxLevel(app.stations?.gen_configs) && (!app.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !app.user.has_hydro_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)
             " class="upg-btn" @click="upgrade('generation')">
               {{ t('common.upg') }}
             </button>
@@ -1536,23 +1536,23 @@ onUnmounted(() => {
                 <img v-if="app.user.engineer_level >= 50" src="@/assets/stars_eng.png" width="10px" height="10px" />
                 <span class="from">{{ app.user.engineer_level }}</span>
                 <ArrowRight
-                  v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs) && !app.user.has_hydro_station && !app.user.has_orbital_station"
+                  v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs) && !app.user.has_hydro_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)"
                   :width="10" class="mx-[.2rem]" />
                 <!-- <Engineer v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs)" :width="10" /> -->
                 <img v-if="
-                  !app.user.has_orbital_station &&
+                  (!app.user.has_orbital_station || app.user.orbital_force_basic) &&
                   !app.user.has_hydro_station &&
                   app.user.engineer_level < 49 &&
                   app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs)
                 " src="@/assets/engineer.webp" width="10px" height="10px" />
                 <img v-if="
-                  !app.user.has_orbital_station &&
+                  (!app.user.has_orbital_station || app.user.orbital_force_basic) &&
                   !app.user.has_hydro_station &&
                   app.user.engineer_level >= 49 &&
                   app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs)
                 " src="@/assets/stars_eng.png" width="10px" height="10px" />
                 <span
-                  v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs) && !app.user.has_hydro_station && !app.user.has_orbital_station"
+                  v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs) && !app.user.has_hydro_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)"
                   class="to">{{
                     app.stations?.eng_configs?.find(
                       (el) => el?.level == app.user?.engineer_level + 1,
@@ -1609,7 +1609,7 @@ onUnmounted(() => {
               </div>
             </div>
             <button
-              v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs) && !app.user.has_hydro_station && !app.user.has_orbital_station"
+              v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs) && !app.user.has_hydro_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)"
               class="upg-btn" :class="{ 'stars-btn': app.user.engineer_level >= 49 }" @click="
                 getUpgModal(
                   t('modals.upgrade.hire_eng'),
@@ -1629,7 +1629,7 @@ onUnmounted(() => {
               {{ t('common.upg') }}
             </button>
             <button v-if="
-              !app.user.has_orbital_station &&
+              (!app.user.has_orbital_station || app.user.orbital_force_basic) &&
               !app.user.has_hydro_station &&
               app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs) &&
               app.user?.energy <
@@ -1642,11 +1642,11 @@ onUnmounted(() => {
               {{ t('common.upg') }}
             </button>
             <button
-              v-if="app.user?.engineer_level == findMaxLevel(app.stations?.eng_configs) && !app.user.has_hydro_station && !app.user.has_orbital_station"
+              v-if="app.user?.engineer_level == findMaxLevel(app.stations?.eng_configs) && !app.user.has_hydro_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)"
               class="upg-btn-max">
               {{ t('common.maximum') }}
             </button>
-            <button v-if="app.user.has_hydro_station || app.user.has_orbital_station" class="upg-btn-unactive">
+            <button v-if="app.user.has_hydro_station || (app.user.has_orbital_station && !app.user.orbital_force_basic)" class="upg-btn-unactive">
               {{ t('common.unavailable') }}
             </button>
           </div>
