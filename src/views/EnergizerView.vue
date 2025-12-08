@@ -489,6 +489,36 @@ async function upgrade(params) {
   }
 }
 
+async function switchOrbitalStation() {
+  try {
+    controller = new AbortController()
+    const res = await host.post('switch-orbital-station/', { signal: controller.signal })
+    if (res.status == 200) {
+      await app.initUser()
+      modalStatus.value = 'success'
+      modalTitle.value = t('notification.st_success')
+      modalBody.value = app.user?.station_type === 'Dyson Sphere'
+        ? 'Switched to orbital station'
+        : 'Switched to regular station'
+    }
+  } catch (err) {
+    console.log(err)
+    modalStatus.value = 'error'
+    modalTitle.value = t('notification.st_error')
+    modalBody.value = err?.response?.data?.error || t('notification.was_error')
+  } finally {
+    controller = null
+    openModal.value = true
+  }
+}
+
+const isOrbitalActive = computed(() => {
+  return app.user?.has_orbital_station && app.user?.station_type === 'Dyson Sphere'
+})
+
+const switchIconGreen = new URL('@/assets/switch-icon.svg', import.meta.url).href
+const switchIconRed = new URL('@/assets/switch-icon-red.svg', import.meta.url).href
+
 const conditionsToMint = computed(() => {
   if (allStations.indexOf(app.user?.station_type) == allStations.length) return false
   if (app.user?.storage_level !== findMaxLevel(app.stations?.storage_configs)) return false
@@ -2033,10 +2063,23 @@ onUnmounted(() => {
             <span v-if="isJarvis.active">{{ isJarvis.forever ? t('common.forever') : isJarvis.time }}</span>
           </div>
         </div>
-        <button class="upgrade-btn" @click="openUpgrade">
-          {{ t('general.main.upg_btn') }}
-          <UpgradeBtn :width="30" :height="30" />
-        </button>
+        <div class="buttons-row">
+          <button class="upgrade-btn" @click="openUpgrade">
+            {{ t('general.main.upg_btn') }}
+            <UpgradeBtn :width="30" :height="30" />
+          </button>
+          <button v-if="app.user?.has_orbital_station"
+            class="switch-station-btn"
+            :class="{ 'special': isOrbitalActive, 'regular': !isOrbitalActive }"
+            @click="switchOrbitalStation">
+            <div class="switch-btn-content">
+              <span class="switch-btn-text">{{ isOrbitalActive ? 'Special' : 'Regular' }}</span>
+              <img :src="isOrbitalActive ? switchIconGreen : switchIconRed"
+                alt="switch"
+                class="switch-btn-icon" />
+            </div>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -3657,9 +3700,91 @@ onUnmounted(() => {
   }
 }
 
-.upgrade-btn {
+.buttons-row {
   position: absolute;
   bottom: calc(120px + 2%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 100;
+}
+
+.switch-station-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  min-width: 109px;
+  padding: 4px 12px;
+  border-radius: 27px;
+  border: none;
+  cursor: pointer;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.21;
+  transition: all 0.2s ease;
+
+  .switch-btn-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .switch-btn-text {
+    color: #FFFFFF;
+    text-align: center;
+  }
+
+  .switch-btn-icon {
+    width: 16px;
+    height: 16px;
+    padding: 3px;
+  }
+
+  &.special {
+    background:
+      radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%),
+      radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%),
+      linear-gradient(270deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, 1) 100%),
+      linear-gradient(165deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%, rgba(255, 255, 255, 0) 100%),
+      linear-gradient(90deg, rgba(49, 207, 255, 1) 0%, rgba(77, 64, 255, 1) 100%);
+    box-shadow: 0px 2px 0px 0px rgba(70, 255, 141, 1);
+    border: 1px solid rgba(70, 255, 141, 1);
+
+    &:active {
+      opacity: 0.8;
+      transform: translateY(1px);
+      box-shadow: 0px 1px 0px 0px rgba(70, 255, 141, 1);
+    }
+  }
+
+  &.regular {
+    background:
+      radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%),
+      radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%),
+      linear-gradient(270deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, 1) 100%),
+      linear-gradient(165deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%, rgba(255, 255, 255, 0) 100%),
+      #B7B7B6,
+      linear-gradient(180deg, rgba(226, 226, 226, 1) 0%, rgba(100, 100, 100, 1) 100%),
+      linear-gradient(90deg, rgba(49, 207, 255, 1) 0%, rgba(77, 64, 255, 1) 100%);
+    box-shadow:
+      0px 2px 0px 0px rgba(89, 102, 154, 1),
+      0px 2px 0px 0px rgba(255, 70, 70, 1);
+    border: 1px solid rgba(255, 70, 70, 1);
+
+    &:active {
+      opacity: 0.8;
+      transform: translateY(1px);
+      box-shadow:
+        0px 1px 0px 0px rgba(89, 102, 154, 1),
+        0px 1px 0px 0px rgba(255, 70, 70, 1);
+    }
+  }
+}
+
+.upgrade-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3670,7 +3795,6 @@ onUnmounted(() => {
   padding: 1rem 2.5rem;
   max-height: 50px;
   border-radius: 5rem;
-  z-index: 100;
   background: linear-gradient(to right, #d340ff, #ff7047);
   border: none;
   cursor: pointer;
@@ -3685,8 +3809,23 @@ onUnmounted(() => {
     margin-top: 40px;
   }
 
-  .upgrade-btn {
+  .buttons-row {
     bottom: 125px;
+  }
+
+  .switch-station-btn {
+    min-width: 95px;
+    height: 45px;
+    font-size: 16px;
+    padding: 3px 10px;
+
+    .switch-btn-icon {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .upgrade-btn {
     padding: 0.5rem 1.5rem;
   }
 
