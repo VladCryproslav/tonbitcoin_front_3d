@@ -2076,12 +2076,10 @@ onUnmounted(() => {
             class="switch-station-btn"
             :class="{ 'special': isOrbitalActive, 'regular': !isOrbitalActive }"
             @click="switchOrbitalStation">
-            <div class="switch-btn-content">
-              <span class="switch-btn-text">{{ isOrbitalActive ? 'Special' : 'Regular' }}</span>
-              <img :src="isOrbitalActive ? switchIconGreen : switchIconRed"
-                alt="switch"
-                class="switch-btn-icon" />
-            </div>
+            <span class="switch-btn-text">{{ isOrbitalActive ? 'Special' : 'Regular' }}</span>
+            <img :src="isOrbitalActive ? switchIconGreen : switchIconRed"
+              alt="switch"
+              class="switch-btn-icon" />
           </button>
         </div>
       </div>
@@ -3727,24 +3725,13 @@ onUnmounted(() => {
   font-family: Inter, sans-serif;
   font-weight: 600;
   font-size: 18px;
-  line-height: 1.21;
+  gap: 6px;
   transition: all 0.2s ease;
-
-  .switch-btn-content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    height: 100%;
-  }
 
   .switch-btn-text {
     color: #FFFFFF;
     text-align: center;
-    line-height: 1.21;
-    display: flex;
-    align-items: center;
-    height: 100%;
+    line-height: 1;
   }
 
   .switch-btn-icon {
@@ -3754,7 +3741,6 @@ onUnmounted(() => {
     image-rendering: crisp-edges;
     flex-shrink: 0;
     display: block;
-    margin-top: -1px;
   }
 
   &.special {
