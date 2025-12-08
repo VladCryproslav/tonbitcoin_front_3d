@@ -500,8 +500,8 @@ async function switchOrbitalStation() {
       modalStatus.value = 'success'
       modalTitle.value = t('notification.st_success')
       modalBody.value = !app.user?.orbital_force_basic
-        ? 'Switched to orbital station (Special)'
-        : 'Switched to regular station'
+        ? t('notification.switched_to_orbital')
+        : t('notification.switched_to_regular')
     }
   } catch (err) {
     console.log(err)
@@ -3742,23 +3742,25 @@ onUnmounted(() => {
   }
 
   .switch-btn-icon {
-    width: 16px;
-    height: 16px;
-    padding: 3px;
+    width: 20px;
+    height: 20px;
+    padding: 2px;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
   }
 
   &.special {
     background:
-      radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%),
-      radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%),
-      linear-gradient(270deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, 1) 100%),
-      linear-gradient(165deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%, rgba(255, 255, 255, 0) 100%),
+      radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 100%),
+      radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%),
+      linear-gradient(270deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, 0.3) 100%),
+      linear-gradient(165deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0) 100%),
       linear-gradient(90deg, rgba(49, 207, 255, 1) 0%, rgba(77, 64, 255, 1) 100%);
     box-shadow: 0px 2px 0px 0px rgba(70, 255, 141, 1);
     border: 1px solid #46FF8D;
 
     &:active {
-      opacity: 0.8;
+      opacity: 0.85;
       transform: translateY(1px);
       box-shadow: 0px 1px 0px 0px rgba(70, 255, 141, 1);
     }
@@ -3766,20 +3768,19 @@ onUnmounted(() => {
 
   &.regular {
     background:
-      radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%),
-      radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%),
-      linear-gradient(270deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, 1) 100%),
-      linear-gradient(165deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%, rgba(255, 255, 255, 0) 100%),
-      #B7B7B6,
+      radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%),
+      radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 100%),
+      linear-gradient(270deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, 0.2) 100%),
+      linear-gradient(165deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0) 100%),
       linear-gradient(180deg, rgba(226, 226, 226, 1) 0%, rgba(100, 100, 100, 1) 100%),
-      linear-gradient(90deg, rgba(49, 207, 255, 1) 0%, rgba(77, 64, 255, 1) 100%);
+      #B7B7B6;
     box-shadow:
       0px 2px 0px 0px rgba(89, 102, 154, 1),
       0px 2px 0px 0px rgba(255, 70, 70, 1);
     border: 1px solid #FF4646;
 
     &:active {
-      opacity: 0.8;
+      opacity: 0.85;
       transform: translateY(1px);
       box-shadow:
         0px 1px 0px 0px rgba(89, 102, 154, 1),
@@ -3824,8 +3825,10 @@ onUnmounted(() => {
     padding: 3px 10px;
 
     .switch-btn-icon {
-      width: 14px;
-      height: 14px;
+      width: 18px;
+      height: 18px;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
     }
   }
 

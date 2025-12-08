@@ -8,8 +8,9 @@ const { t } = useI18n()
 const app = useAppStore()
 // const CurrBase = defineAsyncComponent(() => import(`@/assets/${app.user.station_type}-${app.user.storage_level}.png`))
 const currBase = computed(() => {
-  if (app?.user?.has_orbital_station) {
-    return new URL(`../assets/Orbital power plant.webp`, import.meta.url).href
+  // Если есть орбитальная станция и она активна (не в режиме Regular)
+  if (app?.user?.has_orbital_station && !app?.user?.orbital_force_basic) {
+    return new URL(`../assets/Orbital Power Plant.webp`, import.meta.url).href
   }
   if (app?.user?.has_hydro_station) {
     return new URL(`../assets/Hydroelectric power plant.webp`, import.meta.url).href

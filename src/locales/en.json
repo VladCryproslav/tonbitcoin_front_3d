@@ -375,6 +375,8 @@
     "st_attention": "Warning",
     "st_success": "Success",
     "st_error": "Error",
+    "switched_to_orbital": "Switched to orbital station (Special)",
+    "switched_to_regular": "Switched to regular station",
     "forever_boost_duration": "Extension is not possible — this boost is already activated forever.",
     "max_boost_duration": "The total duration of active boosters cannot exceed 30 days. Use the desired booster when the duration of the active booster becomes shorter than the extension period within this limit.",
     "max_eng_level": "Your white engineer level has reached its maximum.",
