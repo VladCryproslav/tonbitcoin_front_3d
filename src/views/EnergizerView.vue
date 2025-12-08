@@ -3735,14 +3735,16 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     gap: 6px;
+    height: 100%;
   }
 
   .switch-btn-text {
     color: #FFFFFF;
     text-align: center;
-    line-height: 1;
+    line-height: 1.21;
     display: flex;
     align-items: center;
+    height: 100%;
   }
 
   .switch-btn-icon {
@@ -3752,6 +3754,7 @@ onUnmounted(() => {
     image-rendering: crisp-edges;
     flex-shrink: 0;
     display: block;
+    margin-top: -1px;
   }
 
   &.special {
