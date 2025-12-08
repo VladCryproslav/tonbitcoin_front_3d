@@ -18,10 +18,23 @@ const available = computed(() => Math.max(0, Math.floor(app?.wallet_info?.kw_amo
 const max = computed(() => Math.min(max_kw, Math.floor(app?.user?.energy)))
 const amount = ref(Math.min(max.value, available.value))
 
+const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= new Date())
+
+const commissionRate = computed(() => {
+  const hasGold = app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft
+  const hasSilver = app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft
+  if (hasGold || premiumActive.value) return 0.08 // 4% + 4%
+  if (hasSilver) return 0.09 // 4.5% + 4.5%
+  return 0.10 // 5% + 5%
+})
+
+const tokensToReceive = computed(() => {
+  const gross = Number(amount.value) || 0
+  return +(gross * (1 - commissionRate.value)).toFixed(0)
+})
+
 const { user } = useTelegram()
 const ton_address = useTonAddress()
-
-const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= new Date())
 
 const emit = defineEmits(['close'])
 const emitClose = () => {
@@ -47,10 +60,22 @@ function getTimeUntil(date) {
 async function claim() {
   const user_id = user?.id
   const receiveWallet = ton_address.value
+  // Обновляем профиль, чтобы подтянуть актуальные флаги SBT/premium перед расчетом комиссии
+  if (typeof app.fetchUserProfile === 'function') {
+    try {
+      await app.fetchUserProfile()
+    } catch (e) {
+      console.warn('fetchUserProfile failed, continue with cached data', e)
+    }
+  }
+
+  const rate = commissionRate.value
+  const gross = Number(amount.value) || 0
+  const tokensNet = +(gross * (1 - rate)).toFixed(0)
   const reqData = {
     user_id: user_id,
     wallet_address: receiveWallet,
-    token_amount: +amount.value,
+    token_amount: gross,
     token_contract_address: 'EQDSYiFUtMVS9rhBDhbTfP-zbj_uqa69bHv6e5IberQH5n1N',
     isMining: false,
   }
@@ -58,7 +83,7 @@ async function claim() {
     await host
       .post('create-withdrawal-request/', reqData)
       .then(() => {
-        const tokens = Math.floor(amount.value * 0.9)
+        const tokens = tokensNet
         const time = amount.value < app.withdraw_config?.max_auto_kw ? t('modals.mint_modal.few_minutes') : t('modals.mint_modal.24_hours')
         emit('close', {
           status: 'success',
@@ -131,26 +156,28 @@ async function claim() {
             <div class="kw-price">
               <span>{{ t('modals.mint_modal.mint_fee') }}</span>
               <span class="font-semibold flex gap-1"
-                :class="{ '!text-[#FCD909]': (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive }">{{
-                  (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) ? '4.5% (SBT)' : ((app?.user?.has_gold_sbt
-                    && app?.user?.has_gold_sbt_nft) || premiumActive) ? `4% (${premiumActive ? t('boost.king') : 'SBT'})` :
-                    '5%' }}</span>
+                :class="{ '!text-[#FCD909]': (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive }">
+                {{ (commissionRate * 100).toFixed(1).replace(/\.0$/, '') }}%
+                <template v-if="(app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive">
+                  ({{ premiumActive ? t('boost.king') : 'SBT' }})
+                </template>
+              </span>
             </div>
             <div class="kw-price">
               <span>{{ t('modals.mint_modal.liquidity_pool') }}</span>
               <span class="font-semibold flex gap-1"
-                :class="{ '!text-[#FCD909]': (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive }">{{
-                  (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) ? '4.5% (SBT)' : ((app?.user?.has_gold_sbt
-                    && app?.user?.has_gold_sbt_nft) || premiumActive) ? `4% (${premiumActive ? t('boost.king') : 'SBT'})` :
-                    '5%' }}</span>
+                :class="{ '!text-[#FCD909]': (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive }">
+                {{ (commissionRate * 100).toFixed(1).replace(/\.0$/, '') }}%
+                <template v-if="(app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive">
+                  ({{ premiumActive ? t('boost.king') : 'SBT' }})
+                </template>
+              </span>
             </div>
             <div class="kw-price">
               <span>{{ t('modals.mint_modal.tokens_to_receive') }}</span>
-              <span class="font-semibold flex gap-1">{{ Math.floor(amount * ((app?.user?.has_silver_sbt &&
-                app?.user?.has_silver_sbt_nft) ? 0.91 : ((app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) ||
-                  premiumActive) ? 0.92
-                : 0.9))
-              }}<img class="ml-1" src="@/assets/kW_token.png" width="16px" height="16px" /></span>
+              <span class="font-semibold flex gap-1">{{ tokensToReceive }}
+                <img class="ml-1" src="@/assets/kW_token.png" width="16px" height="16px" />
+              </span>
             </div>
             <div class="tbtc-price">
               <span>{{ t('modals.mint_modal.balance_remaining') }}</span>

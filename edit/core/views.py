@@ -942,7 +942,7 @@ def common_withdrawal(request):
                 ).update(kw_amount=F("kw_amount") - token_amount)
             commision_percent = user_profile.sbt_get_kw_commision()
             if token_amount < max_auto_kw:
-                real_amount = token_amount * 0.9
+                real_amount = token_amount * (1 - commision_percent)
                 add_kw_commission(token_amount - real_amount)
                 tx_hash = ""
                 comment = f"Mint {user_profile.user_id}"
@@ -1091,12 +1091,13 @@ def common_withdrawal(request):
                     total_tbtc_claimed=F("total_tbtc_claimed") + token_amount
                 )
                 if token_amount < max_auto_claim:
+                    commission_amount = max(0, withdraw_gross - token_amount)
                     real_amount = token_amount
                     # if token_amount < 100:
                     #     real_amount = token_amount - 1
                     # else:
                     #     real_amount = token_amount * 0.99
-                    add_tbtc_commission(token_amount - real_amount)
+                    add_tbtc_commission(commission_amount)
                     tx_hash = ""
                     comment = f"Claim {user_profile.user_id}"
                     # try:

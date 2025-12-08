@@ -339,10 +339,10 @@ class UserProfile(models.Model):
         gold_sbt = self.has_gold_sbt and self.has_gold_sbt_nft
         premium_sub = self.premium_sub_expires and self.premium_sub_expires > timezone.now()
         if gold_sbt or premium_sub:
-            return 0.04
+            return 0.08  # 4% + 4% (pool + fee)
         if self.has_silver_sbt and self.has_silver_sbt_nft:
-            return 0.045
-        return 0.05
+            return 0.09  # 4.5% + 4.5%
+        return 0.10  # 5% + 5%
 
     def sbt_get_claim_commision(self):
         gold_sbt = self.has_gold_sbt and self.has_gold_sbt_nft
@@ -1793,4 +1793,38 @@ class WalletInfo(models.Model):
     tbtc_amount_sx = models.FloatField(default=0)
     block_until = models.DateTimeField(verbose_name="Block Until", null=True, blank=True)
     
+
+class Lottery(models.Model):
+    total_tickets = models.IntegerField(default=150, verbose_name="Total Tickets")
+    remaining_tickets = models.IntegerField(default=150, verbose_name="Remaining Tickets")
+    ticket_price = models.FloatField(default=0.01, verbose_name="Ticket Price (TON)")
+    is_active = models.BooleanField(default=True, verbose_name="Is Active")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        verbose_name = "Lottery"
+        verbose_name_plural = "Lotteries"
+
+    def __str__(self):
+        return f"Lottery {self.id} - {self.remaining_tickets}/{self.total_tickets} tickets"
+
+
+class LotteryParticipant(models.Model):
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, verbose_name="User", null=True, blank=True)
+    username = models.CharField(max_length=100, verbose_name="Username")
+    wallet_address = models.CharField(max_length=100, verbose_name="Wallet Address", unique=True)
+    tickets_count = models.IntegerField(default=1, verbose_name="Tickets Count")
+    transaction_hash = models.CharField(max_length=200, verbose_name="Transaction Hash")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        verbose_name = "Lottery Participant"
+        verbose_name_plural = "Lottery Participants"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.username} - {self.tickets_count} tickets"
+
     
