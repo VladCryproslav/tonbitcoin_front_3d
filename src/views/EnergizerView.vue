@@ -520,7 +520,7 @@ const isOrbitalActive = computed(() => {
   return app.user?.has_orbital_station && !app.user?.orbital_force_basic
 })
 
-const switchIconGreen = new URL('@/assets/switch-icon.svg', import.meta.url).href
+const switchIconGreen = new URL('@/assets/switch-icon-green.svg', import.meta.url).href
 const switchIconRed = new URL('@/assets/switch-icon-red.svg', import.meta.url).href
 
 const conditionsToMint = computed(() => {
@@ -3721,7 +3721,8 @@ onUnmounted(() => {
   min-width: 109px;
   padding: 4px 12px;
   border-radius: 27px;
-  border: none;
+  border: 1px solid transparent;
+  box-sizing: border-box;
   cursor: pointer;
   font-family: Inter, sans-serif;
   font-weight: 600;
@@ -3747,6 +3748,7 @@ onUnmounted(() => {
     padding: 2px;
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
+    flex-shrink: 0;
   }
 
   &.special {
