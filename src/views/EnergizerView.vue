@@ -379,7 +379,7 @@ function openUpgrade() {
 const imagePath = computed(() => {
   // Если есть орбитальная станция и она активна (не в режиме Regular)
   if (app.user?.has_orbital_station && !app.user?.orbital_force_basic) {
-    return new URL(`../assets/Orbital power plant.webp`, import.meta.url).href
+    return new URL(`../assets/Orbital Power Plant.webp`, import.meta.url).href
   }
   if (app?.user?.has_hydro_station) {
     return new URL(`../assets/Hydroelectric power plant.webp`, import.meta.url).href
@@ -393,7 +393,7 @@ const imagePathCard = computed(() => {
 
   // Если есть орбитальная станция и она активна (не в режиме Regular)
   if (app.user.has_orbital_station && !app.user?.orbital_force_basic) {
-    return new URL(`../assets/Orbital power plant.webp`, import.meta.url).href
+    return new URL(`../assets/Orbital Power Plant.webp`, import.meta.url).href
   }
   if (app.user.has_hydro_station) {
     return new URL(`../assets/Hydroelectric power plant.webp`, import.meta.url).href
@@ -1879,7 +1879,7 @@ onUnmounted(() => {
     </div>
   </div>
   <div class="mainarea">
-    <div class="tapzone" :class="{ orbital: app.user?.has_orbital_station }">
+    <div class="tapzone" :class="{ orbital: app.user?.has_orbital_station && !app.user?.orbital_force_basic }">
       <div class="flex flex-col w-full items-center justify-center station-image">
         <div @touchstart="increment" ref="img" style="position: relative">
           <div
@@ -3770,8 +3770,9 @@ onUnmounted(() => {
       radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%),
       linear-gradient(270deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, 1) 100%),
       linear-gradient(165deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%, rgba(255, 255, 255, 0) 100%),
+      #B7B7B6,
       linear-gradient(180deg, rgba(226, 226, 226, 1) 0%, rgba(100, 100, 100, 1) 100%),
-      #B7B7B6;
+      linear-gradient(90deg, rgba(49, 207, 255, 1) 0%, rgba(77, 64, 255, 1) 100%);
     box-shadow:
       0px 2px 0px 0px rgba(89, 102, 154, 1),
       0px 2px 0px 0px rgba(255, 70, 70, 1);
