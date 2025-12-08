@@ -520,8 +520,8 @@ const isOrbitalActive = computed(() => {
   return app.user?.has_orbital_station && !app.user?.orbital_force_basic
 })
 
-const switchIconGreen = new URL('@/assets/switch-icon-green.svg', import.meta.url).href
-const switchIconRed = new URL('@/assets/switch-icon-red.svg', import.meta.url).href
+const switchIconGreen = new URL('@/assets/switch-icon-green.png', import.meta.url).href
+const switchIconRed = new URL('@/assets/switch-icon-red.png', import.meta.url).href
 
 const conditionsToMint = computed(() => {
   if (allStations.indexOf(app.user?.station_type) == allStations.length) return false
