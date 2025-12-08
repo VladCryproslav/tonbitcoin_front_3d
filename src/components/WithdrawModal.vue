@@ -75,11 +75,8 @@ const toWalletAmount = computed(() => {
   const totalWithdraw = withdraw_amount.value || 0
   if (totalWithdraw <= 0) return 0
 
-  // Застосовуємо комісію
-  const totalAfterCommission = totalWithdraw - (totalWithdraw * commissionRate.value)
-
-  // 100% йде в гаманець
-  return +totalAfterCommission.toFixed(2)
+  const fee = totalWithdraw < 100 ? 1 : totalWithdraw * commissionRate.value
+  return +(totalWithdraw - fee).toFixed(2)
 })
 
 const { user } = useTelegram()
@@ -113,6 +110,8 @@ async function withdrawTBTC() {
   // Жёстко ограничиваем по max_fbtc напрямую (не через max.value)
   // Финальная сумма: жёстко обрезаем 3000 и maxLimit
   const finalAmount = Number(Math.min(max_fbtc, maxLimit.value || max_fbtc, Number(withdraw_amount.value) || 0).toFixed(2))
+  const fee = finalAmount < 100 ? 1 : finalAmount * commissionRate.value
+  const netAmount = +(finalAmount - fee).toFixed(2)
   const mining = props?.claim ? true : false
   const reqData = {
     user_id: user_id,
@@ -130,7 +129,7 @@ async function withdrawTBTC() {
           emit('close', {
             status: 'success',
             title: t('notification.st_success'),
-            body: props?.claim ? t('modals.withdraw_modal.claim_request_accepted', { amount: finalAmount, time: timeText }) : t('modals.withdraw_modal.withdraw_request_accepted', { amount: finalAmount, time: timeText }),
+            body: props?.claim ? t('modals.withdraw_modal.claim_request_accepted', { amount: netAmount, time: timeText }) : t('modals.withdraw_modal.withdraw_request_accepted', { amount: netAmount, time: timeText }),
           })
         }
       })
