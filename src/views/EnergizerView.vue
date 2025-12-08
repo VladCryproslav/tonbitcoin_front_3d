@@ -377,7 +377,8 @@ function openUpgrade() {
 }
 
 const imagePath = computed(() => {
-  if (app.user?.has_orbital_station) {
+  // Если есть орбитальная станция и она активна (не в режиме Regular)
+  if (app.user?.has_orbital_station && !app.user?.orbital_force_basic) {
     return new URL(`../assets/Orbital power plant.webp`, import.meta.url).href
   }
   if (app?.user?.has_hydro_station) {
@@ -390,7 +391,8 @@ const imagePathCard = computed(() => {
   const currentStationIndex = allStations.indexOf(app.user.station_type)
   const currentLevel = app.user.storage_level
 
-  if (app.user.has_orbital_station) {
+  // Если есть орбитальная станция и она активна (не в режиме Regular)
+  if (app.user.has_orbital_station && !app.user?.orbital_force_basic) {
     return new URL(`../assets/Orbital power plant.webp`, import.meta.url).href
   }
   if (app.user.has_hydro_station) {
@@ -497,8 +499,8 @@ async function switchOrbitalStation() {
       await app.initUser()
       modalStatus.value = 'success'
       modalTitle.value = t('notification.st_success')
-      modalBody.value = app.user?.station_type === 'Dyson Sphere'
-        ? 'Switched to orbital station'
+      modalBody.value = !app.user?.orbital_force_basic
+        ? 'Switched to orbital station (Special)'
         : 'Switched to regular station'
     }
   } catch (err) {
@@ -513,7 +515,9 @@ async function switchOrbitalStation() {
 }
 
 const isOrbitalActive = computed(() => {
-  return app.user?.has_orbital_station && app.user?.station_type === 'Dyson Sphere'
+  // Special = орбитальная активна (orbital_force_basic = false)
+  // Regular = обычная станция активна (orbital_force_basic = true)
+  return app.user?.has_orbital_station && !app.user?.orbital_force_basic
 })
 
 const switchIconGreen = new URL('@/assets/switch-icon.svg', import.meta.url).href
@@ -1851,10 +1855,10 @@ onUnmounted(() => {
       <!-- <img src="@/assets/thirst-block11.png" width="52px" height="52px" /> -->
       <div class="balance">
         <div class="flex items-center gap-1">
-          <Swap v-if="app.user?.has_orbital_station && app.user?.orbital_first_owner" @click="handleSwapToken" />
-          <h2 class="score" :class="{ smaller: app.user?.has_orbital_station && app.user?.orbital_first_owner }"
+          <Swap v-if="app.user?.has_orbital_station && app.user?.orbital_first_owner && !app.user?.orbital_force_basic" @click="handleSwapToken" />
+          <h2 class="score" :class="{ smaller: app.user?.has_orbital_station && app.user?.orbital_first_owner && !app.user?.orbital_force_basic }"
             id="score">{{ app.score.toFixed(1) }}</h2>
-          <div class="energy-block" v-if="app.user?.has_orbital_station && app.user?.orbital_first_owner">
+          <div class="energy-block" v-if="app.user?.has_orbital_station && app.user?.orbital_first_owner && !app.user?.orbital_force_basic">
             <img src="@/assets/kW_token.png" :class="{ 'top-energy': app.user?.orbital_is_blue }" />
             <img src="@/assets/kW.png" :class="{ 'top-energy': !app.user?.orbital_is_blue }" />
           </div>
@@ -1990,7 +1994,7 @@ onUnmounted(() => {
             ref="factory" />
         </div>
         <div class="station-label-group">
-          <span class="station-label">{{ app?.user?.has_orbital_station ? t(`stations.${'Orbital power plant'}`) :
+          <span class="station-label">{{ (app?.user?.has_orbital_station && !app?.user?.orbital_force_basic) ? t(`stations.${'Orbital power plant'}`) :
             app?.user?.has_hydro_station ? t(`stations.${'Hydroelectric power plant'}`) :
               t(`stations.${app.user?.station_type}`) }} {{ allStations.indexOf(app.user?.station_type)
               > 3 ? "NFT" : '' }}</span>
@@ -3751,7 +3755,7 @@ onUnmounted(() => {
       linear-gradient(165deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%, rgba(255, 255, 255, 0) 100%),
       linear-gradient(90deg, rgba(49, 207, 255, 1) 0%, rgba(77, 64, 255, 1) 100%);
     box-shadow: 0px 2px 0px 0px rgba(70, 255, 141, 1);
-    border: 1px solid rgba(70, 255, 141, 1);
+    border: 1px solid #46FF8D;
 
     &:active {
       opacity: 0.8;
@@ -3766,13 +3770,12 @@ onUnmounted(() => {
       radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%),
       linear-gradient(270deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, 1) 100%),
       linear-gradient(165deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%, rgba(255, 255, 255, 0) 100%),
-      #B7B7B6,
       linear-gradient(180deg, rgba(226, 226, 226, 1) 0%, rgba(100, 100, 100, 1) 100%),
-      linear-gradient(90deg, rgba(49, 207, 255, 1) 0%, rgba(77, 64, 255, 1) 100%);
+      #B7B7B6;
     box-shadow:
       0px 2px 0px 0px rgba(89, 102, 154, 1),
       0px 2px 0px 0px rgba(255, 70, 70, 1);
-    border: 1px solid rgba(255, 70, 70, 1);
+    border: 1px solid #FF4646;
 
     &:active {
       opacity: 0.8;
