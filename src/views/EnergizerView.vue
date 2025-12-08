@@ -2072,7 +2072,7 @@ onUnmounted(() => {
             {{ t('general.main.upg_btn') }}
             <UpgradeBtn :width="30" :height="30" />
           </button>
-          <button v-if="app.user?.has_orbital_station"
+          <button v-if="app.user?.has_orbital_station && app.user?.orbital_first_owner"
             class="switch-station-btn"
             :class="{ 'special': isOrbitalActive, 'regular': !isOrbitalActive }"
             @click="switchOrbitalStation">
