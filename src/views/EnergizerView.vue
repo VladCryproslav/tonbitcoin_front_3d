@@ -3734,21 +3734,24 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 6px;
   }
 
   .switch-btn-text {
     color: #FFFFFF;
     text-align: center;
+    line-height: 1;
+    display: flex;
+    align-items: center;
   }
 
   .switch-btn-icon {
-    width: 20px;
-    height: 20px;
-    padding: 2px;
+    width: 24px;
+    height: 24px;
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
     flex-shrink: 0;
+    display: block;
   }
 
   &.special {
@@ -3823,8 +3826,8 @@ onUnmounted(() => {
     padding: 3px 10px;
 
     .switch-btn-icon {
-      width: 18px;
-      height: 18px;
+      width: 22px;
+      height: 22px;
       image-rendering: -webkit-optimize-contrast;
       image-rendering: crisp-edges;
     }
