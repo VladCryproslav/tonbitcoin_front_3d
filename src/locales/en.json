@@ -179,7 +179,7 @@
       "cancel": "Cancel"
     },
     "switch_station_modal": {
-      "title": "Switch power station",
+      "title": "Warning!",
       "to_regular_yellow": "After disconnecting the NFT power station, your previous progress will be restored. The saved energy balance will be added to your current yellow energy balance.",
       "to_regular_blue": "After disconnecting the NFT power station, your previous progress will be restored. The blue energy balance will be reset.",
       "to_orbital": "After connecting the NFT power station, your current progress and \"yellow\" energy balance will be saved."
