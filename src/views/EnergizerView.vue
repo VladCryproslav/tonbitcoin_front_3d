@@ -58,6 +58,7 @@ const modalTitle = ref('')
 const modalStatus = ref('')
 
 const openWalletChangeInfo = ref(false)
+const openSwitchStationConfirm = ref(false)
 
 const selectedWorkers = ref('all')
 
@@ -491,7 +492,19 @@ async function upgrade(params) {
   }
 }
 
-async function switchOrbitalStation() {
+function switchOrbitalStation() {
+  // Показываем модалку подтверждения перед переключением
+  openSwitchStationConfirm.value = true
+}
+
+function responseSwitchStationConfirm(result) {
+  openSwitchStationConfirm.value = false
+  if (result?.check) {
+    confirmSwitchStation()
+  }
+}
+
+async function confirmSwitchStation() {
   try {
     controller = new AbortController()
     const res = await host.post('switch-orbital-station/', { signal: controller.signal })
@@ -513,6 +526,23 @@ async function switchOrbitalStation() {
     openModal.value = true
   }
 }
+
+const switchStationModalText = computed(() => {
+  // Если сейчас орбитальная активна (orbital_force_basic = false), переключаемся на обычную
+  if (!app.user?.orbital_force_basic) {
+    // Переключение с орбитальной на обычную
+    if (app.user?.orbital_is_blue) {
+      // Синяя энергия - баланс будет обнулен
+      return t('modals.switch_station_modal.to_regular_blue')
+    } else {
+      // Желтая энергия - баланс будет добавлен
+      return t('modals.switch_station_modal.to_regular_yellow')
+    }
+  } else {
+    // Переключение с обычной на орбитальную
+    return t('modals.switch_station_modal.to_orbital')
+  }
+})
 
 const isOrbitalActive = computed(() => {
   // Special = орбитальная активна (orbital_force_basic = false)
@@ -932,6 +962,14 @@ onUnmounted(() => {
         energyType: t(`modals.energy_types.${app.user?.orbital_is_blue ? 'yellow' : 'blue'}`)
       })
       }}
+    </template>
+  </InfoModal>
+  <InfoModal v-if="openSwitchStationConfirm" @close="responseSwitchStationConfirm">
+    <template #header>
+      {{ t('modals.switch_station_modal.title') }}
+    </template>
+    <template #modal-body>
+      {{ switchStationModalText }}
     </template>
   </InfoModal>
   <MintModal v-if="openMintModal" @close="
