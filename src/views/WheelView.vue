@@ -2,6 +2,7 @@
 import Wheel from '@/components/Wheel.vue'
 import WheelPrizeModal from '@/components/WheelPrizeModal.vue'
 import ModalNew from '@/components/ModalNew.vue'
+import InfoModal from '@/components/InfoModal.vue'
 import { useAppStore } from '@/stores/app'
 const InfoIcon = defineAsyncComponent(() => import('@/assets/info_friends.svg'))
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -23,6 +24,7 @@ const modalStatus = ref('')
 const modalTitle = ref('')
 const modalBody = ref('')
 const openModal = ref(false)
+const openEngineersBlockedModal = ref(false)
 
 const stopUpdate = ref(false)
 
@@ -265,7 +267,14 @@ async function fetchStarsBalance() {
 const getBtnStyle = (item, btn) => {
   return computed(() => {
     if (!item?.asset_type) return ''
-    const isDisabled = (item.status !== 'unclaimed' || (item?.asset_type == 'electrics' && app.user?.engineer_level + item?.asset_quantity > 49)) && btn
+    // Блокируем кнопку для electrics, если активна орбитальная (Special) или гидростанция
+    const isEngineersBlocked = item?.asset_type == 'electrics' && (
+      (app.user?.has_orbital_station && !app.user?.orbital_force_basic) ||
+      app.user?.has_hydro_station
+    )
+    const isDisabled = (item.status !== 'unclaimed' ||
+      (item?.asset_type == 'electrics' && app.user?.engineer_level + item?.asset_quantity > 49) ||
+      isEngineersBlocked) && btn
     const elemStyle =
       item?.asset_type == 'ASIC' ?
         'asic' :
@@ -280,6 +289,14 @@ const getBtnStyle = (item, btn) => {
 const claimReward = async (item) => {
   if (!item || item.status == 'claimed' || item.status == 'processing') return
   if (item?.asset_type == 'electrics' && app.user?.engineer_level + item?.asset_quantity > 49) return
+  // Блокируем забор приза инженеров, если активна орбитальная (Special) или гидростанция
+  if (item?.asset_type == 'electrics') {
+    const isBlocked = (app.user?.has_orbital_station && !app.user?.orbital_force_basic) || app.user?.has_hydro_station
+    if (isBlocked) {
+      openEngineersBlockedModal.value = true
+      return
+    }
+  }
   try {
     const res = await host.post('tasks/claim_user_reward/', { reward_id: item.id })
     if (res.status == 200) {
@@ -341,6 +358,14 @@ const Asic = (name) => {
 
 <template>
   <ModalNew v-if="openModal" :status="modalStatus" :title="modalTitle" :body="modalBody" @close="openModal = false" />
+  <InfoModal v-if="openEngineersBlockedModal" @close="openEngineersBlockedModal = false">
+    <template #header>
+      {{ t('modals.engineers_blocked_modal.title') }}
+    </template>
+    <template #modal-body>
+      {{ t('modals.engineers_blocked_modal.message') }}
+    </template>
+  </InfoModal>
   <Transition name="fade">
     <WheelPrizeModal v-if="showMyPrize && myPrize" :prize="myPrize" @close="showMyPrize = false" />
   </Transition>

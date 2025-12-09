@@ -170,6 +170,15 @@ def get_prize(currency: str, user_profile: UserProfile):
         wheel_slots = wheel_slots.exclude(
             asset_name="electrics"
         )
+    # Исключаем призы инженеров, если активна орбитальная (Special) или гидростанция
+    is_blocked = (
+        (user_profile.has_orbital_station and not user_profile.orbital_force_basic) or
+        user_profile.has_hydro_station
+    )
+    if is_blocked:
+        wheel_slots = wheel_slots.exclude(
+            asset_name="electrics"
+        )
     if not wheel_slots.exists():
         return False, False
 
@@ -434,6 +443,17 @@ class ClaimUserRewardView(APIView):
             )
             UserReward.objects.filter(id=reward_id).update(status="claimed")
         elif user_reward.asset_type in ["autostart", "azot", "powerbank", "electrics", "jarvis", "magnit", "asic_manager"]:
+            # Блокируем забор приза инженеров, если активна орбитальная (Special) или гидростанция
+            if user_reward.asset_type == "electrics":
+                is_blocked = (
+                    (user_profile.has_orbital_station and not user_profile.orbital_force_basic) or
+                    user_profile.has_hydro_station
+                )
+                if is_blocked:
+                    return Response(
+                        {"status": "Engineers reward cannot be claimed with active orbital (Special) or hydro station"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
             # Обробка бустерів
             success, message = apply_booster_reward(user_profile, user_reward)
             
