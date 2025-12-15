@@ -183,7 +183,7 @@ const gemsSalePercent = 50 // Процент скидки (например 50 =
 const gemsSaleEndDate = new Date('2024-10-31T23:59:59') // Дата окончания акции
 
 // Активность акции для ASICs (можно включать/выключать)
-const asicsSaleActive = true // Изменить на true для активации скидки
+const asicsSaleActive = false // Изменить на true для активации скидки
 const asicsSalePercent = 50 // Процент скидки (например 50 = -50%)
 const asicsSaleEndDate = new Date('2024-12-31T23:59:59') // Дата окончания акции
 
