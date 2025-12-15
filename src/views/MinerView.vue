@@ -852,7 +852,7 @@ const openNftSpeedUpInfo = ref(false)
 const openNftSpeedUp = ref(false)
 const speedUpAddress = ref(null)
 
-const activeShopTab = ref('asics')
+const activeShopTab = ref('gems')
 
 const toggleShopTab = () => {
   activeShopTab.value = activeShopTab.value === 'asics' ? 'gems' : 'asics'
