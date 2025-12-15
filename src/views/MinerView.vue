@@ -855,7 +855,7 @@ const speedUpAddress = ref(null)
 const activeShopTab = ref('asics')
 
 const toggleShopTab = () => {
-  activeShopTab.value = activeShopTab.value === 'gems' ? 'asics' : 'gems'
+  activeShopTab.value = activeShopTab.value === 'asics' ? 'gems' : 'asics'
 }
 
 // Sale timer logic for GEMS
