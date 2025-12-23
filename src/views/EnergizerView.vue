@@ -428,6 +428,24 @@ const findMaxLevel = (array) => {
   return Math.max(...arr);
 };
 
+// Максимальный уровень генерации для текущего типа станции
+const maxGenerationLevelForCurrentStation = computed(() => {
+  if (!app.stations?.gen_configs || !app.user?.station_type) return 0;
+  
+  // Для орбитальной станции (orbital_force_basic = false) не используем gen_configs,
+  // так как она использует фиксированные значения генерации
+  if (app.user?.has_orbital_station && !app.user?.orbital_force_basic) {
+    return 3; // Орбитальная станция всегда имеет уровень 3
+  }
+  
+  // Для regular станции (orbital_force_basic = true) фильтруем по типу станции
+  const filteredConfigs = app.stations.gen_configs.filter(
+    (el) => el?.station_type === app.user?.station_type
+  );
+  
+  return findMaxLevel(filteredConfigs);
+});
+
 async function claim() {
   await app.initUser()
   if (!ton_address.value) {
@@ -1358,7 +1376,7 @@ onUnmounted(() => {
             </button>
             <button v-if="
               app.user?.storage_level == findMaxLevel(app.stations?.storage_configs) &&
-              app.user?.generation_level == findMaxLevel(app.stations?.gen_configs) &&
+              app.user?.generation_level == maxGenerationLevelForCurrentStation &&
               app.user?.station_type !== allStations?.[allStations.length - 1] &&
               allStations?.indexOf(app.user?.station_type) >= 3 &&
               (!app.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0)
@@ -1385,7 +1403,7 @@ onUnmounted(() => {
             </button>
             <button v-if="
               app.user?.storage_level == findMaxLevel(app.stations?.storage_configs) &&
-              app.user?.generation_level == findMaxLevel(app.stations?.gen_configs) &&
+              app.user?.generation_level == maxGenerationLevelForCurrentStation &&
               app.user?.station_type !== allStations?.[allStations.length - 1] &&
               allStations.indexOf(app.user?.station_type) < 3 &&
               (!app.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0)
@@ -1414,7 +1432,7 @@ onUnmounted(() => {
             </button>
             <button v-if="
               app.user?.storage_level == findMaxLevel(app.stations?.storage_configs) &&
-              app.user.generation_level < findMaxLevel(app.stations?.gen_configs) &&
+              app.user.generation_level < maxGenerationLevelForCurrentStation &&
               app.user?.station_type !== allStations?.[allStations.length - 1] &&
               (!app.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0)
             " class="upg-btn-unactive" @click="
@@ -1456,11 +1474,11 @@ onUnmounted(() => {
                   src="@/assets/kW_token.png" width="10px" height="10px" />
                 <img v-else src="@/assets/kW.png" width="10px" height="10px" />
                 <span class="from">{{ +app.user.generation_rate }} {{ t('common.per_h', { value: "kW" }) }}</span>
-                <ArrowRight v-if="app.user.generation_level < findMaxLevel(app.stations?.gen_configs)" :width="10"
+                <ArrowRight v-if="app.user.generation_level < maxGenerationLevelForCurrentStation" :width="10"
                   class="mx-[.2rem]" />
-                <img src="@/assets/kW.png" v-if="app.user.generation_level < findMaxLevel(app.stations?.gen_configs)"
+                <img src="@/assets/kW.png" v-if="app.user.generation_level < maxGenerationLevelForCurrentStation"
                   width="10px" height="10px" />
-                <span v-if="app.user.generation_level < findMaxLevel(app.stations?.gen_configs)" class="to">{{
+                <span v-if="app.user.generation_level < maxGenerationLevelForCurrentStation" class="to">{{
                   +app.stations?.gen_configs?.find(
                     (el) =>
                       el?.station_type == app.user?.station_type &&
@@ -1470,7 +1488,7 @@ onUnmounted(() => {
                   {{ t('common.per_h', { value: "kW" }) }}</span>
               </div>
             </div>
-            <div v-if="app.user.generation_level < findMaxLevel(app.stations?.gen_configs) && !app.user.has_hydro_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)" class="upgrade-price">
+            <div v-if="app.user.generation_level < maxGenerationLevelForCurrentStation && !app.user.has_hydro_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)" class="upgrade-price">
               <!-- <Energy v-if="app.stations?.gen_configs?.find(el => el?.station_type == app.user?.station_type &&
                 el?.level == app.user?.generation_level + 1)?.price_kw > 0" :width="10" /> -->
               <div class="upgrade-price-item col-span-2">
@@ -1526,12 +1544,12 @@ onUnmounted(() => {
             </div>
             <button v-if="app.user?.building_until && getTimeRemaining(app.user?.building_until).remain > 0"
               class="upg-btn-unactive"> {{ getTimeRemaining(app.user?.building_until).time }}</button>
-            <button v-if="app.user?.generation_level < findMaxLevel(app.stations?.gen_configs) && (!app.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !app.user.has_hydro_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)
+            <button v-if="app.user?.generation_level < maxGenerationLevelForCurrentStation && (!app.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !app.user.has_hydro_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)
             " class="upg-btn" @click="upgrade('generation')">
               {{ t('common.upg') }}
             </button>
             <button v-if="
-              app.user?.generation_level == findMaxLevel(app.stations?.gen_configs) &&
+              app.user?.generation_level == maxGenerationLevelForCurrentStation &&
               app.user?.station_type !== allStations?.[allStations.length - 1]
             " class="upg-btn-unactive" @click="
               () => {
@@ -1547,7 +1565,7 @@ onUnmounted(() => {
               !app.user.has_orbital_station &&
               !app.user.has_hydro_station &&
               app.user?.station_type == allStations?.[allStations.length - 1] &&
-              app.user?.generation_level == findMaxLevel(app.stations?.gen_configs)
+              app.user?.generation_level == maxGenerationLevelForCurrentStation
             " class="upg-btn-max">
               {{ t('common.maximum') }}
             </button>
