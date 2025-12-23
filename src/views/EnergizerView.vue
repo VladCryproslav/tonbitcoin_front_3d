@@ -425,6 +425,7 @@ const setActiveStation = (station) => {
 
 const findMaxLevel = (array) => {
   const arr = Array.isArray(array) ? array.map((item) => item.level || 0) : [];
+  if (arr.length === 0) return 0;
   return Math.max(...arr);
 };
 
@@ -439,11 +440,17 @@ const maxGenerationLevelForCurrentStation = computed(() => {
   }
   
   // Для regular станции (orbital_force_basic = true) фильтруем по типу станции
+  // Если есть орбитальная станция, но она в режиме regular, используем тип станции пользователя
+  const stationType = app.user?.orbital_force_basic && app.user?.has_orbital_station 
+    ? app.user?.station_type 
+    : app.user?.station_type;
+  
   const filteredConfigs = app.stations.gen_configs.filter(
-    (el) => el?.station_type === app.user?.station_type
+    (el) => el?.station_type === stationType
   );
   
-  return findMaxLevel(filteredConfigs);
+  const maxLevel = findMaxLevel(filteredConfigs);
+  return maxLevel > 0 ? maxLevel : 0;
 });
 
 async function claim() {
@@ -1216,7 +1223,7 @@ onUnmounted(() => {
                 class="service-title-loc">
                 {{ t('modals.upgrade.upd_station') }}
               </div>
-              <div v-if="app.user.has_hydro_station || app.user.has_orbital_station" class="service-title-loc spec">
+              <div v-if="app.user.has_hydro_station || (app.user.has_orbital_station && !app.user.orbital_force_basic)" class="service-title-loc spec">
                 {{ t('modals.upgrade.spec') }}
               </div>
               <div
@@ -1550,7 +1557,9 @@ onUnmounted(() => {
             </button>
             <button v-if="
               app.user?.generation_level == maxGenerationLevelForCurrentStation &&
-              app.user?.station_type !== allStations?.[allStations.length - 1]
+              app.user?.station_type !== allStations?.[allStations.length - 1] &&
+              (!app.user.has_orbital_station || app.user.orbital_force_basic) &&
+              !app.user.has_hydro_station
             " class="upg-btn-unactive" @click="
               () => {
                 modalStatus = 'warning'
@@ -1569,7 +1578,7 @@ onUnmounted(() => {
             " class="upg-btn-max">
               {{ t('common.maximum') }}
             </button>
-            <button v-else-if="app.user.has_hydro_station || app.user.has_orbital_station" class="upg-btn-unactive">
+            <button v-else-if="app.user.has_hydro_station || (app.user.has_orbital_station && !app.user.orbital_force_basic)" class="upg-btn-unactive">
               {{ t('common.maximum') }}
             </button>
           </div>
