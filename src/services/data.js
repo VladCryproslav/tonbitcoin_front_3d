@@ -211,7 +211,7 @@ const gemsSheet = [
     description: 'You buy 1% project',
     buttonColor: 'gold',
     hasGoldStroke: true,
-    enableSale: true, // DAO не участвует в акции
+    enableSale: false, // DAO не участвует в акции
     salePercent: 10,
     imagePath: '@/assets/gems/DAO_Owner.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Rarity%22%3A%5B%22DAO%22%5D%7D%7D',
@@ -231,7 +231,7 @@ const gemsSheet = [
     description: 'Nuclear power plant',
     buttonColor: 'purple',
     hasPurpleStroke: true,
-    enableSale: true,
+    enableSale: false,
     salePercent: 10, // Кастомная скидка для этого GEMS (50%)
     imagePath: '@/assets/gems/Starter_pack.webp',
     link: '', // Not used - uses TON payment instead
@@ -253,7 +253,7 @@ const gemsSheet = [
     buttonColor: 'blue',
     hasGoldStroke: false,
     hasBlueStroke: true,
-    enableSale: false,
+    enableSale: true,
     salePercent: 10, // Кастомная скидка для этого GEMS (50%)
     imagePath: '@/assets/gems/Hydroelectric_power_plant.webp',
     link: 'https://getgems.io/collection/EQB-pBhnWEYPbIu25uM1Yp5MqGFjQ-8Jes5CT2Dr-OVd705u?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQASp_CpNEoFI-HvTurh74NTxdV_vuXGGd1PzsJsinnJjUkp%22%7D%2C%22attributes%22%3A%7B%22Level%22%3A%5B%22Special%22%5D%7D%7D', // Not used - uses TON payment instead
