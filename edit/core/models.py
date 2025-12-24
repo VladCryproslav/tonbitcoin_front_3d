@@ -1400,9 +1400,30 @@ class StationRollbackLog(models.Model):
     engineer_level = models.PositiveSmallIntegerField(null=True, blank=True)
     energy = models.FloatField(null=True, blank=True)
     date = models.DateTimeField(auto_now_add=True)
+    
+    # Новые поля для восстановления
+    nft_address = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='NFT Address',
+        help_text='Адрес NFT станции для восстановления'
+    )
+    is_restored = models.BooleanField(
+        default=False,
+        verbose_name='Восстановлено',
+        help_text='Была ли станция восстановлена'
+    )
+    restored_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Дата восстановления',
+        help_text='Дата и время восстановления станции'
+    )
 
     def __str__(self):
-        return f"StationRollbackLog(user={self.user.user_id}, from_station={self.from_station})"
+        status = "✅ Восстановлено" if self.is_restored else "❌ Не восстановлено"
+        return f"StationRollbackLog(user={self.user.user_id}, from_station={self.from_station}, {status})"
 
 
 class NFTRentalConfig(models.Model):

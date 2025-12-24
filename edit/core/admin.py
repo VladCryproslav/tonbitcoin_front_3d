@@ -3,7 +3,7 @@ from datetime import datetime
 import django
 import pytoniq_core
 from django import forms
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.db.models import F
 from django.shortcuts import redirect, render
 from django.urls import path
@@ -580,11 +580,551 @@ class UserActionLogAdmin(admin.ModelAdmin):
 admin.site.register(UserActionLog, UserActionLogAdmin)
 
 
+def restore_station_action(modeladmin, request, queryset):
+    """
+    Восстановить станцию пользователя из StationRollbackLog.
+    
+    Действия:
+    1. Восстанавливает тип станции и уровни
+    2. Возвращает энергию на баланс
+    3. Удаляет building_until (чтобы не было стройки)
+    4. Создает запись в StationNFTOwner
+    5. Обновляет статус в StationRollbackLog
+    """
+    from django.db import transaction
+    from django.utils import timezone
+    from django.db.models import F
+    from core.models import StoragePowerStationConfig, GenPowerStationConfig, EngineerConfig
+    
+    restored_count = 0
+    errors = []
+    
+    for rollback_log in queryset:
+        # Проверка: уже восстановлено?
+        if rollback_log.is_restored:
+            errors.append(
+                f"User {rollback_log.user.user_id}: станция уже восстановлена"
+            )
+            continue
+        
+        # Проверка: есть ли NFT адрес?
+        if not rollback_log.nft_address:
+            errors.append(
+                f"User {rollback_log.user.user_id}: отсутствует NFT адрес. "
+                f"Добавьте NFT адрес в поле 'nft_address' перед восстановлением."
+            )
+            continue
+        
+        # Проверка: есть ли данные для восстановления?
+        if not rollback_log.from_station:
+            errors.append(
+                f"User {rollback_log.user.user_id}: отсутствует тип станции"
+            )
+            continue
+        
+        try:
+            with transaction.atomic():
+                user = rollback_log.user
+                
+                # 1. Получить конфигурации станции по уровням
+                storage_config = StoragePowerStationConfig.objects.filter(
+                    station_type=rollback_log.from_station,
+                    level=rollback_log.storage_level or 1
+                ).first()
+                
+                gen_config = GenPowerStationConfig.objects.filter(
+                    station_type=rollback_log.from_station,
+                    level=rollback_log.generation_level or 1
+                ).first()
+                
+                engineer_config = EngineerConfig.objects.filter(
+                    level=rollback_log.engineer_level or 1
+                ).first()
+                
+                if not storage_config or not gen_config or not engineer_config:
+                    errors.append(
+                        f"User {rollback_log.user.user_id}: не найдены конфигурации для "
+                        f"станции {rollback_log.from_station}, уровни "
+                        f"storage={rollback_log.storage_level}, "
+                        f"gen={rollback_log.generation_level}, "
+                        f"engineer={rollback_log.engineer_level}"
+                    )
+                    continue
+                
+                # 2. Восстановить станцию в UserProfile
+                # Получаем текущее значение current_mint для безопасного добавления адреса
+                user_profile = UserProfile.objects.get(user_id=user.user_id)
+                current_mint_value = user_profile.current_mint or ""
+                
+                # Добавляем адрес NFT в current_mint, если его там еще нет
+                nft_address = rollback_log.nft_address
+                if current_mint_value and current_mint_value != "wait":
+                    # Если уже есть адреса, проверяем, нет ли там этого адреса
+                    # Разделяем по запятой или переносу строки
+                    existing_addresses = [addr.strip() for addr in current_mint_value.replace('\n', ',').split(',') if addr.strip()]
+                    if nft_address not in existing_addresses:
+                        # Добавляем новый адрес через запятую
+                        current_mint_value = current_mint_value + "," + nft_address
+                else:
+                    # Если пустое или "wait", просто устанавливаем адрес NFT
+                    current_mint_value = nft_address
+                
+                UserProfile.objects.filter(user_id=user.user_id).update(
+                    station_type=rollback_log.from_station,
+                    storage_level=rollback_log.storage_level or 1,
+                    generation_level=rollback_log.generation_level or 1,
+                    engineer_level=rollback_log.engineer_level or 1,
+                    storage_limit=storage_config.storage_limit,
+                    storage=storage_config.storage_limit,  # Устанавливаем storage равным storage_limit
+                    generation_rate=gen_config.generation_rate,
+                    kw_per_tap=engineer_config.tap_power,
+                    current_station_nft=rollback_log.nft_address,
+                    current_mint=current_mint_value,  # Добавляем адрес NFT в current_mint
+                    # Возвращаем энергию на баланс
+                    energy=F('energy') + (rollback_log.energy or 0),
+                    # Удаляем building_until, чтобы не было стройки
+                    building_until=None,
+                )
+                
+                # 3. Создать запись в StationNFTOwner
+                StationNFTOwner.objects.update_or_create(
+                    user=user,
+                    defaults={
+                        'wallet': user.ton_wallet or '',
+                        'nft': rollback_log.nft_address,
+                    }
+                )
+                
+                # 4. Обновить статус в StationRollbackLog
+                rollback_log.is_restored = True
+                rollback_log.restored_at = timezone.now()
+                rollback_log.save(update_fields=['is_restored', 'restored_at'])
+                
+                restored_count += 1
+                
+        except Exception as e:
+            errors.append(
+                f"User {rollback_log.user.user_id}: ошибка при восстановлении - {str(e)}"
+            )
+            import traceback
+            traceback.print_exc()
+    
+    # Вывести результаты
+    if restored_count > 0:
+        modeladmin.message_user(
+            request,
+            f"✅ Успешно восстановлено станций: {restored_count}",
+            messages.SUCCESS
+        )
+    
+    if errors:
+        error_msg = f"❌ Ошибки ({len(errors)}):\n" + "\n".join(errors[:10])
+        if len(errors) > 10:
+            error_msg += f"\n... и еще {len(errors) - 10} ошибок"
+        modeladmin.message_user(
+            request,
+            error_msg,
+            messages.ERROR
+        )
+
+restore_station_action.short_description = "🔄 Восстановить станцию (Restore Station)"
+
+
+def fill_current_mint_for_restored_action(modeladmin, request, queryset):
+    """
+    Заполнить current_mint для уже восстановленных станций.
+    Безопасно добавляет адрес NFT в current_mint без дубликатов.
+    """
+    from django.db import transaction
+    from core.models import UserProfile
+    
+    filled_count = 0
+    skipped_count = 0
+    errors = []
+    
+    for rollback_log in queryset:
+        # Проверка: станция должна быть восстановлена
+        if not rollback_log.is_restored:
+            skipped_count += 1
+            continue
+        
+        # Проверка: должен быть NFT адрес
+        if not rollback_log.nft_address:
+            errors.append(
+                f"User {rollback_log.user.user_id}: отсутствует NFT адрес"
+            )
+            continue
+        
+        try:
+            with transaction.atomic():
+                user = rollback_log.user
+                user_profile = UserProfile.objects.get(user_id=user.user_id)
+                
+                # Получаем текущее значение current_mint
+                current_mint_value = user_profile.current_mint or ""
+                nft_address = rollback_log.nft_address
+                
+                # Проверяем, нужно ли добавлять адрес
+                needs_update = False
+                
+                if not current_mint_value or current_mint_value == "wait":
+                    # Если пустое или "wait", устанавливаем адрес NFT
+                    current_mint_value = nft_address
+                    needs_update = True
+                else:
+                    # Если уже есть адреса, проверяем, нет ли там этого адреса
+                    existing_addresses = [addr.strip() for addr in current_mint_value.replace('\n', ',').split(',') if addr.strip()]
+                    if nft_address not in existing_addresses:
+                        # Добавляем новый адрес через запятую
+                        current_mint_value = current_mint_value + "," + nft_address
+                        needs_update = True
+                
+                # Обновляем только если нужно
+                if needs_update:
+                    UserProfile.objects.filter(user_id=user.user_id).update(
+                        current_mint=current_mint_value
+                    )
+                    filled_count += 1
+                else:
+                    skipped_count += 1
+                    
+        except Exception as e:
+            errors.append(
+                f"User {rollback_log.user.user_id}: ошибка - {str(e)}"
+            )
+            import traceback
+            traceback.print_exc()
+    
+    # Вывести результаты
+    result_messages = []
+    if filled_count > 0:
+        result_messages.append(f"✅ Заполнено current_mint для {filled_count} пользователей")
+    if skipped_count > 0:
+        result_messages.append(f"⏭️  Пропущено (уже заполнено или не восстановлено): {skipped_count}")
+    
+    if result_messages:
+        modeladmin.message_user(
+            request,
+            "\n".join(result_messages),
+            messages.SUCCESS if filled_count > 0 else messages.WARNING
+        )
+    
+    if errors:
+        error_msg = f"❌ Ошибки ({len(errors)}):\n" + "\n".join(errors[:10])
+        if len(errors) > 10:
+            error_msg += f"\n... и еще {len(errors) - 10} ошибок"
+        modeladmin.message_user(
+            request,
+            error_msg,
+            messages.ERROR
+        )
+
+fill_current_mint_for_restored_action.short_description = "📝 Заполнить current_mint для восстановленных (Fill current_mint for restored)"
+
+
+def fill_nft_addresses_action(modeladmin, request, queryset):
+    """
+    Автоматически заполнить NFT адреса для выбранных записей StationRollbackLog.
+    Получает NFT адреса из TON API по типу станции.
+    ОПТИМИЗИРОВАНО: использует прямой запрос NFT пользователя вместо загрузки всей коллекции.
+    """
+    from core.models import LinkedUserNFT
+    import time
+    
+    # Коллекция станций
+    STATION_COLLECTION = "EQB-pBhnWEYPbIu25uM1Yp5MqGFjQ-8Jes5CT2Dr-OVd705u"
+    API_KEY = "AHNKO56KDTDIYGIAAAAKPVWGBLOQ2J4Z6W4ZYIP35GPCI6BSG647XSPXK6YEJHY4MTVHRFA"
+    
+    # Маппинг типов станций из БД в названия в NFT метаданных
+    STATION_TYPE_MAPPING = {
+        "Nuclear power plant": "Nuclear Power Plant",
+        "Thermonuclear power plant": "Thermonuclear Power Plant",
+        "Dyson Sphere": "Dyson Sphere",
+        "Neutron star": "Neutron Star",
+        "Boiler house": "Boiler House",
+    }
+    
+    def get_user_nft_by_station_type_sync(wallet_address, station_type):
+        """
+        Получить NFT адрес конкретной станции пользователя из TON API (синхронная версия).
+        Использует прямой HTTP запрос NFT пользователя, с fallback на метод через коллекцию.
+        """
+        try:
+            expected_name = STATION_TYPE_MAPPING.get(station_type, station_type)
+            
+            import requests
+            from pytoniq_core import Address
+            from asgiref.sync import async_to_sync
+            from pytonapi import AsyncTonapi
+            
+            # Конвертируем адрес коллекции в hex формат (как во фронтенде: "0:...")
+            try:
+                collection_addr = Address(STATION_COLLECTION)
+                collection_hex = f"0:{collection_addr.hash_part.hex()}"
+            except Exception as e:
+                print(f"Error converting collection address: {e}")
+                collection_hex = STATION_COLLECTION
+            
+            # Конвертируем wallet адрес - используем user-friendly формат (как во фронтенде)
+            try:
+                wallet_addr = Address(wallet_address)
+                # Используем user-friendly формат (как во фронтенде)
+                wallet_formatted = wallet_addr.to_str(is_user_friendly=True, is_bounceable=True)
+            except Exception:
+                wallet_formatted = wallet_address
+            
+            # Метод 1: Прямой запрос через HTTP (быстрее)
+            try:
+                url = f"https://tonapi.io/v2/accounts/{wallet_formatted}/nfts"
+                params = {"collection": collection_hex}
+                headers = {"Authorization": f"Bearer {API_KEY}"}
+                
+                response = requests.get(url, params=params, headers=headers, timeout=5.0)
+                if response.status_code == 200:
+                    data = response.json()
+                    nft_items = data.get("nft_items", [])
+                    
+                    # Найти NFT нужного типа станции
+                    for nft_item in nft_items:
+                        meta = nft_item.get("metadata", {})
+                        name = meta.get("name", "")
+                        name_clean = name.split("(")[0].strip()
+                        
+                        if name_clean in ["Hydroelectric Power Station", "Orbital Power Station"]:
+                            continue
+                        
+                        if name_clean.lower() == expected_name.lower():
+                            # Получить адрес NFT и конвертировать в формат 0:hex
+                            address_data = nft_item.get("address", {})
+                            nft_addr_str = address_data.get("raw") or address_data.get("bounceable") or address_data.get("non_bounceable")
+                            
+                            if nft_addr_str:
+                                try:
+                                    nft_addr = Address(nft_addr_str)
+                                    return f"0:{nft_addr.hash_part.hex()}"
+                                except Exception:
+                                    return nft_addr_str
+                            return None
+            except Exception as e:
+                print(f"Direct API request failed: {e}, trying fallback method")
+            
+            # Метод 2: Fallback - через загрузку коллекции (как в fill_rollback_nft_addresses.py)
+            try:
+                tonapi = AsyncTonapi(api_key=API_KEY)
+                
+                async def get_nft_from_collection():
+                    all_nfts = []
+                    offset = 0
+                    limit = 1000
+                    
+                    while True:
+                        nfts = await tonapi.nft.get_items_by_collection_address(
+                            STATION_COLLECTION,
+                            limit=limit,
+                            offset=offset,
+                        )
+                        
+                        if not nfts.nft_items:
+                            break
+                        
+                        all_nfts.extend(nfts.nft_items)
+                        
+                        if len(nfts.nft_items) < limit:
+                            break
+                        
+                        offset += limit
+                        time.sleep(0.01)
+                    
+                    # Найти NFT нужного типа
+                    for nft in all_nfts:
+                        if nft.owner.address.root == wallet_address:
+                            meta = nft.metadata or {}
+                            name = meta.get("name", "")
+                            name_clean = name.split("(")[0].strip()
+                            
+                            if name_clean in ["Hydroelectric Power Station", "Orbital Power Station"]:
+                                continue
+                            
+                            if name_clean.lower() == expected_name.lower():
+                                # Конвертировать адрес NFT в формат 0:hex
+                                try:
+                                    nft_addr = Address(nft.address.root)
+                                    return f"0:{nft_addr.hash_part.hex()}"
+                                except Exception:
+                                    return nft.address.root
+                    
+                    return None
+                
+                return async_to_sync(get_nft_from_collection)()
+            except Exception as e:
+                print(f"Fallback method also failed: {e}")
+                return None
+            
+        except Exception as e:
+            print(f"Error in get_user_nft_by_station_type_sync: {e}")
+            return None
+    
+    # Ограничение: обрабатывать максимум 50 записей за раз для предотвращения таймаутов
+    MAX_BATCH_SIZE = 50
+    queryset_list = list(queryset[:MAX_BATCH_SIZE])
+    
+    if len(queryset) > MAX_BATCH_SIZE:
+        modeladmin.message_user(
+            request,
+            f"⚠️  Выбрано {len(queryset)} записей, но будет обработано только {MAX_BATCH_SIZE} "
+            f"для предотвращения таймаутов. Выполните action еще раз для оставшихся записей.",
+            messages.WARNING
+        )
+    
+    filled = 0
+    not_found = 0
+    errors = []
+    skipped = 0
+    
+    for rollback_log in queryset_list:
+        # Пропустить если уже есть NFT адрес
+        if rollback_log.nft_address:
+            skipped += 1
+            continue
+        
+        user = rollback_log.user
+        
+        if not user.ton_wallet:
+            errors.append(
+                f"User {user.user_id}: нет TON wallet"
+            )
+            not_found += 1
+            continue
+        
+        # Проверка LinkedUserNFT для Hydroelectric/Orbital станций
+        if rollback_log.from_station in ["Hydroelectric Power Station", "Orbital Power Station"]:
+            linked = LinkedUserNFT.objects.filter(
+                user=user,
+                wallet=user.ton_wallet
+            ).first()
+            
+            if linked:
+                rollback_log.nft_address = linked.nft_address
+                rollback_log.save(update_fields=['nft_address'])
+                filled += 1
+                continue
+        
+        # Получить NFT адрес из TON API
+        try:
+            # Используем синхронную функцию напрямую (requests уже имеет timeout=5.0)
+            nft_address = get_user_nft_by_station_type_sync(
+                user.ton_wallet,
+                rollback_log.from_station
+            )
+            
+            if nft_address:
+                rollback_log.nft_address = nft_address
+                rollback_log.save(update_fields=['nft_address'])
+                filled += 1
+            else:
+                errors.append(
+                    f"User {user.user_id}: NFT не найден в TON API для станции '{rollback_log.from_station}'"
+                )
+                not_found += 1
+            
+            # Rate limiting: небольшая задержка между запросами
+            time.sleep(0.05)  # 50ms для более стабильной работы
+            
+        except Exception as e:
+            errors.append(
+                f"User {user.user_id}: ошибка при получении NFT - {str(e)[:100]}"
+            )
+            not_found += 1
+    
+    # Вывести результаты
+    result_messages = []
+    if filled > 0:
+        result_messages.append(f"✅ Заполнено NFT адресов: {filled}")
+    if skipped > 0:
+        result_messages.append(f"⏭️  Пропущено (уже есть NFT адрес): {skipped}")
+    if not_found > 0:
+        result_messages.append(f"⚠️  Не найдено: {not_found}")
+    
+    if result_messages:
+        modeladmin.message_user(
+            request,
+            "\n".join(result_messages),
+            messages.SUCCESS if filled > 0 else messages.WARNING
+        )
+    
+    if errors:
+        error_msg = f"❌ Ошибки ({len(errors)}):\n" + "\n".join(errors[:10])
+        if len(errors) > 10:
+            error_msg += f"\n... и еще {len(errors) - 10} ошибок"
+        modeladmin.message_user(
+            request,
+            error_msg,
+            messages.ERROR
+        )
+
+fill_nft_addresses_action.short_description = "🔍 Заполнить NFT адреса из TON API (Fill NFT Addresses)"
+
+
 class StationRollbackLogAdmin(admin.ModelAdmin):
-    autocomplete_fields = ["user"]
-    # list_display = ("user_id", "username", "wallet", "from_station", "date")
-    # search_fields = ("user__user_id", "user__username", "user__ton_wallet")
-    # list_filter = ("from_station", "date")
+    list_display = (
+        'user',
+        'from_station',
+        'generation_level',
+        'storage_level',
+        'engineer_level',
+        'energy',
+        'date',
+        'is_restored',
+        'restored_at',
+        'nft_address',
+    )
+    list_filter = (
+        'from_station',
+        'is_restored',
+        'date',
+    )
+    search_fields = (
+        'user__user_id',
+        'user__username',
+        'nft_address',
+    )
+    readonly_fields = (
+        'date',
+        'is_restored',
+        'restored_at',
+    )
+    autocomplete_fields = ['user']
+    
+    # Добавить actions
+    actions = [fill_nft_addresses_action, restore_station_action, fill_current_mint_for_restored_action]
+    
+    fieldsets = (
+        ('Информация о пользователе', {
+            'fields': ('user',)
+        }),
+        ('Данные до отката', {
+            'fields': (
+                'from_station',
+                'generation_level',
+                'storage_level',
+                'engineer_level',
+                'energy',
+            )
+        }),
+        ('NFT для восстановления', {
+            'fields': ('nft_address',),
+            'description': 'Введите адрес NFT станции для восстановления. '
+                          'Этот адрес будет использован в StationNFTOwner.'
+        }),
+        ('Статус восстановления', {
+            'fields': (
+                'is_restored',
+                'restored_at',
+                'date',
+            ),
+            'classes': ('collapse',)
+        }),
+    )
 
 
 admin.site.register(StationRollbackLog, StationRollbackLogAdmin)
