@@ -432,23 +432,23 @@ const findMaxLevel = (array) => {
 // Максимальный уровень генерации для текущего типа станции
 const maxGenerationLevelForCurrentStation = computed(() => {
   if (!app.stations?.gen_configs || !app.user?.station_type) return 0;
-  
+
   // Для орбитальной станции (orbital_force_basic = false) не используем gen_configs,
   // так как она использует фиксированные значения генерации
   if (app.user?.has_orbital_station && !app.user?.orbital_force_basic) {
     return 3; // Орбитальная станция всегда имеет уровень 3
   }
-  
+
   // Для regular станции (orbital_force_basic = true) фильтруем по типу станции
   // Если есть орбитальная станция, но она в режиме regular, используем тип станции пользователя
-  const stationType = app.user?.orbital_force_basic && app.user?.has_orbital_station 
-    ? app.user?.station_type 
+  const stationType = app.user?.orbital_force_basic && app.user?.has_orbital_station
+    ? app.user?.station_type
     : app.user?.station_type;
-  
+
   const filteredConfigs = app.stations.gen_configs.filter(
     (el) => el?.station_type === stationType
   );
-  
+
   const maxLevel = findMaxLevel(filteredConfigs);
   return maxLevel > 0 ? maxLevel : 0;
 });
@@ -3377,7 +3377,7 @@ onUnmounted(() => {
     align-items: center;
     justify-content: end;
     text-align: center;
-    background: url('@/assets/thirst-block222.png') no-repeat center;
+    background: url('@/assets/thirst-block2223.png') no-repeat center;
     background-size: cover;
     overflow: hidden;
     height: 52px;
@@ -3411,8 +3411,8 @@ onUnmounted(() => {
       padding-bottom: 10px;
       z-index: 0; /* под текстом */
       pointer-events: none; /* не перехватывать клики */
-      filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
-              drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
+      filter: drop-shadow(0 6px 10px rgba(0, 241, 254, 0.22))
+              drop-shadow(0 0 12px rgba(0, 241, 254, 0.18))
               drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
       animation: halloween-pumpkin-dance 8s cubic-bezier(0.4, 0.0, 0.6, 1) infinite;
       transform-origin: center bottom;
@@ -3423,70 +3423,70 @@ onUnmounted(() => {
       /* Плавное качание влево */
       0% {
         transform: translateX(0) translateY(0) rotate(0deg);
-        filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
-                drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
+        filter: drop-shadow(0 6px 10px rgba(0, 241, 254, 0.22))
+                drop-shadow(0 0 12px rgba(0, 241, 254, 0.18))
                 drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
       }
       12.5% {
         transform: translateX(-2.5px) translateY(-0.8px) rotate(-1.5deg);
-        filter: drop-shadow(0 7px 11px rgba(254, 164, 0, 0.24))
-                drop-shadow(0 0 14px rgba(254, 164, 0, 0.19))
+        filter: drop-shadow(0 7px 11px rgba(0, 241, 254, 0.24))
+                drop-shadow(0 0 14px rgba(0, 241, 254, 0.19))
                 drop-shadow(0 4px 7px rgba(0, 0, 0, 0.28));
       }
 
       /* Плавное качание вправо */
       25% {
         transform: translateX(2.5px) translateY(-0.8px) rotate(1.5deg);
-        filter: drop-shadow(0 7px 11px rgba(254, 164, 0, 0.24))
-                drop-shadow(0 0 14px rgba(254, 164, 0, 0.19))
+        filter: drop-shadow(0 7px 11px rgba(0, 241, 254, 0.24))
+                drop-shadow(0 0 14px rgba(0, 241, 254, 0.19))
                 drop-shadow(0 4px 7px rgba(0, 0, 0, 0.28));
       }
 
       /* Мягкое подпрыгивание */
       37.5% {
         transform: translateX(0) translateY(-3px) rotate(0deg);
-        filter: drop-shadow(0 8px 12px rgba(254, 164, 0, 0.25))
-                drop-shadow(0 0 15px rgba(254, 164, 0, 0.2))
+        filter: drop-shadow(0 8px 12px rgba(0, 241, 254, 0.25))
+                drop-shadow(0 0 15px rgba(0, 241, 254, 0.2))
                 drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
       }
 
       /* Возврат к центру */
       50% {
         transform: translateX(0) translateY(0) rotate(0deg);
-        filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
-                drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
+        filter: drop-shadow(0 6px 10px rgba(0, 241, 254, 0.22))
+                drop-shadow(0 0 12px rgba(0, 241, 254, 0.18))
                 drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
       }
 
       /* Мягкое качание влево (меньшая амплитуда) */
       62.5% {
         transform: translateX(-1.5px) translateY(-0.5px) rotate(-0.8deg);
-        filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
-                drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
+        filter: drop-shadow(0 6px 10px rgba(0, 241, 254, 0.22))
+                drop-shadow(0 0 12px rgba(0, 241, 254, 0.18))
                 drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
       }
 
       /* Мягкое качание вправо (меньшая амплитуда) */
       75% {
         transform: translateX(1.5px) translateY(-0.5px) rotate(0.8deg);
-        filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
-                drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
+        filter: drop-shadow(0 6px 10px rgba(0, 241, 254, 0.22))
+                drop-shadow(0 0 12px rgba(0, 241, 254, 0.18))
                 drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
       }
 
       /* Второе мягкое подпрыгивание */
       87.5% {
         transform: translateX(0) translateY(-2.5px) rotate(0deg);
-        filter: drop-shadow(0 7px 11px rgba(254, 164, 0, 0.24))
-                drop-shadow(0 0 14px rgba(254, 164, 0, 0.19))
+        filter: drop-shadow(0 7px 11px rgba(0, 241, 254, 0.24))
+                drop-shadow(0 0 14px rgba(0, 241, 254, 0.19))
                 drop-shadow(0 4px 7px rgba(0, 0, 0, 0.28));
       }
 
       /* Возврат к началу */
       100% {
         transform: translateX(0) translateY(0) rotate(0deg);
-        filter: drop-shadow(0 6px 10px rgba(254, 164, 0, 0.22))
-                drop-shadow(0 0 12px rgba(254, 164, 0, 0.18))
+        filter: drop-shadow(0 6px 10px rgba(0, 241, 254, 0.22))
+                drop-shadow(0 0 12px rgba(0, 241, 254, 0.18))
                 drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
       }
     }
