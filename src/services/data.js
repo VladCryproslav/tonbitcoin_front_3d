@@ -178,17 +178,17 @@ const asicsSheet = [
 ]
 
 // Активность акции для GEMS (можно включать/выключать)
-const gemsSaleActive = false // Изменить на true для активации скидки
+const gemsSaleActive = true // Изменить на true для активации скидки
 const gemsSalePercent = 50 // Процент скидки (например 50 = -50%)
 const gemsSaleEndDate = new Date('2024-10-31T23:59:59') // Дата окончания акции
 
 // Активность акции для ASICs (можно включать/выключать)
-const asicsSaleActive = false // Изменить на true для активации скидки
+const asicsSaleActive = true // Изменить на true для активации скидки
 const asicsSalePercent = 50 // Процент скидки (например 50 = -50%)
 const asicsSaleEndDate = new Date('2024-12-31T23:59:59') // Дата окончания акции
 
 // Halloween статус для кнопки ASICs Shop в EnergizerView
-const halloweenActive = false // Изменить на true для активации Halloween кнопки
+const halloweenActive = true // Изменить на true для активации Halloween кнопки
 
 // Максимальные значения для вывода
 const max_fbtc = 3000 // Максимальное количество fBTC для вывода
