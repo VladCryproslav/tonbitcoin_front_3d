@@ -1353,7 +1353,6 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-      </Transition>
 
       <!-- ASICs List -->
       <div v-show="activeShopTab === 'asics'" class="asics-list" ref="asicsList" :key="'asics-list'">
