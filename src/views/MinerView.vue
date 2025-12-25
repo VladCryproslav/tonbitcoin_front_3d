@@ -884,13 +884,16 @@ const toggleShopTab = async () => {
   activeShopTab.value = activeShopTab.value === 'asics' ? 'gems' : 'asics'
   // Принудительное обновление layout после переключения вкладок
   await nextTick()
+  // Двойной requestAnimationFrame для гарантированного обновления после всех анимаций
   requestAnimationFrame(() => {
-    const list = activeShopTab.value === 'asics' 
-      ? asicsList.value 
-      : document.querySelector('.gems-list')
-    if (list) {
-      list.scrollTo({ top: list.scrollTop })
-    }
+    requestAnimationFrame(() => {
+      const list = activeShopTab.value === 'asics' 
+        ? asicsList.value 
+        : document.querySelector('.gems-list')
+      if (list) {
+        list.scrollTo({ top: list.scrollTop })
+      }
+    })
   })
 }
 
@@ -1309,9 +1312,11 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Маркетинговая плашка с акцией -->
-      <Transition name="promo-banner-asics">
-        <div v-if="activeShopTab === 'asics' && asicsSaleActive && !promoBannerClosed" class="promo-banner">
+      <!-- Единый баннер для обеих вкладок -->
+      <Transition name="promo-banner-unified">
+        <div v-if="((activeShopTab === 'asics' && asicsSaleActive && !promoBannerClosed) || (activeShopTab === 'gems' && gemsSaleActive && !gemsPromoBannerClosed))" 
+             class="promo-banner" 
+             :class="{ 'gems-promo-banner': activeShopTab === 'gems' }">
           <div class="promo-banner-shine-wrapper">
             <div class="promo-banner-shine"></div>
             <!-- Новогодние снежинки -->
@@ -1324,17 +1329,21 @@ onUnmounted(() => {
               <div class="snowflake">❄</div>
             </div>
           </div>
-          <button class="promo-banner-close" @click="closeAsicsPromoBanner">
+          <button class="promo-banner-close" @click="activeShopTab === 'asics' ? closeAsicsPromoBanner() : closeGemsPromoBanner()">
             <Exit :width="14" style="color: rgba(255, 255, 255, 0.8)" />
           </button>
           <div class="promo-banner-content">
             <div class="promo-banner-text">
               <div class="promo-banner-title">
                 <span class="promo-banner-icon-inline">🎄</span>
-                <span class="promo-banner-title-text">{{ t('asic_shop.promo_banner_title') }}</span>
+                <span class="promo-banner-title-text">
+                  {{ activeShopTab === 'asics' ? t('asic_shop.promo_banner_title') : t('gems.promo_banner_title') }}
+                </span>
                 <span class="promo-banner-icon-inline">🎄</span>
               </div>
-              <div class="promo-banner-description">{{ t('asic_shop.promo_banner_text') }}</div>
+              <div class="promo-banner-description">
+                {{ activeShopTab === 'asics' ? t('asic_shop.promo_banner_text') : t('gems.promo_banner_text') }}
+              </div>
             </div>
           </div>
         </div>
@@ -1443,36 +1452,6 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Маркетинговая плашка с акцией для GEMS -->
-      <Transition name="promo-banner-gems">
-        <div v-if="activeShopTab === 'gems' && gemsSaleActive && !gemsPromoBannerClosed" class="promo-banner gems-promo-banner">
-          <div class="promo-banner-shine-wrapper">
-            <div class="promo-banner-shine"></div>
-            <!-- Новогодние снежинки -->
-            <div class="snowflakes">
-              <div class="snowflake">❄</div>
-              <div class="snowflake">❄</div>
-              <div class="snowflake">❄</div>
-              <div class="snowflake">❄</div>
-              <div class="snowflake">❄</div>
-              <div class="snowflake">❄</div>
-            </div>
-          </div>
-          <button class="promo-banner-close" @click="closeGemsPromoBanner">
-            <Exit :width="14" style="color: rgba(255, 255, 255, 0.8)" />
-          </button>
-          <div class="promo-banner-content">
-            <div class="promo-banner-text">
-              <div class="promo-banner-title">
-                <span class="promo-banner-icon-inline">🎄</span>
-                <span class="promo-banner-title-text">{{ t('gems.promo_banner_title') }}</span>
-                <span class="promo-banner-icon-inline">🎄</span>
-              </div>
-              <div class="promo-banner-description">{{ t('gems.promo_banner_text') }}</div>
-            </div>
-          </div>
-        </div>
-      </Transition>
 
       <!-- GEMS List -->
       <div v-show="activeShopTab === 'gems'" class="gems-list" :key="'gems-list'">
@@ -2505,84 +2484,42 @@ onUnmounted(() => {
     }
   }
 
-  // Анимации для ASICs баннера
-  .promo-banner-asics-enter-active {
-    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
-    overflow: hidden;
+  // Единая анимация для баннера (один Transition для обеих вкладок)
+  .promo-banner-unified-enter-active {
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
     
     .promo-banner {
-      animation: none !important;
+      animation: promoPulse 4s ease-in-out infinite;
     }
   }
 
-  .promo-banner-asics-leave-active {
+  .promo-banner-unified-leave-active {
     transition: opacity 0.2s ease-in, transform 0.2s ease-in;
     pointer-events: none;
-    overflow: hidden;
     
     .promo-banner {
       animation: none !important;
     }
   }
 
-  .promo-banner-asics-enter-from {
+  .promo-banner-unified-enter-from {
     opacity: 0;
-    transform: translateY(-20px) scale(0.95);
+    transform: translateY(-10px);
   }
 
-  .promo-banner-asics-enter-to {
+  .promo-banner-unified-enter-to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 
-  .promo-banner-asics-leave-from {
+  .promo-banner-unified-leave-from {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 
-  .promo-banner-asics-leave-to {
+  .promo-banner-unified-leave-to {
     opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-
-  // Анимации для GEMS баннера
-  .promo-banner-gems-enter-active {
-    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
-    overflow: hidden;
-    
-    .promo-banner {
-      animation: none !important;
-    }
-  }
-
-  .promo-banner-gems-leave-active {
-    transition: opacity 0.2s ease-in, transform 0.2s ease-in;
-    pointer-events: none;
-    overflow: hidden;
-    
-    .promo-banner {
-      animation: none !important;
-    }
-  }
-
-  .promo-banner-gems-enter-from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-
-  .promo-banner-gems-enter-to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-
-  .promo-banner-gems-leave-from {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-
-  .promo-banner-gems-leave-to {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
+    transform: translateY(-10px);
   }
 
   .shop-tabs {
