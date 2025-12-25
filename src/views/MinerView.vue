@@ -1987,12 +1987,11 @@ onUnmounted(() => {
     min-height: auto;
     height: auto;
     max-height: none;
-    overflow: hidden;
+    overflow: visible;
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
     animation: promoPulse 4s ease-in-out infinite;
-    contain: layout style paint;
     box-shadow:
       0 4px 20px rgba(252, 217, 9, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -2005,7 +2004,7 @@ onUnmounted(() => {
       bottom: 0;
       width: 100%;
       height: 100%;
-      overflow: hidden;
+      overflow: visible;
       border-radius: 1rem;
       z-index: 0;
       pointer-events: none;
@@ -2235,11 +2234,10 @@ onUnmounted(() => {
         0 4px 20px rgba(252, 217, 9, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
       position: relative;
-      overflow: hidden;
+      overflow: visible;
       min-height: auto;
       height: auto;
       max-height: none;
-      contain: layout style paint;
 
       &::before {
         background: linear-gradient(135deg,
@@ -2337,11 +2335,10 @@ onUnmounted(() => {
     // Елочки и снежинки для обычного баннера ASICs
     &:not(.gems-promo-banner) {
       position: relative;
-      overflow: hidden;
+      overflow: visible;
       min-height: auto;
       height: auto;
       max-height: none;
-      contain: layout style paint;
 
       .promo-banner-shine-wrapper {
         // Снежинки для ASICs баннера
