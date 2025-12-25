@@ -1,5 +1,5 @@
 <script setup>
-import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 const EquipButton = defineAsyncComponent(() => import('@/assets/equip.svg'))
 const Exit = defineAsyncComponent(() => import('@/assets/exit.svg'))
 const Disk = defineAsyncComponent(() => import('@/assets/boost_disk.svg'))
@@ -41,6 +41,7 @@ const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= 
 // Состояние для закрытия промо-плашки
 const promoBannerClosed = ref(false)
 const gemsPromoBannerClosed = ref(false)
+const asicsList = ref(null)
 
 let controller = null
 
@@ -856,8 +857,41 @@ const speedUpAddress = ref(null)
 
 const activeShopTab = ref('gems')
 
-const toggleShopTab = () => {
+const closeAsicsPromoBanner = async () => {
+  promoBannerClosed.value = true
+  await nextTick()
+  // Принудительное обновление layout после закрытия баннера
+  if (asicsList.value) {
+    requestAnimationFrame(() => {
+      asicsList.value?.scrollTo({ top: asicsList.value.scrollTop })
+    })
+  }
+}
+
+const closeGemsPromoBanner = async () => {
+  gemsPromoBannerClosed.value = true
+  await nextTick()
+  // Принудительное обновление layout после закрытия баннера
+  const gemsList = document.querySelector('.gems-list')
+  if (gemsList) {
+    requestAnimationFrame(() => {
+      gemsList.scrollTo({ top: gemsList.scrollTop })
+    })
+  }
+}
+
+const toggleShopTab = async () => {
   activeShopTab.value = activeShopTab.value === 'asics' ? 'gems' : 'asics'
+  // Принудительное обновление layout после переключения вкладок
+  await nextTick()
+  requestAnimationFrame(() => {
+    const list = activeShopTab.value === 'asics' 
+      ? asicsList.value 
+      : document.querySelector('.gems-list')
+    if (list) {
+      list.scrollTo({ top: list.scrollTop })
+    }
+  })
 }
 
 // Sale timer logic for GEMS
@@ -1290,7 +1324,7 @@ onUnmounted(() => {
               <div class="snowflake">❄</div>
             </div>
           </div>
-          <button class="promo-banner-close" @click="promoBannerClosed = true">
+          <button class="promo-banner-close" @click="closeAsicsPromoBanner">
             <Exit :width="14" style="color: rgba(255, 255, 255, 0.8)" />
           </button>
           <div class="promo-banner-content">
@@ -1307,7 +1341,7 @@ onUnmounted(() => {
       </Transition>
 
       <!-- ASICs List -->
-      <div v-if="activeShopTab === 'asics'" class="asics-list" ref="asicsList">
+      <div v-show="activeShopTab === 'asics'" class="asics-list" ref="asicsList" :key="'asics-list'">
         <div class="item" v-for="(asicItem, index) in asicsSheet.filter(el => el.shop)" :key="asicItem">
           <div class="picture">
             <!-- <Asics :width="62" :height="62" /> -->
@@ -1424,7 +1458,7 @@ onUnmounted(() => {
               <div class="snowflake">❄</div>
             </div>
           </div>
-          <button class="promo-banner-close" @click="gemsPromoBannerClosed = true">
+          <button class="promo-banner-close" @click="closeGemsPromoBanner">
             <Exit :width="14" style="color: rgba(255, 255, 255, 0.8)" />
           </button>
           <div class="promo-banner-content">
@@ -1441,7 +1475,7 @@ onUnmounted(() => {
       </Transition>
 
       <!-- GEMS List -->
-      <div v-if="activeShopTab === 'gems'" class="gems-list">
+      <div v-show="activeShopTab === 'gems'" class="gems-list" :key="'gems-list'">
         <div class="gem-item"
           :class="{
             'has-gold-stroke': gemItem?.hasGoldStroke,
@@ -1844,6 +1878,8 @@ onUnmounted(() => {
     radial-gradient(ellipse 45% 50% at top center, #31ff8080, transparent),
     #08150a;
   // box-shadow: 0 -10px 40px 10px #31ff8080;
+  overflow: hidden;
+  contain: layout style;
 
   .top-panel {
     display: flex;
@@ -1996,6 +2032,7 @@ onUnmounted(() => {
       0 4px 20px rgba(252, 217, 9, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
     contain: layout style paint;
+    will-change: transform, opacity;
 
     .promo-banner-shine-wrapper {
       position: absolute;
@@ -2470,7 +2507,7 @@ onUnmounted(() => {
 
   // Анимации для ASICs баннера
   .promo-banner-asics-enter-active {
-    transition: opacity 0.3s ease-out, transform 0.3s ease-out, margin 0.3s ease-out;
+    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
     overflow: hidden;
     
     .promo-banner {
@@ -2479,7 +2516,7 @@ onUnmounted(() => {
   }
 
   .promo-banner-asics-leave-active {
-    transition: opacity 0.2s ease-out, transform 0.2s ease-out, margin 0.2s ease-out;
+    transition: opacity 0.2s ease-in, transform 0.2s ease-in;
     pointer-events: none;
     overflow: hidden;
     
@@ -2490,31 +2527,27 @@ onUnmounted(() => {
 
   .promo-banner-asics-enter-from {
     opacity: 0;
-    transform: translateY(-10px);
-    margin-bottom: 0;
+    transform: translateY(-20px) scale(0.95);
   }
 
   .promo-banner-asics-enter-to {
     opacity: 1;
-    transform: translateY(0);
-    margin-bottom: 1rem;
+    transform: translateY(0) scale(1);
   }
 
   .promo-banner-asics-leave-from {
     opacity: 1;
-    transform: translateY(0);
-    margin-bottom: 1rem;
+    transform: translateY(0) scale(1);
   }
 
   .promo-banner-asics-leave-to {
     opacity: 0;
-    transform: translateY(-10px);
-    margin-bottom: 0;
+    transform: translateY(-20px) scale(0.95);
   }
 
   // Анимации для GEMS баннера
   .promo-banner-gems-enter-active {
-    transition: opacity 0.3s ease-out, transform 0.3s ease-out, margin 0.3s ease-out;
+    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
     overflow: hidden;
     
     .promo-banner {
@@ -2523,7 +2556,7 @@ onUnmounted(() => {
   }
 
   .promo-banner-gems-leave-active {
-    transition: opacity 0.2s ease-out, transform 0.2s ease-out, margin 0.2s ease-out;
+    transition: opacity 0.2s ease-in, transform 0.2s ease-in;
     pointer-events: none;
     overflow: hidden;
     
@@ -2534,26 +2567,22 @@ onUnmounted(() => {
 
   .promo-banner-gems-enter-from {
     opacity: 0;
-    transform: translateY(-10px);
-    margin-bottom: 0;
+    transform: translateY(-20px) scale(0.95);
   }
 
   .promo-banner-gems-enter-to {
     opacity: 1;
-    transform: translateY(0);
-    margin-bottom: 1rem;
+    transform: translateY(0) scale(1);
   }
 
   .promo-banner-gems-leave-from {
     opacity: 1;
-    transform: translateY(0);
-    margin-bottom: 1rem;
+    transform: translateY(0) scale(1);
   }
 
   .promo-banner-gems-leave-to {
     opacity: 0;
-    transform: translateY(-10px);
-    margin-bottom: 0;
+    transform: translateY(-20px) scale(0.95);
   }
 
   .shop-tabs {
@@ -2600,9 +2629,15 @@ onUnmounted(() => {
     -ms-overflow-style: none;
     scrollbar-width: none;
     contain: layout style;
+    position: relative;
+    min-height: 0;
 
     &::-webkit-scrollbar {
       display: none;
+    }
+
+    &[style*="display: none"] {
+      display: none !important;
     }
 
     .gem-item {
@@ -2919,9 +2954,15 @@ onUnmounted(() => {
     -ms-overflow-style: none;
     scrollbar-width: none;
     contain: layout style;
+    position: relative;
+    min-height: 0;
 
     &::-webkit-scrollbar {
       display: none;
+    }
+
+    &[style*="display: none"] {
+      display: none !important;
     }
 
     .item {
