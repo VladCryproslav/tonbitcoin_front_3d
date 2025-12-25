@@ -2254,6 +2254,22 @@ onUnmounted(() => {
                    iconGlow 2s ease-in-out infinite;
       }
 
+      .promo-banner-description {
+        color: rgba(255, 255, 255, 0.9);
+        font-family: 'Inter' !important;
+        font-weight: 500;
+        font-size: clamp(11px, 3vw, 13px);
+        line-height: 1.6;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        width: 100%;
+        display: block;
+        text-align: center;
+        will-change: auto;
+        backface-visibility: hidden;
+        transform: translateZ(0);
+      }
 
       // Снежинки
       .snowflakes {
