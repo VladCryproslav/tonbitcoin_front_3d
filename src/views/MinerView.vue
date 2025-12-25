@@ -1277,19 +1277,31 @@ onUnmounted(() => {
 
       <!-- Маркетинговая плашка с акцией -->
       <Transition name="promo-banner">
-        <div v-if="activeShopTab === 'asics' && asicsSaleActive && !promoBannerClosed" class="promo-banner">
+        <div v-if="activeShopTab === 'asics' && asicsSaleActive && !promoBannerClosed" class="promo-banner" :key="`asics-${activeShopTab}`">
           <div class="promo-banner-shine-wrapper">
             <div class="promo-banner-shine"></div>
+            <!-- Новогодние снежинки -->
+            <div class="snowflakes" :key="`asics-snow-${activeShopTab}`">
+              <div class="snowflake">❄</div>
+              <div class="snowflake">❄</div>
+              <div class="snowflake">❄</div>
+              <div class="snowflake">❄</div>
+              <div class="snowflake">❄</div>
+              <div class="snowflake">❄</div>
+            </div>
           </div>
           <button class="promo-banner-close" @click="promoBannerClosed = true">
             <Exit :width="14" style="color: rgba(255, 255, 255, 0.8)" />
           </button>
+          <!-- Елочки по бокам -->
+          <span class="promo-banner-tree-left">🎄</span>
+          <span class="promo-banner-tree-right">🎄</span>
           <div class="promo-banner-content">
             <div class="promo-banner-text">
               <div class="promo-banner-title">
-                <span class="promo-banner-icon-inline">🔥</span>
+                <span class="promo-banner-icon-inline">🎄</span>
                 <span class="promo-banner-title-text">{{ t('asic_shop.promo_banner_title') }}</span>
-                <span class="promo-banner-icon-inline">🔥</span>
+                <span class="promo-banner-icon-inline">❄️</span>
               </div>
               <div class="promo-banner-description">{{ t('asic_shop.promo_banner_text') }}</div>
             </div>
@@ -1402,11 +1414,11 @@ onUnmounted(() => {
 
       <!-- Маркетинговая плашка с акцией для GEMS -->
       <Transition name="promo-banner">
-        <div v-if="activeShopTab === 'gems' && gemsSaleActive && !gemsPromoBannerClosed" class="promo-banner gems-promo-banner">
+        <div v-if="activeShopTab === 'gems' && gemsSaleActive && !gemsPromoBannerClosed" class="promo-banner gems-promo-banner" :key="`gems-${activeShopTab}`">
           <div class="promo-banner-shine-wrapper">
             <div class="promo-banner-shine"></div>
             <!-- Новогодние снежинки -->
-            <div class="snowflakes">
+            <div class="snowflakes" :key="`gems-snow-${activeShopTab}`">
               <div class="snowflake">❄</div>
               <div class="snowflake">❄</div>
               <div class="snowflake">❄</div>
@@ -2294,6 +2306,7 @@ onUnmounted(() => {
         font-size: 1rem;
         animation: snowfall linear infinite;
         pointer-events: none;
+        top: -30px; // Начинаем сверху, вне видимой области
 
         &:nth-child(1) {
           left: 10%;
@@ -2333,6 +2346,99 @@ onUnmounted(() => {
       }
     }
 
+    // Елочки и снежинки для обычного баннера ASICs
+    &:not(.gems-promo-banner) {
+      position: relative;
+      overflow: hidden;
+
+      .promo-banner-shine-wrapper {
+        // Снежинки для ASICs баннера
+        .snowflakes {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        .snowflake {
+          position: absolute;
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 1rem;
+          animation: snowfall linear infinite;
+          pointer-events: none;
+          top: -30px; // Начинаем сверху, вне видимой области
+
+          &:nth-child(1) {
+            left: 10%;
+            animation-duration: 10s;
+            animation-delay: 0s;
+          }
+
+          &:nth-child(2) {
+            left: 30%;
+            animation-duration: 12s;
+            animation-delay: 2s;
+          }
+
+          &:nth-child(3) {
+            left: 50%;
+            animation-duration: 14s;
+            animation-delay: 4s;
+          }
+
+          &:nth-child(4) {
+            left: 70%;
+            animation-duration: 11s;
+            animation-delay: 1s;
+          }
+
+          &:nth-child(5) {
+            left: 85%;
+            animation-duration: 13s;
+            animation-delay: 3s;
+          }
+
+          &:nth-child(6) {
+            left: 20%;
+            animation-duration: 15s;
+            animation-delay: 5s;
+          }
+        }
+      }
+
+      // Елочки по бокам для ASICs
+      .promo-banner-tree-left,
+      .promo-banner-tree-right {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.8rem;
+        z-index: 1;
+        animation: treeTwinkle 2s ease-in-out infinite;
+        filter: drop-shadow(0 0 8px rgba(252, 217, 9, 0.8));
+        pointer-events: none;
+      }
+
+      .promo-banner-tree-left {
+        left: 0.3rem;
+        animation-delay: 0s;
+      }
+
+      .promo-banner-tree-right {
+        right: 0.3rem;
+        animation-delay: 1s;
+      }
+
+      // Добавляем отступы для контента, чтобы елочки не перекрывали текст
+      .promo-banner-content {
+        padding-left: 2rem;
+        padding-right: 2rem;
+      }
+    }
+
     @keyframes treeTwinkle {
       0%, 100% {
         opacity: 1;
@@ -2348,17 +2454,17 @@ onUnmounted(() => {
 
     @keyframes snowfall {
       0% {
-        transform: translateY(-100%) rotate(0deg);
+        transform: translateY(0) rotate(0deg);
         opacity: 0;
       }
-      10% {
+      2% {
         opacity: 1;
       }
-      90% {
+      98% {
         opacity: 1;
       }
       100% {
-        transform: translateY(200%) rotate(360deg);
+        transform: translateY(calc(100% + 50px)) rotate(360deg);
         opacity: 0;
       }
     }
