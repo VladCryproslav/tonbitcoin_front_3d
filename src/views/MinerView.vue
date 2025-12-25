@@ -859,12 +859,11 @@ const activeShopTab = ref('gems')
 
 const closeAsicsPromoBanner = () => {
   promoBannerClosed.value = true
-  // Синхронное обновление layout сразу после изменения состояния
+  // Немедленное обновление layout - синхронно
   if (asicsList.value) {
-    // Принудительный reflow для немедленного обновления layout
     void asicsList.value.offsetHeight
   }
-  // Дополнительное обновление в следующем тике для гарантии
+  // Дополнительное обновление в следующем тике
   nextTick(() => {
     if (asicsList.value) {
       void asicsList.value.offsetHeight
@@ -874,13 +873,12 @@ const closeAsicsPromoBanner = () => {
 
 const closeGemsPromoBanner = () => {
   gemsPromoBannerClosed.value = true
-  // Синхронное обновление layout сразу после изменения состояния
+  // Немедленное обновление layout - синхронно
   const gemsList = document.querySelector('.gems-list')
   if (gemsList) {
-    // Принудительный reflow для немедленного обновления layout
     void gemsList.offsetHeight
   }
-  // Дополнительное обновление в следующем тике для гарантии
+  // Дополнительное обновление в следующем тике
   nextTick(() => {
     const gemsList = document.querySelector('.gems-list')
     if (gemsList) {
@@ -1322,10 +1320,9 @@ onUnmounted(() => {
       </div>
 
       <!-- Единый баннер для обеих вкладок -->
-      <Transition name="promo-banner-unified">
-        <div v-if="((activeShopTab === 'asics' && asicsSaleActive && !promoBannerClosed) || (activeShopTab === 'gems' && gemsSaleActive && !gemsPromoBannerClosed))" 
-             class="promo-banner" 
-             :class="{ 'gems-promo-banner': activeShopTab === 'gems' }">
+      <div v-show="((activeShopTab === 'asics' && asicsSaleActive && !promoBannerClosed) || (activeShopTab === 'gems' && gemsSaleActive && !gemsPromoBannerClosed))" 
+           class="promo-banner promo-banner-unified-enter-to" 
+           :class="{ 'gems-promo-banner': activeShopTab === 'gems' }">
           <div class="promo-banner-shine-wrapper">
             <div class="promo-banner-shine"></div>
             <!-- Новогодние снежинки -->
@@ -2503,12 +2500,16 @@ onUnmounted(() => {
   }
 
   .promo-banner-unified-leave-active {
-    transition: opacity 0.15s ease-in, transform 0.15s ease-in, margin 0.15s ease-in, height 0.15s ease-in;
+    transition: none !important;
     pointer-events: none;
     
     .promo-banner {
-      animation: none !important;
+      display: none !important;
       margin-bottom: 0 !important;
+      height: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      animation: none !important;
     }
   }
 
@@ -2525,15 +2526,11 @@ onUnmounted(() => {
   .promo-banner-unified-leave-from {
     opacity: 1;
     transform: translateY(0);
-    margin-bottom: 1rem;
   }
 
   .promo-banner-unified-leave-to {
     opacity: 0;
-    transform: translateY(-10px);
-    margin-bottom: 0;
-    height: 0;
-    overflow: hidden;
+    transform: translateY(0);
   }
 
   .shop-tabs {
