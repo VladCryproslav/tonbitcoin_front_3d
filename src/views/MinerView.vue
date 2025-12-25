@@ -1293,15 +1293,12 @@ onUnmounted(() => {
           <button class="promo-banner-close" @click="promoBannerClosed = true">
             <Exit :width="14" style="color: rgba(255, 255, 255, 0.8)" />
           </button>
-          <!-- Елочки по бокам -->
-          <span class="promo-banner-tree-left">🎄</span>
-          <span class="promo-banner-tree-right">🎄</span>
           <div class="promo-banner-content">
             <div class="promo-banner-text">
               <div class="promo-banner-title">
                 <span class="promo-banner-icon-inline">🎄</span>
                 <span class="promo-banner-title-text">{{ t('asic_shop.promo_banner_title') }}</span>
-                <span class="promo-banner-icon-inline">❄️</span>
+                <span class="promo-banner-icon-inline">🎄</span>
               </div>
               <div class="promo-banner-description">{{ t('asic_shop.promo_banner_text') }}</div>
             </div>
@@ -1430,15 +1427,12 @@ onUnmounted(() => {
           <button class="promo-banner-close" @click="gemsPromoBannerClosed = true">
             <Exit :width="14" style="color: rgba(255, 255, 255, 0.8)" />
           </button>
-          <!-- Елочки по бокам -->
-          <span class="promo-banner-tree-left">🎄</span>
-          <span class="promo-banner-tree-right">🎄</span>
           <div class="promo-banner-content">
             <div class="promo-banner-text">
               <div class="promo-banner-title">
                 <span class="promo-banner-icon-inline">🎄</span>
                 <span class="promo-banner-title-text">{{ t('gems.promo_banner_title') }}</span>
-                <span class="promo-banner-icon-inline">❄️</span>
+                <span class="promo-banner-icon-inline">🎄</span>
               </div>
               <div class="promo-banner-description">{{ t('gems.promo_banner_text') }}</div>
             </div>
@@ -2260,34 +2254,6 @@ onUnmounted(() => {
                    iconGlow 2s ease-in-out infinite;
       }
 
-      // Елочки по бокам с анимацией
-      .promo-banner-tree-left,
-      .promo-banner-tree-right {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 1.8rem;
-        z-index: 1;
-        animation: treeTwinkle 2s ease-in-out infinite;
-        filter: drop-shadow(0 0 8px rgba(252, 217, 9, 0.8));
-        pointer-events: none;
-      }
-
-      .promo-banner-tree-left {
-        left: 0.3rem;
-        animation-delay: 0s;
-      }
-
-      .promo-banner-tree-right {
-        right: 0.3rem;
-        animation-delay: 1s;
-      }
-
-      // Добавляем отступы для контента, чтобы елочки не перекрывали текст
-      .promo-banner-content {
-        padding-left: 2rem;
-        padding-right: 2rem;
-      }
 
       // Снежинки
       .snowflakes {
@@ -2409,34 +2375,6 @@ onUnmounted(() => {
         }
       }
 
-      // Елочки по бокам для ASICs
-      .promo-banner-tree-left,
-      .promo-banner-tree-right {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 1.8rem;
-        z-index: 1;
-        animation: treeTwinkle 2s ease-in-out infinite;
-        filter: drop-shadow(0 0 8px rgba(252, 217, 9, 0.8));
-        pointer-events: none;
-      }
-
-      .promo-banner-tree-left {
-        left: 0.3rem;
-        animation-delay: 0s;
-      }
-
-      .promo-banner-tree-right {
-        right: 0.3rem;
-        animation-delay: 1s;
-      }
-
-      // Добавляем отступы для контента, чтобы елочки не перекрывали текст
-      .promo-banner-content {
-        padding-left: 2rem;
-        padding-right: 2rem;
-      }
     }
 
     @keyframes treeTwinkle {
