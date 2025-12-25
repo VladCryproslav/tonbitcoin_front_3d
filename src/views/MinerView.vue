@@ -40,6 +40,7 @@ const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= 
 
 // Состояние для закрытия промо-плашки
 const promoBannerClosed = ref(false)
+const gemsPromoBannerClosed = ref(false)
 
 let controller = null
 
@@ -561,6 +562,7 @@ function openAsics(side = true) {
   // Сбрасываем состояние закрытия промо-плашки при открытии магазина
   if (opt) {
     promoBannerClosed.value = false
+    gemsPromoBannerClosed.value = false
   }
   if (tg.platform === 'android') {
     tg.HapticFeedback.notificationOccurred('success');
@@ -1398,6 +1400,28 @@ onUnmounted(() => {
         </div>
       </div>
 
+      <!-- Маркетинговая плашка с акцией для GEMS -->
+      <Transition name="promo-banner">
+        <div v-if="activeShopTab === 'gems' && gemsSaleActive && !gemsPromoBannerClosed" class="promo-banner gems-promo-banner">
+          <div class="promo-banner-shine-wrapper">
+            <div class="promo-banner-shine"></div>
+          </div>
+          <button class="promo-banner-close" @click="gemsPromoBannerClosed = true">
+            <Exit :width="14" style="color: rgba(255, 255, 255, 0.8)" />
+          </button>
+          <div class="promo-banner-content">
+            <div class="promo-banner-text">
+              <div class="promo-banner-title">
+                <span class="promo-banner-icon-inline">🎄</span>
+                <span class="promo-banner-title-text">{{ t('gems.promo_banner_title') }}</span>
+                <span class="promo-banner-icon-inline">❄️</span>
+              </div>
+              <div class="promo-banner-description">{{ t('gems.promo_banner_text') }}</div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
       <!-- GEMS List -->
       <div v-if="activeShopTab === 'gems'" class="gems-list">
         <div class="gem-item"
@@ -2177,6 +2201,58 @@ onUnmounted(() => {
           backface-visibility: hidden;
           transform: translateZ(0);
         }
+      }
+    }
+
+    // Новогодний баннер для GEMS
+    &.gems-promo-banner {
+      background: linear-gradient(135deg,
+        rgba(220, 38, 38, 0.15) 0%,
+        rgba(22, 163, 74, 0.15) 50%,
+        rgba(252, 217, 9, 0.1) 100%);
+      border: 1px solid rgba(220, 38, 38, 0.3);
+      animation: gemsPromoPulse 4s ease-in-out infinite;
+
+      &::before {
+        background: linear-gradient(135deg,
+          rgba(220, 38, 38, 0.2) 0%,
+          rgba(22, 163, 74, 0.2) 50%,
+          rgba(252, 217, 9, 0.15) 100%);
+      }
+
+      .promo-banner-title {
+        color: #fcd909;
+        text-shadow: 0 2px 8px rgba(252, 217, 9, 0.4), 0 0 10px rgba(220, 38, 38, 0.3);
+      }
+
+      .promo-banner-icon-inline {
+        filter: drop-shadow(0 0 4px rgba(252, 217, 9, 0.6)) drop-shadow(0 0 8px rgba(22, 163, 74, 0.4));
+        animation: iconBounce 2.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite,
+                   gemsIconGlow 2s ease-in-out infinite;
+      }
+    }
+
+    @keyframes gemsPromoPulse {
+      0%, 100% {
+        box-shadow:
+          0 4px 20px rgba(220, 38, 38, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        border-color: rgba(220, 38, 38, 0.3);
+      }
+      50% {
+        box-shadow:
+          0 8px 35px rgba(220, 38, 38, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        border-color: rgba(220, 38, 38, 0.6);
+      }
+    }
+
+    @keyframes gemsIconGlow {
+      0%, 100% {
+        filter: drop-shadow(0 0 4px rgba(252, 217, 9, 0.6)) drop-shadow(0 0 8px rgba(22, 163, 74, 0.4));
+      }
+      50% {
+        filter: drop-shadow(0 0 8px rgba(252, 217, 9, 0.9)) drop-shadow(0 0 12px rgba(22, 163, 74, 0.6));
       }
     }
 
