@@ -1983,7 +1983,7 @@ onUnmounted(() => {
     backdrop-filter: blur(10px);
     border: 1px solid rgba(252, 217, 9, 0.3);
     border-radius: 1rem;
-    padding: 1.2rem 1rem;
+    padding: 1.2rem 1rem 1.4rem 1rem;
     min-height: auto;
     height: auto;
     max-height: none;
@@ -2172,7 +2172,7 @@ onUnmounted(() => {
       .promo-banner-text {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.6rem;
         flex: 1;
         min-width: 0;
         width: 100%;
@@ -2234,7 +2234,10 @@ onUnmounted(() => {
         0 4px 20px rgba(252, 217, 9, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
       position: relative;
-      overflow: hidden;
+      overflow: visible;
+      min-height: auto;
+      height: auto;
+      max-height: none;
 
       &::before {
         background: linear-gradient(135deg,
