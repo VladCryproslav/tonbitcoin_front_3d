@@ -1987,11 +1987,12 @@ onUnmounted(() => {
     min-height: auto;
     height: auto;
     max-height: none;
-    overflow: visible;
+    overflow: hidden;
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
     animation: promoPulse 4s ease-in-out infinite;
+    contain: layout style paint;
     box-shadow:
       0 4px 20px rgba(252, 217, 9, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -2234,10 +2235,11 @@ onUnmounted(() => {
         0 4px 20px rgba(252, 217, 9, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
       position: relative;
-      overflow: visible;
+      overflow: hidden;
       min-height: auto;
       height: auto;
       max-height: none;
+      contain: layout style paint;
 
       &::before {
         background: linear-gradient(135deg,
@@ -2283,6 +2285,7 @@ onUnmounted(() => {
         height: 100%;
         pointer-events: none;
         z-index: 0;
+        overflow: hidden;
       }
 
       .snowflake {
@@ -2334,10 +2337,11 @@ onUnmounted(() => {
     // Елочки и снежинки для обычного баннера ASICs
     &:not(.gems-promo-banner) {
       position: relative;
-      overflow: visible;
+      overflow: hidden;
       min-height: auto;
       height: auto;
       max-height: none;
+      contain: layout style paint;
 
       .promo-banner-shine-wrapper {
         // Снежинки для ASICs баннера
@@ -2349,6 +2353,7 @@ onUnmounted(() => {
           height: 100%;
           pointer-events: none;
           z-index: 0;
+          overflow: hidden;
         }
 
         .snowflake {
@@ -2474,11 +2479,21 @@ onUnmounted(() => {
   // Анимации для ASICs баннера
   .promo-banner-asics-enter-active {
     transition: opacity 0.3s ease-out;
+    
+    .promo-banner {
+      animation: none !important;
+      will-change: opacity;
+    }
   }
 
   .promo-banner-asics-leave-active {
     transition: opacity 0.2s ease-out;
     pointer-events: none;
+    
+    .promo-banner {
+      animation: none !important;
+      will-change: opacity;
+    }
   }
 
   .promo-banner-asics-enter-from {
@@ -2500,11 +2515,21 @@ onUnmounted(() => {
   // Анимации для GEMS баннера (такие же как у ASICs - только opacity)
   .promo-banner-gems-enter-active {
     transition: opacity 0.3s ease-out;
+    
+    .promo-banner {
+      animation: none !important;
+      will-change: opacity;
+    }
   }
 
   .promo-banner-gems-leave-active {
     transition: opacity 0.2s ease-out;
     pointer-events: none;
+    
+    .promo-banner {
+      animation: none !important;
+      will-change: opacity;
+    }
   }
 
   .promo-banner-gems-enter-from {
