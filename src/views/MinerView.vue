@@ -1995,6 +1995,7 @@ onUnmounted(() => {
     box-shadow:
       0 4px 20px rgba(252, 217, 9, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    contain: layout style paint;
 
     .promo-banner-shine-wrapper {
       position: absolute;
@@ -2203,22 +2204,19 @@ onUnmounted(() => {
           flex-shrink: 0;
         }
 
-        .promo-banner-description {
-          color: rgba(255, 255, 255, 0.9);
-          font-family: 'Inter' !important;
-          font-weight: 500;
-          font-size: clamp(11px, 3vw, 13px);
-          line-height: 1.6;
-          word-wrap: break-word;
-          overflow-wrap: break-word;
-          white-space: normal;
-          width: 100%;
-          display: block;
-          text-align: center;
-          will-change: auto;
-          backface-visibility: hidden;
-          transform: translateZ(0);
-        }
+      .promo-banner-description {
+        color: rgba(255, 255, 255, 0.9);
+        font-family: 'Inter' !important;
+        font-weight: 500;
+        font-size: clamp(11px, 3vw, 13px);
+        line-height: 1.6;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        width: 100%;
+        display: block;
+        text-align: center;
+      }
       }
     }
 
@@ -2269,9 +2267,6 @@ onUnmounted(() => {
         width: 100%;
         display: block;
         text-align: center;
-        will-change: auto;
-        backface-visibility: hidden;
-        transform: translateZ(0);
       }
 
       // Снежинки
@@ -2475,74 +2470,90 @@ onUnmounted(() => {
 
   // Анимации для ASICs баннера
   .promo-banner-asics-enter-active {
-    transition: opacity 0.3s ease-out;
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out, margin 0.3s ease-out;
+    overflow: hidden;
     
     .promo-banner {
       animation: none !important;
-      will-change: opacity;
     }
   }
 
   .promo-banner-asics-leave-active {
-    transition: opacity 0.2s ease-out;
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out, margin 0.2s ease-out;
     pointer-events: none;
+    overflow: hidden;
     
     .promo-banner {
       animation: none !important;
-      will-change: opacity;
     }
   }
 
   .promo-banner-asics-enter-from {
     opacity: 0;
+    transform: translateY(-10px);
+    margin-bottom: 0;
   }
 
   .promo-banner-asics-enter-to {
     opacity: 1;
+    transform: translateY(0);
+    margin-bottom: 1rem;
   }
 
   .promo-banner-asics-leave-from {
     opacity: 1;
+    transform: translateY(0);
+    margin-bottom: 1rem;
   }
 
   .promo-banner-asics-leave-to {
     opacity: 0;
+    transform: translateY(-10px);
+    margin-bottom: 0;
   }
 
-  // Анимации для GEMS баннера (такие же как у ASICs - только opacity)
+  // Анимации для GEMS баннера
   .promo-banner-gems-enter-active {
-    transition: opacity 0.3s ease-out;
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out, margin 0.3s ease-out;
+    overflow: hidden;
     
     .promo-banner {
       animation: none !important;
-      will-change: opacity;
     }
   }
 
   .promo-banner-gems-leave-active {
-    transition: opacity 0.2s ease-out;
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out, margin 0.2s ease-out;
     pointer-events: none;
+    overflow: hidden;
     
     .promo-banner {
       animation: none !important;
-      will-change: opacity;
     }
   }
 
   .promo-banner-gems-enter-from {
     opacity: 0;
+    transform: translateY(-10px);
+    margin-bottom: 0;
   }
 
   .promo-banner-gems-enter-to {
     opacity: 1;
+    transform: translateY(0);
+    margin-bottom: 1rem;
   }
 
   .promo-banner-gems-leave-from {
     opacity: 1;
+    transform: translateY(0);
+    margin-bottom: 1rem;
   }
 
   .promo-banner-gems-leave-to {
     opacity: 0;
+    transform: translateY(-10px);
+    margin-bottom: 0;
   }
 
   .shop-tabs {
@@ -2588,6 +2599,7 @@ onUnmounted(() => {
     margin-bottom: -10px;
     -ms-overflow-style: none;
     scrollbar-width: none;
+    contain: layout style;
 
     &::-webkit-scrollbar {
       display: none;
@@ -2906,6 +2918,7 @@ onUnmounted(() => {
     margin-bottom: -10px;
     -ms-overflow-style: none;
     scrollbar-width: none;
+    contain: layout style;
 
     &::-webkit-scrollbar {
       display: none;
