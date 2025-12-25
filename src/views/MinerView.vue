@@ -1405,10 +1405,22 @@ onUnmounted(() => {
         <div v-if="activeShopTab === 'gems' && gemsSaleActive && !gemsPromoBannerClosed" class="promo-banner gems-promo-banner">
           <div class="promo-banner-shine-wrapper">
             <div class="promo-banner-shine"></div>
+            <!-- Новогодние снежинки -->
+            <div class="snowflakes">
+              <div class="snowflake">❄</div>
+              <div class="snowflake">❄</div>
+              <div class="snowflake">❄</div>
+              <div class="snowflake">❄</div>
+              <div class="snowflake">❄</div>
+              <div class="snowflake">❄</div>
+            </div>
           </div>
           <button class="promo-banner-close" @click="gemsPromoBannerClosed = true">
             <Exit :width="14" style="color: rgba(255, 255, 255, 0.8)" />
           </button>
+          <!-- Елочки по бокам -->
+          <span class="promo-banner-tree-left">🎄</span>
+          <span class="promo-banner-tree-right">🎄</span>
           <div class="promo-banner-content">
             <div class="promo-banner-text">
               <div class="promo-banner-title">
@@ -2204,55 +2216,150 @@ onUnmounted(() => {
       }
     }
 
-    // Новогодний баннер для GEMS
+    // Новогодний баннер для GEMS (стилистика как у ASICs)
     &.gems-promo-banner {
       background: linear-gradient(135deg,
-        rgba(220, 38, 38, 0.15) 0%,
-        rgba(22, 163, 74, 0.15) 50%,
-        rgba(252, 217, 9, 0.1) 100%);
-      border: 1px solid rgba(220, 38, 38, 0.3);
-      animation: gemsPromoPulse 4s ease-in-out infinite;
+        rgba(252, 217, 9, 0.15) 0%,
+        rgba(254, 164, 0, 0.15) 50%,
+        rgba(226, 249, 116, 0.1) 100%);
+      border: 1px solid rgba(252, 217, 9, 0.3);
+      animation: promoPulse 4s ease-in-out infinite;
+      box-shadow:
+        0 4px 20px rgba(252, 217, 9, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
 
       &::before {
         background: linear-gradient(135deg,
-          rgba(220, 38, 38, 0.2) 0%,
-          rgba(22, 163, 74, 0.2) 50%,
-          rgba(252, 217, 9, 0.15) 100%);
+          rgba(252, 217, 9, 0.2) 0%,
+          rgba(254, 164, 0, 0.2) 50%,
+          rgba(226, 249, 116, 0.15) 100%);
       }
 
       .promo-banner-title {
         color: #fcd909;
-        text-shadow: 0 2px 8px rgba(252, 217, 9, 0.4), 0 0 10px rgba(220, 38, 38, 0.3);
+        text-shadow: 0 2px 8px rgba(252, 217, 9, 0.4);
       }
 
       .promo-banner-icon-inline {
-        filter: drop-shadow(0 0 4px rgba(252, 217, 9, 0.6)) drop-shadow(0 0 8px rgba(22, 163, 74, 0.4));
+        filter: drop-shadow(0 0 4px rgba(252, 217, 9, 0.6));
         animation: iconBounce 2.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite,
-                   gemsIconGlow 2s ease-in-out infinite;
+                   iconGlow 2s ease-in-out infinite;
+      }
+
+      // Елочки по бокам с анимацией
+      .promo-banner-tree-left,
+      .promo-banner-tree-right {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.8rem;
+        z-index: 1;
+        animation: treeTwinkle 2s ease-in-out infinite;
+        filter: drop-shadow(0 0 8px rgba(252, 217, 9, 0.8));
+        pointer-events: none;
+      }
+
+      .promo-banner-tree-left {
+        left: 0.3rem;
+        animation-delay: 0s;
+      }
+
+      .promo-banner-tree-right {
+        right: 0.3rem;
+        animation-delay: 1s;
+      }
+
+      // Добавляем отступы для контента, чтобы елочки не перекрывали текст
+      .promo-banner-content {
+        padding-left: 2rem;
+        padding-right: 2rem;
+      }
+
+      // Снежинки
+      .snowflakes {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .snowflake {
+        position: absolute;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1rem;
+        animation: snowfall linear infinite;
+        pointer-events: none;
+
+        &:nth-child(1) {
+          left: 10%;
+          animation-duration: 10s;
+          animation-delay: 0s;
+        }
+
+        &:nth-child(2) {
+          left: 30%;
+          animation-duration: 12s;
+          animation-delay: 2s;
+        }
+
+        &:nth-child(3) {
+          left: 50%;
+          animation-duration: 14s;
+          animation-delay: 4s;
+        }
+
+        &:nth-child(4) {
+          left: 70%;
+          animation-duration: 11s;
+          animation-delay: 1s;
+        }
+
+        &:nth-child(5) {
+          left: 85%;
+          animation-duration: 13s;
+          animation-delay: 3s;
+        }
+
+        &:nth-child(6) {
+          left: 20%;
+          animation-duration: 15s;
+          animation-delay: 5s;
+        }
       }
     }
 
-    @keyframes gemsPromoPulse {
+    @keyframes treeTwinkle {
       0%, 100% {
-        box-shadow:
-          0 4px 20px rgba(220, 38, 38, 0.2),
-          inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        border-color: rgba(220, 38, 38, 0.3);
+        opacity: 1;
+        transform: translateY(-50%) scale(1);
+        filter: drop-shadow(0 0 8px rgba(252, 217, 9, 0.8));
       }
       50% {
-        box-shadow:
-          0 8px 35px rgba(220, 38, 38, 0.5),
-          inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        border-color: rgba(220, 38, 38, 0.6);
+        opacity: 0.7;
+        transform: translateY(-50%) scale(1.1);
+        filter: drop-shadow(0 0 12px rgba(252, 217, 9, 1));
       }
     }
 
-    @keyframes gemsIconGlow {
-      0%, 100% {
-        filter: drop-shadow(0 0 4px rgba(252, 217, 9, 0.6)) drop-shadow(0 0 8px rgba(22, 163, 74, 0.4));
+    @keyframes snowfall {
+      0% {
+        transform: translateY(-100%) rotate(0deg);
+        opacity: 0;
       }
-      50% {
-        filter: drop-shadow(0 0 8px rgba(252, 217, 9, 0.9)) drop-shadow(0 0 12px rgba(22, 163, 74, 0.6));
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(200%) rotate(360deg);
+        opacity: 0;
       }
     }
 
