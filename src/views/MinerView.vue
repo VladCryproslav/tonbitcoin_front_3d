@@ -1277,11 +1277,11 @@ onUnmounted(() => {
 
       <!-- Маркетинговая плашка с акцией -->
       <Transition name="promo-banner-asics">
-        <div v-if="activeShopTab === 'asics' && asicsSaleActive && !promoBannerClosed" class="promo-banner" :key="`asics-banner-${activeShopTab}-${promoBannerClosed}`">
+        <div v-if="activeShopTab === 'asics' && asicsSaleActive && !promoBannerClosed" class="promo-banner">
           <div class="promo-banner-shine-wrapper">
             <div class="promo-banner-shine"></div>
             <!-- Новогодние снежинки -->
-            <div class="snowflakes" :key="`asics-snow-${activeShopTab}-${promoBannerClosed}`">
+            <div class="snowflakes">
               <div class="snowflake">❄</div>
               <div class="snowflake">❄</div>
               <div class="snowflake">❄</div>
@@ -1411,11 +1411,11 @@ onUnmounted(() => {
 
       <!-- Маркетинговая плашка с акцией для GEMS -->
       <Transition name="promo-banner-gems">
-        <div v-if="activeShopTab === 'gems' && gemsSaleActive && !gemsPromoBannerClosed" class="promo-banner gems-promo-banner" :key="`gems-banner-${activeShopTab}-${gemsPromoBannerClosed}`">
+        <div v-if="activeShopTab === 'gems' && gemsSaleActive && !gemsPromoBannerClosed" class="promo-banner gems-promo-banner">
           <div class="promo-banner-shine-wrapper">
             <div class="promo-banner-shine"></div>
             <!-- Новогодние снежинки -->
-            <div class="snowflakes" :key="`gems-snow-${activeShopTab}-${gemsPromoBannerClosed}`">
+            <div class="snowflakes">
               <div class="snowflake">❄</div>
               <div class="snowflake">❄</div>
               <div class="snowflake">❄</div>
@@ -2473,82 +2473,54 @@ onUnmounted(() => {
 
   // Анимации для ASICs баннера
   .promo-banner-asics-enter-active {
-    transition: opacity 0.4s ease-out,
-                transform 0.4s ease-out;
-    
-    .promo-banner {
-      animation: none !important;
-    }
+    transition: opacity 0.3s ease-out;
   }
 
   .promo-banner-asics-leave-active {
-    transition: opacity 0.25s ease-out,
-                transform 0.25s ease-out;
+    transition: opacity 0.2s ease-out;
     pointer-events: none;
-    
-    .promo-banner {
-      animation: none !important;
-    }
   }
 
   .promo-banner-asics-enter-from {
     opacity: 0;
-    transform: translateY(-10px);
   }
 
   .promo-banner-asics-enter-to {
     opacity: 1;
-    transform: translateY(0);
   }
 
   .promo-banner-asics-leave-from {
     opacity: 1;
-    transform: translateY(0);
   }
 
   .promo-banner-asics-leave-to {
     opacity: 0;
-    transform: translateY(-5px);
   }
 
-  // Анимации для GEMS баннера
+  // Анимации для GEMS баннера (такие же как у ASICs - только opacity)
   .promo-banner-gems-enter-active {
-    transition: opacity 0.4s ease-out,
-                transform 0.4s ease-out;
-    
-    .promo-banner {
-      animation: none !important;
-    }
+    transition: opacity 0.3s ease-out;
   }
 
   .promo-banner-gems-leave-active {
-    transition: opacity 0.25s ease-out,
-                transform 0.25s ease-out;
+    transition: opacity 0.2s ease-out;
     pointer-events: none;
-    
-    .promo-banner {
-      animation: none !important;
-    }
   }
 
   .promo-banner-gems-enter-from {
     opacity: 0;
-    transform: translateY(-10px);
   }
 
   .promo-banner-gems-enter-to {
     opacity: 1;
-    transform: translateY(0);
   }
 
   .promo-banner-gems-leave-from {
     opacity: 1;
-    transform: translateY(0);
   }
 
   .promo-banner-gems-leave-to {
     opacity: 0;
-    transform: translateY(-5px);
   }
 
   .shop-tabs {
