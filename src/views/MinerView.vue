@@ -2334,7 +2334,10 @@ onUnmounted(() => {
     // Елочки и снежинки для обычного баннера ASICs
     &:not(.gems-promo-banner) {
       position: relative;
-      overflow: hidden;
+      overflow: visible;
+      min-height: auto;
+      height: auto;
+      max-height: none;
 
       .promo-banner-shine-wrapper {
         // Снежинки для ASICs баннера
@@ -2417,11 +2420,11 @@ onUnmounted(() => {
       2% {
         opacity: 1;
       }
-      98% {
+      95% {
         opacity: 1;
       }
       100% {
-        transform: translateY(calc(100% + 50px)) rotate(360deg);
+        transform: translateY(calc(100% + 120px)) rotate(360deg);
         opacity: 0;
       }
     }
