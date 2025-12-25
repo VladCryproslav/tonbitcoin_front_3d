@@ -857,27 +857,36 @@ const speedUpAddress = ref(null)
 
 const activeShopTab = ref('gems')
 
-const closeAsicsPromoBanner = async () => {
+const closeAsicsPromoBanner = () => {
   promoBannerClosed.value = true
-  await nextTick()
-  // Принудительное обновление layout после закрытия баннера
+  // Синхронное обновление layout сразу после изменения состояния
   if (asicsList.value) {
-    requestAnimationFrame(() => {
-      asicsList.value?.scrollTo({ top: asicsList.value.scrollTop })
-    })
+    // Принудительный reflow для немедленного обновления layout
+    void asicsList.value.offsetHeight
   }
+  // Дополнительное обновление в следующем тике для гарантии
+  nextTick(() => {
+    if (asicsList.value) {
+      void asicsList.value.offsetHeight
+    }
+  })
 }
 
-const closeGemsPromoBanner = async () => {
+const closeGemsPromoBanner = () => {
   gemsPromoBannerClosed.value = true
-  await nextTick()
-  // Принудительное обновление layout после закрытия баннера
+  // Синхронное обновление layout сразу после изменения состояния
   const gemsList = document.querySelector('.gems-list')
   if (gemsList) {
-    requestAnimationFrame(() => {
-      gemsList.scrollTo({ top: gemsList.scrollTop })
-    })
+    // Принудительный reflow для немедленного обновления layout
+    void gemsList.offsetHeight
   }
+  // Дополнительное обновление в следующем тике для гарантии
+  nextTick(() => {
+    const gemsList = document.querySelector('.gems-list')
+    if (gemsList) {
+      void gemsList.offsetHeight
+    }
+  })
 }
 
 const toggleShopTab = async () => {
@@ -2494,11 +2503,12 @@ onUnmounted(() => {
   }
 
   .promo-banner-unified-leave-active {
-    transition: opacity 0.2s ease-in, transform 0.2s ease-in;
+    transition: opacity 0.15s ease-in, transform 0.15s ease-in, margin 0.15s ease-in, height 0.15s ease-in;
     pointer-events: none;
     
     .promo-banner {
       animation: none !important;
+      margin-bottom: 0 !important;
     }
   }
 
@@ -2515,11 +2525,15 @@ onUnmounted(() => {
   .promo-banner-unified-leave-from {
     opacity: 1;
     transform: translateY(0);
+    margin-bottom: 1rem;
   }
 
   .promo-banner-unified-leave-to {
     opacity: 0;
     transform: translateY(-10px);
+    margin-bottom: 0;
+    height: 0;
+    overflow: hidden;
   }
 
   .shop-tabs {
