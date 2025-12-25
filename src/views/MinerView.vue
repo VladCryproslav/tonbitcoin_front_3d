@@ -2471,118 +2471,84 @@ onUnmounted(() => {
     }
   }
 
-  // Анимации для плашки
-  .promo-banner-enter-active {
-    transition: opacity 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
-                transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
-                filter 0.6s ease-out;
-  }
-
-  .promo-banner-leave-active {
-    transition: opacity 0.3s ease-out,
-                transform 0.3s ease-out,
-                filter 0.3s ease-out;
-    pointer-events: none;
-  }
-
-  .promo-banner-enter-from {
-    opacity: 0;
-    transform: translateY(-15px);
-    filter: blur(4px);
-  }
-
-  .promo-banner-enter-to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-
-  .promo-banner-leave-from {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-
-  .promo-banner-leave-to {
-    opacity: 0;
-    transform: translateY(-10px);
-    filter: blur(3px);
-  }
-
   // Анимации для ASICs баннера
   .promo-banner-asics-enter-active {
-    transition: opacity 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
-                transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
-                filter 0.6s ease-out;
+    transition: opacity 0.4s ease-out,
+                transform 0.4s ease-out;
+    
+    .promo-banner {
+      animation: none !important;
+    }
   }
 
   .promo-banner-asics-leave-active {
-    transition: opacity 0.3s ease-out,
-                transform 0.3s ease-out,
-                filter 0.3s ease-out;
+    transition: opacity 0.25s ease-out,
+                transform 0.25s ease-out;
     pointer-events: none;
+    
+    .promo-banner {
+      animation: none !important;
+    }
   }
 
   .promo-banner-asics-enter-from {
     opacity: 0;
-    transform: translateY(-15px);
-    filter: blur(4px);
+    transform: translateY(-10px);
   }
 
   .promo-banner-asics-enter-to {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0);
   }
 
   .promo-banner-asics-leave-from {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0);
   }
 
   .promo-banner-asics-leave-to {
     opacity: 0;
-    transform: translateY(-10px);
-    filter: blur(3px);
+    transform: translateY(-5px);
   }
 
   // Анимации для GEMS баннера
   .promo-banner-gems-enter-active {
-    transition: opacity 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
-                transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
-                filter 0.6s ease-out;
+    transition: opacity 0.4s ease-out,
+                transform 0.4s ease-out;
+    
+    .promo-banner {
+      animation: none !important;
+    }
   }
 
   .promo-banner-gems-leave-active {
-    transition: opacity 0.3s ease-out,
-                transform 0.3s ease-out,
-                filter 0.3s ease-out;
+    transition: opacity 0.25s ease-out,
+                transform 0.25s ease-out;
     pointer-events: none;
+    
+    .promo-banner {
+      animation: none !important;
+    }
   }
 
   .promo-banner-gems-enter-from {
     opacity: 0;
-    transform: translateY(-15px);
-    filter: blur(4px);
+    transform: translateY(-10px);
   }
 
   .promo-banner-gems-enter-to {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0);
   }
 
   .promo-banner-gems-leave-from {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0);
   }
 
   .promo-banner-gems-leave-to {
     opacity: 0;
-    transform: translateY(-10px);
-    filter: blur(3px);
+    transform: translateY(-5px);
   }
 
   .shop-tabs {
