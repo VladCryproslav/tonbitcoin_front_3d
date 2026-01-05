@@ -288,6 +288,60 @@ const gemsSheet = [
   {
     shop: true,
     name: 'Buy NFT',
+    type: 'Repair Kit',
+    price: 49,
+    rarity: 'class_3',
+    enableSale: false,
+    salePercent: 50,
+    description: 'For Energizers',
+    imagePath: '',
+    link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%221-2-3%22%5D%7D%7D',
+    info: 'gems.repair_kit_info',
+    benefits: [
+      'for_energizers',
+      'power_plant_lvl: 3-5',
+      'duration_eternal'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
+    type: 'Repair Kit',
+    price: 199,
+    rarity: 'class_2',
+    enableSale: false,
+    salePercent: 50,
+    description: 'For Energizers',
+    imagePath: '',
+    link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%221-2-3%22%5D%7D%7D',
+    info: 'gems.repair_kit_info',
+    benefits: [
+      'for_energizers',
+      'power_plant_lvl: 6-7',
+      'duration_eternal'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
+    type: 'Repair Kit',
+    price: 699,
+    rarity: 'class_1',
+    enableSale: false,
+    salePercent: 50,
+    description: 'For Energizers',
+    imagePath: '',
+    link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%221-2-3%22%5D%7D%7D',
+    info: 'gems.repair_kit_info',
+    benefits: [
+      'for_energizers',
+      'power_plant_lvl: 8-9',
+      'duration_eternal'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
     type: 'Jarvis Bot',
     price: 99,
     rarity: 'class_4',
