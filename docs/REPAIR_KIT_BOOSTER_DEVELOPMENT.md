@@ -8,6 +8,8 @@
 - Криокамера предотвращает перегрев электростанции
 - Рем. Комплект фиксирует параметр Power на уровне активации и не дает ему падать
 
+**Важно:** Все настройки буста (цены, тексты, описания) настраиваются через админку Django. В коде не должно быть захардкоженных значений - все берется из модели `Booster` через API.
+
 **Логика работы Рем. Комплекта:**
 1. При активации буста сохраняется текущий уровень Power в поле `repair_kit_power_level`
    - Пример: если Power был 77, то `repair_kit_power_level = 77`
@@ -420,17 +422,99 @@ UserProfile.objects.filter(user_id=user_profile.user_id).update(**update_data)
 - Если Рем. Комплект активен, то `repair_kit_power_level` также обновляется на 100
 - После ремонта power не будет падать ниже 100, пока буст активен
 
-### 12. Backend: Обновление сериализатора
+### 12. Backend: Добавление проверки NFT для вечного буста
+
+**Файл:** `edit/t.py`
+
+В функции `main_boosters()` (около строки 810), нужно добавить проверку NFT "Repair Kit":
+
+#### 12.1. Добавить в список проверяемых NFT
+
+В строке 892, где проверяется список NFT, добавить "Repair Kit":
+
+```python
+if name in ["Jarvis Bot", "Cryochamber", "ASIC Manager", "Magnetic ring", "Repair Kit"]:
+```
+
+#### 12.2. Добавить словарь для владельцев
+
+После строки 876 (где создаются словари), добавить:
+
+```python
+repair_kit_owners = dict()
+```
+
+#### 12.3. Добавить проверку NFT Repair Kit
+
+После блока проверки "Magnetic ring" (около строки 965), добавить:
+
+```python
+elif name == "Repair Kit":
+    station_level = user.get_station_level() + 1
+    good = False
+    # Логика классов такая же как у Jarvis Bot
+    if full_name == "Repair Kit (4 class)" and 1 <= station_level <= 3:
+        good = True
+    elif full_name == "Repair Kit (3 class)" and 4 <= station_level <= 5:
+        good = True
+    elif full_name == "Repair Kit (2 class)" and 6 <= station_level <= 7:
+        good = True
+    elif full_name == "Repair Kit (1 class)" and 8 <= station_level <= 9:
+        good = True
+    if good:
+        repair_kit_owners[user.user_id] = True
+```
+
+#### 12.4. Добавить обновление repair_kit_expires
+
+После блока обновления `magnit_expires` (около строки 1019-1022), добавить:
+
+```python
+UserProfile.objects.filter(
+    repair_kit_expires__year=2100,
+).exclude(user_id__in=list(repair_kit_owners.keys())).update(
+    repair_kit_expires=None,
+)
+UserProfile.objects.filter(
+    user_id__in=list(repair_kit_owners.keys())
+).exclude(repair_kit_expires__year=2100).update(
+    repair_kit_expires=infinite_date,
+)
+```
+
+**Логика работы:**
+- Функция `main_boosters()` запускается периодически (через celery или cron)
+- Проверяет все NFT на кошельках пользователей из официальных коллекций
+- Если найден NFT "Repair Kit" нужного класса для уровня станции пользователя - устанавливает `repair_kit_expires` в 2100-01-01 (вечный буст)
+- Если NFT не найден, но `repair_kit_expires` был в 2100 году - сбрасывает в None
+- Проверка классов NFT Repair Kit:
+  - **4 class:** для уровней станции 1-3 (Boiler house, Coal power plant, Thermal power plant)
+  - **3 class:** для уровней станции 4-5 (Geothermal power plant, Nuclear power plant)
+  - **2 class:** для уровней станции 6-7 (Thermonuclear power plant, Dyson Sphere)
+  - **1 class:** для уровней станции 8-9 (Neutron star, Antimatter)
+
+**Важно:** 
+- Функция использует `LinkedUserNFT` для связи NFT с пользователем
+- Проверяет `TimedUserNFT` для блокировки NFT после подключения нового кошелька
+- Если NFT заблокирован (`block_until > now`), он не учитывается при проверке
+
+**Классы NFT Repair Kit (по аналогии с Jarvis Bot):**
+- **4 class:** для уровней станции 1-3
+- **3 class:** для уровней станции 4-5
+- **2 class:** для уровней станции 6-7
+- **1 class:** для уровней станции 8-9
+
+### 13. Backend: Обновление сериализатора
 
 **Файл:** `edit/core/serializers.py`
 
 Сериализатор `UserProfileSerializer` использует `exclude` для исключения некоторых полей, поэтому новые поля `repair_kit_expires` и `repair_kit_power_level` автоматически будут включены. Никаких изменений не требуется.
 
-### 13. Frontend: Добавление буста в компонент Boost.vue
+### 14. Frontend: Добавление буста в компонент Boost.vue
 
 **Файл:** `src/components/Boost.vue`
 
-#### 13.1. Добавить computed для проверки активности
+#### 14.1. Добавить computed для проверки активности
 
 После строки 42 (после `managerIsForever`), добавить:
 
@@ -445,20 +529,30 @@ const repairKitBlocked = computed(() => {
 })
 ```
 
-#### 13.2. Добавить в foreverBoosts
+**Примечание:** 
+- `repairKitIsForever` проверяет, установлен ли `repair_kit_expires` на год 2100 (вечный буст через NFT)
+- `repairKitBlocked` проверяет, заблокирован ли NFT на определенное время (через TimedUserNFT)
+
+#### 14.2. Добавить в foreverBoosts
 
 После строки 87, добавить:
 
 ```javascript
 'repair_kit': {
   name: 'Repair Kit',
-  price: 89,
-  old_price: 99,
+  price: 89,  // Пример значения, можно изменить
+  old_price: 99,  // Пример значения, можно изменить
   link: 'https://getgems.io/tbtc?filter=%7B%22attributes%22%3A%7B%7D%2C%22q%22%3A%22Repair%20Kit%22%7D#items'
 }
 ```
 
-#### 13.3. Добавить обработку в parseBoosterInfo
+**Примечание:** 
+- `name` должно совпадать с именем NFT в метаданных (без класса, например "Repair Kit")
+- `link` - ссылка на GetGems для покупки NFT
+- `price` и `old_price` - это примеры значений для вечного буста через TON (используется только для отображения в интерфейсе при выборе paymentRadio == 'ton')
+- **Важно:** Эти значения используются только для вечных NFT бустов через TON. Для временных бустов (Stars/fBTC) все цены берутся из модели `Booster` через API
+
+#### 14.3. Добавить обработку в parseBoosterInfo
 
 После блока `asic_manager` (около строки 349), добавить:
 
@@ -486,24 +580,41 @@ if (booster?.slug == 'repair_kit') {
 }
 ```
 
-#### 13.4. Добавить в getTotalStarsPrice
+**Логика работы:**
+- Сначала проверяется, заблокирован ли NFT (TimedUserNFT)
+- Затем проверяется, активен ли буст (`repair_kit_expires`)
+- Если `repairKitIsForever` = true, показывается иконка "forever" вместо количества дней
+- Если буст не активен, показывается статус "не куплен"
+
+#### 14.4. Добавить в getTotalStarsPrice
 
 После блока `premium_sub` (около строки 436), добавить:
 
 ```javascript
 else if (item?.slug == 'repair_kit') {
+  // Используем ту же логику градации что и для jarvis/cryo/electrics/premium_sub
+  // Цена зависит от уровня станции через gen_config
   price = `price${app?.user?.station_type ? (Math.ceil(app.gen_config.find((el) => el?.station_type == app?.user?.station_type)?.id / 3) >= 7 ? 7 : Math.ceil(app.gen_config.find((el) => el?.station_type == app?.user?.station_type)?.id / 3)) : 1}${paymentRadio.value == 'fbtc' ? "_fbtc" : ""}`
   sum = item?.[price] * boosters_count.value[item?.slug]
+  // Применяем скидку SBT/Premium для Stars
   if (((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) && paymentRadio.value == 'stars') {
     sum = Math.floor(sum * (100 - ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) ? 5 : ((app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) ? 10 : 0)) / 100)
   }
+  // Применяем скидку за количество (от 5 дней)
   if (boosters_count.value[item?.slug] >= 5) {
     sum *= (100 - Math.min(boosters_count.value[item?.slug], 30)) / 100
   }
 }
 ```
 
-#### 13.5. Добавить в isActiveBooster
+**Логика градации:**
+- Используется `gen_config` для определения уровня станции
+- `id` из `gen_config` делится на 3 и округляется вверх
+- Если результат >= 7, используется price7 (максимум)
+- Иначе используется price{результат}
+- Поддерживаются price1-price10 для Stars и price1_fbtc-price10_fbtc для fBTC
+
+#### 14.5. Добавить в isActiveBooster
 
 После строки 550, добавить:
 
@@ -516,7 +627,7 @@ if (
   return true
 ```
 
-#### 13.6. Добавить в boosters_count
+#### 14.6. Добавить в boosters_count
 
 После строки 564, добавить:
 
@@ -524,11 +635,23 @@ if (
 repair_kit: 1,
 ```
 
-#### 13.7. Добавить в filteredBoosters
+#### 14.7. Добавить в filteredBoosters
 
 В computed `filteredBoosters` (строка 567-572), добавить `'repair_kit'` в соответствующие массивы `inclSlug` в зависимости от `isMiners` и `paymentRadio`.
 
-#### 13.8. Добавить в increment
+**Для Energizers (isMiners = false):**
+```javascript
+: paymentRadio.value == 'ton' ? ['jarvis', 'cryo'] : ['azot', 'jarvis', 'cryo', 'autostart', 'electrics', 'premium_sub', 'repair_kit']
+```
+
+**Для Miners (isMiners = true):**
+```javascript
+: paymentRadio.value == 'ton' ? ['magnit', 'asic_manager'] : ['powerbank', 'magnit', 'asic_manager']
+```
+
+**Примечание:** Рем. Комплект доступен только для Energizers (как и jarvis, cryo), не для Miners.
+
+#### 14.8. Добавить в increment
 
 В функции `increment()` (строка 594-620), добавить в `expiresMap`:
 
@@ -536,7 +659,270 @@ repair_kit: 1,
 repair_kit: 'repair_kit_expires',
 ```
 
-### 14. Frontend: Добавление локализации
+#### 14.9. Добавить в отображение зачеркнутой цены (старая цена без скидки)
+
+В шаблоне, где отображается зачеркнутая цена (около строки 870 и 915), нужно добавить `repair_kit` в условие:
+
+**Первое место (около строки 870):**
+```javascript
+<span v-if="item?.slug == 'jarvis' || item?.slug == 'cryo' || item?.slug == 'repair_kit'"
+  class="text-[8px] text-white font-bold line-through decoration-red-400 decoration-[2px]">{{
+    Math.ceil(
+      item?.[
+      `price${app?.user?.station_type
+        ? Math.ceil(
+          app.gen_config.find(
+            (el) => el?.station_type == app?.user?.station_type,
+          )?.id / 3,
+        ) >= 7
+          ? 7
+          : Math.ceil(
+            app.gen_config.find(
+              (el) => el?.station_type == app?.user?.station_type,
+            )?.id / 3,
+          )
+        : 1
+      }${paymentRadio == 'fbtc' ? "_fbtc" : ""}`
+      ] * boosters_count?.[item?.slug],
+    )
+  }}</span>
+```
+
+**Второе место (около строки 915):**
+```javascript
+<span v-if="item?.slug == 'jarvis' || item?.slug == 'cryo' || item?.slug == 'repair_kit'"
+  class="text-[8px] text-white font-bold line-through decoration-red-400 decoration-[2px]">{{
+    Math.ceil(
+      item?.[
+      `price${app?.user?.station_type
+        ? Math.ceil(
+          app.gen_config.find(
+            (el) => el?.station_type == app?.user?.station_type,
+          )?.id / 3,
+        ) >= 7
+          ? 7
+          : Math.ceil(
+            app.gen_config.find(
+              (el) => el?.station_type == app?.user?.station_type,
+            )?.id / 3,
+          )
+        : 1
+      }${paymentRadio == 'fbtc' ? "_fbtc" : ""}`
+      ] * boosters_count?.[item?.slug],
+    )
+  }}</span>
+```
+
+**Примечание:** Это нужно для правильного отображения старой цены (без скидки) при наличии скидки SBT/Premium или скидки за количество дней.
+
+#### 14.10. Добавить в условие для отображения скидки SBT/Premium
+
+#### 14.11. Добавить проверку вечного буста в условия кнопки
+
+В шаблоне, где проверяется условие для кнопки (около строки 782-786), добавить проверку `repairKitIsForever`:
+
+```javascript
+if ((item?.slug == 'cryo' && cryoIsForever && !cryoBlocked) ||
+  (item?.slug == 'jarvis' && jarvisIsForever && !jarvisBlocked) ||
+  (item?.slug == 'magnit' && magnitIsForever && !magnitBlocked) ||
+  (item?.slug == 'asic_manager' && managerIsForever && !managerBlocked) ||
+  (item?.slug == 'repair_kit' && repairKitIsForever && !repairKitBlocked)) {
+  return;
+}
+```
+
+#### 14.12. Добавить проверку блокировки NFT в условия кнопки
+
+В том же месте (около строки 788-791), добавить проверку `repairKitBlocked`:
+
+```javascript
+else if ((item?.slug == 'cryo' && cryoBlocked) ||
+  (item?.slug == 'jarvis' && jarvisBlocked) ||
+  (item?.slug == 'magnit' && magnitBlocked) ||
+  (item?.slug == 'asic_manager' && managerBlocked) ||
+  (item?.slug == 'repair_kit' && repairKitBlocked)) {
+  // Логика ускорения разблокировки NFT
+  const res = await host.post('timed-nft-stars/', {
+    timed_nft_id: app.timed_nfts.find(el => el.name == foreverBoosts?.[item?.slug]?.name)?.id,
+  })
+  // ... остальная логика
+}
+```
+
+#### 14.13. Добавить в классы кнопки
+
+В шаблоне, где определяются классы кнопки (около строки 775-780), добавить:
+
+```javascript
+:class="{
+  speedup: (item?.slug == 'jarvis' && jarvisBlocked) || 
+           (item?.slug == 'cryo' && cryoBlocked) || 
+           (item?.slug == 'magnit' && magnitBlocked) || 
+           (item?.slug == 'asic_manager' && managerBlocked) ||
+           (item?.slug == 'repair_kit' && repairKitBlocked),
+  forever: paymentRadio == 'ton' && item?.slug !== 'azot' && item?.slug !== 'autostart' && 
+           !((item?.slug == 'cryo' && cryoBlocked) || 
+             (item?.slug == 'jarvis' && jarvisBlocked) || 
+             (item?.slug == 'magnit' && magnitBlocked) || 
+             (item?.slug == 'asic_manager' && managerBlocked) ||
+             (item?.slug == 'repair_kit' && repairKitBlocked)),
+  bought: ((item?.slug == 'cryo' && cryoIsForever && !cryoBlocked) || 
+           (item?.slug == 'jarvis' && jarvisIsForever && !jarvisBlocked) || 
+           (item?.slug == 'magnit' && magnitIsForever && !magnitBlocked) || 
+           (item?.slug == 'asic_manager' && managerIsForever && !managerBlocked) ||
+           (item?.slug == 'repair_kit' && repairKitIsForever && !repairKitBlocked)),
+  // ... остальные классы
+}"
+```
+
+#### 14.14. Добавить в условия отображения текста кнопки
+
+В шаблоне, где отображается текст кнопки (около строки 813-853), добавить проверки для `repair_kit`:
+
+**Для вечного буста (bought):**
+```javascript
+<span class="p-0 m-0 w-full h-full text-nowrap" v-else-if="
+  paymentRadio == 'ton' &&
+  ((item?.slug == 'cryo' && cryoIsForever && !cryoBlocked) ||
+    (item?.slug == 'jarvis' && jarvisIsForever && !jarvisBlocked) ||
+    (item?.slug == 'magnit' && magnitIsForever && !magnitBlocked) ||
+    (item?.slug == 'asic_manager' && managerIsForever && !managerBlocked) ||
+    (item?.slug == 'repair_kit' && repairKitIsForever && !repairKitBlocked))
+">{{ t('common.bought') }}</span>
+<span class="p-0 m-0 w-full h-full text-nowrap" v-else-if="
+  (paymentRadio == 'stars' || paymentRadio == 'fbtc') &&
+  ((item?.slug == 'cryo' && cryoIsForever && !cryoBlocked) ||
+    (item?.slug == 'jarvis' && jarvisIsForever && !jarvisBlocked) ||
+    (item?.slug == 'magnit' && magnitIsForever && !magnitBlocked) ||
+    (item?.slug == 'asic_manager' && managerIsForever && !managerBlocked) ||
+    (item?.slug == 'repair_kit' && repairKitIsForever && !repairKitBlocked))
+">{{ t('common.bought') }}</span>
+```
+
+**Для блокированного NFT (speedup):**
+```javascript
+<span class="flex text-[12px] items-center gap-1"
+  v-if="(item?.slug == 'jarvis' && jarvisBlocked) || 
+        (item?.slug == 'cryo' && cryoBlocked) || 
+        (item?.slug == 'magnit' && magnitBlocked) || 
+        (item?.slug == 'asic_manager' && managerBlocked) ||
+        (item?.slug == 'repair_kit' && repairKitBlocked)">
+  {{ t('common.speedup') }}
+  <img src="@/assets/wheel_stars.png" width="18px" height="18px" />
+</span>
+```
+
+#### 14.15. Добавить в условия для SBT/Premium меток
+
+В шаблоне, где отображаются метки SBT и Premium (около строки 690-701), добавить проверки для `repair_kit`:
+
+```javascript
+<span v-if="((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft)) && 
+            (item?.slug !== 'azot' && item?.slug !== 'powerbank' && item?.slug !== 'premium_sub') && 
+            paymentRadio == 'stars' && (
+              item?.slug === 'cryo' ? !cryoIsForever && !cryoBlocked :
+              item?.slug === 'jarvis' ? !jarvisIsForever && !jarvisBlocked :
+              item?.slug == 'magnit' ? !magnitIsForever && !magnitBlocked :
+              item?.slug === 'asic_manager' ? !managerIsForever && !managerBlocked :
+              item?.slug === 'repair_kit' ? !repairKitIsForever && !repairKitBlocked : true
+            )" class="!text-[#FCD909] !font-bold">SBT</span>
+<span v-if="premiumActive && 
+            (item?.slug !== 'azot' && item?.slug !== 'powerbank' && item?.slug !== 'premium_sub') && 
+            paymentRadio == 'stars' && (
+              item?.slug === 'cryo' ? !cryoIsForever && !cryoBlocked :
+              item?.slug === 'jarvis' ? !jarvisIsForever && !jarvisBlocked :
+              item?.slug == 'magnit' ? !magnitIsForever && !magnitBlocked :
+              item?.slug === 'asic_manager' ? !managerIsForever && !managerBlocked :
+              item?.slug === 'repair_kit' ? !repairKitIsForever && !repairKitBlocked : true
+            )" class="!text-[#FCD909] !font-bold">{{ t('boost.king') }}</span>
+```
+
+#### 14.16. Добавить в условия для счетчика дней
+
+В шаблоне, где проверяется условие для отображения счетчика дней (около строки 705-716), добавить проверки для `repair_kit`:
+
+```javascript
+<div v-if="
+  (paymentRadio == 'stars' || paymentRadio == 'fbtc') &&
+  isFreeBooster(item) == false &&
+  item?.slug !== 'azot' &&
+  item?.slug !== 'powerbank' &&
+  item?.slug !== 'magnit' &&
+  (
+    item?.slug === 'cryo' ? !cryoIsForever && !cryoBlocked :
+    item?.slug === 'jarvis' ? !jarvisIsForever && !jarvisBlocked :
+    item?.slug === 'asic_manager' ? !managerIsForever && !managerBlocked :
+    item?.slug === 'repair_kit' ? !repairKitIsForever && !repairKitBlocked : true
+  )
+" class="boost-counter">
+  <!-- ... содержимое счетчика ... -->
+</div>
+```
+
+#### 14.17. Добавить в условие для отображения "forever" текста (TON payment)
+
+В шаблоне, где отображается текст "forever" для TON payment (около строки 766-772), добавить проверку для `repair_kit`:
+
+```javascript
+<div v-if="
+  paymentRadio == 'ton'
+  && ((item?.slug == 'cryo' && !cryoIsForever && !cryoBlocked) ||
+    (item?.slug == 'jarvis' && !jarvisIsForever && !jarvisBlocked) ||
+    (item?.slug == 'magnit' && !magnitIsForever && !magnitBlocked) ||
+    (item?.slug == 'asic_manager' && !managerIsForever && !managerBlocked) ||
+    (item?.slug == 'repair_kit' && !repairKitIsForever && !repairKitBlocked))
+">
+  <span class="always-text">{{ t('common.forever') }}</span>
+</div>
+```
+
+#### 14.18. Добавить в условие для кнопки "continue" (продолжить)
+
+В шаблоне, где отображается кнопка "continue" для активного буста (около строки 822), добавить проверку для `repair_kit`:
+
+```javascript
+<span
+  v-else-if="(paymentRadio == 'stars' || paymentRadio == 'fbtc') && 
+              isActiveBooster(item) && 
+              (item?.slug == 'jarvis' && !jarvisIsForever) ||
+              (item?.slug == 'repair_kit' && !repairKitIsForever)">
+  {{ t('common.continue') }}
+  <!-- ... остальной код с ценами ... -->
+</span>
+```
+
+**Примечание:** Кнопка "continue" показывается когда буст активен, но не вечный (можно продлить).
+
+В шаблоне, где проверяется список бустов для отображения скидки SBT/Premium (около строки 904-909), добавить `'repair_kit'`:
+
+```javascript
+(item?.slug == 'jarvis' ||
+  item?.slug == 'magnit' ||
+  item?.slug == 'cryo' ||
+  item?.slug == 'asic_manager' ||
+  item?.slug == 'electrics' ||
+  item?.slug == 'premium_sub' ||
+  item?.slug == 'repair_kit'
+)
+```
+
+**Примечание:** Это условие используется для отображения зачеркнутой цены при наличии скидки SBT/Premium (когда количество дней < 5).
+
+### 15. Backend: Настройка GradationConfig для Repair Kit NFT
+
+**Файл:** Админка Django `/admin/core/gradationconfig/add/`
+
+Для работы системы блокировки NFT (TimedUserNFT) нужно создать конфигурацию:
+
+1. Войти в админку: `/admin/core/gradationconfig/add/`
+2. Создать новую конфигурацию:
+   - **Name:** `Repair Kit` (должно точно совпадать с именем NFT в метаданных)
+   - **Gradation minutes:** Время блокировки в минутах (например, 60 для 1 часа)
+   - **Gradation value:** Стоимость ускорения разблокировки в Stars
+
+**Примечание:** Эта конфигурация используется для системы блокировки NFT после подключения нового кошелька.
+
+### 16. Frontend: Добавление локализации
 
 **Файлы:** 
 - `src/locales/ru.json`
@@ -545,20 +931,155 @@ repair_kit: 'repair_kit_expires',
 
 Добавить переводы для буста "Рем. Комплект" (по аналогии с другими бустами).
 
-### 15. Админка: Настройка буста
+### 17. Админка: Настройка буста
+
+**Важно:** Все поля уже существуют в модели `Booster`. Не нужно создавать новые поля, используйте существующие.
 
 1. Войти в админку Django: `/admin/tasks/booster/add/`
-2. Создать новый буст со следующими параметрами:
-   - **Slug:** `repair_kit`
-   - **Title:** "Рем. Комплект" (и соответствующие переводы)
-   - **Description:** Описание функционала
-   - **Prices:** Установить цены для разных уровней станций (price1-price7, price1_fbtc-price7_fbtc)
-   - **Status1/Status2:** Статусы для неактивного/активного состояния
-   - **Additional info1/Additional info2:** Дополнительная информация
+2. Создать новый буст со следующими параметрами (используя те же поля что и для Jarvis Bot):
 
-### 16. Передача файлов на серверы
+#### 17.1. Основные поля
 
-#### 16.1. Передача файлов на тестовый сервер
+- **Order number:** `3.0` (или следующий номер после существующих бустов)
+- **Slug:** `repair_kit` (выбрать из выпадающего списка: "Рем. Комплект | фиксирует Power")
+- **Title:** `Рем. Комплект`
+- **Title ru:** `Рем. Комплект`
+- **Title en:** `Repair Kit`
+- **Icon:** Загрузить иконку буста (например, `booster_icons/Repair_Kit.webp`)
+
+#### 17.2. Статусы
+
+- **Status1:** `Не активний`
+- **Status1 ru:** `Не активен`
+- **Status1 en:** `Inactive`
+- **Status2:** `Активно`
+- **Status2 ru:** `Активно`
+- **Status2 en:** `Active`
+
+#### 17.3. Дополнительная информация
+
+**Важно:** Все тексты настраиваются в админке. Примеры значений (можно изменить в админке):
+
+- **Additional info1:** `Від 1 до 30 днів` (пример)
+- **Additional info1 ru:** `От 1 до 30 дней` (пример)
+- **Additional info1 en:** `From 1 to 30 days` (пример)
+- **Additional info2:** `Залишилось {N}` (пример)
+- **Additional info2 ru:** `Осталось {N}` (пример)
+- **Additional info2 en:** `Remaining {N}` (пример)
+
+**Примечание:** 
+- `{N}` будет заменено на количество дней в коде автоматически
+- Все тексты берутся из модели `Booster` через API, не захардкожены в коде
+- Администратор может изменить тексты в любой момент через админку
+
+#### 17.4. Описание
+
+**Важно:** Описания настраиваются в админке. Примеры текстов (можно изменить в админке):
+
+- **Description:** 
+  ```
+  Завдяки передовим технологіям ремонту, цей бустер фіксує рівень Power вашої електростанції на момент активації та не дозволяє йому знижуватися. Ідеальний вибір для збереження продуктивності станції.
+  ```
+  (пример, можно изменить в админке)
+- **Description ru:**
+  ```
+  Благодаря передовым технологиям ремонта, данный бустер фиксирует уровень Power вашей электростанции на момент активации и не позволяет ему снижаться. Идеальный выбор для сохранения производительности станции.
+  ```
+  (пример, можно изменить в админке)
+- **Description en:**
+  ```
+  Thanks to advanced repair technologies, this booster locks your power plant's Power level at the moment of activation and prevents it from decreasing. The perfect choice for maintaining station performance.
+  ```
+  (пример, можно изменить в админке)
+
+**Примечание:** Все описания берутся из модели `Booster` через API и отображаются в интерфейсе. Администратор может изменить их в любой момент через админку без изменения кода.
+
+#### 17.5. Popup сообщение
+
+**Важно:** Popup сообщения настраиваются в админке. Примеры текстов (можно изменить в админке):
+
+- **Popup:**
+  ```
+  Ви активували підсилювач «Рем. Комплект», термін його дії {N}.
+  ```
+  (пример, можно изменить в админке)
+- **Popup ru:**
+  ```
+  Вы активировали усилитель «Рем. Комплект», срок его действия {N}.
+  ```
+  (пример, можно изменить в админке)
+- **Popup en:**
+  ```
+  You have activated the enhancer «Repair Kit», its expiration date is {N}.
+  ```
+  (пример, можно изменить в админке)
+
+**Примечание:** 
+- `{N}` будет заменено на количество дней в коде автоматически
+- Все popup сообщения берутся из модели `Booster` через API
+- Администратор может изменить тексты в любой момент через админку без изменения кода
+
+#### 17.6. Цены (Stars)
+
+**Важно:** Цены настраиваются в админке и могут быть изменены в любой момент без изменения кода. Примеры значений (как у Jarvis Bot):
+
+- **Price1:** `149` (пример для уровней станции 1-3)
+- **Price2:** `149` (пример для уровней станции 1-3)
+- **Price3:** `149` (пример для уровней станции 1-3)
+- **Price4:** `349` (пример для уровня станции 4)
+- **Price5:** `449` (пример для уровня станции 5)
+- **Price6:** `599` (пример для уровня станции 6)
+- **Price7:** `699` (пример для уровня станции 7 и выше)
+- **Price8:** `799` (резерв, можно настроить позже)
+- **Price9:** `899` (резерв, можно настроить позже)
+- **Price10:** `999` (резерв, можно настроить позже)
+
+**Примечание:** Конкретные значения цен устанавливаются администратором в админке в зависимости от бизнес-логики. Код автоматически использует эти значения из модели `Booster`.
+
+#### 17.7. Цены (fBTC)
+
+**Важно:** Цены настраиваются в админке и могут быть изменены в любой момент без изменения кода. Примеры значений (как у Jarvis Bot):
+
+- **Price1 fbtc:** `99.2` (пример для уровней станции 1-3)
+- **Price2 fbtc:** `99.2` (пример для уровней станции 1-3)
+- **Price3 fbtc:** `118.0` (пример для уровней станции 1-3)
+- **Price4 fbtc:** `198.0` (пример для уровня станции 4)
+- **Price5 fbtc:** `238.0` (пример для уровня станции 5)
+- **Price6 fbtc:** `498.0` (пример для уровня станции 6)
+- **Price7 fbtc:** `698.0` (пример для уровня станции 7 и выше)
+- **Price8 fbtc:** `918.0` (резерв, можно настроить позже)
+- **Price9 fbtc:** `1198.0` (резерв, можно настроить позже)
+- **Price10 fbtc:** `1398.0` (резерв, можно настроить позже)
+
+**Примечание:** Конкретные значения цен устанавливаются администратором в админке в зависимости от бизнес-логики. Код автоматически использует эти значения из модели `Booster`.
+
+#### 17.8. Параметры N1, N2, N3
+
+- **N1:** (можно оставить пустым, не используется для repair_kit)
+- **N2:** (можно оставить пустым, не используется для repair_kit)
+- **N3:** (можно оставить пустым, не используется для repair_kit)
+
+**Примечание:** Поля N1, N2, N3 используются для других бустов (например, azot использует n1 для дополнительной стоимости). Для repair_kit они не нужны.
+
+**Примечание:** Логика градации работает через `gen_config`:
+- Уровень определяется как `Math.ceil(gen_config.id / 3)`
+- Если результат >= 7, используется price7 (максимум)
+- Иначе используется price{результат}
+- **Все цены берутся из модели `Booster` через API, не захардкожены в коде**
+- Цены должны быть настроены для всех уровней (1-10) для Stars и fBTC в админке
+- Пример: если `gen_config.id = 10`, то `Math.ceil(10/3) = 4`, используется `price4` из модели `Booster`
+- Пример: если `gen_config.id = 21`, то `Math.ceil(21/3) = 7`, используется `price7` из модели `Booster` (максимум)
+
+**Важно:** 
+- В backend используется функция `get_booster_price()` из `tasks/services.py` (строка 70-72), которая автоматически определяет цену на основе уровня станции через `STATION_LEVELS.index(user.station_type) + 1`
+- Эта функция **читает цены из модели `Booster`** через `getattr(booster, f"price{station_index}_fbtc" if fbtc else f"price{station_index}")`
+- Эта функция уже используется в `activate_booster()` для всех бустов, включая repair_kit (строка 124-126 для cryo, аналогично будет для repair_kit)
+- В frontend используется более сложная логика через `gen_config`, которая делит `id` на 3 и округляет вверх, но **цены все равно берутся из `item?.[price]`**, где `item` - это объект буста из API
+- **Никакие цены не захардкожены в коде** - все берется из админки через API
+
+### 18. Передача файлов на серверы
+
+#### 18.1. Передача файлов на тестовый сервер
 
 **Из локальной папки `edit/` на тестовый сервер:**
 
@@ -575,6 +1096,9 @@ scp edit/tasks/views.py projects-srv:/home/admsrv/tbtc_dev/tasks/views.py
 
 # Передача файлов tgbot
 scp edit/tgbot/views.py projects-srv:/home/admsrv/tbtc_dev/tgbot/views.py
+
+# Передача файла для проверки NFT (если изменен)
+scp edit/t.py projects-srv:/home/admsrv/tbtc_dev/t.py
 
 # Передача миграций (если созданы локально)
 scp edit/core/migrations/0XXX_*.py projects-srv:/home/admsrv/tbtc_dev/core/migrations/
@@ -593,7 +1117,7 @@ rsync -av --exclude='__pycache__' --exclude='*.pyc' edit/tasks/ projects-srv:/ho
 rsync -av --exclude='__pycache__' --exclude='*.pyc' edit/tgbot/ projects-srv:/home/admsrv/tbtc_dev/tgbot/
 ```
 
-#### 16.2. Передача файлов на продакшн сервер
+#### 18.2. Передача файлов на продакшн сервер
 
 **Аналогично тестовому, но путь `/home/admsrv/tbtc`:**
 
@@ -623,7 +1147,7 @@ rsync -av --exclude='__pycache__' --exclude='*.pyc' edit/tasks/ projects-srv:/ho
 rsync -av --exclude='__pycache__' --exclude='*.pyc' edit/tgbot/ projects-srv:/home/admsrv/tbtc/tgbot/
 ```
 
-#### 16.3. Передача frontend файлов
+#### 18.3. Передача frontend файлов
 
 **На тестовый сервер:**
 ```bash
@@ -646,7 +1170,7 @@ scp src/locales/uk.json projects-srv:/home/admsrv/tbtc/frontend/src/locales/uk.j
 ssh projects-srv "cd tbtc_dev && find . -name 'Boost.vue' -type f"
 ```
 
-### 17. Тестирование на тестовом сервере
+### 19. Тестирование на тестовом сервере
 
 1. **Подключиться к тестовому серверу:**
    ```bash
@@ -684,7 +1208,7 @@ ssh projects-srv "cd tbtc_dev && find . -name 'Boost.vue' -type f"
    - Проверку обновления `repair_kit_power_level` при ремонте
    - Отображение в интерфейсе
 
-### 18. Деплой на продакшн
+### 20. Деплой на продакшн
 
 После успешного тестирования на тестовом сервере:
 
@@ -810,14 +1334,16 @@ ssh projects-srv "cd tbtc && ls -t tasks/migrations/0*.py | head -1"
 ```bash
 scp edit/core/models.py edit/core/views.py edit/core/serializers.py projects-srv:/home/admsrv/tbtc_dev/core/ && \
 scp edit/tasks/models.py edit/tasks/services.py edit/tasks/views.py projects-srv:/home/admsrv/tbtc_dev/tasks/ && \
-scp edit/tgbot/views.py projects-srv:/home/admsrv/tbtc_dev/tgbot/
+scp edit/tgbot/views.py projects-srv:/home/admsrv/tbtc_dev/tgbot/ && \
+scp edit/t.py projects-srv:/home/admsrv/tbtc_dev/t.py
 ```
 
 **Backend файлы на продакшн:**
 ```bash
 scp edit/core/models.py edit/core/views.py edit/core/serializers.py projects-srv:/home/admsrv/tbtc/core/ && \
 scp edit/tasks/models.py edit/tasks/services.py edit/tasks/views.py projects-srv:/home/admsrv/tbtc/tasks/ && \
-scp edit/tgbot/views.py projects-srv:/home/admsrv/tbtc/tgbot/
+scp edit/tgbot/views.py projects-srv:/home/admsrv/tbtc/tgbot/ && \
+scp edit/t.py projects-srv:/home/admsrv/tbtc/t.py
 ```
 
 ## Важные замечания
@@ -835,6 +1361,28 @@ scp edit/tgbot/views.py projects-srv:/home/admsrv/tbtc/tgbot/
 6. **Структура на сервере** - на сервере нет папки `edit`, файлы находятся в `core/` и `tasks/` напрямую. Учитывайте это при передаче файлов.
 
 7. **Виртуальное окружение** - на сервере используйте `.venv/bin/python` вместо `python` для выполнения команд Django.
+
+8. **Вечные NFT бусты** - система проверяет NFT на кошельках пользователей через функцию `main_boosters()` в `edit/t.py`. Эта функция должна запускаться периодически (через celery или cron). Если найден NFT нужного класса - устанавливается `repair_kit_expires` в 2100-01-01 (вечный буст).
+
+9. **Классы NFT Repair Kit** - используются те же классы что и у Jarvis Bot:
+   - **4 class:** для уровней станции 1-3
+   - **3 class:** для уровней станции 4-5
+   - **2 class:** для уровней станции 6-7
+   - **1 class:** для уровней станции 8-9
+
+10. **TimedUserNFT** - система блокировки NFT после подключения нового кошелька. Нужно создать `GradationConfig` с именем "Repair Kit" для работы этой системы.
+
+11. **Запуск функции main_boosters()** - эта функция запускается в отдельном потоке в `edit/t.py` (строка 1627). Убедитесь что файл `t.py` запущен на сервере для периодической проверки NFT.
+
+12. **Имя NFT в метаданных** - имя NFT должно быть точно "Repair Kit" (без класса). Класс указывается в скобках: "Repair Kit (4 class)", "Repair Kit (3 class)" и т.д. В коде используется `name.split("(")[0].strip()` для получения базового имени.
+
+13. **КРИТИЧЕСКИ ВАЖНО: Нет захардкоженных значений** - все настройки буста (цены, тексты, описания) настраиваются через админку Django и берутся из модели `Booster` через API:
+    - **Цены** - берутся из полей `price1-price10` и `price1_fbtc-price10_fbtc` модели `Booster`
+    - **Тексты** - берутся из полей `title`, `status1`, `status2`, `additional_info1`, `additional_info2`, `description`, `popup` модели `Booster`
+    - **Иконка** - берется из поля `icon` модели `Booster`
+    - В коде используются только `booster.price1`, `booster.title`, `booster.status1` и т.д. - все из модели
+    - **Не должно быть** захардкоженных значений типа `price = 149` или `title = "Рем. Комплект"` в коде
+    - Все примеры в инструкции - это только примеры для заполнения админки, не для кода
 
 ## Чеклист перед деплоем
 
