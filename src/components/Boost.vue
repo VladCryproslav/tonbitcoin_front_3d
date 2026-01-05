@@ -17,6 +17,27 @@ const loc_add = computed(() => locale.value == 'uk' ? '' : locale.value == 'ru' 
 const isMiners = ref(false)
 const paymentRadio = ref('fbtc')
 
+// Константа для уровней станций (соответствует backend STATION_LEVELS)
+const STATION_LEVELS = [
+  "Boiler house",
+  "Coal power plant",
+  "Thermal power plant",
+  "Geothermal power plant",
+  "Nuclear power plant",
+  "Thermonuclear power plant",
+  "Dyson Sphere",
+  "Neutron star",
+  "Antimatter",
+  "Galactic core"
+]
+
+// Функция для определения уровня станции (1-10)
+const getStationLevel = (stationType) => {
+  if (!stationType) return 1
+  const index = STATION_LEVELS.indexOf(stationType)
+  return index >= 0 ? index + 1 : 1  // от 1 до 10
+}
+
 const modalStatus = ref(null)
 const modalTitle = ref(null)
 const modalBody = ref(null)
@@ -404,7 +425,8 @@ const getTotalStarsPrice = (item) => {
         sum = Math.floor(sum * (100 - ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) ? 5 : ((app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) ? 10 : 0)) / 100)
       }
     } else if (item?.slug == 'jarvis') {
-      price = `price${app?.user?.station_type ? (Math.ceil(app.gen_config.find((el) => el?.station_type == app?.user?.station_type)?.id / 3) >= 7 ? 7 : Math.ceil(app.gen_config.find((el) => el?.station_type == app?.user?.station_type)?.id / 3)) : 1}${paymentRadio.value == 'fbtc' ? "_fbtc" : ""}`
+      const stationLevel = getStationLevel(app?.user?.station_type)
+      price = `price${Math.min(stationLevel, 10)}${paymentRadio.value == 'fbtc' ? "_fbtc" : ""}`
       sum = item?.[price] * boosters_count.value[item?.slug]
       if (((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) && paymentRadio.value == 'stars') {
         sum = Math.floor(sum * (100 - ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) ? 5 : ((app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) ? 10 : 0)) / 100)
@@ -413,7 +435,8 @@ const getTotalStarsPrice = (item) => {
         sum *= (100 - Math.min(boosters_count.value[item?.slug], 30)) / 100
       }
     } else if (item?.slug == 'cryo') {
-      price = `price${app?.user?.station_type ? (Math.ceil(app.gen_config.find((el) => el?.station_type == app?.user?.station_type)?.id / 3) >= 7 ? 7 : Math.ceil(app.gen_config.find((el) => el?.station_type == app?.user?.station_type)?.id / 3)) : 1}${paymentRadio.value == 'fbtc' ? "_fbtc" : ""}`
+      const stationLevel = getStationLevel(app?.user?.station_type)
+      price = `price${Math.min(stationLevel, 10)}${paymentRadio.value == 'fbtc' ? "_fbtc" : ""}`
       sum = item?.[price] * boosters_count.value[item?.slug]
       if (((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) && paymentRadio.value == 'stars') {
         sum = Math.floor(sum * (100 - ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) ? 5 : ((app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) ? 10 : 0)) / 100)
@@ -451,7 +474,8 @@ const getTotalStarsPrice = (item) => {
         sum *= (100 - Math.min(boosters_count.value[item?.slug], 30)) / 100
       }
     } else if (item?.slug == 'electrics') {
-      price = `price${app?.user?.station_type ? (Math.ceil(app.gen_config.find((el) => el?.station_type == app?.user?.station_type)?.id / 3) >= 7 ? 7 : Math.ceil(app.gen_config.find((el) => el?.station_type == app?.user?.station_type)?.id / 3)) : 1}${paymentRadio.value == 'fbtc' ? "_fbtc" : ""}`
+      const stationLevel = getStationLevel(app?.user?.station_type)
+      price = `price${Math.min(stationLevel, 10)}${paymentRadio.value == 'fbtc' ? "_fbtc" : ""}`
       sum = item?.[price] * boosters_count.value[item?.slug]
       if (((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) && paymentRadio.value == 'stars') {
         sum = Math.floor(sum * (100 - ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) ? 5 : ((app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) ? 10 : 0)) / 100)
@@ -460,7 +484,8 @@ const getTotalStarsPrice = (item) => {
         sum *= (100 - Math.min(boosters_count.value[item?.slug], 30)) / 100
       }
     } else if (item?.slug == 'premium_sub') {
-      price = `price${app?.user?.station_type ? (Math.ceil(app.gen_config.find((el) => el?.station_type == app?.user?.station_type)?.id / 3) >= 7 ? 7 : Math.ceil(app.gen_config.find((el) => el?.station_type == app?.user?.station_type)?.id / 3)) : 1}${paymentRadio.value == 'fbtc' ? "_fbtc" : ""}`
+      const stationLevel = getStationLevel(app?.user?.station_type)
+      price = `price${Math.min(stationLevel, 10)}${paymentRadio.value == 'fbtc' ? "_fbtc" : ""}`
       sum = item?.[price] * boosters_count.value[item?.slug]
       if (((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft)) && paymentRadio.value == 'stars') {
         sum = Math.floor(sum * (100 - ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) ? 5 : ((app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft)) ? 10 : 0)) / 100)
@@ -470,8 +495,9 @@ const getTotalStarsPrice = (item) => {
       }
     } else if (item?.slug == 'repair_kit') {
       // Используем ту же логику градации что и для jarvis/cryo/electrics/premium_sub
-      // Цена зависит от уровня станции через gen_config
-      price = `price${app?.user?.station_type ? (Math.ceil(app.gen_config.find((el) => el?.station_type == app?.user?.station_type)?.id / 3) >= 7 ? 7 : Math.ceil(app.gen_config.find((el) => el?.station_type == app?.user?.station_type)?.id / 3)) : 1}${paymentRadio.value == 'fbtc' ? "_fbtc" : ""}`
+      // Цена зависит от уровня станции (1-10)
+      const stationLevel = getStationLevel(app?.user?.station_type)
+      price = `price${Math.min(stationLevel, 10)}${paymentRadio.value == 'fbtc' ? "_fbtc" : ""}`
       sum = item?.[price] * boosters_count.value[item?.slug]
       // Применяем скидку SBT/Premium для Stars
       if (((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) && paymentRadio.value == 'stars') {
@@ -936,22 +962,7 @@ onUnmounted(() => {
                   <span v-if="item?.slug == 'jarvis' || item?.slug == 'cryo' || item?.slug == 'repair_kit'"
                     class="text-[8px] text-white font-bold line-through decoration-red-400 decoration-[2px]">{{
                       Math.ceil(
-                        item?.[
-                        `price${app?.user?.station_type
-                          ? Math.ceil(
-                            app.gen_config.find(
-                              (el) => el?.station_type == app?.user?.station_type,
-                            )?.id / 3,
-                          ) >= 7
-                            ? 7
-                            : Math.ceil(
-                              app.gen_config.find(
-                                (el) => el?.station_type == app?.user?.station_type,
-                              )?.id / 3,
-                            )
-                          : 1
-                        }${paymentRadio == 'fbtc' ? "_fbtc" : ""}`
-                        ] * boosters_count?.[item?.slug],
+                        item?.[`price${getStationLevel(app?.user?.station_type)}${paymentRadio == 'fbtc' ? "_fbtc" : ""}`] * boosters_count?.[item?.slug],
                       )
                     }}</span>
                   <span v-else
@@ -982,22 +993,7 @@ onUnmounted(() => {
                   <span v-if="item?.slug == 'jarvis' || item?.slug == 'cryo' || item?.slug == 'repair_kit'"
                     class="text-[8px] text-white font-bold line-through decoration-red-400 decoration-[2px]">{{
                       Math.ceil(
-                        item?.[
-                        `price${app?.user?.station_type
-                          ? Math.ceil(
-                            app.gen_config.find(
-                              (el) => el?.station_type == app?.user?.station_type,
-                            )?.id / 3,
-                          ) >= 7
-                            ? 7
-                            : Math.ceil(
-                              app.gen_config.find(
-                                (el) => el?.station_type == app?.user?.station_type,
-                              )?.id / 3,
-                            )
-                          : 1
-                        }${paymentRadio == 'fbtc' ? "_fbtc" : ""}`
-                        ] * boosters_count?.[item?.slug],
+                        item?.[`price${getStationLevel(app?.user?.station_type)}${paymentRadio == 'fbtc' ? "_fbtc" : ""}`] * boosters_count?.[item?.slug],
                       )
                     }}</span>
                   <span v-else
