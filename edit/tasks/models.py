@@ -216,6 +216,7 @@ class Booster(models.Model):
         ("asic_manager", "ASIC Менеджер | остановка от 1 до n1 (макс. 3) раз"),
         ("electrics", "Электрики | +n1 инженеров"),
         ("premium_sub", "Премиум подписка"),
+        ("repair_kit", "Рем. Комплект | фиксирует Power на n1%"),
     ]
 
     order_number = models.FloatField()

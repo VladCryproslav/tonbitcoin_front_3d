@@ -179,6 +179,9 @@ def activate_booster(user: UserProfile, booster: Booster, day_count: int, fbtc=F
     elif booster.slug == "premium_sub":
         discount = max(1 - day_count * 0.01, 0.7) if day_count >= 5 else 1
         return math.ceil(get_booster_price(user, booster, fbtc) * day_count * discount)
+    elif booster.slug == "repair_kit":
+        discount = max(1 - day_count * 0.01, 0.7) if day_count >= 5 else 1
+        return math.ceil(get_booster_price(user, booster, fbtc) * day_count * discount)
 
 from django.utils import timezone
 
@@ -194,7 +197,8 @@ def check_booster_time_limit(user: UserProfile, booster_slug: str, days_to_add: 
         'cryo': 'cryo_expires', 
         'magnit': 'magnit_expires',
         'asic_manager': 'manager_expires',
-        'premium_sub': 'premium_sub_expires'
+        'premium_sub': 'premium_sub_expires',
+        'repair_kit': 'repair_kit_expires'
     }
     
     if booster_slug in booster_fields:
@@ -256,7 +260,7 @@ def apply_booster_reward(user: UserProfile, reward: UserReward):
         
         return True, "Електрики додано до балансу"
 
-    elif reward.asset_type in ["jarvis", "magnit", "asic_manager"]:
+    elif reward.asset_type in ["jarvis", "magnit", "asic_manager", "repair_kit"]:
         # Бустери з терміном дії - перевіряємо обмеження
         days_to_add = int(reward.asset_quantity or 1)
         can_add, error_msg = check_booster_time_limit(user, reward.asset_type, days_to_add)
@@ -268,7 +272,8 @@ def apply_booster_reward(user: UserProfile, reward: UserReward):
         field_mapping = {
             'jarvis': 'jarvis_expires',
             'magnit': 'magnit_expires', 
-            'asic_manager': 'manager_expires'
+            'asic_manager': 'manager_expires',
+            'repair_kit': 'repair_kit_expires'
         }
         
         field_name = field_mapping[reward.asset_type]
@@ -281,8 +286,13 @@ def apply_booster_reward(user: UserProfile, reward: UserReward):
         else:
             # Активуємо новий бустер
             new_expiry = current_time + timezone.timedelta(days=days_to_add)
+        
+        update_data = {field_name: new_expiry}
+        # Для repair_kit также сохраняем текущий уровень power
+        if reward.asset_type == "repair_kit":
+            update_data["repair_kit_power_level"] = user.power
             
-        UserProfile.objects.filter(id=user.id).update(**{field_name: new_expiry})
+        UserProfile.objects.filter(id=user.id).update(**update_data)
         return True, f"{reward.asset_type.title()} активовано на {days_to_add} днів"
         
     elif reward.asset_type == "ASIC":

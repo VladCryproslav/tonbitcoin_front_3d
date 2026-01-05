@@ -672,6 +672,28 @@ class ActivateBoosterFTBCView(APIView):
                 UserProfile.objects.filter(id=user_profile.id).update(
                     premium_sub_expires=premium_sub_expires
                 )
+            elif booster.slug == "repair_kit":
+                now = timezone.now()
+                repair_kit_expires = user_profile.repair_kit_expires
+                is_active = repair_kit_expires and repair_kit_expires > now
+
+                if not is_active:
+                    repair_kit_expires = now
+
+                repair_kit_expires += timedelta(days=int(days))
+
+                if repair_kit_expires > now + timedelta(days=31):
+                    return Response(
+                        {"status": "Booster cannot be activated for more than 31 days"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                    repair_kit_expires = now + timedelta(days=31)
+
+                # Сохраняем текущий уровень power при активации
+                UserProfile.objects.filter(id=user_profile.id).update(
+                    repair_kit_expires=repair_kit_expires,
+                    repair_kit_power_level=user_profile.power,  # Новое поле для хранения уровня
+                )
         # if price > 0:
         #     link = bot.create_invoice_link(
         #         title=f"Покупка бустера {booster.title}",

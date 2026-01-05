@@ -444,6 +444,8 @@ if name in ["Jarvis Bot", "Cryochamber", "ASIC Manager", "Magnetic ring", "Repai
 repair_kit_owners = dict()
 ```
 
+**Примечание:** Если в файле есть несколько функций с похожим кодом, нужно добавить `repair_kit_owners = dict()` в функцию `main_boosters()` (около строки 871-876).
+
 #### 12.3. Добавить проверку NFT Repair Kit
 
 После блока проверки "Magnetic ring" (около строки 965), добавить:
@@ -452,14 +454,12 @@ repair_kit_owners = dict()
 elif name == "Repair Kit":
     station_level = user.get_station_level() + 1
     good = False
-    # Логика классов такая же как у Jarvis Bot
-    if full_name == "Repair Kit (4 class)" and 1 <= station_level <= 3:
-        good = True
-    elif full_name == "Repair Kit (3 class)" and 4 <= station_level <= 5:
+    # Логика классов: 3 класса
+    if full_name == "Repair Kit (3 class)" and 3 <= station_level <= 5:
         good = True
     elif full_name == "Repair Kit (2 class)" and 6 <= station_level <= 7:
         good = True
-    elif full_name == "Repair Kit (1 class)" and 8 <= station_level <= 9:
+    elif full_name == "Repair Kit (1 class)" and station_level >= 8:
         good = True
     if good:
         repair_kit_owners[user.user_id] = True
@@ -488,21 +488,19 @@ UserProfile.objects.filter(
 - Если найден NFT "Repair Kit" нужного класса для уровня станции пользователя - устанавливает `repair_kit_expires` в 2100-01-01 (вечный буст)
 - Если NFT не найден, но `repair_kit_expires` был в 2100 году - сбрасывает в None
 - Проверка классов NFT Repair Kit:
-  - **4 class:** для уровней станции 1-3 (Boiler house, Coal power plant, Thermal power plant)
-  - **3 class:** для уровней станции 4-5 (Geothermal power plant, Nuclear power plant)
+  - **3 class:** для уровней станции 3-5 (Thermal power plant, Geothermal power plant, Nuclear power plant)
   - **2 class:** для уровней станции 6-7 (Thermonuclear power plant, Dyson Sphere)
-  - **1 class:** для уровней станции 8-9 (Neutron star, Antimatter)
+  - **1 class:** для уровней станции 8-9 и выше (Neutron star, Antimatter и выше)
 
 **Важно:** 
 - Функция использует `LinkedUserNFT` для связи NFT с пользователем
 - Проверяет `TimedUserNFT` для блокировки NFT после подключения нового кошелька
 - Если NFT заблокирован (`block_until > now`), он не учитывается при проверке
 
-**Классы NFT Repair Kit (по аналогии с Jarvis Bot):**
-- **4 class:** для уровней станции 1-3
-- **3 class:** для уровней станции 4-5
+**Классы NFT Repair Kit:**
+- **3 class:** для уровней станции 3-5
 - **2 class:** для уровней станции 6-7
-- **1 class:** для уровней станции 8-9
+- **1 class:** для уровней станции 8-9 и выше
 
 ### 13. Backend: Обновление сериализатора
 
@@ -1079,6 +1077,39 @@ else if ((item?.slug == 'cryo' && cryoBlocked) ||
 
 ### 18. Передача файлов на серверы
 
+**Список файлов для передачи на сервер:**
+
+#### Backend файлы (из папки `edit/`):
+
+1. **Core приложение:**
+   - `edit/core/models.py` - добавлены поля `repair_kit_expires` и `repair_kit_power_level`
+   - `edit/core/views.py` - добавлена защита от уменьшения Power при перегреве и тапах, обновление при ремонте
+
+2. **Tasks приложение:**
+   - `edit/tasks/models.py` - добавлен буст `repair_kit` в `BOOSTER_CHOICES`
+   - `edit/tasks/services.py` - добавлена логика активации и проверки времени для `repair_kit`
+   - `edit/tasks/views.py` - добавлена обработка активации в `ActivateBoosterFTBCView`
+
+3. **Telegram бот:**
+   - `edit/tgbot/views.py` - добавлена обработка активации в `got_payment`
+
+4. **NFT проверка:**
+   - `edit/t.py` - добавлена проверка NFT "Repair Kit" для вечного буста
+
+5. **Миграции (если созданы локально):**
+   - `edit/core/migrations/0XXX_*.py` - миграция для добавления полей в UserProfile
+   - `edit/tasks/migrations/0XXX_*.py` - миграция для добавления буста в Booster (если требуется)
+
+#### Frontend файлы (из папки `src/`):
+
+1. **Компоненты:**
+   - `src/components/Boost.vue` - добавлена полная поддержка буста `repair_kit`
+
+2. **Локализация:**
+   - `src/locales/ru.json` - добавлен перевод `"repair_kit": "Рем. Комплект"`
+   - `src/locales/en.json` - добавлен перевод `"repair_kit": "Repair Kit"`
+   - `src/locales/uk.json` - добавлен перевод `"repair_kit": "Рем. Комплект"`
+
 #### 18.1. Передача файлов на тестовый сервер
 
 **Из локальной папки `edit/` на тестовый сервер:**
@@ -1151,7 +1182,10 @@ rsync -av --exclude='__pycache__' --exclude='*.pyc' edit/tgbot/ projects-srv:/ho
 
 **На тестовый сервер:**
 ```bash
+# Компонент Boost.vue
 scp src/components/Boost.vue projects-srv:/home/admsrv/tbtc_dev/frontend/src/components/Boost.vue
+
+# Файлы локализации
 scp src/locales/ru.json projects-srv:/home/admsrv/tbtc_dev/frontend/src/locales/ru.json
 scp src/locales/en.json projects-srv:/home/admsrv/tbtc_dev/frontend/src/locales/en.json
 scp src/locales/uk.json projects-srv:/home/admsrv/tbtc_dev/frontend/src/locales/uk.json
@@ -1159,10 +1193,18 @@ scp src/locales/uk.json projects-srv:/home/admsrv/tbtc_dev/frontend/src/locales/
 
 **На продакшн сервер:**
 ```bash
+# Компонент Boost.vue
 scp src/components/Boost.vue projects-srv:/home/admsrv/tbtc/frontend/src/components/Boost.vue
+
+# Файлы локализации
 scp src/locales/ru.json projects-srv:/home/admsrv/tbtc/frontend/src/locales/ru.json
 scp src/locales/en.json projects-srv:/home/admsrv/tbtc/frontend/src/locales/en.json
 scp src/locales/uk.json projects-srv:/home/admsrv/tbtc/frontend/src/locales/uk.json
+```
+
+**Примечание:** Путь к frontend может отличаться. Проверьте структуру на сервере:
+```bash
+ssh projects-srv "cd tbtc_dev && find . -name 'Boost.vue' -type f"
 ```
 
 **Примечание:** Путь к frontend может отличаться. Проверьте структуру на сервере:
@@ -1364,11 +1406,10 @@ scp edit/t.py projects-srv:/home/admsrv/tbtc/t.py
 
 8. **Вечные NFT бусты** - система проверяет NFT на кошельках пользователей через функцию `main_boosters()` в `edit/t.py`. Эта функция должна запускаться периодически (через celery или cron). Если найден NFT нужного класса - устанавливается `repair_kit_expires` в 2100-01-01 (вечный буст).
 
-9. **Классы NFT Repair Kit** - используются те же классы что и у Jarvis Bot:
-   - **4 class:** для уровней станции 1-3
-   - **3 class:** для уровней станции 4-5
+9. **Классы NFT Repair Kit** - используется 3 класса:
+   - **3 class:** для уровней станции 3-5
    - **2 class:** для уровней станции 6-7
-   - **1 class:** для уровней станции 8-9
+   - **1 class:** для уровней станции 8-9 и выше
 
 10. **TimedUserNFT** - система блокировки NFT после подключения нового кошелька. Нужно создать `GradationConfig` с именем "Repair Kit" для работы этой системы.
 

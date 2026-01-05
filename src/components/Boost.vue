@@ -40,6 +40,10 @@ const managerIsForever = computed(() => {
   const date = new Date(app?.user?.manager_expires)
   return date.getFullYear() === 2100
 })
+const repairKitIsForever = computed(() => {
+  const date = new Date(app?.user?.repair_kit_expires)
+  return date.getFullYear() === 2100
+})
 
 const jarvisBlocked = computed(() => {
   const jarvisBlock = app.timed_nfts.find(el => el.name == 'Jarvis Bot')
@@ -56,6 +60,10 @@ const magnitBlocked = computed(() => {
 const managerBlocked = computed(() => {
   const managerBlock = app.timed_nfts.find(el => el.name == 'ASIC Manager')
   return new Date(managerBlock?.block_until) > new Date()
+})
+const repairKitBlocked = computed(() => {
+  const repairKitBlock = app.timed_nfts.find(el => el.name == 'Repair Kit')
+  return new Date(repairKitBlock?.block_until) > new Date()
 })
 
 const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= new Date())
@@ -84,6 +92,12 @@ const foreverBoosts = ref({
     price: 39,
     old_price: 49,
     link: 'https://getgems.io/tbtc?filter=%7B%22attributes%22%3A%7B%7D%2C%22q%22%3A%22manager%22%7D#items'
+  },
+  'repair_kit': {
+    name: 'Repair Kit',
+    price: 89,
+    old_price: 99,
+    link: 'https://getgems.io/tbtc?filter=%7B%22attributes%22%3A%7B%7D%2C%22q%22%3A%22Repair%20Kit%22%7D#items'
   }
 })
 
@@ -347,6 +361,27 @@ const parseBoosterInfo = (booster) => {
           additional = paymentRadio.value == 'ton' ? t('common.not_bought') : booster?.[`additional_info1${loc_add.value}`]
         }
     }
+    if (booster?.slug == 'repair_kit') {
+      const repairKitBlock = app.timed_nfts.find(el => el.name == 'Repair Kit')
+      if (new Date(repairKitBlock?.block_until) > new Date()) {
+        status = `<span class="!text-[#FCD909]">${t('common.connect')}</span>`
+        additional = `<img src="${timeImg}" style="width: 12px; height: 13px;"/> ${getTimeRemaining(repairKitBlock?.block_until).time}`
+      } else if (app?.user?.repair_kit_expires) {
+        const daysDiff = Math.max(0, Math.round((new Date(app?.user?.repair_kit_expires) - new Date()) / (1000 * 60 * 60 * 24)))
+        if (daysDiff > 0) {
+          status = booster?.[`status2${loc_add.value}`]
+          additional = repairKitIsForever.value
+            ? `<img src="${mintableImg}" style="width: 12px; height: 13px;"/> ${t('common.forever')}`
+            : booster?.[`additional_info2${loc_add.value}`]?.replace('{N}', t('common.days', { n: +daysDiff }))
+        } else {
+          status = booster?.[`status1${loc_add.value}`]
+          additional = paymentRadio.value == 'ton' ? t('common.not_bought') : booster?.[`additional_info1${loc_add.value}`]
+        }
+      } else {
+        status = booster?.[`status1${loc_add.value}`]
+        additional = paymentRadio.value == 'ton' ? t('common.not_bought') : booster?.[`additional_info1${loc_add.value}`]
+      }
+    }
     return { status, additional, booster }
   }).value
 }
@@ -430,6 +465,19 @@ const getTotalStarsPrice = (item) => {
       if (((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft)) && paymentRadio.value == 'stars') {
         sum = Math.floor(sum * (100 - ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) ? 5 : ((app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft)) ? 10 : 0)) / 100)
       }
+      if (boosters_count.value[item?.slug] >= 5) {
+        sum *= (100 - Math.min(boosters_count.value[item?.slug], 30)) / 100
+      }
+    } else if (item?.slug == 'repair_kit') {
+      // Используем ту же логику градации что и для jarvis/cryo/electrics/premium_sub
+      // Цена зависит от уровня станции через gen_config
+      price = `price${app?.user?.station_type ? (Math.ceil(app.gen_config.find((el) => el?.station_type == app?.user?.station_type)?.id / 3) >= 7 ? 7 : Math.ceil(app.gen_config.find((el) => el?.station_type == app?.user?.station_type)?.id / 3)) : 1}${paymentRadio.value == 'fbtc' ? "_fbtc" : ""}`
+      sum = item?.[price] * boosters_count.value[item?.slug]
+      // Применяем скидку SBT/Premium для Stars
+      if (((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) && paymentRadio.value == 'stars') {
+        sum = Math.floor(sum * (100 - ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) ? 5 : ((app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) ? 10 : 0)) / 100)
+      }
+      // Применяем скидку за количество (от 5 дней)
       if (boosters_count.value[item?.slug] >= 5) {
         sum *= (100 - Math.min(boosters_count.value[item?.slug], 30)) / 100
       }
@@ -548,6 +596,12 @@ const isActiveBooster = (booster) => {
       (new Date(app?.user?.manager_expires) - new Date()) / (1000 * 60 * 60 * 24) <= 0
     )
       return true
+    if (
+      booster?.slug == 'repair_kit' &&
+      app?.user?.repair_kit_expires &&
+      (new Date(app?.user?.repair_kit_expires) - new Date()) / (1000 * 60 * 60 * 24) >= 0
+    )
+      return true
     return false
   }).value
 }
@@ -561,13 +615,14 @@ const boosters_count = ref({
   magnit: 1,
   asic_manager: 1,
   electrics: 1,
-  premium_sub: 1
+  premium_sub: 1,
+  repair_kit: 1
 })
 
 const filteredBoosters = computed(() => {
   const inclSlug = isMiners.value
     ? paymentRadio.value == 'ton' ? ['magnit', 'asic_manager'] : ['powerbank', 'magnit', 'asic_manager']
-    : paymentRadio.value == 'ton' ? ['jarvis', 'cryo'] : ['azot', 'jarvis', 'cryo', 'autostart', 'electrics', 'premium_sub']
+    : paymentRadio.value == 'ton' ? ['jarvis', 'cryo'] : ['azot', 'jarvis', 'cryo', 'autostart', 'electrics', 'premium_sub', 'repair_kit']
   return boosters.value?.filter((el) => inclSlug.includes(el?.slug))
 })
 
@@ -601,7 +656,8 @@ const increment = (item) => {
     magnit: 'magnit_expires',
     asic_manager: 'manager_expires',
     electrics: 'electrics_expires',
-    premium_sub: 'premium_sub_expires'
+    premium_sub: 'premium_sub_expires',
+    repair_kit: 'repair_kit_expires'
   }
 
   const daysDiff =
@@ -691,13 +747,15 @@ onUnmounted(() => {
                 item?.slug === 'cryo' ? !cryoIsForever && !cryoBlocked :
                   item?.slug === 'jarvis' ? !jarvisIsForever && !jarvisBlocked :
                     item?.slug == 'magnit' ? !magnitIsForever && !magnitBlocked :
-                      item?.slug === 'asic_manager' ? !managerIsForever && !managerBlocked : true
+                      item?.slug === 'asic_manager' ? !managerIsForever && !managerBlocked :
+                        item?.slug === 'repair_kit' ? !repairKitIsForever && !repairKitBlocked : true
               )" class="!text-[#FCD909] !font-bold">SBT</span>
               <span v-if="premiumActive && (item?.slug !== 'azot' && item?.slug !== 'powerbank' && item?.slug !== 'premium_sub') && paymentRadio == 'stars' && (
                 item?.slug === 'cryo' ? !cryoIsForever && !cryoBlocked :
                   item?.slug === 'jarvis' ? !jarvisIsForever && !jarvisBlocked :
                     item?.slug == 'magnit' ? !magnitIsForever && !magnitBlocked :
-                      item?.slug === 'asic_manager' ? !managerIsForever && !managerBlocked : true
+                      item?.slug === 'asic_manager' ? !managerIsForever && !managerBlocked :
+                        item?.slug === 'repair_kit' ? !repairKitIsForever && !repairKitBlocked : true
               )" class="!text-[#FCD909] !font-bold">{{ t('boost.king') }}</span>
             </div>
           </div>
@@ -712,7 +770,8 @@ onUnmounted(() => {
                 item?.slug === 'cryo' ? !cryoIsForever && !cryoBlocked :
                   item?.slug === 'jarvis' ? !jarvisIsForever && !jarvisBlocked :
                     // item?.slug == 'magnit' ? !magnitIsForever :
-                    item?.slug === 'asic_manager' ? !managerIsForever && !managerBlocked : true
+                    item?.slug === 'asic_manager' ? !managerIsForever && !managerBlocked :
+                      item?.slug === 'repair_kit' ? !repairKitIsForever && !repairKitBlocked : true
               )
             " class="boost-counter">
               <button @click="decrement(item)">-</button>
@@ -726,7 +785,8 @@ onUnmounted(() => {
                 item?.slug == 'asic_manager' ||
                 item?.slug == 'autostart' ||
                 item?.slug == 'electrics' ||
-                item?.slug == 'premium_sub'
+                item?.slug == 'premium_sub' ||
+                item?.slug == 'repair_kit'
               " class="flex flex-col justify-center items-center">{{
                 (item?.slug == 'autostart'
                   ? t('common.pcs', { n: boosters_count?.[item?.slug] })
@@ -768,27 +828,30 @@ onUnmounted(() => {
               && ((item?.slug == 'cryo' && !cryoIsForever && !cryoBlocked) ||
                 (item?.slug == 'jarvis' && !jarvisIsForever && !jarvisBlocked) ||
                 (item?.slug == 'magnit' && !magnitIsForever && !magnitBlocked) ||
-                (item?.slug == 'asic_manager' && !managerIsForever && !managerBlocked))
+                (item?.slug == 'asic_manager' && !managerIsForever && !managerBlocked) ||
+                (item?.slug == 'repair_kit' && !repairKitIsForever && !repairKitBlocked))
             ">
               <span class="always-text">{{ t('common.forever') }}</span>
             </div>
             <button class="booster-btn" :class="{
-              speedup: (item?.slug == 'jarvis' && jarvisBlocked) || (item?.slug == 'cryo' && cryoBlocked) || (item?.slug == 'magnit' && magnitBlocked) || (item?.slug == 'asic_manager' && managerBlocked),
-              forever: paymentRadio == 'ton' && item?.slug !== 'azot' && item?.slug !== 'autostart' && !((item?.slug == 'cryo' && cryoBlocked) || (item?.slug == 'jarvis' && jarvisBlocked) || (item?.slug == 'magnit' && magnitBlocked) || (item?.slug == 'asic_manager' && managerBlocked)),
-              bought: ((item?.slug == 'cryo' && cryoIsForever && !cryoBlocked) || (item?.slug == 'jarvis' && jarvisIsForever && !jarvisBlocked) || (item?.slug == 'magnit' && magnitIsForever && !magnitBlocked) || (item?.slug == 'asic_manager' && managerIsForever && !managerBlocked)),
+              speedup: (item?.slug == 'jarvis' && jarvisBlocked) || (item?.slug == 'cryo' && cryoBlocked) || (item?.slug == 'magnit' && magnitBlocked) || (item?.slug == 'asic_manager' && managerBlocked) || (item?.slug == 'repair_kit' && repairKitBlocked),
+              forever: paymentRadio == 'ton' && item?.slug !== 'azot' && item?.slug !== 'autostart' && !((item?.slug == 'cryo' && cryoBlocked) || (item?.slug == 'jarvis' && jarvisBlocked) || (item?.slug == 'magnit' && magnitBlocked) || (item?.slug == 'asic_manager' && managerBlocked) || (item?.slug == 'repair_kit' && repairKitBlocked)),
+              bought: ((item?.slug == 'cryo' && cryoIsForever && !cryoBlocked) || (item?.slug == 'jarvis' && jarvisIsForever && !jarvisBlocked) || (item?.slug == 'magnit' && magnitIsForever && !magnitBlocked) || (item?.slug == 'asic_manager' && managerIsForever && !managerBlocked) || (item?.slug == 'repair_kit' && repairKitIsForever && !repairKitBlocked)),
               stars: (paymentRadio == 'stars' || paymentRadio == 'fbtc') && isFreeBooster(item) == false && item?.slug !== 'powerbank' && item?.slug !== 'magnit',
               disabled: (item?.slug == 'powerbank' && app?.user?.is_powerbank_active) || (item?.slug == 'magnit' && paymentRadio !== 'ton'),
             }" @click="async () => {
               if ((item?.slug == 'cryo' && cryoIsForever && !cryoBlocked) ||
                 (item?.slug == 'jarvis' && jarvisIsForever && !jarvisBlocked) ||
                 (item?.slug == 'magnit' && magnitIsForever && !magnitBlocked) ||
-                (item?.slug == 'asic_manager' && managerIsForever && !managerBlocked)) {
+                (item?.slug == 'asic_manager' && managerIsForever && !managerBlocked) ||
+                (item?.slug == 'repair_kit' && repairKitIsForever && !repairKitBlocked)) {
                 return;
               }
               else if ((item?.slug == 'cryo' && cryoBlocked) ||
                 (item?.slug == 'jarvis' && jarvisBlocked) ||
                 (item?.slug == 'magnit' && magnitBlocked) ||
-                (item?.slug == 'asic_manager' && managerBlocked)) {
+                (item?.slug == 'asic_manager' && managerBlocked) ||
+                (item?.slug == 'repair_kit' && repairKitBlocked)) {
                 const res = await host.post('timed-nft-stars/', {
                   timed_nft_id: app.timed_nfts.find(el => el.name == foreverBoosts?.[item?.slug]?.name)?.id,
                 })
@@ -810,7 +873,7 @@ onUnmounted(() => {
             }
             ">
               <span class="flex text-[12px] items-center gap-1"
-                v-if="(item?.slug == 'jarvis' && jarvisBlocked) || (item?.slug == 'cryo' && cryoBlocked) || (item?.slug == 'magnit' && magnitBlocked) || (item?.slug == 'asic_manager' && managerBlocked)">
+                v-if="(item?.slug == 'jarvis' && jarvisBlocked) || (item?.slug == 'cryo' && cryoBlocked) || (item?.slug == 'magnit' && magnitBlocked) || (item?.slug == 'asic_manager' && managerBlocked) || (item?.slug == 'repair_kit' && repairKitBlocked)">
                 {{ t('common.speedup') }}
                 <img src="@/assets/wheel_stars.png" width="18px" height="18px" />
               </span>
@@ -819,7 +882,7 @@ onUnmounted(() => {
               }}</span>
               <span v-else-if="isFreeBooster(item) || item?.slug == 'powerbank'">{{ t('common.free') }}</span>
               <span
-                v-else-if="(paymentRadio == 'stars' || paymentRadio == 'fbtc') && isActiveBooster(item) && item?.slug == 'jarvis' && !jarvisIsForever">
+                v-else-if="(paymentRadio == 'stars' || paymentRadio == 'fbtc') && isActiveBooster(item) && (item?.slug == 'jarvis' && !jarvisIsForever) || (item?.slug == 'repair_kit' && !repairKitIsForever)">
                 {{ t('common.continue') }}
                 <div
                   v-if="boosters_count?.[item?.slug] >= 5 || (((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive) && paymentRadio == 'stars')"
@@ -842,14 +905,16 @@ onUnmounted(() => {
                 ((item?.slug == 'cryo' && cryoIsForever && !cryoBlocked) ||
                   (item?.slug == 'jarvis' && jarvisIsForever && !jarvisBlocked) ||
                   (item?.slug == 'magnit' && magnitIsForever && !magnitBlocked) ||
-                  (item?.slug == 'asic_manager' && managerIsForever && !managerBlocked))
+                  (item?.slug == 'asic_manager' && managerIsForever && !managerBlocked) ||
+                  (item?.slug == 'repair_kit' && repairKitIsForever && !repairKitBlocked))
               ">{{ t('common.bought') }}</span>
               <span class="p-0 m-0 w-full h-full text-nowrap" v-else-if="
                 (paymentRadio == 'stars' || paymentRadio == 'fbtc') &&
                 ((item?.slug == 'cryo' && cryoIsForever && !cryoBlocked) ||
                   (item?.slug == 'jarvis' && jarvisIsForever && !jarvisBlocked) ||
                   (item?.slug == 'magnit' && magnitIsForever && !magnitBlocked) ||
-                  (item?.slug == 'asic_manager' && managerIsForever && !managerBlocked))
+                  (item?.slug == 'asic_manager' && managerIsForever && !managerBlocked) ||
+                  (item?.slug == 'repair_kit' && repairKitIsForever && !repairKitBlocked))
               ">{{ t('common.bought') }}</span>
               <span v-else class="p-0 m-0 w-full h-full text-nowrap">
                 {{ t('common.buy') }} {{ paymentRadio == 'ton' ? t('common.getgems') : '' }}
@@ -861,13 +926,14 @@ onUnmounted(() => {
                     item?.slug == 'cryo' ||
                     item?.slug == 'asic_manager' ||
                     item?.slug == 'electrics' ||
-                    item?.slug == 'premium_sub'
+                    item?.slug == 'premium_sub' ||
+                    item?.slug == 'repair_kit'
                   )
                 " class="flex justify-center items-center font-bold gap-1 text-[12px] text-[#FCD909]">
                   <img v-show="paymentRadio == 'fbtc'" src="@/assets/fBTC.webp" width="15px" alt="Stars" />
                   <img v-show="paymentRadio == 'stars'" src="@/assets/stars.png" width="15px" alt="Stars" />
                   {{ getTotalStarsPrice(item) }}
-                  <span v-if="item?.slug == 'jarvis' || item?.slug == 'cryo'"
+                  <span v-if="item?.slug == 'jarvis' || item?.slug == 'cryo' || item?.slug == 'repair_kit'"
                     class="text-[8px] text-white font-bold line-through decoration-red-400 decoration-[2px]">{{
                       Math.ceil(
                         item?.[
@@ -906,13 +972,14 @@ onUnmounted(() => {
                     item?.slug == 'cryo' ||
                     item?.slug == 'asic_manager' ||
                     item?.slug == 'electrics' ||
-                    item?.slug == 'premium_sub'
+                    item?.slug == 'premium_sub' ||
+                    item?.slug == 'repair_kit'
                   )
                 " class="flex justify-center items-center font-bold gap-1 text-[12px] text-[#FCD909]">
                   <img v-show="paymentRadio == 'fbtc'" src="@/assets/fBTC.webp" width="15px" alt="Stars" />
                   <img v-show="paymentRadio == 'stars'" src="@/assets/stars.png" width="15px" alt="Stars" />
                   {{ getTotalStarsPrice(item) }}
-                  <span v-if="item?.slug == 'jarvis' || item?.slug == 'cryo'"
+                  <span v-if="item?.slug == 'jarvis' || item?.slug == 'cryo' || item?.slug == 'repair_kit'"
                     class="text-[8px] text-white font-bold line-through decoration-red-400 decoration-[2px]">{{
                       Math.ceil(
                         item?.[

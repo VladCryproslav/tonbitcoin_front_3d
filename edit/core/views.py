@@ -194,7 +194,7 @@ def require_auth(view_func):
     return wrapper
 
 
-from django.db.models import F
+from django.db.models import Case, F, When
 from rest_framework.decorators import api_view, throttle_classes
 
 # class UserProfileThrottle(SimpleRateThrottle):
@@ -309,15 +309,29 @@ class TapEnergyView(APIView):
         try:
             # OVERHEAT
             if user_profile.overheated_until:
+                # Проверяем активен ли Рем. Комплект
+                is_repair_kit_active = (
+                    user_profile.repair_kit_expires and 
+                    timezone.now() < user_profile.repair_kit_expires
+                )
+                
                 if user_profile.tap_count_since_overheat >= (
                     overheat_config.taps_before_power_reduction
                 ):
-                    UserProfile.objects.filter(
-                        user_id=request.user_profile.user_id
-                    ).update(
-                        tap_count_since_overheat=F("tap_count_since_overheat") + 1,
-                        power=F("power") - overheat_config.power_reduction_percentage,
-                    )
+                    # Если Рем. Комплект активен, не уменьшаем power, но обновляем счетчик
+                    if not is_repair_kit_active:
+                        UserProfile.objects.filter(
+                            user_id=request.user_profile.user_id
+                        ).update(
+                            tap_count_since_overheat=F("tap_count_since_overheat") + 1,
+                            power=F("power") - overheat_config.power_reduction_percentage,
+                        )
+                    else:
+                        UserProfile.objects.filter(
+                            user_id=request.user_profile.user_id
+                        ).update(
+                            tap_count_since_overheat=F("tap_count_since_overheat") + 1,
+                        )
                     UserProfile.objects.filter(
                         user_id=request.user_profile.user_id, power__lt=0
                     ).update(power=0)
@@ -358,19 +372,41 @@ class TapEnergyView(APIView):
 
             # withdraw_config = WithdrawalConfig.objects.first() or None
             # tap_power_config = getattr(withdraw_config, "tap_power", 0.5)
+            
+            # Проверяем активен ли Рем. Комплект
+            is_repair_kit_active = (
+                user_profile.repair_kit_expires and 
+                timezone.now() < user_profile.repair_kit_expires
+            )
+            
+            # Вычисляем уменьшение power
             final_power_minus = (
                 tapped_kw / F("generation_rate") / 2 * user_profile.sbt_get_power()
             )
+            
+            # Обновляем данные пользователя
+            update_data = {
+                "energy": F("energy") + tapped_kw,
+                "tap_count": F("tap_count") + 1,
+                "storage": F("storage") - tapped_kw,
+                "overheat_energy_collected": F("overheat_energy_collected") + tapped_kw,
+            }
+            
+            # Если Рем. Комплект активен, не уменьшаем power вообще
+            # Power может быть больше зафиксированного (если был ремонт), но не меньше
+            if is_repair_kit_active and user_profile.repair_kit_power_level:
+                # Не уменьшаем power, но если он упал ниже зафиксированного - восстанавливаем
+                update_data["power"] = Case(
+                    When(power__lt=user_profile.repair_kit_power_level, then=user_profile.repair_kit_power_level),
+                    default=F("power")
+                )
+            else:
+                update_data["power"] = F("power") - final_power_minus
+            
             GlobalSpendStats.objects.update(
                 total_energy_accumulated=F("total_energy_accumulated") + tapped_kw
             )
-            UserProfile.objects.filter(user_id=request.user_profile.user_id).update(
-                energy=F("energy") + tapped_kw,
-                tap_count=F("tap_count") + 1,
-                storage=F("storage") - tapped_kw,
-                power=F("power") - final_power_minus,
-                overheat_energy_collected=F("overheat_energy_collected") + tapped_kw,
-            )
+            UserProfile.objects.filter(user_id=request.user_profile.user_id).update(**update_data)
             UserProfile.objects.filter(
                 user_id=request.user_profile.user_id, power__lt=0
             ).update(power=0)
@@ -613,6 +649,13 @@ class RepairStationView(APIView):
             action_logger.info(
                 f"user {user_profile.user_id} | repair {user_profile.energy} kw, {user_profile.tbtc_wallet} tbtc"
             )
+            
+            # Проверяем активен ли Рем. Комплект
+            is_repair_kit_active = (
+                user_profile.repair_kit_expires and 
+                timezone.now() < user_profile.repair_kit_expires
+            )
+            
             base_cost_kw = RepairPowerStationConfig.objects.get(
                 station_type=user_profile.station_type
             ).price_kw
@@ -630,10 +673,14 @@ class RepairStationView(APIView):
                 GlobalSpendStats.objects.update(
                     energy_spent_repair=F("energy_spent_repair") + repair_cost_kw
                 )
-                UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                    energy=F("energy") - repair_cost_kw,
-                    power=100,
-                )
+                update_data = {
+                    "energy": F("energy") - repair_cost_kw,
+                    "power": 100,
+                }
+                # Если Рем. Комплект активен, обновляем зафиксированный уровень на 100
+                if is_repair_kit_active:
+                    update_data["repair_kit_power_level"] = 100
+                UserProfile.objects.filter(user_id=user_profile.user_id).update(**update_data)
                 user_profile.refresh_from_db()
                 return Response(
                     {
@@ -648,10 +695,14 @@ class RepairStationView(APIView):
                 GlobalSpendStats.objects.update(
                     energy_spent_repair=F("energy_spent_repair") + repair_cost_kw
                 )
-                UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                    kw_wallet=F("kw_wallet") - repair_cost_kw,
-                    power=100,
-                )
+                update_data = {
+                    "kw_wallet": F("kw_wallet") - repair_cost_kw,
+                    "power": 100,
+                }
+                # Если Рем. Комплект активен, обновляем зафиксированный уровень на 100
+                if is_repair_kit_active:
+                    update_data["repair_kit_power_level"] = 100
+                UserProfile.objects.filter(user_id=user_profile.user_id).update(**update_data)
                 user_profile.refresh_from_db()
                 return Response(
                     {
@@ -666,10 +717,14 @@ class RepairStationView(APIView):
                 GlobalSpendStats.objects.update(
                     tbtc_spent_repair=F("tbtc_spent_repair") + repair_cost_tbtc
                 )
-                UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                    tbtc_wallet=F("tbtc_wallet") - repair_cost_tbtc,
-                    power=100,
-                )
+                update_data = {
+                    "tbtc_wallet": F("tbtc_wallet") - repair_cost_tbtc,
+                    "power": 100,
+                }
+                # Если Рем. Комплект активен, обновляем зафиксированный уровень на 100
+                if is_repair_kit_active:
+                    update_data["repair_kit_power_level"] = 100
+                UserProfile.objects.filter(user_id=user_profile.user_id).update(**update_data)
                 user_profile.refresh_from_db()
                 return Response(
                     {

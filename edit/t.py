@@ -874,6 +874,7 @@ def main_boosters():
     cryo_owners = dict()
     asic_owners = dict()
     magnit_owners = dict()
+    repair_kit_owners = dict()
     
     infinite_date = datetime(2100, 1, 1, 0, 0, 0)
 
@@ -889,7 +890,7 @@ def main_boosters():
         name = name.split("(")[0].strip()
 
 
-        if name in ["Jarvis Bot", "Cryochamber", "ASIC Manager", "Magnetic ring"]:
+        if name in ["Jarvis Bot", "Cryochamber", "ASIC Manager", "Magnetic ring", "Repair Kit"]:
             full_name = meta.get("name")
             linked = LinkedUserNFT.objects.filter(nft_address=nft_address).first()
             
@@ -963,6 +964,18 @@ def main_boosters():
                     good = True
                 if good:
                     magnit_owners[user.user_id] = True
+            elif name == "Repair Kit":
+                station_level = user.get_station_level() + 1
+                good = False
+                # Логика классов: 3 класса
+                if full_name == "Repair Kit (3 class)" and 3 <= station_level <= 5:
+                    good = True
+                elif full_name == "Repair Kit (2 class)" and 6 <= station_level <= 7:
+                    good = True
+                elif full_name == "Repair Kit (1 class)" and station_level >= 8:
+                    good = True
+                if good:
+                    repair_kit_owners[user.user_id] = True
             
             continue
         
@@ -1020,6 +1033,17 @@ def main_boosters():
         user_id__in=list(magnit_owners.keys())
     ).exclude(magnit_expires__year=2100).update(
         magnit_expires=infinite_date,
+    )
+    
+    UserProfile.objects.filter(
+        repair_kit_expires__year=2100,
+    ).exclude(user_id__in=list(repair_kit_owners.keys())).update(
+        repair_kit_expires=None,
+    )
+    UserProfile.objects.filter(
+        user_id__in=list(repair_kit_owners.keys())
+    ).exclude(repair_kit_expires__year=2100).update(
+        repair_kit_expires=infinite_date,
     )
 
 def main2():
@@ -1089,6 +1113,7 @@ def main2():
     cryo_owners = dict()
     asic_owners = dict()
     magnit_owners = dict()
+    repair_kit_owners = dict()
     
     infinite_date = datetime(2100, 1, 1, 0, 0, 0)
 

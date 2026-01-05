@@ -286,6 +286,15 @@ class UserProfile(models.Model):
     
     premium_sub_expires = models.DateTimeField(null=True, blank=True)
 
+    repair_kit_expires = models.DateTimeField(null=True, blank=True)
+    repair_kit_power_level = models.DecimalField(
+        max_digits=36, 
+        decimal_places=16, 
+        null=True, 
+        blank=True,
+        default=None
+    )
+
     stop_mining_at1 = models.DateTimeField(null=True, blank=True)
     stop_mining_at2 = models.DateTimeField(null=True, blank=True)
     stop_mining_at3 = models.DateTimeField(null=True, blank=True)

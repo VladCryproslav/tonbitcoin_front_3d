@@ -350,6 +350,26 @@ def got_payment(message: Message):
                 action_logger.info(
                     f"user {user_id} | bought booster {payload} | was {user_profile.premium_sub_expires} | {payment_info.total_amount} stars | {payment_info.telegram_payment_charge_id}"
                 )
+            elif booster.slug == "repair_kit":
+                now = timezone.now()
+                repair_kit_expires = user_profile.repair_kit_expires
+                is_active = repair_kit_expires and repair_kit_expires > now
+
+                if not is_active:
+                    repair_kit_expires = now
+
+                repair_kit_expires += timedelta(days=int(days))
+
+                if repair_kit_expires > now + timedelta(days=31):
+                    repair_kit_expires = now + timedelta(days=31)
+
+                UserProfile.objects.filter(id=user_profile.id).update(
+                    repair_kit_expires=repair_kit_expires,
+                    repair_kit_power_level=user_profile.power,
+                )
+                action_logger.info(
+                    f"user {user_id} | bought booster {payload} | was {user_profile.repair_kit_expires} | {payment_info.total_amount} stars | {payment_info.telegram_payment_charge_id}"
+                )
             else:
                 action_logger.info(
                     f"user {user_id} | UNKNOWN bought booster {payload} | {payment_info.total_amount} stars | {payment_info.telegram_payment_charge_id}"
