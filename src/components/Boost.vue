@@ -649,7 +649,13 @@ const filteredBoosters = computed(() => {
   const inclSlug = isMiners.value
     ? paymentRadio.value == 'ton' ? ['magnit', 'asic_manager'] : ['powerbank', 'magnit', 'asic_manager']
     : paymentRadio.value == 'ton' ? ['jarvis', 'cryo'] : ['azot', 'jarvis', 'cryo', 'autostart', 'electrics', 'premium_sub', 'repair_kit']
-  return boosters.value?.filter((el) => inclSlug.includes(el?.slug))
+  return boosters.value?.filter((el) => {
+    // Скрываем repair_kit при выборе fBTC
+    if (el?.slug === 'repair_kit' && paymentRadio.value === 'fbtc') {
+      return false
+    }
+    return inclSlug.includes(el?.slug)
+  })
 })
 
 let timeoutId = null
@@ -913,17 +919,17 @@ onUnmounted(() => {
                 <div
                   v-if="boosters_count?.[item?.slug] >= 5 || (((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive) && paymentRadio == 'stars')"
                   class="flex justify-center items-center font-bold gap-1 text-[12px] text-[#FCD909]">
-                  <img v-show="paymentRadio == 'fbtc'" src="@/assets/fBTC.webp" width="15px" alt="Stars" />
-                  <img v-show="paymentRadio == 'stars'" src="@/assets/stars.png" width="15px" alt="Stars" />
-                  {{ getTotalStarsPrice(item) }}
-                  <span class="text-[8px] text-white font-bold line-through decoration-red-400 decoration-[2px]">{{
+                  <img v-show="paymentRadio == 'fbtc' && item?.slug != 'repair_kit'" src="@/assets/fBTC.webp" width="15px" alt="Stars" />
+                  <img v-show="paymentRadio == 'stars' || (paymentRadio == 'fbtc' && item?.slug == 'repair_kit')" src="@/assets/stars.png" width="15px" alt="Stars" />
+                  <span v-if="item?.slug != 'repair_kit' || paymentRadio == 'stars'">{{ getTotalStarsPrice(item) }}</span>
+                  <span v-if="item?.slug != 'repair_kit'" class="text-[8px] text-white font-bold line-through decoration-red-400 decoration-[2px]">{{
                     Math.ceil((paymentRadio == 'fbtc' ? item?.price1_fbtc : item?.price1) *
                       boosters_count?.[item?.slug]) }}</span>
                 </div>
                 <div v-else class="flex justify-center items-center gap-1 text-[12px]">
-                  <img v-show="paymentRadio == 'fbtc'" src="@/assets/fBTC.webp" width="15px" alt="Stars" />
-                  <img v-show="paymentRadio == 'stars'" src="@/assets/stars.png" width="15px" alt="Stars" />
-                  {{ getTotalStarsPrice(item) }}
+                  <img v-show="paymentRadio == 'fbtc' && item?.slug != 'repair_kit'" src="@/assets/fBTC.webp" width="15px" alt="Stars" />
+                  <img v-show="paymentRadio == 'stars' || (paymentRadio == 'fbtc' && item?.slug == 'repair_kit')" src="@/assets/stars.png" width="15px" alt="Stars" />
+                  <span v-if="item?.slug != 'repair_kit' || paymentRadio == 'stars'">{{ getTotalStarsPrice(item) }}</span>
                 </div>
               </span>
               <span class="p-0 m-0 w-full h-full text-nowrap" v-else-if="
@@ -945,7 +951,7 @@ onUnmounted(() => {
               <span v-else class="p-0 m-0 w-full h-full text-nowrap">
                 {{ t('common.buy') }} {{ paymentRadio == 'ton' ? t('common.getgems') : '' }}
                 <div v-if="
-                  (paymentRadio == 'stars' || paymentRadio == 'fbtc') &&
+                  ((paymentRadio == 'stars' || paymentRadio == 'fbtc') && item?.slug != 'repair_kit' || (paymentRadio == 'stars' && item?.slug == 'repair_kit')) &&
                   boosters_count?.[item?.slug] >= 5 &&
                   (item?.slug == 'jarvis' ||
                     item?.slug == 'magnit' ||
@@ -956,16 +962,16 @@ onUnmounted(() => {
                     item?.slug == 'repair_kit'
                   )
                 " class="flex justify-center items-center font-bold gap-1 text-[12px] text-[#FCD909]">
-                  <img v-show="paymentRadio == 'fbtc'" src="@/assets/fBTC.webp" width="15px" alt="Stars" />
+                  <img v-show="paymentRadio == 'fbtc' && item?.slug != 'repair_kit'" src="@/assets/fBTC.webp" width="15px" alt="Stars" />
                   <img v-show="paymentRadio == 'stars'" src="@/assets/stars.png" width="15px" alt="Stars" />
-                  {{ getTotalStarsPrice(item) }}
-                  <span v-if="item?.slug == 'jarvis' || item?.slug == 'cryo' || item?.slug == 'repair_kit'"
+                  <span v-if="item?.slug != 'repair_kit' || paymentRadio == 'stars'">{{ getTotalStarsPrice(item) }}</span>
+                  <span v-if="(item?.slug == 'jarvis' || item?.slug == 'cryo' || item?.slug == 'repair_kit') && (item?.slug != 'repair_kit' || paymentRadio == 'stars')"
                     class="text-[8px] text-white font-bold line-through decoration-red-400 decoration-[2px]">{{
                       Math.ceil(
                         item?.[`price${getStationLevel(app?.user?.station_type)}${paymentRadio == 'fbtc' ? "_fbtc" : ""}`] * boosters_count?.[item?.slug],
                       )
                     }}</span>
-                  <span v-else
+                  <span v-else-if="item?.slug != 'repair_kit'"
                     class="text-[8px] text-white font-bold line-through decoration-red-400 decoration-[2px]">{{
                       item?.slug == 'magnit' || item?.slug == 'asic_manager'
                         ? Math.ceil(item?.[`price${priceByHash}${paymentRadio == 'fbtc' ? "_fbtc" : ""}`] *
@@ -987,16 +993,16 @@ onUnmounted(() => {
                     item?.slug == 'repair_kit'
                   )
                 " class="flex justify-center items-center font-bold gap-1 text-[12px] text-[#FCD909]">
-                  <img v-show="paymentRadio == 'fbtc'" src="@/assets/fBTC.webp" width="15px" alt="Stars" />
-                  <img v-show="paymentRadio == 'stars'" src="@/assets/stars.png" width="15px" alt="Stars" />
-                  {{ getTotalStarsPrice(item) }}
-                  <span v-if="item?.slug == 'jarvis' || item?.slug == 'cryo' || item?.slug == 'repair_kit'"
+                  <img v-show="paymentRadio == 'fbtc' && item?.slug != 'repair_kit'" src="@/assets/fBTC.webp" width="15px" alt="Stars" />
+                  <img v-show="paymentRadio == 'stars' || (paymentRadio == 'fbtc' && item?.slug == 'repair_kit')" src="@/assets/stars.png" width="15px" alt="Stars" />
+                  <span v-if="item?.slug != 'repair_kit' || paymentRadio == 'stars'">{{ getTotalStarsPrice(item) }}</span>
+                  <span v-if="(item?.slug == 'jarvis' || item?.slug == 'cryo' || item?.slug == 'repair_kit') && (item?.slug != 'repair_kit' || paymentRadio == 'stars')"
                     class="text-[8px] text-white font-bold line-through decoration-red-400 decoration-[2px]">{{
                       Math.ceil(
                         item?.[`price${getStationLevel(app?.user?.station_type)}${paymentRadio == 'fbtc' ? "_fbtc" : ""}`] * boosters_count?.[item?.slug],
                       )
                     }}</span>
-                  <span v-else
+                  <span v-else-if="item?.slug != 'repair_kit'"
                     class="text-[8px] text-white font-bold line-through decoration-red-400 decoration-[2px]">{{
                       item?.slug == 'magnit' || item?.slug == 'asic_manager'
                         ? Math.ceil(item?.[`price${priceByHash}${paymentRadio == 'fbtc' ? "_fbtc" : ""}`] *
@@ -1017,11 +1023,11 @@ onUnmounted(() => {
                     {{ Math.ceil((paymentRadio == 'fbtc' ? item?.price1_fbtc : item?.price1) *
                       boosters_count?.[item?.slug]) }}</span>
                 </div>
-                <div v-else-if="(paymentRadio == 'stars' || paymentRadio == 'fbtc')"
+                <div v-else-if="(paymentRadio == 'stars' || paymentRadio == 'fbtc') && (item?.slug != 'repair_kit' || paymentRadio == 'stars')"
                   class="flex justify-center items-center font-bold gap-1 text-[12px]">
-                  <img v-show="paymentRadio == 'fbtc'" src="@/assets/fBTC.webp" width="15px" alt="Stars" />
-                  <img v-show="paymentRadio == 'stars'" src="@/assets/stars.png" width="15px" alt="Stars" />
-                  {{ getTotalStarsPrice(item) }}
+                  <img v-show="paymentRadio == 'fbtc' && item?.slug != 'repair_kit'" src="@/assets/fBTC.webp" width="15px" alt="Stars" />
+                  <img v-show="paymentRadio == 'stars' || (paymentRadio == 'fbtc' && item?.slug == 'repair_kit')" src="@/assets/stars.png" width="15px" alt="Stars" />
+                  <span v-if="item?.slug != 'repair_kit' || paymentRadio == 'stars'">{{ getTotalStarsPrice(item) }}</span>
                 </div>
                 <div v-else-if="
                   paymentRadio == 'ton' && item?.slug !== 'azot' && item?.slug !== 'autostart'
