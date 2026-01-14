@@ -294,7 +294,7 @@ const gemsSheet = [
     enableSale: false,
     salePercent: 50,
     description: 'For Energizers',
-    imagePath: '',
+    imagePath: '@/assets/gems/Repair_NFT_3.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%221-2-3%22%5D%7D%7D',
     info: 'gems.repair_kit_info',
     benefits: [
@@ -312,7 +312,7 @@ const gemsSheet = [
     enableSale: false,
     salePercent: 50,
     description: 'For Energizers',
-    imagePath: '',
+    imagePath: '@/assets/gems/Repair_NFT_2.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%221-2-3%22%5D%7D%7D',
     info: 'gems.repair_kit_info',
     benefits: [
@@ -330,7 +330,7 @@ const gemsSheet = [
     enableSale: false,
     salePercent: 50,
     description: 'For Energizers',
-    imagePath: '',
+    imagePath: '@/assets/gems/Repair_NFT_1.webp',
     link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%221-2-3%22%5D%7D%7D',
     info: 'gems.repair_kit_info',
     benefits: [

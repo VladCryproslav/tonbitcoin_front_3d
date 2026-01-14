@@ -1471,7 +1471,7 @@ onUnmounted(() => {
           <div class="gem-info-icon-top" @click="handleGemInfoClick(gemItem)">i</div>
           <div class="gem-picture">
             <img v-if="gemItem?.imagePath" :src="imagePathGems(gemItem.imagePath)?.value" class="gem-image"
-              :class="{ 'hide-under-tag': gemItem?.buttonColor !== 'gold' && gemItem?.buttonColor !== 'purple' && gemItem?.buttonColor !== 'blue' && gemItem?.type !== 'Cryochamber' }"
+              :class="{ 'hide-under-tag': gemItem?.buttonColor !== 'gold' && gemItem?.buttonColor !== 'purple' && gemItem?.buttonColor !== 'blue' && gemItem?.type !== 'Cryochamber' && gemItem?.type !== 'Repair Kit' }"
               alt="NFT" />
             <div v-else class="gem-icon">💎</div>
           </div>
