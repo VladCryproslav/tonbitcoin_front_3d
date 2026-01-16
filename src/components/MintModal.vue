@@ -28,6 +28,8 @@ const commissionRate = computed(() => {
   return 0.10 // 5% + 5%
 })
 
+const individualFeeRate = computed(() => commissionRate.value / 2)
+
 const tokensToReceive = computed(() => {
   const gross = Number(amount.value) || 0
   return +(gross * (1 - commissionRate.value)).toFixed(0)
@@ -157,7 +159,7 @@ async function claim() {
               <span>{{ t('modals.mint_modal.mint_fee') }}</span>
               <span class="font-semibold flex gap-1"
                 :class="{ '!text-[#FCD909]': (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive }">
-                {{ (commissionRate * 100).toFixed(1).replace(/\.0$/, '') }}%
+                {{ (individualFeeRate * 100).toFixed(1).replace(/\.0$/, '') }}%
                 <template v-if="(app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive">
                   ({{ premiumActive ? t('boost.king') : 'SBT' }})
                 </template>
@@ -167,7 +169,7 @@ async function claim() {
               <span>{{ t('modals.mint_modal.liquidity_pool') }}</span>
               <span class="font-semibold flex gap-1"
                 :class="{ '!text-[#FCD909]': (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive }">
-                {{ (commissionRate * 100).toFixed(1).replace(/\.0$/, '') }}%
+                {{ (individualFeeRate * 100).toFixed(1).replace(/\.0$/, '') }}%
                 <template v-if="(app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive">
                   ({{ premiumActive ? t('boost.king') : 'SBT' }})
                 </template>
