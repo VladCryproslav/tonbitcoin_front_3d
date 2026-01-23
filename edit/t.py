@@ -22,6 +22,7 @@ from core.models import (
     NFTRentalAgreement,
     Notification,
     StationNFTOwner,
+    StationRollbackLog,
     TimedUserNFT,
     UserProfile,
     LinkedUserNFT,
@@ -342,13 +343,14 @@ def get_nfts_with_retry(addr, page, max_retries=3, delay=1):
     return None
 
 
-def is_data_complete(all_nfts, collection_addr):
+def is_data_complete(all_nfts, collection_addr, failed_pages=None):
     """
     Проверить полноту данных NFT.
     
     Args:
         all_nfts: Список полученных NFT
         collection_addr: Адрес коллекции
+        failed_pages: Список страниц, которые не удалось получить (опционально)
     
     Returns:
         True если данные полные, False если неполные
@@ -358,8 +360,16 @@ def is_data_complete(all_nfts, collection_addr):
     expected_count = cache.get(cache_key)
     
     if expected_count is None:
-        # Если нет кэша, считаем данные полными (первый запуск)
-        logger.info(f"No cached NFT count for {collection_addr}, assuming data is complete")
+        # Если нет кэша (первый запуск), проверяем на наличие ошибок
+        if failed_pages and len(failed_pages) > 0:
+            logger.warning(
+                f"No cached NFT count for {collection_addr}, but {len(failed_pages)} pages failed. "
+                f"Assuming data is incomplete."
+            )
+            return False
+        
+        # Первый запуск без ошибок - считаем данные полными
+        logger.info(f"No cached NFT count for {collection_addr}, assuming data is complete (first run)")
         return True
     
     # Проверяем, что получено не менее 90% ожидаемого количества
@@ -448,8 +458,12 @@ def main_mint():
     if len(all_nfts) > 0:
         save_expected_nft_count(collection_addr, len(all_nfts))
 
+    # Флаг полноты данных - используется для принятия решения об откате
+    # Данные полные ТОЛЬКО если: is_data_complete вернул True И не было failed_pages
+    data_is_complete = is_data_complete(all_nfts, collection_addr, failed_pages) and len(failed_pages) == 0
+
     # Проверка на полноту данных
-    if not is_data_complete(all_nfts, collection_addr):
+    if not is_data_complete(all_nfts, collection_addr, failed_pages):
         logger.error(
             f"API returned incomplete data for collection {collection_addr}. "
             f"Received {len(all_nfts)} NFTs. Skipping station check to prevent mass rollback."
@@ -563,7 +577,21 @@ def main_mint():
         has_orbital_station=False,
     ).exclude(user_id__in=list(hydro_owners.keys())):
         try:
+            # Обновляем объект для получения актуальных значений
+            u.refresh_from_db()
+            
             with transaction.atomic():
+                # Логируем баланс энергии на момент отката hydro станции
+                StationRollbackLog.objects.create(
+                    user=u,
+                    from_station=u.station_type,
+                    generation_level=u.generation_level,
+                    storage_level=u.storage_level,
+                    engineer_level=u.engineer_level,
+                    energy=u.energy,
+                    nft_address=u.current_station_nft if u.current_station_nft else "",
+                )
+                
                 UserProfile.objects.filter(user_id=u.user_id).update(
                     current_station_nft="",
                     has_hydro_station=False,
@@ -631,7 +659,21 @@ def main_mint():
         has_hydro_station=False,
     ).exclude(user_id__in=list(orbital_owners.keys())):
         try:
+            # Обновляем объект для получения актуальных значений
+            u.refresh_from_db()
+            
             with transaction.atomic():
+                # Логируем баланс энергии на момент отката orbital станции
+                StationRollbackLog.objects.create(
+                    user=u,
+                    from_station=u.station_type,
+                    generation_level=u.generation_level,
+                    storage_level=u.storage_level,
+                    engineer_level=u.engineer_level,
+                    energy=u.energy,
+                    nft_address=u.current_station_nft if u.current_station_nft else "",
+                )
+                
                 UserProfile.objects.filter(user_id=u.user_id).update(
                     current_station_nft="",
                     orbital_force_basic=False,
@@ -693,7 +735,7 @@ def main_mint():
             )
 
     # КРИТИЧЕСКАЯ ЗАЩИТА: Проверка полноты данных перед проверкой станций
-    if not is_data_complete(all_nfts, collection_addr):
+    if not is_data_complete(all_nfts, collection_addr, failed_pages):
         logger.error(
             "CRITICAL: API data incomplete before station check. "
             "Skipping station check to prevent mass rollback."
@@ -713,6 +755,9 @@ def main_mint():
                 users.setdefault(address, {"mint_string": []})
                 users[address]["mint_string"].append(nft_address)
                 nfts_info[nft_address] = {"nft": nft}
+            # Обновляем флаг полноты данных - кэш считается полными данными
+            data_is_complete = True
+            logger.info("Using cached data, marking as complete for station check")
         else:
             logger.error("No valid cached data available. ABORTING station check.")
             return
@@ -738,9 +783,15 @@ def main_mint():
                     )
                     break  # Прерываем проверку, чтобы не откатить все станции
                 
-                mint_string = ""
-            else:
-                mint_string = ";".join(user["mint_string"])
+                # ✅ ИЗМЕНЕНИЕ: Если кошелек не найден - НЕ откатывать, а пропустить
+                # Это может быть из-за неполных данных API, а не реального отсутствия NFT
+                logger.warning(
+                    f"Station NFT {station_nft.nft} owner wallet {station_nft.wallet} not found in users dict. "
+                    f"Skipping to prevent false rollback. Data complete: {data_is_complete}"
+                )
+                continue  # ✅ Пропускаем, НЕ откатываем
+            
+            mint_string = ";".join(user["mint_string"])
             
             # Дополнительная проверка: убедиться, что nft_info содержит этот NFT
             if station_nft.nft not in nfts_info:
@@ -754,13 +805,24 @@ def main_mint():
                 station_nft.nft not in mint_string
                 or nfts_info[station_nft.nft]["nft"].sale is not None
             ):
+                # ✅ ИЗМЕНЕНИЕ: Откатывать ТОЛЬКО если данные полные
+                if not data_is_complete:
+                    logger.warning(
+                        f"Station NFT {station_nft.nft} appears to be missing, but data is incomplete. "
+                        f"Skipping rollback to prevent false positive. Will check again on next run."
+                    )
+                    continue  # Пропускаем откат при неполных данных
+                
+                # Данные полные - можно безопасно откатывать
                 Notification.objects.create(
                     user=station_nft.user, notif_type="nft_not_found"
                 )
                 station_nft.user.reset_station()
                 logger.info(
-                    f"station_nft not in mint string {station_nft.nft} | {mint_string}"
+                    f"Rolled back station for user {station_nft.user.user_id}: "
+                    f"NFT {station_nft.nft} not found in mint_string or on sale"
                 )
+                logger.info(f"station_nft not in mint string {station_nft.nft} | {mint_string}")
                 logger.info(station_nft)
 
         except KeyError as e:
@@ -874,7 +936,6 @@ def main_boosters():
     cryo_owners = dict()
     asic_owners = dict()
     magnit_owners = dict()
-    repair_kit_owners = dict()
     
     infinite_date = datetime(2100, 1, 1, 0, 0, 0)
 
@@ -890,7 +951,7 @@ def main_boosters():
         name = name.split("(")[0].strip()
 
 
-        if name in ["Jarvis Bot", "Cryochamber", "ASIC Manager", "Magnetic ring", "Repair Kit"]:
+        if name in ["Jarvis Bot", "Cryochamber", "ASIC Manager", "Magnetic ring"]:
             full_name = meta.get("name")
             linked = LinkedUserNFT.objects.filter(nft_address=nft_address).first()
             
@@ -964,18 +1025,6 @@ def main_boosters():
                     good = True
                 if good:
                     magnit_owners[user.user_id] = True
-            elif name == "Repair Kit":
-                station_level = user.get_station_level() + 1
-                good = False
-                # Логика классов: 3 класса
-                if full_name == "Repair Kit (3 class)" and 3 <= station_level <= 5:
-                    good = True
-                elif full_name == "Repair Kit (2 class)" and 6 <= station_level <= 7:
-                    good = True
-                elif full_name == "Repair Kit (1 class)" and station_level >= 8:
-                    good = True
-                if good:
-                    repair_kit_owners[user.user_id] = True
             
             continue
         
@@ -1033,17 +1082,6 @@ def main_boosters():
         user_id__in=list(magnit_owners.keys())
     ).exclude(magnit_expires__year=2100).update(
         magnit_expires=infinite_date,
-    )
-    
-    UserProfile.objects.filter(
-        repair_kit_expires__year=2100,
-    ).exclude(user_id__in=list(repair_kit_owners.keys())).update(
-        repair_kit_expires=None,
-    )
-    UserProfile.objects.filter(
-        user_id__in=list(repair_kit_owners.keys())
-    ).exclude(repair_kit_expires__year=2100).update(
-        repair_kit_expires=infinite_date,
     )
 
 def main2():
@@ -1113,7 +1151,6 @@ def main2():
     cryo_owners = dict()
     asic_owners = dict()
     magnit_owners = dict()
-    repair_kit_owners = dict()
     
     infinite_date = datetime(2100, 1, 1, 0, 0, 0)
 
