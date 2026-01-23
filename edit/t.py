@@ -936,6 +936,7 @@ def main_boosters():
     cryo_owners = dict()
     asic_owners = dict()
     magnit_owners = dict()
+    repair_kit_owners = dict()
     
     infinite_date = datetime(2100, 1, 1, 0, 0, 0)
 
@@ -951,7 +952,7 @@ def main_boosters():
         name = name.split("(")[0].strip()
 
 
-        if name in ["Jarvis Bot", "Cryochamber", "ASIC Manager", "Magnetic ring"]:
+        if name in ["Jarvis Bot", "Cryochamber", "ASIC Manager", "Magnetic ring", "Repair Kit"]:
             full_name = meta.get("name")
             linked = LinkedUserNFT.objects.filter(nft_address=nft_address).first()
             
@@ -1025,6 +1026,21 @@ def main_boosters():
                     good = True
                 if good:
                     magnit_owners[user.user_id] = True
+            elif name == "Repair Kit":
+                station_level = user.get_station_level() + 1
+                good = False
+                # Логика классов: 3 класс для станций 3-5, 2 класс для 6-7, 1 класс для 8-9
+                if full_name == "Repair Kit (3 class)" and 3 <= station_level <= 5:
+                    good = True
+                elif full_name == "Repair Kit (2 class)" and 6 <= station_level <= 7:
+                    good = True
+                elif full_name == "Repair Kit (1 class)" and 8 <= station_level <= 9:
+                    good = True
+                if good:
+                    repair_kit_owners[user.user_id] = True
+                    logging.info(f"Repair Kit VALID: user {user.user_id}, station_level {station_level}, full_name '{full_name}'")
+                else:
+                    logging.info(f"Repair Kit INVALID: user {user.user_id}, station_level {station_level}, full_name '{full_name}' (expected: 3 class for 3-5, 2 class for 6-7, 1 class for 8-9)")
             
             continue
         
@@ -1083,6 +1099,29 @@ def main_boosters():
     ).exclude(magnit_expires__year=2100).update(
         magnit_expires=infinite_date,
     )
+    
+    # Сбрасываем repair_kit_expires для пользователей, у которых нет подходящего NFT
+    UserProfile.objects.filter(
+        repair_kit_expires__year=2100,
+    ).exclude(user_id__in=list(repair_kit_owners.keys())).update(
+        repair_kit_expires=None,
+        repair_kit_power_level=None,
+    )
+    # Устанавливаем repair_kit_expires = infinite_date только для пользователей с подходящим NFT
+    # Также устанавливаем repair_kit_power_level на текущий power, если он не установлен
+    for user_id in repair_kit_owners.keys():
+        try:
+            user = UserProfile.objects.get(user_id=user_id)
+            update_data = {}
+            if user.repair_kit_expires is None or user.repair_kit_expires.year != 2100:
+                update_data["repair_kit_expires"] = infinite_date
+            # Устанавливаем repair_kit_power_level на текущий power, если он не установлен
+            if user.repair_kit_power_level is None:
+                update_data["repair_kit_power_level"] = user.power
+            if update_data:
+                UserProfile.objects.filter(user_id=user_id).update(**update_data)
+        except UserProfile.DoesNotExist:
+            continue
 
 def main2():
     OFFICIAL_COLLECTION = "EQDJURRy7jc_GutdLdEvxfXL9D0wzByfDiOtLwA0bqniBYJe"
@@ -1151,6 +1190,7 @@ def main2():
     cryo_owners = dict()
     asic_owners = dict()
     magnit_owners = dict()
+    repair_kit_owners = dict()
     
     infinite_date = datetime(2100, 1, 1, 0, 0, 0)
 

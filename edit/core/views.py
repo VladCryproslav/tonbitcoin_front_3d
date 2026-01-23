@@ -194,7 +194,7 @@ def require_auth(view_func):
     return wrapper
 
 
-from django.db.models import F
+from django.db.models import F, Case, When
 from rest_framework.decorators import api_view, throttle_classes
 
 # class UserProfileThrottle(SimpleRateThrottle):
@@ -309,15 +309,27 @@ class TapEnergyView(APIView):
         try:
             # OVERHEAT
             if user_profile.overheated_until:
+                is_repair_kit_active = (
+                    user_profile.repair_kit_expires and
+                    timezone.now() < user_profile.repair_kit_expires
+                )
                 if user_profile.tap_count_since_overheat >= (
                     overheat_config.taps_before_power_reduction
                 ):
-                    UserProfile.objects.filter(
-                        user_id=request.user_profile.user_id
-                    ).update(
-                        tap_count_since_overheat=F("tap_count_since_overheat") + 1,
-                        power=F("power") - overheat_config.power_reduction_percentage,
-                    )
+                    if not is_repair_kit_active:
+                        UserProfile.objects.filter(
+                            user_id=request.user_profile.user_id
+                        ).update(
+                            tap_count_since_overheat=F("tap_count_since_overheat") + 1,
+                            power=F("power") - overheat_config.power_reduction_percentage,
+                        )
+                    else:
+                        # repair_kit active, no power reduction during overheat
+                        UserProfile.objects.filter(
+                            user_id=request.user_profile.user_id
+                        ).update(
+                            tap_count_since_overheat=F("tap_count_since_overheat") + 1,
+                        )
                     UserProfile.objects.filter(
                         user_id=request.user_profile.user_id, power__lt=0
                     ).update(power=0)
@@ -364,13 +376,40 @@ class TapEnergyView(APIView):
             GlobalSpendStats.objects.update(
                 total_energy_accumulated=F("total_energy_accumulated") + tapped_kw
             )
-            UserProfile.objects.filter(user_id=request.user_profile.user_id).update(
-                energy=F("energy") + tapped_kw,
-                tap_count=F("tap_count") + 1,
-                storage=F("storage") - tapped_kw,
-                power=F("power") - final_power_minus,
-                overheat_energy_collected=F("overheat_energy_collected") + tapped_kw,
+            
+            # Проверяем активность Repair Kit
+            is_repair_kit_active = (
+                user_profile.repair_kit_expires and
+                timezone.now() < user_profile.repair_kit_expires
             )
+            
+            update_data = {
+                "energy": F("energy") + tapped_kw,
+                "tap_count": F("tap_count") + 1,
+                "storage": F("storage") - tapped_kw,
+                "overheat_energy_collected": F("overheat_energy_collected") + tapped_kw,
+            }
+            
+            if is_repair_kit_active:
+                # Если Repair Kit активен, но repair_kit_power_level не установлен, устанавливаем его на текущий power
+                if user_profile.repair_kit_power_level is None:
+                    update_data["repair_kit_power_level"] = user_profile.power
+                    repair_kit_power_level = user_profile.power
+                else:
+                    repair_kit_power_level = user_profile.repair_kit_power_level
+                
+                # Фиксируем power на уровне repair_kit_power_level (не позволяем снижаться ниже)
+                # Используем Greatest, чтобы выбрать максимум между (power - final_power_minus) и repair_kit_power_level
+                from django.db.models.functions import Greatest
+                update_data["power"] = Greatest(
+                    F("power") - final_power_minus,
+                    repair_kit_power_level
+                )
+            else:
+                # Обычное снижение power
+                update_data["power"] = F("power") - final_power_minus
+            
+            UserProfile.objects.filter(user_id=request.user_profile.user_id).update(**update_data)
             UserProfile.objects.filter(
                 user_id=request.user_profile.user_id, power__lt=0
             ).update(power=0)
