@@ -7,8 +7,11 @@ import {
   PlaneGeometry,
   RepeatWrapping,
   TextureLoader,
-  Group
+  Group,
+  AnimationMixer,
+  Clock
 } from 'three'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import * as THREE from 'three'
 
 export function useGamePhysics(scene) {
@@ -22,67 +25,132 @@ export function useGamePhysics(scene) {
   let playerMesh = null
   let jumpStartTime = 0
   let slideStartTime = 0
+  let mixer = null // Для анимаций из GLTF
+  let clock = new Clock()
+  let currentAnimation = null
   
-  // Создание модели игрока (простой куб для начала)
-  const createPlayer = (gameScene) => {
+  // Загрузка 3D модели игрока (опционально)
+  const loadPlayerModel = async (gameScene, modelPath) => {
+    if (!modelPath) return null
+    
+    try {
+      const loader = new GLTFLoader()
+      const gltf = await loader.loadAsync(modelPath)
+      
+      const model = gltf.scene
+      model.scale.set(1, 1, 1) // Настройте масштаб под вашу модель
+      model.position.set(0, 0, 0)
+      
+      // Настройка анимаций если есть
+      if (gltf.animations && gltf.animations.length > 0) {
+        mixer = new AnimationMixer(model)
+        // Ищем анимацию бега
+        const runAnimation = gltf.animations.find(anim => 
+          anim.name.toLowerCase().includes('run') || 
+          anim.name.toLowerCase().includes('walk')
+        )
+        if (runAnimation) {
+          const action = mixer.clipAction(runAnimation)
+          action.play()
+          currentAnimation = action
+        }
+      }
+      
+      gameScene.add(model)
+      playerMesh = model
+      
+      return model
+    } catch (error) {
+      console.error('Ошибка загрузки модели:', error)
+      return null
+    }
+  }
+  
+  // Создание модели игрока (простой куб для начала или загрузка 3D модели)
+  const createPlayer = (gameScene, modelPath = null) => {
     const gameSceneToUse = gameScene || scene
     if (!gameSceneToUse) return null
     
     const group = new Group()
     
-    // Тело (инженер)
+    // Тело (инженер) - Subway Surfers стиль: яркие цвета
     const bodyGeometry = new BoxGeometry(0.8, 1.2, 0.6)
     const bodyMaterial = new MeshStandardMaterial({ 
-      color: 0x8143FC,
-      metalness: 0.3,
-      roughness: 0.7
+      color: 0xEB7D26, // Оранжевый как в Subway Surfers
+      metalness: 0.1,
+      roughness: 0.9,
+      flatShading: true // Cartoon стиль
     })
     const body = new Mesh(bodyGeometry, bodyMaterial)
     body.position.y = 0.6
     body.castShadow = true
+    body.name = 'body'
     group.add(body)
     
-    // Голова (шлем инженера)
+    // Голова (шлем инженера) - яркий желтый
     const headGeometry = new BoxGeometry(0.6, 0.6, 0.6)
     const headMaterial = new MeshStandardMaterial({ 
-      color: 0xFFD700,
-      metalness: 0.8,
-      roughness: 0.2,
-      emissive: 0x332200,
-      emissiveIntensity: 0.2
+      color: 0xFEFF28, // Яркий желтый Subway Surfers
+      metalness: 0.2,
+      roughness: 0.8,
+      flatShading: true,
+      emissive: 0xFFFF00,
+      emissiveIntensity: 0.1
     })
     const head = new Mesh(headGeometry, headMaterial)
     head.position.y = 1.5
     head.castShadow = true
+    head.name = 'head'
     group.add(head)
     
-    // Руки
+    // Руки - яркие цвета
     const armGeometry = new BoxGeometry(0.2, 0.8, 0.2)
-    const armMaterial = new MeshStandardMaterial({ color: 0x8143FC })
+    const armMaterial = new MeshStandardMaterial({ 
+      color: 0xEB7D26,
+      flatShading: true
+    })
     
     const leftArm = new Mesh(armGeometry, armMaterial)
     leftArm.position.set(-0.5, 0.8, 0)
+    leftArm.name = 'leftArm'
     group.add(leftArm)
     
     const rightArm = new Mesh(armGeometry, armMaterial)
     rightArm.position.set(0.5, 0.8, 0)
+    rightArm.name = 'rightArm'
     group.add(rightArm)
     
-    // Ноги
+    // Ноги - темно-синий/фиолетовый
     const legGeometry = new BoxGeometry(0.25, 0.6, 0.25)
-    const legMaterial = new MeshStandardMaterial({ color: 0x5A2FA0 })
+    const legMaterial = new MeshStandardMaterial({ 
+      color: 0x1E3A8A, // Темно-синий
+      flatShading: true
+    })
     
     const leftLeg = new Mesh(legGeometry, legMaterial)
     leftLeg.position.set(-0.25, 0, 0)
+    leftLeg.name = 'leftLeg'
     group.add(leftLeg)
     
     const rightLeg = new Mesh(legGeometry, legMaterial)
     rightLeg.position.set(0.25, 0, 0)
+    rightLeg.name = 'rightLeg'
     group.add(rightLeg)
     
     group.position.set(0, 0, 0)
     gameSceneToUse.add(group)
     playerMesh = group
+    
+    // Если передан путь к модели, загружаем её
+    if (modelPath) {
+      loadPlayerModel(gameSceneToUse, modelPath).then(model => {
+        if (model) {
+          // Удаляем простую модель и используем загруженную
+          gameSceneToUse.remove(group)
+          playerMesh = model
+        }
+      })
+    }
     
     return group
   }
@@ -241,14 +309,64 @@ export function useGamePhysics(scene) {
   }
   
   const update = () => {
+    // Обновление анимаций из GLTF модели
+    if (mixer) {
+      mixer.update(clock.getDelta())
+    }
+    
     if (playerMesh) {
       // Обновляем позицию игрока по X
       const targetX = playerPosition.value.x
       playerMesh.position.x += (targetX - playerMesh.position.x) * 0.2
       
-      // Небольшая анимация бега (покачивание)
-      if (!isJumping.value && !isSliding.value) {
-        playerMesh.rotation.z = Math.sin(Date.now() * 0.01) * 0.1
+      // Анимация бега - движение рук и ног (только для простой модели)
+      // Для GLTF моделей анимации управляются через AnimationMixer
+      if (playerMesh.children && playerMesh.children.length > 0 && !mixer) {
+        if (!isJumping.value && !isSliding.value) {
+        const time = Date.now() * 0.008
+        const runSpeed = 1.5
+        
+        // Покачивание тела при беге
+        playerMesh.rotation.z = Math.sin(time * runSpeed) * 0.05
+        
+        // Находим части тела по имени
+        const leftArm = playerMesh.children.find(child => child.name === 'leftArm')
+        const rightArm = playerMesh.children.find(child => child.name === 'rightArm')
+        const leftLeg = playerMesh.children.find(child => child.name === 'leftLeg')
+        const rightLeg = playerMesh.children.find(child => child.name === 'rightLeg')
+        
+        // Движение рук
+        if (leftArm && rightArm) {
+          leftArm.rotation.x = Math.sin(time * runSpeed) * 0.8
+          rightArm.rotation.x = -Math.sin(time * runSpeed) * 0.8
+        }
+        
+        // Движение ног
+        if (leftLeg && rightLeg) {
+          leftLeg.rotation.x = -Math.sin(time * runSpeed) * 0.5
+          rightLeg.rotation.x = Math.sin(time * runSpeed) * 0.5
+        }
+        
+        // Небольшое вертикальное покачивание при беге
+        const baseY = isSliding.value ? 0.3 : 0
+        playerMesh.position.y = baseY + Math.abs(Math.sin(time * runSpeed * 2)) * 0.1
+      } else {
+        // Сброс анимации при прыжке/скольжении
+        playerMesh.rotation.z = 0
+        const leftArm = playerMesh.children.find(child => child.name === 'leftArm')
+        const rightArm = playerMesh.children.find(child => child.name === 'rightArm')
+        const leftLeg = playerMesh.children.find(child => child.name === 'leftLeg')
+        const rightLeg = playerMesh.children.find(child => child.name === 'rightLeg')
+        
+        if (leftArm && rightArm) {
+          leftArm.rotation.x = 0
+          rightArm.rotation.x = 0
+        }
+        if (leftLeg && rightLeg) {
+          leftLeg.rotation.x = 0
+          rightLeg.rotation.x = 0
+        }
+      }
       }
     }
   }
@@ -264,6 +382,7 @@ export function useGamePhysics(scene) {
     slide,
     getPlayerY,
     createPlayer,
+    loadPlayerModel,
     update,
     playerMesh: () => playerMesh
   }

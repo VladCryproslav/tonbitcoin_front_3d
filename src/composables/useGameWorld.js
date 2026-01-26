@@ -20,14 +20,16 @@ export function useGameWorld(scene, camera) {
   
   // Создание фона
   const createBackground = () => {
-    // Небо (градиентный фон через несколько плоскостей)
+    // Небо - яркие цвета Subway Surfers (голубое небо)
     for (let i = 0; i < 3; i++) {
       const skyGeometry = new PlaneGeometry(50, 30)
       const skyColor = new Color()
-      skyColor.setHSL(0.55, 0.3, 0.7 + i * 0.1) // От светлого к темному
+      // Яркое голубое небо как в Subway Surfers
+      skyColor.setHSL(0.55, 0.5, 0.75 + i * 0.08) // Более насыщенный и яркий
       const skyMaterial = new MeshStandardMaterial({ 
         color: skyColor,
-        side: 2 // DoubleSide
+        side: 2, // DoubleSide
+        flatShading: true
       })
       const sky = new Mesh(skyGeometry, skyMaterial)
       sky.position.set(0, 15 - i * 5, -20 - i * 10)
@@ -35,12 +37,13 @@ export function useGameWorld(scene, camera) {
       scene.add(sky)
     }
     
-    // Боковые барьеры с текстурами
+    // Боковые барьеры - яркие цвета Subway Surfers
     const barrierGeometry = new BoxGeometry(0.5, 2.5, 200)
     const barrierMaterial = new MeshStandardMaterial({ 
-      color: 0x444444,
-      metalness: 0.2,
-      roughness: 0.8
+      color: 0x666666, // Светлее для cartoon стиля
+      metalness: 0.1,
+      roughness: 0.9,
+      flatShading: true
     })
     
     // Левый барьер
@@ -53,10 +56,17 @@ export function useGameWorld(scene, camera) {
     rightBarrier.position.set(3.5, 1.25, 0)
     scene.add(rightBarrier)
     
-    // Декоративные элементы на барьерах
+    // Декоративные элементы на барьерах - яркие цвета Subway Surfers
     for (let i = 0; i < 10; i++) {
       const markerGeometry = new BoxGeometry(0.1, 0.3, 0.1)
-      const markerMaterial = new MeshStandardMaterial({ color: 0xFFFF00 })
+      const colors = [0xFEFF28, 0xEB7D26, 0xDE2126] // Желтый, оранжевый, красный
+      const color = colors[i % colors.length]
+      const markerMaterial = new MeshStandardMaterial({ 
+        color: color,
+        emissive: color,
+        emissiveIntensity: 0.2,
+        flatShading: true
+      })
       
       // Левый барьер
       const leftMarker = new Mesh(markerGeometry, markerMaterial)
@@ -80,8 +90,9 @@ export function useGameWorld(scene, camera) {
     for (let i = 0; i < segmentCount; i++) {
       const roadGeometry = new PlaneGeometry(roadWidth, roadLength)
       const roadMaterial = new MeshStandardMaterial({ 
-        color: 0x333333,
-        roughness: 0.8
+        color: 0x2A2A2A, // Темно-серый асфальт
+        roughness: 0.9,
+        flatShading: true // Cartoon стиль
       })
       const road = new Mesh(roadGeometry, roadMaterial)
       road.rotation.x = -Math.PI / 2
@@ -103,7 +114,12 @@ export function useGameWorld(scene, camera) {
     for (let z = -50; z < 10; z += markingLength * 2) {
       lanes.forEach(laneX => {
         const markingGeometry = new BoxGeometry(markingWidth, 0.01, markingLength)
-        const markingMaterial = new MeshStandardMaterial({ color: 0xFFFF00 })
+        const markingMaterial = new MeshStandardMaterial({ 
+          color: 0xFEFF28, // Яркий желтый Subway Surfers
+          emissive: 0xFEFF28,
+          emissiveIntensity: 0.3,
+          flatShading: true
+        })
         const marking = new Mesh(markingGeometry, markingMaterial)
         marking.position.set(laneX, 0.01, z)
         marking.userData = { type: 'marking' }
@@ -137,23 +153,26 @@ export function useGameWorld(scene, camera) {
     })
   }
   
-  // Создание препятствия
+  // Создание препятствия - Subway Surfers стиль
   const createObstacle = (lane, z) => {
     const obstacleTypes = [
-      { height: 1.5, color: 0xFF0000 }, // Низкое препятствие
-      { height: 2.5, color: 0xCC0000 }, // Высокое препятствие
+      { height: 1.5, color: 0xDE2126, name: 'low' }, // Красный Subway Surfers
+      { height: 2.5, color: 0xEB7D26, name: 'high' }, // Оранжевый
+      { height: 1.8, color: 0x444444, name: 'barrier' }, // Серый барьер
     ]
     
     const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)]
     const obstacleGeometry = new BoxGeometry(1, type.height, 1)
     const obstacleMaterial = new MeshStandardMaterial({ 
       color: type.color,
-      metalness: 0.3,
-      roughness: 0.7
+      metalness: 0.1,
+      roughness: 0.9,
+      flatShading: true // Cartoon стиль
     })
     const obstacle = new Mesh(obstacleGeometry, obstacleMaterial)
     obstacle.position.set(lanes[lane], type.height / 2, z)
     obstacle.userData = { type: 'obstacle', lane, height: type.height }
+    obstacle.castShadow = true
     scene.add(obstacle)
     obstacles.value.push(obstacle)
     return obstacle

@@ -52,14 +52,21 @@ const initScene = () => {
   renderer.shadowMap.enabled = true
   container.value.appendChild(renderer.domElement)
 
-  // Освещение
-  const ambientLight = new AmbientLight(0xffffff, 0.6)
+  // Освещение - яркое как в Subway Surfers
+  const ambientLight = new AmbientLight(0xffffff, 0.8) // Ярче для cartoon стиля
   scene.add(ambientLight)
 
-  const directionalLight = new DirectionalLight(0xffffff, 0.8)
+  const directionalLight = new DirectionalLight(0xffffff, 1.0) // Очень яркое
   directionalLight.position.set(5, 10, 5)
   directionalLight.castShadow = true
+  directionalLight.shadow.mapSize.width = 2048
+  directionalLight.shadow.mapSize.height = 2048
   scene.add(directionalLight)
+  
+  // Дополнительный свет спереди для яркости
+  const frontLight = new DirectionalLight(0xffffff, 0.5)
+  frontLight.position.set(0, 5, 10)
+  scene.add(frontLight)
 
   // Анимационный цикл (только если autoRender включен)
   if (props.autoRender) {
