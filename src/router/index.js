@@ -44,6 +44,11 @@ const router = createRouter({
       name: 'lottery',
       component: () => import('@/views/LotteryView.vue'),
     },
+    {
+      path: '/game-run',
+      name: 'game-run',
+      component: () => import('@/views/GameRunView.vue'),
+    },
   ],
 })
 

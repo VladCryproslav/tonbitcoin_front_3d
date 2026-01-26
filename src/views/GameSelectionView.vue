@@ -18,6 +18,10 @@ const goToInDevelopment = () => {
   console.log('In development')
 }
 
+const goToGameRun = () => {
+  router.push('/game-run')
+}
+
 const goBack = () => {
   router.back()
 }
@@ -46,6 +50,12 @@ const goBack = () => {
           <div class="game-card-bg"></div>
           <div class="development-overlay"></div>
           <h2 class="game-title">{{ t('games.in_development') }}</h2>
+        </div>
+
+        <!-- 3D Забег -->
+        <div class="game-card game-run-card" @click="goToGameRun">
+          <div class="game-card-bg"></div>
+          <h2 class="game-title">3D Забег</h2>
         </div>
       </div>
 
@@ -199,6 +209,21 @@ const goBack = () => {
   .game-title {
     color: #fff;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+}
+
+.game-run-card {
+  background: linear-gradient(135deg, rgba(129, 67, 252, 0.3) 0%, rgba(103, 98, 240, 0.3) 100%);
+  
+  .game-card-bg {
+    background: linear-gradient(135deg, rgba(129, 67, 252, 0.2) 0%, rgba(103, 98, 240, 0.2) 100%);
+  }
+  
+  .game-title {
+    background: linear-gradient(90deg, #8143FC, #6762F0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
 

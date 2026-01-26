@@ -439,6 +439,20 @@
     "in_development": "В розробці",
     "go_back": "Повернутися назад"
   },
+  "game": {
+    "start": "Старт",
+    "pause": "Пауза",
+    "resume": "Продовжити",
+    "close": "Закрити",
+    "energy": "Енергія",
+    "distance": "Дистанція",
+    "power": "Потужність",
+    "run_complete": "Забіг завершено",
+    "energy_collected": "Зібрано енергії",
+    "energy_gained": "Отримано енергії",
+    "distance_bonus": "Бонус за дистанцію",
+    "collection_bonus": "Бонус за збір"
+  },
   "common": {
     "lvl": "рів.",
     "comming": "Скоро буде",

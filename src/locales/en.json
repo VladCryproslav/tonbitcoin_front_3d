@@ -439,6 +439,20 @@
     "in_development": "In Development",
     "go_back": "Go Back"
   },
+  "game": {
+    "start": "Start",
+    "pause": "Pause",
+    "resume": "Resume",
+    "close": "Close",
+    "energy": "Energy",
+    "distance": "Distance",
+    "power": "Power",
+    "run_complete": "Run Complete",
+    "energy_collected": "Energy Collected",
+    "energy_gained": "Energy Gained",
+    "distance_bonus": "Distance Bonus",
+    "collection_bonus": "Collection Bonus"
+  },
   "common": {
     "lvl": "lvl",
     "comming": "Coming Soon",

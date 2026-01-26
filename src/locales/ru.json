@@ -439,6 +439,20 @@
     "in_development": "В разработке",
     "go_back": "Вернуться назад"
   },
+  "game": {
+    "start": "Старт",
+    "pause": "Пауза",
+    "resume": "Продолжить",
+    "close": "Закрыть",
+    "energy": "Энергия",
+    "distance": "Дистанция",
+    "power": "Мощность",
+    "run_complete": "Забег завершен",
+    "energy_collected": "Собрано энергии",
+    "energy_gained": "Получено энергии",
+    "distance_bonus": "Бонус за дистанцию",
+    "collection_bonus": "Бонус за сбор"
+  },
   "common": {
     "lvl": "ур.",
     "comming": "Скоро будет",
