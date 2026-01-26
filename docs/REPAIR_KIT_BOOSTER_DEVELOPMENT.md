@@ -1388,6 +1388,63 @@ scp edit/tgbot/views.py projects-srv:/home/admsrv/tbtc/tgbot/ && \
 scp edit/t.py projects-srv:/home/admsrv/tbtc/t.py
 ```
 
+**Полный процесс деплоя на продакшн:**
+
+1. **Создание миграций (если еще не созданы):**
+```bash
+# Локально или на сервере
+ssh projects-srv "cd tbtc && .venv/bin/python manage.py makemigrations core && .venv/bin/python manage.py makemigrations tasks"
+```
+
+2. **Передача всех файлов на продакшн:**
+```bash
+# Backend файлы
+scp edit/core/models.py edit/core/views.py edit/core/serializers.py projects-srv:/home/admsrv/tbtc/core/ && \
+scp edit/tasks/models.py edit/tasks/services.py edit/tasks/views.py projects-srv:/home/admsrv/tbtc/tasks/ && \
+scp edit/tgbot/views.py projects-srv:/home/admsrv/tbtc/tgbot/ && \
+scp edit/t.py projects-srv:/home/admsrv/tbtc/t.py
+
+# Миграции (если были созданы новые)
+# Сначала проверьте, какие миграции нужно передать:
+ssh projects-srv "cd tbtc && ls -t core/migrations/0*.py | head -1"
+ssh projects-srv "cd tbtc && ls -t tasks/migrations/0*.py | head -1"
+
+# Затем передайте новые миграции (замените номера на актуальные):
+# scp edit/core/migrations/0121_*.py projects-srv:/home/admsrv/tbtc/core/migrations/
+# scp edit/tasks/migrations/0024_*.py projects-srv:/home/admsrv/tbtc/tasks/migrations/
+```
+
+3. **Применение миграций на продакшн:**
+```bash
+ssh projects-srv "cd tbtc && .venv/bin/python manage.py migrate"
+```
+
+4. **Проверка статуса миграций:**
+```bash
+ssh projects-srv "cd tbtc && .venv/bin/python manage.py showmigrations core && .venv/bin/python manage.py showmigrations tasks"
+```
+
+5. **Перезапуск сервисов (если необходимо):**
+```bash
+# Обычно Django автоматически подхватывает изменения, но может потребоваться перезапуск
+# Уточните у администратора сервера команды для перезапуска
+```
+
+**Быстрый деплой одной командой (после создания миграций):**
+```bash
+# Передача всех файлов и применение миграций
+scp edit/core/models.py edit/core/views.py edit/core/serializers.py projects-srv:/home/admsrv/tbtc/core/ && \
+scp edit/tasks/models.py edit/tasks/services.py edit/tasks/views.py projects-srv:/home/admsrv/tbtc/tasks/ && \
+scp edit/tgbot/views.py projects-srv:/home/admsrv/tbtc/tgbot/ && \
+scp edit/t.py projects-srv:/home/admsrv/tbtc/t.py && \
+ssh projects-srv "cd tbtc && .venv/bin/python manage.py migrate"
+```
+
+**Важно:** Перед выполнением команды выше убедитесь, что:
+1. Миграции уже созданы (локально или на сервере)
+2. Если миграции созданы локально, передайте их перед выполнением migrate
+3. Сделайте бэкап базы данных перед применением миграций на продакшн
+
 ## Важные замечания
 
 1. **Поле repair_kit_power_level** - критически важно для фиксации уровня power. Без него буст не будет работать корректно.

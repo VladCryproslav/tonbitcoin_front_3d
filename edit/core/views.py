@@ -391,19 +391,19 @@ class TapEnergyView(APIView):
             }
             
             if is_repair_kit_active:
-                # Если Repair Kit активен, но repair_kit_power_level не установлен, устанавливаем его на текущий power
+                # Если Repair Kit активен, но repair_kit_power_level не установлен, фиксируем текущий power
                 if user_profile.repair_kit_power_level is None:
                     update_data["repair_kit_power_level"] = user_profile.power
                     repair_kit_power_level = user_profile.power
                 else:
                     repair_kit_power_level = user_profile.repair_kit_power_level
-                
-                # Фиксируем power на уровне repair_kit_power_level (не позволяем снижаться ниже)
-                # Используем Greatest, чтобы выбрать максимум между (power - final_power_minus) и repair_kit_power_level
-                from django.db.models.functions import Greatest
-                update_data["power"] = Greatest(
-                    F("power") - final_power_minus,
-                    repair_kit_power_level
+
+                # При активном Repair Kit power вообще не должен снижаться:
+                # - если текущий power ниже зафиксированного уровня, поднимаем его до repair_kit_power_level
+                # - если выше или равен, оставляем без изменений (не вычитаем final_power_minus)
+                update_data["power"] = Case(
+                    When(power__lt=repair_kit_power_level, then=repair_kit_power_level),
+                    default=F("power"),
                 )
             else:
                 # Обычное снижение power
@@ -665,14 +665,23 @@ class RepairStationView(APIView):
                 100 - user_profile.power
             ) * decimal.Decimal(base_cost_tbtc)
 
+            # Проверяем активность Repair Kit
+            is_repair_kit_active = (
+                user_profile.repair_kit_expires
+                and timezone.now() < user_profile.repair_kit_expires
+            )
+
             if repair_cost_kw > 0 and user_profile.energy >= repair_cost_kw:
                 GlobalSpendStats.objects.update(
                     energy_spent_repair=F("energy_spent_repair") + repair_cost_kw
                 )
-                UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                    energy=F("energy") - repair_cost_kw,
-                    power=100,
-                )
+                update_data = {
+                    "energy": F("energy") - repair_cost_kw,
+                    "power": 100,
+                }
+                if is_repair_kit_active:
+                    update_data["repair_kit_power_level"] = 100
+                UserProfile.objects.filter(user_id=user_profile.user_id).update(**update_data)
                 user_profile.refresh_from_db()
                 return Response(
                     {
@@ -687,10 +696,13 @@ class RepairStationView(APIView):
                 GlobalSpendStats.objects.update(
                     energy_spent_repair=F("energy_spent_repair") + repair_cost_kw
                 )
-                UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                    kw_wallet=F("kw_wallet") - repair_cost_kw,
-                    power=100,
-                )
+                update_data = {
+                    "kw_wallet": F("kw_wallet") - repair_cost_kw,
+                    "power": 100,
+                }
+                if is_repair_kit_active:
+                    update_data["repair_kit_power_level"] = 100
+                UserProfile.objects.filter(user_id=user_profile.user_id).update(**update_data)
                 user_profile.refresh_from_db()
                 return Response(
                     {
@@ -705,10 +717,13 @@ class RepairStationView(APIView):
                 GlobalSpendStats.objects.update(
                     tbtc_spent_repair=F("tbtc_spent_repair") + repair_cost_tbtc
                 )
-                UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                    tbtc_wallet=F("tbtc_wallet") - repair_cost_tbtc,
-                    power=100,
-                )
+                update_data = {
+                    "tbtc_wallet": F("tbtc_wallet") - repair_cost_tbtc,
+                    "power": 100,
+                }
+                if is_repair_kit_active:
+                    update_data["repair_kit_power_level"] = 100
+                UserProfile.objects.filter(user_id=user_profile.user_id).update(**update_data)
                 user_profile.refresh_from_db()
                 return Response(
                     {

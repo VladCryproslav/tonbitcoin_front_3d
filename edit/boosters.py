@@ -53,6 +53,7 @@ logger = setup_logging("logs/boost.log")
 
 from django.db import transaction
 from django.db.models import F, Q
+from django.db.models.functions import Greatest
 from django.utils import timezone
 
 
@@ -70,12 +71,30 @@ while True:
                     & (Q(building_until__lt=now) | Q(building_until__isnull=True))
                 ).all():
                 added_kw = float(u.generation_rate) * float(u.power) / 100 / 1800 * jarvis_percent / 100 * u.sbt_get_jarvis()
-                UserProfile.objects.filter(
-                    id=u.id
-                ).update(
-                    energy=F("energy")+ added_kw,
-                    power=F("power") - 1 / 3600 * u.sbt_get_power(),
+                
+                # Проверяем активность Repair Kit
+                is_repair_kit_active = (
+                    u.repair_kit_expires and
+                    now < u.repair_kit_expires
                 )
+                
+                update_data = {
+                    "energy": F("energy") + added_kw,
+                }
+                
+                if is_repair_kit_active and u.repair_kit_power_level is not None:
+                    # Repair Kit активен: power вообще не должен снижаться.
+                    # На всякий случай поднимаем power до repair_kit_power_level,
+                    # если он вдруг оказался ниже (например, из-за старой логики).
+                    update_data["power"] = Greatest(
+                        F("power"),
+                        u.repair_kit_power_level,
+                    )
+                else:
+                    # Обычное снижение power
+                    update_data["power"] = F("power") - 1 / 3600 * u.sbt_get_power()
+                
+                UserProfile.objects.filter(id=u.id).update(**update_data)
                 WalletInfo.objects.filter(user=u, wallet=u.ton_wallet).update(kw_amount=F("kw_amount") + added_kw)
 
 
