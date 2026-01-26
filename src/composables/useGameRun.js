@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { useAppStore } from '@/stores/app'
-import { host } from '@/axios.config'
+import { host } from '../../axios.config'
 
 export function useGameRun() {
   const app = useAppStore()

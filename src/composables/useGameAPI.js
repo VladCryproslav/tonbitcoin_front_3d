@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { host } from '@/axios.config'
+import { host } from '../../axios.config'
 
 export function useGameAPI() {
   const isLoading = ref(false)
