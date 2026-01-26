@@ -661,6 +661,27 @@ const conditionsToMint = computed(() => {
 
 const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= new Date())
 
+// Режим игры: при нажатии на станцию открывается игра
+const handleStationClick = (event) => {
+  // Предотвращаем стандартное поведение
+  event.preventDefault()
+  event.stopPropagation()
+  
+  // Визуальная обратная связь
+  if (img.value) {
+    img.value.style.transform = 'scale(0.95)'
+    setTimeout(() => {
+      if (img.value) {
+        img.value.style.transform = 'scale(1)'
+      }
+    }, 150)
+  }
+  
+  // Открываем игру при нажатии на станцию
+  tg.HapticFeedback.impactOccurred('medium')
+  router.push('/game-run')
+}
+
 async function increment(event) {
   if (!ton_address.value) {
     showMeModal('warning', t('notification.st_attention'), t('notification.unconnected'))
@@ -1944,9 +1965,14 @@ onUnmounted(() => {
     </div>
   </div>
   <div class="mainarea">
-    <div class="tapzone" :class="{ orbital: app.user?.has_orbital_station && !app.user?.orbital_force_basic }">
+      <div class="tapzone" :class="{ orbital: app.user?.has_orbital_station && !app.user?.orbital_force_basic }">
       <div class="flex flex-col w-full items-center justify-center station-image">
-        <div @touchstart="increment" ref="img" style="position: relative">
+        <div 
+          @touchstart="handleStationClick"
+          @click="handleStationClick"
+          ref="img" 
+          style="position: relative; cursor: pointer; transition: transform 0.15s ease"
+        >
           <div
             v-if="isJarvis.active && (!app.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !hydroStation.lock && !orbitalStation.lock && unlockedWallet.bool"
             class="jarvis">
