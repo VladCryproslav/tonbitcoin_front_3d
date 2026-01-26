@@ -3,11 +3,11 @@
     <div class="ui-top">
       <div class="energy-counter">
         <span class="label">{{ t('game.energy') }}:</span>
-        <span class="value">{{ formatEnergy(energy) }} kW</span>
+        <span class="value energy-value">{{ formatEnergy(energy) }} kW</span>
       </div>
       <div class="distance-counter">
         <span class="label">{{ t('game.distance') }}:</span>
-        <span class="value">{{ formatDistance(distance) }}m</span>
+        <span class="value distance-value">{{ formatDistance(distance) }}m</span>
       </div>
     </div>
     
@@ -78,6 +78,7 @@ const formatDistance = (value) => {
   border-radius: 12px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   
   .label {
     color: rgba(255, 255, 255, 0.7);
@@ -89,11 +90,26 @@ const formatDistance = (value) => {
     color: #fff;
     font-size: 18px;
     font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   }
 }
 
-.distance-counter .value {
+.energy-value {
+  color: #00FF88;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.distance-value {
   color: #8143FC;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    text-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 15px rgba(0, 255, 136, 0.8);
+  }
 }
 
 .ui-bottom {

@@ -10,7 +10,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 const props = defineProps({
   width: { type: Number, default: window.innerWidth },
   height: { type: Number, default: window.innerHeight },
-  backgroundColor: { type: [String, Number], default: 0x87ceeb }, // Sky blue
+  backgroundColor: { type: [String, Number], default: 0x87CEEB }, // Sky blue
+  autoRender: { type: Boolean, default: false }, // Отключить автоматический рендеринг для игры
 })
 
 const emit = defineEmits(['scene-ready'])
@@ -28,7 +29,7 @@ const initScene = () => {
   // Создание сцены
   scene = new Scene()
   scene.background = new Color(props.backgroundColor)
-  scene.fog = new Fog(props.backgroundColor, 10, 50)
+  scene.fog = new Fog(props.backgroundColor, 5, 30) // Ближний туман для глубины
 
   // Камера
   camera = new PerspectiveCamera(
@@ -60,13 +61,15 @@ const initScene = () => {
   directionalLight.castShadow = true
   scene.add(directionalLight)
 
-  // Анимационный цикл
-  const animate = () => {
-    animationId = requestAnimationFrame(animate)
-    if (controls) controls.update()
-    renderer.render(scene, camera)
+  // Анимационный цикл (только если autoRender включен)
+  if (props.autoRender) {
+    const animate = () => {
+      animationId = requestAnimationFrame(animate)
+      if (controls) controls.update()
+      renderer.render(scene, camera)
+    }
+    animate()
   }
-  animate()
 
   emit('scene-ready', { scene, camera, renderer })
 }
