@@ -162,8 +162,11 @@ const startGame = () => {
       gamePhysics.value.playerPosition.value.y = 0
       gamePhysics.value.playerPosition.value.z = 0
     }
-    if (gamePhysics.value.playerLane) {
-      gamePhysics.value.playerLane.value = 1
+    // Сбрасываем полосу только если это именно ref,
+    // иначе не трогаем (во избежание ошибок типа "Cannot create property 'value' on number '1'")
+    const laneRef = gamePhysics.value.playerLane
+    if (laneRef && typeof laneRef === 'object' && 'value' in laneRef) {
+      laneRef.value = 1
     }
   }
   gameRun.startRun()
@@ -220,7 +223,7 @@ const startGameLoop = () => {
           () => {
             // Коллизия с препятствием
             gameRun.hitObstacle()
-            const newPower = gameRun.currentPower - 10
+            const newPower = gameRun.currentPower.value - 10
             app.setPower(Math.max(0, newPower))
 
             // Эффект частиц при столкновении
@@ -289,7 +292,7 @@ const startGameLoop = () => {
     }
 
     // Увеличение скорости со временем
-    const distanceCheck = Math.floor(gameRun.distance / 100)
+    const distanceCheck = Math.floor(gameRun.distance.value / 100)
     if (distanceCheck > 0 && distanceCheck !== lastSpeedIncrease.value) {
       lastSpeedIncrease.value = distanceCheck
       gameSpeed.value = Math.min(gameSpeed.value + 0.01, 0.4)
