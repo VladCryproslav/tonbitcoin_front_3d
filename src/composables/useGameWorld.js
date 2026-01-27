@@ -283,24 +283,28 @@ export function useGameWorld(scene, camera) {
   
   // Обновление препятствий
   // Важно: по оси Z игрок фактически стоит около 0, "движется" дорога,
-  // поэтому в коллизии сравниваем с мировым Z=0, а не с playerZ.
+  // поэтому в коллизии сравниваем с мировым Z=0, а не с playerZ,
+  // и используем "ящиковую" зону хита, а не радиусную.
   const updateObstacles = (playerZ, playerX, playerY, onCollision) => {
     const obstaclesToRemove = []
     
     obstacles.value.forEach((obstacle, index) => {
       obstacle.position.z += roadSpeed.value
       
-      // Проверка коллизии (улучшенная)
+      // Проверка коллизии: узкое окно по X/Z, плюс учёт высоты
       const dx = obstacle.position.x - playerX
-      const dz = obstacle.position.z // игрок стоит около z=0
+      const dz = obstacle.position.z      // игрок стоит около z = 0
       const dy = obstacle.position.y - playerY
-      const distance = Math.sqrt(dx * dx + dz * dz)
-      
-      // Учитываем размер препятствия
+
       const obstacleHeight = obstacle.userData.height || 1.5
-      const collisionRadius = 0.6
+      const xHalfWidth = 0.7   // ширина полосы/персонажа по X
+      const zHalfWidth = 1.2   // "длина" хита по Z (перед/за персонажем)
+
+      const hitByX = Math.abs(dx) < xHalfWidth
+      const hitByZ = Math.abs(dz) < zHalfWidth
+      const hitByY = Math.abs(dy) < obstacleHeight / 2 + 0.5
       
-      if (distance < collisionRadius && Math.abs(dy) < obstacleHeight / 2 + 0.5) {
+      if (hitByX && hitByZ && hitByY) {
         onCollision()
         obstaclesToRemove.push(index)
         scene.remove(obstacle)
@@ -339,13 +343,20 @@ export function useGameWorld(scene, camera) {
       // Вертикальное движение
       collectible.position.y = 1 + Math.sin(Date.now() * 0.005) * 0.3
       
-      // Проверка сбора
-      const distance = Math.sqrt(
-        Math.pow(collectible.position.x - playerX, 2) +
-        Math.pow(collectible.position.z, 2)
-      )
+      // Проверка сбора: отдельные окна по X/Z/Y,
+      // чтобы собирать куб только при реальном пересечении.
+      const dx = collectible.position.x - playerX
+      const dz = collectible.position.z       // игрок около z = 0
+      const dy = collectible.position.y - playerY
+
+      const xHalfWidth = 0.7
+      const zHalfWidth = 1.2
+
+      const hitByX = Math.abs(dx) < xHalfWidth
+      const hitByZ = Math.abs(dz) < zHalfWidth
+      const hitByY = Math.abs(dy) < 1
       
-      if (distance < 0.8 && Math.abs(collectible.position.y - playerY) < 1) {
+      if (hitByX && hitByZ && hitByY) {
         collectible.userData.collected = true
         onCollect(0.5) // Количество энергии
         collectiblesToRemove.push(index)

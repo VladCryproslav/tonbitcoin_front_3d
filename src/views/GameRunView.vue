@@ -302,11 +302,11 @@ const startGameLoop = () => {
       camera.lookAt(lookAtX, 1 + cameraBob * 0.5, 0)
     }
 
-    // Увеличение скорости со временем
-    const distanceCheck = Math.floor(gameRun.distance.value / 100)
+    // Увеличение скорости со временем (чуть медленнее)
+    const distanceCheck = Math.floor(gameRun.distance.value / 120)
     if (distanceCheck > 0 && distanceCheck !== lastSpeedIncrease.value) {
       lastSpeedIncrease.value = distanceCheck
-      gameSpeed.value = Math.min(gameSpeed.value + 0.01, 0.4)
+      gameSpeed.value = Math.min(gameSpeed.value + 0.006, 0.38)
     }
 
     // Проверка условий окончания забега
