@@ -39,8 +39,9 @@ export function useGamePhysics(scene) {
     run: 1,
     running: 1,
     jump: 2,
-    roll: 3,
-    slide: 3,
+    // По твоей просьбе свайп вниз — анимация №4
+    roll: 4,
+    slide: 4,
     fall: 4,
     death: 4
   }
@@ -220,7 +221,9 @@ export function useGamePhysics(scene) {
       playerPosition.value.x = lanes[playerLane.value]
 
       // Плавная анимация перемещения
-      if (playerMesh) {
+      // Для GLB‑модели полагаемся только на скелетную анимацию,
+      // "прижимание вниз" оставляем только для кубического фоллбэка.
+      if (playerMesh && !mixer) {
         const targetX = lanes[playerLane.value]
         animatePosition(playerMesh.position, 'x', targetX, 0.3)
       }
