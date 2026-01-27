@@ -89,7 +89,14 @@ export function useGamePhysics(scene) {
         }
       }
 
-      gameScene.add(model)
+      const targetScene = gameScene || scene
+      if (targetScene) {
+        // Удаляем предыдущую модель игрока, если была
+        if (playerMesh) {
+          targetScene.remove(playerMesh)
+        }
+        targetScene.add(model)
+      }
       playerMesh = model
 
       return model
@@ -181,16 +188,10 @@ export function useGamePhysics(scene) {
     const gameSceneToUse = gameScene || scene
     if (!gameSceneToUse) return null
 
-    // Если есть путь до модели — сначала пробуем загрузить её,
-    // не показывая кубический фоллбек.
+    // Если есть путь до модели — загружаем её.
+    // Фоллбек-куб создаём только если путь не указан.
     if (modelPath) {
-      return loadPlayerModel(gameSceneToUse, modelPath).then(model => {
-        if (model) {
-          return model
-        }
-        // Если загрузка провалилась — создаём фоллбек
-        return createFallbackPlayer(gameSceneToUse)
-      })
+      return loadPlayerModel(gameSceneToUse, modelPath)
     }
 
     // Без пути к модели сразу создаём фоллбек
