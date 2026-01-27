@@ -222,14 +222,15 @@ export function useGameWorld(scene, camera) {
     const obstacleChance = Math.min(0.5, 0.25 + (roadSpeed.value - 0.15) * 2)
     if (Math.random() < obstacleChance) {
       const lane = Math.floor(Math.random() * 3)
-      // Спавним препятствия ВПЕРЕДИ игрока по направлению -Z,
-      // так как камера смотрит из +Z в 0, а дорога уходит в минус.
-      createObstacle(lane, playerZ - 25)
+      // Спавним препятствия в «туннеле» перед камерой, в диапазоне [-60, -30] по Z,
+      // чтобы они всегда шли навстречу игроку независимо от накопленного playerZ.
+      const obstacleZ = -30 - Math.random() * 30
+      createObstacle(lane, obstacleZ)
       
       // Иногда создаем препятствие в соседней полосе (более сложно)
       if (Math.random() < 0.3) {
         const nextLane = (lane + (Math.random() < 0.5 ? 1 : -1) + 3) % 3
-        createObstacle(nextLane, playerZ - 25)
+        createObstacle(nextLane, obstacleZ)
       }
     }
     
@@ -237,25 +238,28 @@ export function useGameWorld(scene, camera) {
     const collectibleChance = 0.7 - (roadSpeed.value - 0.15) * 0.5
     if (Math.random() < collectibleChance) {
       const lane = Math.floor(Math.random() * 3)
-      // Энергия тоже спавнится в минусовом Z, чтобы "ехать" к камере
-      createCollectible(lane, playerZ - 20)
+      // Энергия тоже спавнится в минусовом Z, чуть ближе к камере, чем препятствия.
+      const collectibleZ = -25 - Math.random() * 25
+      createCollectible(lane, collectibleZ)
     }
     
     // Иногда генерируем несколько предметов подряд (бонусная линия)
     if (Math.random() < 0.15) {
       const startLane = Math.floor(Math.random() * 3)
+      const baseZ = -25 - Math.random() * 25
       for (let i = 0; i < 3; i++) {
         const lane = (startLane + i) % 3
-        createCollectible(lane, playerZ - 18 - i * 2)
+        createCollectible(lane, baseZ - i * 2)
       }
     }
     
     // Редко генерируем препятствие и предмет рядом (сложная ситуация)
     if (Math.random() < 0.1) {
       const lane = Math.floor(Math.random() * 3)
-      createObstacle(lane, playerZ - 25)
+      const obstacleZ = -30 - Math.random() * 30
+      createObstacle(lane, obstacleZ)
       const collectibleLane = (lane + (Math.random() < 0.5 ? 1 : -1) + 3) % 3
-      createCollectible(collectibleLane, playerZ - 22)
+      createCollectible(collectibleLane, obstacleZ + 3)
     }
   }
   
@@ -278,6 +282,8 @@ export function useGameWorld(scene, camera) {
   }
   
   // Обновление препятствий
+  // Важно: по оси Z игрок фактически стоит около 0, "движется" дорога,
+  // поэтому в коллизии сравниваем с мировым Z=0, а не с playerZ.
   const updateObstacles = (playerZ, playerX, playerY, onCollision) => {
     const obstaclesToRemove = []
     
@@ -286,7 +292,7 @@ export function useGameWorld(scene, camera) {
       
       // Проверка коллизии (улучшенная)
       const dx = obstacle.position.x - playerX
-      const dz = obstacle.position.z - playerZ
+      const dz = obstacle.position.z // игрок стоит около z=0
       const dy = obstacle.position.y - playerY
       const distance = Math.sqrt(dx * dx + dz * dz)
       
@@ -312,6 +318,7 @@ export function useGameWorld(scene, camera) {
   }
   
   // Обновление собираемых предметов
+  // Аналогично препятствиям, по Z игрок стоит вблизи нуля.
   const updateCollectibles = (playerZ, playerX, playerY, onCollect) => {
     const collectiblesToRemove = []
     
@@ -335,7 +342,7 @@ export function useGameWorld(scene, camera) {
       // Проверка сбора
       const distance = Math.sqrt(
         Math.pow(collectible.position.x - playerX, 2) +
-        Math.pow(collectible.position.z - playerZ, 2)
+        Math.pow(collectible.position.z, 2)
       )
       
       if (distance < 0.8 && Math.abs(collectible.position.y - playerY) < 1) {
