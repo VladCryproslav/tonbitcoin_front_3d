@@ -28,6 +28,8 @@ export function useGamePhysics(scene) {
   let mixer = null // Для анимаций из GLTF
   let clock = new Clock()
   let currentAnimation = null
+  let standingClip = null
+  let runClip = null
   
   // Загрузка 3D модели игрока (опционально)
   const loadPlayerModel = async (gameScene, modelPath) => {
@@ -63,15 +65,22 @@ export function useGamePhysics(scene) {
       // Настройка анимаций если есть
       if (gltf.animations && gltf.animations.length > 0) {
         mixer = new AnimationMixer(model)
-        // Ищем анимацию бега
-        const runAnimation = gltf.animations.find(anim => 
+
+        // Найдём клипы Standing / idle и Run / Walk
+        standingClip = gltf.animations.find(anim =>
+          anim.name.toLowerCase().includes('standing') ||
+          anim.name.toLowerCase().includes('idle')
+        ) || null
+
+        runClip = gltf.animations.find(anim => 
           anim.name.toLowerCase().includes('run') || 
           anim.name.toLowerCase().includes('walk')
-        )
-        // Если run/walk не нашли — берём первый клип как дефолт
-        const clip = runAnimation || gltf.animations[0]
-        if (clip) {
-          const action = mixer.clipAction(clip)
+        ) || null
+
+        // По умолчанию — стоячая анимация, если есть, иначе первый клип
+        const defaultClip = standingClip || runClip || gltf.animations[0]
+        if (defaultClip) {
+          const action = mixer.clipAction(defaultClip)
           action.play()
           currentAnimation = action
         } 
@@ -183,6 +192,30 @@ export function useGamePhysics(scene) {
     
     // Без пути к модели сразу создаём фоллбек
     return createFallbackPlayer(gameSceneToUse)
+  }
+
+  // Переключение анимации Standing/Run для GLB-модели
+  const playAnimation = (type) => {
+    if (!mixer) return
+
+    let clip = null
+    if (type === 'standing') {
+      clip = standingClip || null
+    } else if (type === 'run') {
+      clip = runClip || null
+    }
+
+    if (!clip) {
+      // Фоллбек — не трогаем текущую анимацию
+      return
+    }
+
+    if (currentAnimation) {
+      currentAnimation.stop()
+    }
+    const action = mixer.clipAction(clip)
+    action.reset().play()
+    currentAnimation = action
   }
   
   const moveLeft = () => {
@@ -413,6 +446,7 @@ export function useGamePhysics(scene) {
     getPlayerY,
     createPlayer,
     loadPlayerModel,
+    playAnimation,
     update,
     playerMesh: () => playerMesh
   }

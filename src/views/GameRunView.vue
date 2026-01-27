@@ -30,12 +30,12 @@
       >
         {{ t('game.start') }}
       </button>
-      <button
+      <button 
         v-else-if="gameRun.isPaused"
         class="btn-resume"
         @click="resumeGame"
       >
-        {{ t('game.resume') }}
+        {{ t('game.start') }}
       </button>
       <button
         v-else
@@ -113,6 +113,10 @@ const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeR
   gamePhysics.value = useGamePhysics(scene)
   // Используем 3D-модель игрока из public/models/running.glb
   gamePhysics.value.createPlayer(scene, '/models/running.glb')
+  // При открытом лаунчере, до старта бега — стоячая анимация
+  if (gamePhysics.value.playAnimation) {
+    gamePhysics.value.playAnimation('standing')
+  }
 
   // Инициализация эффектов
   gameEffects.value = useGameEffects(scene)
@@ -147,6 +151,10 @@ const startGame = () => {
     }
   }
   gameRun.startRun()
+  // При старте забега переключаемся на анимацию бега
+  if (gamePhysics.value?.playAnimation) {
+    gamePhysics.value.playAnimation('run')
+  }
   startGameLoop()
 }
 
