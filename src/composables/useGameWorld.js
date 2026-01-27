@@ -283,28 +283,38 @@ export function useGameWorld(scene, camera) {
   
   // Обновление препятствий
   // Важно: по оси Z игрок фактически стоит около 0, "движется" дорога,
-  // поэтому в коллизии сравниваем с мировым Z=0, а не с playerZ,
-  // и используем "ящиковую" зону хита, а не радиусную.
+  // поэтому в коллизии сравниваем с мировым Z=0, а не с playerZ.
+  // Для X используем не координату в мире, а фактическую полосу (lane),
+  // чтобы хит происходил ТОЛЬКО когда игрок и препятствие в одной полосе.
   const updateObstacles = (playerZ, playerX, playerY, onCollision) => {
     const obstaclesToRemove = []
     
     obstacles.value.forEach((obstacle, index) => {
       obstacle.position.z += roadSpeed.value
       
-      // Проверка коллизии: узкое окно по X/Z, плюс учёт высоты
-      const dx = obstacle.position.x - playerX
+      // Проверка коллизии: та же полоса + окно по Z и высоте
       const dz = obstacle.position.z      // игрок стоит около z = 0
       const dy = obstacle.position.y - playerY
 
       const obstacleHeight = obstacle.userData.height || 1.5
-      const xHalfWidth = 0.7   // ширина полосы/персонажа по X
       const zHalfWidth = 1.2   // "длина" хита по Z (перед/за персонажем)
 
-      const hitByX = Math.abs(dx) < xHalfWidth
+      // Определяем текущую полосу игрока по его X:
+      let playerLaneIndex = 0
+      let bestDx = Infinity
+      lanes.forEach((laneX, idx) => {
+        const d = Math.abs(playerX - laneX)
+        if (d < bestDx) {
+          bestDx = d
+          playerLaneIndex = idx
+        }
+      })
+
+      const hitByLane = obstacle.userData.lane === playerLaneIndex
       const hitByZ = Math.abs(dz) < zHalfWidth
       const hitByY = Math.abs(dy) < obstacleHeight / 2 + 0.5
-      
-      if (hitByX && hitByZ && hitByY) {
+
+      if (hitByLane && hitByZ && hitByY) {
         onCollision()
         obstaclesToRemove.push(index)
         scene.remove(obstacle)
@@ -343,20 +353,29 @@ export function useGameWorld(scene, camera) {
       // Вертикальное движение
       collectible.position.y = 1 + Math.sin(Date.now() * 0.005) * 0.3
       
-      // Проверка сбора: отдельные окна по X/Z/Y,
+      // Проверка сбора: та же полоса + окно по Z/Y,
       // чтобы собирать куб только при реальном пересечении.
-      const dx = collectible.position.x - playerX
       const dz = collectible.position.z       // игрок около z = 0
       const dy = collectible.position.y - playerY
 
-      const xHalfWidth = 0.7
       const zHalfWidth = 1.2
 
-      const hitByX = Math.abs(dx) < xHalfWidth
+      // Полоса игрока по его X
+      let playerLaneIndex = 0
+      let bestDx = Infinity
+      lanes.forEach((laneX, idx) => {
+        const d = Math.abs(playerX - laneX)
+        if (d < bestDx) {
+          bestDx = d
+          playerLaneIndex = idx
+        }
+      })
+
+      const hitByLane = collectible.userData.lane === playerLaneIndex
       const hitByZ = Math.abs(dz) < zHalfWidth
       const hitByY = Math.abs(dy) < 1
-      
-      if (hitByX && hitByZ && hitByY) {
+
+      if (hitByLane && hitByZ && hitByY) {
         collectible.userData.collected = true
         onCollect(0.5) // Количество энергии
         collectiblesToRemove.push(index)
