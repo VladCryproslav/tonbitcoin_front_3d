@@ -348,6 +348,10 @@ const endGame = async () => {
   const result = await gameRun.completeRun()
 
   if (result && result.success) {
+    // Успешное завершение забега — проигрываем победную анимацию
+    if (gamePhysics.value?.setAnimationState) {
+      gamePhysics.value.setAnimationState('win')
+    }
     runResults.value = {
       distance: gameRun.distance,
       energyCollected: gameRun.energyCollected,

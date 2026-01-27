@@ -32,7 +32,7 @@ export function useGamePhysics(scene) {
   let animations = []
 
   // Маппинг логических состояний на индексы клипов в main.glb:
-  // 0: standing, 1: running, 2: jump, 3: roll, 4: fall
+  // 0: standing, 1: running, 2: jump, 3: roll, 4: fall, 5: win
   const animationIndexByState = {
     standing: 0,
     idle: 0,
@@ -42,7 +42,10 @@ export function useGamePhysics(scene) {
     roll: 3,
     slide: 3,
     fall: 4,
-    death: 4
+    death: 4,
+    win: 5,
+    victory: 5,
+    success: 5
   }
 
   const playAnimationState = (state) => {

@@ -222,12 +222,14 @@ export function useGameWorld(scene, camera) {
     const obstacleChance = Math.min(0.5, 0.25 + (roadSpeed.value - 0.15) * 2)
     if (Math.random() < obstacleChance) {
       const lane = Math.floor(Math.random() * 3)
-      createObstacle(lane, playerZ + 25)
+      // Спавним препятствия ВПЕРЕДИ игрока по направлению -Z,
+      // так как камера смотрит из +Z в 0, а дорога уходит в минус.
+      createObstacle(lane, playerZ - 25)
       
       // Иногда создаем препятствие в соседней полосе (более сложно)
       if (Math.random() < 0.3) {
         const nextLane = (lane + (Math.random() < 0.5 ? 1 : -1) + 3) % 3
-        createObstacle(nextLane, playerZ + 25)
+        createObstacle(nextLane, playerZ - 25)
       }
     }
     
@@ -235,7 +237,8 @@ export function useGameWorld(scene, camera) {
     const collectibleChance = 0.7 - (roadSpeed.value - 0.15) * 0.5
     if (Math.random() < collectibleChance) {
       const lane = Math.floor(Math.random() * 3)
-      createCollectible(lane, playerZ + 20)
+      // Энергия тоже спавнится в минусовом Z, чтобы "ехать" к камере
+      createCollectible(lane, playerZ - 20)
     }
     
     // Иногда генерируем несколько предметов подряд (бонусная линия)
@@ -243,16 +246,16 @@ export function useGameWorld(scene, camera) {
       const startLane = Math.floor(Math.random() * 3)
       for (let i = 0; i < 3; i++) {
         const lane = (startLane + i) % 3
-        createCollectible(lane, playerZ + 18 + i * 2)
+        createCollectible(lane, playerZ - 18 - i * 2)
       }
     }
     
     // Редко генерируем препятствие и предмет рядом (сложная ситуация)
     if (Math.random() < 0.1) {
       const lane = Math.floor(Math.random() * 3)
-      createObstacle(lane, playerZ + 25)
+      createObstacle(lane, playerZ - 25)
       const collectibleLane = (lane + (Math.random() < 0.5 ? 1 : -1) + 3) % 3
-      createCollectible(collectibleLane, playerZ + 22)
+      createCollectible(collectibleLane, playerZ - 22)
     }
   }
   
