@@ -205,7 +205,11 @@ const startGameLoop = () => {
     // Обновление игрока (позиции и коллизии)
     if (gamePhysics.value) {
       const playerY = gamePhysics.value.getPlayerY()
-      const playerX = gamePhysics.value.playerPosition.value.x
+      // Защита от ситуаций, когда playerPosition или его value ещё не инициализированы
+      const playerPosRef = gamePhysics.value.playerPosition
+      const playerX = (playerPosRef && playerPosRef.value)
+        ? playerPosRef.value.x
+        : 0
 
       // Обновление мира
       if (gameWorld.value) {
@@ -279,7 +283,11 @@ const startGameLoop = () => {
 
     // Плавное движение камеры за игроком
     if (camera && gamePhysics.value) {
-      const targetX = gamePhysics.value.playerPosition.value.x * 0.3
+      const playerPosRef = gamePhysics.value.playerPosition
+      const baseX = (playerPosRef && playerPosRef.value)
+        ? playerPosRef.value.x
+        : 0
+      const targetX = baseX * 0.3
       camera.position.x += (targetX - camera.position.x) * 0.1
 
       // Небольшое покачивание камеры для динамики
@@ -287,7 +295,7 @@ const startGameLoop = () => {
       camera.position.y = 4 + cameraBob
 
       // Камера следит за игроком
-      const lookAtX = gamePhysics.value.playerPosition.value.x * 0.2
+      const lookAtX = baseX * 0.2
       camera.lookAt(lookAtX, 1 + cameraBob * 0.5, 0)
     }
 
