@@ -153,8 +153,16 @@ const startGame = () => {
   if (gamePhysics.value) {
     const mesh = gamePhysics.value.playerMesh()
     if (mesh) {
+      // Сбрасываем позицию меша
       mesh.position.set(0, 0, 0)
-      gamePhysics.value.playerPosition.value.set(0, 0, 0)
+    }
+    // Сбрасываем вычислительную позицию игрока
+    if (gamePhysics.value.playerPosition?.value) {
+      gamePhysics.value.playerPosition.value.x = 0
+      gamePhysics.value.playerPosition.value.y = 0
+      gamePhysics.value.playerPosition.value.z = 0
+    }
+    if (gamePhysics.value.playerLane) {
       gamePhysics.value.playerLane.value = 1
     }
   }
@@ -189,7 +197,7 @@ const startGameLoop = () => {
 
     // Обновление дистанции
     playerZ.value += gameSpeed.value
-    gameRun.updateDistance(gameRun.distance + gameSpeed.value * 10)
+    gameRun.updateDistance(gameRun.distance.value + gameSpeed.value * 10)
 
     // Обновление игрока (позиции и коллизии)
     if (gamePhysics.value) {
