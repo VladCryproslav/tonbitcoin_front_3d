@@ -39,9 +39,8 @@ export function useGamePhysics(scene) {
     run: 1,
     running: 1,
     jump: 2,
-    // По твоей просьбе свайп вниз — анимация №4
-    roll: 4,
-    slide: 4,
+    roll: 3,
+    slide: 3,
     fall: 4,
     death: 4
   }
