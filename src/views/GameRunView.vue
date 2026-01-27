@@ -140,7 +140,9 @@ const startGame = () => {
   gameSpeed.value = 0.15
   lastSpeedIncrease.value = 0
   if (gameWorld.value) {
+    // Очищаем объекты прошлого забега и пересоздаём дорожку/разметку
     gameWorld.value.clearAll()
+    gameWorld.value.createRoad()
   }
   if (gamePhysics.value) {
     const mesh = gamePhysics.value.playerMesh()
