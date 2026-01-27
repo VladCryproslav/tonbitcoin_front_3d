@@ -127,6 +127,10 @@ const startThreeLoop = () => {
     if (renderer && scene && camera) {
       renderer.render(scene, camera)
     }
+    // Обновляем анимации игрока (standing/running) каждый кадр
+    if (gamePhysics.value) {
+      gamePhysics.value.update()
+    }
   }
   animate()
 }
@@ -179,9 +183,8 @@ const startGameLoop = () => {
     playerZ.value += gameSpeed.value
     gameRun.updateDistance(gameRun.distance + gameSpeed.value * 10)
 
-    // Обновление игрока
+    // Обновление игрока (позиции и коллизии)
     if (gamePhysics.value) {
-      gamePhysics.value.update()
       const playerY = gamePhysics.value.getPlayerY()
       const playerX = gamePhysics.value.playerPosition.value.x
 

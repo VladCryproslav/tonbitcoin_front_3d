@@ -39,14 +39,16 @@ const props = defineProps({
 })
 
 const formatEnergy = (value) => {
-  return value.toFixed(1)
+  const v = Number(value ?? 0)
+  return v.toFixed(1)
 }
 
 const formatDistance = (value) => {
-  if (value >= 1000) {
-    return (value / 1000).toFixed(2) + 'k'
+  const v = Number(value ?? 0)
+  if (v >= 1000) {
+    return (v / 1000).toFixed(2) + 'k'
   }
-  return Math.round(value)
+  return Math.round(v)
 }
 </script>
 
