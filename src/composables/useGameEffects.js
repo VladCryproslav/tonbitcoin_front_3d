@@ -17,21 +17,36 @@ export function useGameEffects(scene) {
   
   // Создание эффекта сбора энергии
   const createEnergyCollectEffect = (position) => {
+    // Защита от некорректных координат (NaN/Infinity),
+    // которые приводят к ошибке THREE.BufferGeometry.computeBoundingSphere().
+    const safePos = {
+      x: Number.isFinite(position?.x) ? position.x : 0,
+      y: Number.isFinite(position?.y) ? position.y : 0,
+      z: Number.isFinite(position?.z) ? position.z : 0
+    }
+
     const particleCount = 20
     const geometry = new BufferGeometry()
     const positions = new Float32Array(particleCount * 3)
     const colors = new Float32Array(particleCount * 3)
+    const velocity = []
     
     for (let i = 0; i < particleCount; i++) {
       const i3 = i * 3
-      positions[i3] = position.x + (Math.random() - 0.5) * 0.5
-      positions[i3 + 1] = position.y + (Math.random() - 0.5) * 0.5
-      positions[i3 + 2] = position.z + (Math.random() - 0.5) * 0.5
+      positions[i3] = safePos.x + (Math.random() - 0.5) * 0.5
+      positions[i3 + 1] = safePos.y + (Math.random() - 0.5) * 0.5
+      positions[i3 + 2] = safePos.z + (Math.random() - 0.5) * 0.5
       
       // Зеленый цвет для энергии
       colors[i3] = 0
       colors[i3 + 1] = 1
       colors[i3 + 2] = 0
+      // Отдельный вектор скорости для каждой частицы
+      velocity.push({
+        x: (Math.random() - 0.5) * 0.02,
+        y: (Math.random() - 0.5) * 0.02 + 0.01,
+        z: (Math.random() - 0.5) * 0.02
+      })
     }
     
     geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
@@ -49,11 +64,7 @@ export function useGameEffects(scene) {
       type: 'energyEffect',
       startTime: Date.now(),
       duration: 500,
-      velocity: positions.map((_, i) => ({
-        x: (Math.random() - 0.5) * 0.02,
-        y: (Math.random() - 0.5) * 0.02 + 0.01,
-        z: (Math.random() - 0.5) * 0.02
-      }))
+      velocity
     }
     
     scene.add(points)
@@ -64,21 +75,34 @@ export function useGameEffects(scene) {
   
   // Создание эффекта столкновения
   const createCollisionEffect = (position) => {
+    const safePos = {
+      x: Number.isFinite(position?.x) ? position.x : 0,
+      y: Number.isFinite(position?.y) ? position.y : 0,
+      z: Number.isFinite(position?.z) ? position.z : 0
+    }
+
     const particleCount = 15
     const geometry = new BufferGeometry()
     const positions = new Float32Array(particleCount * 3)
     const colors = new Float32Array(particleCount * 3)
+    const velocity = []
     
     for (let i = 0; i < particleCount; i++) {
       const i3 = i * 3
-      positions[i3] = position.x + (Math.random() - 0.5) * 0.8
-      positions[i3 + 1] = position.y + (Math.random() - 0.5) * 0.8
-      positions[i3 + 2] = position.z + (Math.random() - 0.5) * 0.8
+      positions[i3] = safePos.x + (Math.random() - 0.5) * 0.8
+      positions[i3 + 1] = safePos.y + (Math.random() - 0.5) * 0.8
+      positions[i3 + 2] = safePos.z + (Math.random() - 0.5) * 0.8
       
       // Красный цвет для столкновения
       colors[i3] = 1
       colors[i3 + 1] = 0
       colors[i3 + 2] = 0
+      // Вектор скорости для каждой частицы
+      velocity.push({
+        x: (Math.random() - 0.5) * 0.03,
+        y: (Math.random() - 0.5) * 0.03,
+        z: (Math.random() - 0.5) * 0.03
+      })
     }
     
     geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
@@ -96,11 +120,7 @@ export function useGameEffects(scene) {
       type: 'collisionEffect',
       startTime: Date.now(),
       duration: 300,
-      velocity: positions.map((_, i) => ({
-        x: (Math.random() - 0.5) * 0.03,
-        y: (Math.random() - 0.5) * 0.03,
-        z: (Math.random() - 0.5) * 0.03
-      }))
+      velocity
     }
     
     scene.add(points)
@@ -126,8 +146,10 @@ export function useGameEffects(scene) {
       } else {
         // Обновление позиций частиц
         const positions = particle.geometry.attributes.position.array
+        const velArray = particle.userData.velocity
         for (let i = 0; i < positions.length; i += 3) {
-          const vel = particle.userData.velocity[i / 3]
+          const vel = velArray[Math.floor(i / 3)]
+          if (!vel) continue
           positions[i] += vel.x
           positions[i + 1] += vel.y
           positions[i + 2] += vel.z
