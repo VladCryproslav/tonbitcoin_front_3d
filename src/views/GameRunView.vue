@@ -234,20 +234,14 @@ const startGameLoop = () => {
         gameWorld.value.updateRoad(playerZ.value)
         gameWorld.value.spawnObjects(playerZ.value)
 
-        // Текущая полоса игрока берётся из физики как дискретный индекс (0/1/2),
-        // чтобы коллизия зависела именно от полосы, а не от "плавающего" X.
-        const laneRef = gamePhysics.value.playerLane
-        const playerLaneIndex =
-          laneRef && typeof laneRef === 'object' && 'value' in laneRef
-            ? laneRef.value
-            : 1
+        // Реальный AABB игрока для точной коллизии (без привязки к индексам полос).
+        const playerBox = gamePhysics.value.getPlayerBox
+          ? gamePhysics.value.getPlayerBox()
+          : null
 
         // Обновление препятствий и проверка коллизий
         gameWorld.value.updateObstacles(
-          playerZ.value,
-          playerX,
-          playerY,
-          playerLaneIndex,
+          playerBox,
           () => {
             // Коллизия с препятствием
             gameRun.hitObstacle()
@@ -289,10 +283,7 @@ const startGameLoop = () => {
 
         // Обновление собираемых предметов
         gameWorld.value.updateCollectibles(
-          playerZ.value,
-          playerX,
-          playerY,
-          playerLaneIndex,
+          playerBox,
           (energy) => {
             gameRun.collectEnergy(energy)
             // Визуальный эффект при сборе

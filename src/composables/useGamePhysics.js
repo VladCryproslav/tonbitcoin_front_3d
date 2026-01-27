@@ -445,6 +445,14 @@ export function useGamePhysics(scene) {
     }
   }
 
+  // Ось‑aligned bounding box игрока для точной коллизии с препятствиями
+  const getPlayerBox = () => {
+    if (!playerMesh) return null
+    const box = new THREE.Box3()
+    box.setFromObject(playerMesh)
+    return box
+  }
+
   return {
     playerPosition,
     playerLane,
@@ -459,6 +467,7 @@ export function useGamePhysics(scene) {
     loadPlayerModel,
     setAnimationState: playAnimationState,
     update,
-    playerMesh: () => playerMesh
+    playerMesh: () => playerMesh,
+    getPlayerBox
   }
 }

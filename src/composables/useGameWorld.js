@@ -6,7 +6,8 @@ import {
   Vector3,
   PlaneGeometry,
   Group,
-  Color
+  Color,
+  Box3
 } from 'three'
 
 export function useGameWorld(scene, camera) {
@@ -281,36 +282,30 @@ export function useGameWorld(scene, camera) {
     updateLaneMarkings()
   }
   
-  // Обновление препятствий
-  // Важно: по оси Z игрок фактически стоит около 0, "движется" дорога,
-  // поэтому в коллизии сравниваем с мировым Z=0, а не с playerZ.
-  // Для X/полосы используем дискретный индекс полосы игрока (playerLaneIndex),
-  // а не пересчёт из мирового X, чтобы избежать расхождений между визуальной
-  // позицией и логикой (когда персонаж уже "ушёл" в бок, а X ещё не успел догнать).
-  const updateObstacles = (playerZ, playerX, playerY, playerLaneIndex, onCollision) => {
+  // Обновление препятствий.
+  // Теперь коллизия считается через реальные AABB (Box3) игрока и препятствий,
+  // без каких‑либо эвристик по полосам/X/Z. Это устраняет баги, когда визуально
+  // игрок в одной полосе, а логика считает, что он в другой.
+  const updateObstacles = (playerBox, onCollision) => {
     const obstaclesToRemove = []
     
     obstacles.value.forEach((obstacle, index) => {
       obstacle.position.z += roadSpeed.value
       
-      // Проверка коллизии: та же полоса + окно по Z и высоте
-      const dz = obstacle.position.z      // игрок стоит около z = 0
-      const dy = obstacle.position.y - playerY
+      // Если ещё нет меша игрока/box — просто прокручиваем препятствия.
+      if (playerBox) {
+        const obstacleBox = obstacle.userData.box || (obstacle.userData.box = new Box3())
+        obstacleBox.setFromObject(obstacle)
 
-      const obstacleHeight = obstacle.userData.height || 1.5
-      const zHalfWidth = 1.2   // "длина" хита по Z (перед/за персонажем)
+        if (playerBox.intersectsBox(obstacleBox)) {
+          onCollision()
+          obstaclesToRemove.push(index)
+          scene.remove(obstacle)
+          return
+        }
+      }
 
-      // Полоса игрока приходит явно из физики (playerLaneIndex),
-      // не пересчитываем её из мировых координат X.
-      const hitByLane = obstacle.userData.lane === playerLaneIndex
-      const hitByZ = Math.abs(dz) < zHalfWidth
-      const hitByY = Math.abs(dy) < obstacleHeight / 2 + 0.5
-
-      if (hitByLane && hitByZ && hitByY) {
-        onCollision()
-        obstaclesToRemove.push(index)
-        scene.remove(obstacle)
-      } else if (obstacle.position.z > 10) {
+      if (obstacle.position.z > 10) {
         // Удаление ушедших препятствий
         obstaclesToRemove.push(index)
         scene.remove(obstacle)
@@ -324,9 +319,8 @@ export function useGameWorld(scene, camera) {
   }
   
   // Обновление собираемых предметов
-  // Аналогично препятствиям, по Z игрок стоит вблизи нуля.
-  // Для X/полосы используем дискретный индекс полосы игрока.
-  const updateCollectibles = (playerZ, playerX, playerY, playerLaneIndex, onCollect) => {
+  // Аналогично препятствиям, используем реальные AABB.
+  const updateCollectibles = (playerBox, onCollect) => {
     const collectiblesToRemove = []
     
     collectibles.value.forEach((collectible, index) => {
@@ -346,24 +340,20 @@ export function useGameWorld(scene, camera) {
       // Вертикальное движение
       collectible.position.y = 1 + Math.sin(Date.now() * 0.005) * 0.3
       
-      // Проверка сбора: та же полоса + окно по Z/Y,
-      // чтобы собирать куб только при реальном пересечении.
-      const dz = collectible.position.z       // игрок около z = 0
-      const dy = collectible.position.y - playerY
+      if (playerBox) {
+        const collBox = collectible.userData.box || (collectible.userData.box = new Box3())
+        collBox.setFromObject(collectible)
 
-      const zHalfWidth = 1.2
+        if (playerBox.intersectsBox(collBox)) {
+          collectible.userData.collected = true
+          onCollect(0.5) // Количество энергии
+          collectiblesToRemove.push(index)
+          scene.remove(collectible)
+          return
+        }
+      }
 
-      // Полоса игрока приходит явно из физики.
-      const hitByLane = collectible.userData.lane === playerLaneIndex
-      const hitByZ = Math.abs(dz) < zHalfWidth
-      const hitByY = Math.abs(dy) < 1
-
-      if (hitByLane && hitByZ && hitByY) {
-        collectible.userData.collected = true
-        onCollect(0.5) // Количество энергии
-        collectiblesToRemove.push(index)
-        scene.remove(collectible)
-      } else if (collectible.position.z > 10) {
+      if (collectible.position.z > 10) {
         // Удаление ушедших предметов
         collectiblesToRemove.push(index)
         scene.remove(collectible)
@@ -375,7 +365,7 @@ export function useGameWorld(scene, camera) {
       collectibles.value.splice(index, 1)
     })
   }
-  
+
   // Очистка всех объектов
   const clearAll = () => {
     obstacles.value.forEach(obstacle => scene.remove(obstacle))
