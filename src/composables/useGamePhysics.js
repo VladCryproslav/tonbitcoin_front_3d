@@ -29,6 +29,40 @@ export function useGamePhysics(scene) {
   let mixer = null // Для анимаций из GLTF
   let clock = new Clock()
   let currentAnimation = null
+  let animations = []
+
+  // Маппинг логических состояний на индексы клипов в main.glb:
+  // 0: standing, 1: running, 2: jump, 3: roll, 4: fall
+  const animationIndexByState = {
+    standing: 0,
+    idle: 0,
+    run: 1,
+    running: 1,
+    jump: 2,
+    roll: 3,
+    slide: 3,
+    fall: 4,
+    death: 4
+  }
+
+  const playAnimationState = (state) => {
+    if (!mixer || !animations || animations.length === 0) return
+
+    const idx = animationIndexByState[state]
+    const clip =
+      (typeof idx === 'number' && animations[idx]) ||
+      animations[0]
+    if (!clip) return
+
+    const action = mixer.clipAction(clip)
+    if (currentAnimation === action) return
+
+    if (currentAnimation) {
+      currentAnimation.fadeOut(0.1)
+    }
+    action.reset().fadeIn(0.1).play()
+    currentAnimation = action
+  }
 
   // Загрузка 3D модели игрока (опционально)
   const loadPlayerModel = async (gameScene, modelPath) => {
@@ -65,14 +99,10 @@ export function useGamePhysics(scene) {
 
       // Настройка анимаций если есть
       if (gltf.animations && gltf.animations.length > 0) {
+        animations = gltf.animations
         mixer = new AnimationMixer(model)
-        // В standing.glb и running.glb по одному нужному клипу — берём первый
-        const clip = gltf.animations[0]
-        if (clip) {
-          const action = mixer.clipAction(clip)
-          action.play()
-          currentAnimation = action
-        }
+        // По умолчанию включаем standing/первый клип
+        playAnimationState('standing')
       }
 
       const targetScene = gameScene || scene
@@ -214,6 +244,9 @@ export function useGamePhysics(scene) {
       isJumping.value = true
       jumpStartTime = Date.now()
 
+      // Переключаемся на анимацию прыжка, если есть
+      playAnimationState('jump')
+
       if (playerMesh) {
         // Анимация прыжка
         const jumpHeight = 2.5
@@ -228,6 +261,9 @@ export function useGamePhysics(scene) {
     if (!isSliding.value && !isJumping.value) {
       isSliding.value = true
       slideStartTime = Date.now()
+
+      // Переключаемся на анимацию переката/скольжения, если есть
+      playAnimationState('roll')
 
       if (playerMesh) {
         // Плавная анимация скольжения
@@ -268,6 +304,8 @@ export function useGamePhysics(scene) {
                 playerMesh.position.y = startY
                 playerMesh.rotation.x = 0
                 isSliding.value = false
+                // Возвращаем анимацию бега
+                playAnimationState('running')
               }
             }
             returnAnimate()
@@ -323,6 +361,8 @@ export function useGamePhysics(scene) {
         playerMesh.position.y = startY
         playerMesh.rotation.x = 0
         isJumping.value = false
+        // После прыжка возвращаемся к бегу
+        playAnimationState('running')
       }
     }
     animate()
@@ -412,6 +452,7 @@ export function useGamePhysics(scene) {
     getPlayerY,
     createPlayer,
     loadPlayerModel,
+    setAnimationState: playAnimationState,
     update,
     playerMesh: () => playerMesh
   }

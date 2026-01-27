@@ -114,8 +114,8 @@ const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeR
 
   // Инициализация физики и создание игрока
   gamePhysics.value = useGamePhysics(scene)
-  // При открытом лаунчере показываем стоячую анимацию из standing.glb
-  gamePhysics.value.createPlayer(scene, '/models/standing.glb')
+  // Загружаем основную модель с полным набором анимаций (standing/running/jump/roll/fall)
+  gamePhysics.value.createPlayer(scene, '/models/main.glb')
 
   // Инициализация эффектов
   gameEffects.value = useGameEffects(scene)
@@ -170,9 +170,9 @@ const startGame = () => {
     }
   }
   gameRun.startRun()
-  // При старте забега переключаемся на модель с анимацией бега
-  if (gamePhysics.value?.loadPlayerModel) {
-    gamePhysics.value.loadPlayerModel(scene, '/models/running.glb')
+  // При старте забега переключаемся на анимацию бега
+  if (gamePhysics.value?.setAnimationState) {
+    gamePhysics.value.setAnimationState('running')
   }
   startGameLoop()
 }
@@ -255,6 +255,9 @@ const startGameLoop = () => {
             }
 
             if (newPower <= 0) {
+              if (gamePhysics.value?.setAnimationState) {
+                gamePhysics.value.setAnimationState('fall')
+              }
               endGame()
             }
           }
@@ -308,6 +311,9 @@ const startGameLoop = () => {
 
     // Проверка условий окончания забега
     if (gameRun.currentPower.value <= 0) {
+      if (gamePhysics.value?.setAnimationState) {
+        gamePhysics.value.setAnimationState('fall')
+      }
       endGame()
       return
     }
@@ -333,6 +339,11 @@ const stopGameLoop = () => {
 
 const endGame = async () => {
   stopGameLoop()
+
+  // Возвращаем стоячую анимацию
+  if (gamePhysics.value?.setAnimationState) {
+    gamePhysics.value.setAnimationState('standing')
+  }
 
   const result = await gameRun.completeRun()
 
