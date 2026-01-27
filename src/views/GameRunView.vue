@@ -1,43 +1,43 @@
 <template>
   <div class="game-run-view">
     <!-- Three.js сцена -->
-    <GameScene 
+    <GameScene
       ref="gameSceneRef"
       @scene-ready="onSceneReady"
     />
-    
+
     <!-- UI поверх игры -->
-    <GameUI 
+    <GameUI
       :energy="gameRun.energyCollected"
       :distance="gameRun.distance"
       :power="gameRun.currentPower"
     />
-    
+
     <!-- Управление -->
-    <GameControls 
+    <GameControls
       @swipe-left="handleSwipeLeft"
       @swipe-right="handleSwipeRight"
       @swipe-up="handleSwipeUp"
       @swipe-down="handleSwipeDown"
     />
-    
+
     <!-- Кнопка паузы/старта -->
     <div class="game-controls-ui">
-      <button 
-        v-if="!gameRun.isRunning" 
+      <button
+        v-if="!gameRun.isRunning"
         class="btn-start"
         @click="startGame"
       >
         {{ t('game.start') }}
       </button>
-      <button 
+      <button
         v-else-if="gameRun.isPaused"
         class="btn-resume"
         @click="resumeGame"
       >
         {{ t('game.resume') }}
       </button>
-      <button 
+      <button
         v-else
         class="btn-pause"
         @click="pauseGame"
@@ -45,9 +45,9 @@
         {{ t('game.pause') }}
       </button>
     </div>
-    
+
     <!-- Модалка результатов -->
-    <RunCompleteModal 
+    <RunCompleteModal
       :visible="showResults"
       :results="runResults"
       @close="handleRunComplete"
@@ -100,23 +100,23 @@ const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeR
   scene = threeScene
   camera = threeCamera
   renderer = threeRenderer
-  
+
   // Настройка камеры для раннера
   camera.position.set(0, 4, 8)
   camera.lookAt(0, 1, 0)
-  
+
   // Инициализация игрового мира
   gameWorld.value = useGameWorld(scene, camera)
   gameWorld.value.createRoad()
-  
+
   // Инициализация физики и создание игрока
   gamePhysics.value = useGamePhysics(scene)
   // Используем 3D-модель игрока из public/models/running.glb
   gamePhysics.value.createPlayer(scene, '/models/running.glb')
-  
+
   // Инициализация эффектов
   gameEffects.value = useGameEffects(scene)
-  
+
   // Запуск рендеринга Three.js
   startThreeLoop()
 }
@@ -162,33 +162,33 @@ const resumeGame = () => {
 
 const startGameLoop = () => {
   if (gameLoop) return
-  
+
   const update = () => {
     if (!gameRun.isRunning || gameRun.isPaused) {
       gameLoop = null
       return
     }
-    
+
     const deltaTime = 0.016 // ~60 FPS
-    
+
     // Обновление дистанции
     playerZ.value += gameSpeed.value
     gameRun.updateDistance(gameRun.distance + gameSpeed.value * 10)
-    
+
     // Обновление игрока
     if (gamePhysics.value) {
       gamePhysics.value.update()
       const playerY = gamePhysics.value.getPlayerY()
       const playerX = gamePhysics.value.playerPosition.value.x
-      
+
       // Обновление мира
       if (gameWorld.value) {
         // Синхронизируем скорость дороги с игровой скоростью
         gameWorld.value.setRoadSpeed(gameSpeed.value)
-        
+
         gameWorld.value.updateRoad(playerZ.value)
         gameWorld.value.spawnObjects(playerZ.value)
-        
+
         // Обновление препятствий и проверка коллизий
         gameWorld.value.updateObstacles(
           playerZ.value,
@@ -199,12 +199,12 @@ const startGameLoop = () => {
             gameRun.hitObstacle()
             const newPower = gameRun.currentPower - 10
             app.setPower(Math.max(0, newPower))
-            
+
             // Эффект частиц при столкновении
             if (gameEffects.value) {
               gameEffects.value.createCollisionEffect(new Vector3(playerX, playerY, playerZ.value))
             }
-            
+
             // Эффект тряски камеры при столкновении
             if (camera) {
               const originalX = camera.position.x
@@ -223,13 +223,13 @@ const startGameLoop = () => {
               }
               shake()
             }
-            
+
             if (newPower <= 0) {
               endGame()
             }
           }
         )
-        
+
         // Обновление собираемых предметов
         gameWorld.value.updateCollectibles(
           playerZ.value,
@@ -243,50 +243,50 @@ const startGameLoop = () => {
             }
           }
         )
-        
+
         // Обновление эффектов
         if (gameEffects.value) {
           gameEffects.value.updateEffects()
         }
       }
     }
-    
+
     // Плавное движение камеры за игроком
     if (camera && gamePhysics.value) {
       const targetX = gamePhysics.value.playerPosition.value.x * 0.3
       camera.position.x += (targetX - camera.position.x) * 0.1
-      
+
       // Небольшое покачивание камеры для динамики
       const cameraBob = Math.sin(Date.now() * 0.003) * 0.1
       camera.position.y = 4 + cameraBob
-      
+
       // Камера следит за игроком
       const lookAtX = gamePhysics.value.playerPosition.value.x * 0.2
       camera.lookAt(lookAtX, 1 + cameraBob * 0.5, 0)
     }
-    
+
     // Увеличение скорости со временем
     const distanceCheck = Math.floor(gameRun.distance / 100)
     if (distanceCheck > 0 && distanceCheck !== lastSpeedIncrease.value) {
       lastSpeedIncrease.value = distanceCheck
       gameSpeed.value = Math.min(gameSpeed.value + 0.01, 0.4)
     }
-    
+
     // Проверка условий окончания забега
     if (gameRun.currentPower <= 0) {
       endGame()
       return
     }
-    
+
     // Автоматическое завершение при достижении максимальной дистанции (опционально)
     // if (gameRun.distance >= 10000) {
     //   endGame()
     //   return
     // }
-    
+
     gameLoop = requestAnimationFrame(update)
   }
-  
+
   gameLoop = requestAnimationFrame(update)
 }
 
@@ -299,9 +299,9 @@ const stopGameLoop = () => {
 
 const endGame = async () => {
   stopGameLoop()
-  
+
   const result = await gameRun.completeRun()
-  
+
   if (result && result.success) {
     runResults.value = {
       distance: gameRun.distance,
@@ -399,7 +399,7 @@ onUnmounted(() => {
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(129, 67, 252, 0.4);
   transition: all 0.2s;
-  
+
   &:active {
     transform: scale(0.95);
     opacity: 0.8;

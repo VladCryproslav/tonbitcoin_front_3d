@@ -38,8 +38,27 @@ export function useGamePhysics(scene) {
       const gltf = await loader.loadAsync(modelPath)
       
       const model = gltf.scene
-      model.scale.set(1, 1, 1) // Настройте масштаб под вашу модель
+      // При необходимости подправь масштаб/позицию под конкретную модель
+      model.scale.set(1, 1, 1)
       model.position.set(0, 0, 0)
+      // Разворачиваем модель спиной к камере (камера стоит с +Z и смотрит в 0)
+      model.rotation.y = Math.PI
+      
+      // Настройка мешей и материалов
+      model.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true
+          child.receiveShadow = true
+          
+          // Если у меша нет текстурной карты — зададим базовый цвет,
+          // чтобы он не выглядел просто серым.
+          if (!child.material.map) {
+            child.material.color.set(0xEB7D26)
+            child.material.metalness = 0.1
+            child.material.roughness = 0.9
+          }
+        }
+      })
       
       // Настройка анимаций если есть
       if (gltf.animations && gltf.animations.length > 0) {
@@ -49,11 +68,13 @@ export function useGamePhysics(scene) {
           anim.name.toLowerCase().includes('run') || 
           anim.name.toLowerCase().includes('walk')
         )
-        if (runAnimation) {
-          const action = mixer.clipAction(runAnimation)
+        // Если run/walk не нашли — берём первый клип как дефолт
+        const clip = runAnimation || gltf.animations[0]
+        if (clip) {
+          const action = mixer.clipAction(clip)
           action.play()
           currentAnimation = action
-        }
+        } 
       }
       
       gameScene.add(model)
@@ -66,11 +87,8 @@ export function useGamePhysics(scene) {
     }
   }
   
-  // Создание модели игрока (простой куб для начала или загрузка 3D модели)
-  const createPlayer = (gameScene, modelPath = null) => {
-    const gameSceneToUse = gameScene || scene
-    if (!gameSceneToUse) return null
-    
+  // Внутренняя утилита: создать кубического игрока (фоллбек)
+  const createFallbackPlayer = (gameSceneToUse) => {
     const group = new Group()
     
     // Тело (инженер) - Subway Surfers стиль: яркие цвета
@@ -138,21 +156,33 @@ export function useGamePhysics(scene) {
     group.add(rightLeg)
     
     group.position.set(0, 0, 0)
+    // Кубический персонаж тоже смотрит от камеры вперёд по -Z
+    group.rotation.y = Math.PI
     gameSceneToUse.add(group)
     playerMesh = group
     
-    // Если передан путь к модели, загружаем её
+    return group
+  }
+  
+  // Создание модели игрока (GLB-модель, либо фоллбек-куб)
+  const createPlayer = (gameScene, modelPath = null) => {
+    const gameSceneToUse = gameScene || scene
+    if (!gameSceneToUse) return null
+    
+    // Если есть путь до модели — сначала пробуем загрузить её,
+    // не показывая кубический фоллбек.
     if (modelPath) {
-      loadPlayerModel(gameSceneToUse, modelPath).then(model => {
+      return loadPlayerModel(gameSceneToUse, modelPath).then(model => {
         if (model) {
-          // Удаляем простую модель и используем загруженную
-          gameSceneToUse.remove(group)
-          playerMesh = model
+          return model
         }
+        // Если загрузка провалилась — создаём фоллбек
+        return createFallbackPlayer(gameSceneToUse)
       })
     }
     
-    return group
+    // Без пути к модели сразу создаём фоллбек
+    return createFallbackPlayer(gameSceneToUse)
   }
   
   const moveLeft = () => {
