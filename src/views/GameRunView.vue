@@ -13,12 +13,13 @@
       :power="gameRun.currentPower"
     />
 
-    <!-- Управление -->
+    <!-- Управление (свайпы + тап для старта на мобильных) -->
     <GameControls
       @swipe-left="handleSwipeLeft"
       @swipe-right="handleSwipeRight"
       @swipe-up="handleSwipeUp"
       @swipe-down="handleSwipeDown"
+      @tap="handleTap"
     />
 
     <!-- Кнопка паузы/старта -->
@@ -138,6 +139,9 @@ const startThreeLoop = () => {
 }
 
 const startGame = () => {
+  // Если забег уже идёт — игнорируем повторный старт
+  if (gameRun.isRunning.value && !gameRun.isPaused.value) return
+
   playerZ.value = 0
   gameSpeed.value = 0.15
   lastSpeedIncrease.value = 0
@@ -176,7 +180,7 @@ const startGameLoop = () => {
   if (gameLoop) return
 
   const update = () => {
-    if (!gameRun.isRunning || gameRun.isPaused) {
+    if (!gameRun.isRunning.value || gameRun.isPaused.value) {
       gameLoop = null
       return
     }
@@ -284,7 +288,7 @@ const startGameLoop = () => {
     }
 
     // Проверка условий окончания забега
-    if (gameRun.currentPower <= 0) {
+    if (gameRun.currentPower.value <= 0) {
       endGame()
       return
     }
@@ -351,6 +355,13 @@ const handleSwipeDown = () => {
   }
 }
 
+// Тап по экрану: если игра ещё не запущена — стартуем забег
+const handleTap = () => {
+  if (!gameRun.isRunning.value) {
+    startGame()
+  }
+}
+
 const handleRunComplete = () => {
   showResults.value = false
   // Небольшая задержка перед возвратом для плавности
@@ -368,7 +379,7 @@ onUnmounted(() => {
   if (threeLoop) {
     cancelAnimationFrame(threeLoop)
   }
-  if (gameRun.isRunning) {
+  if (gameRun.isRunning.value) {
     gameRun.stopRun()
   }
   if (gameWorld.value) {
