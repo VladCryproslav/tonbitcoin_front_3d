@@ -26,14 +26,16 @@
       <button
         v-if="!gameRun.isRunning"
         class="btn-start"
-        @click="startGame"
+        @click.stop.prevent="startGame"
+        @touchstart.stop.prevent="startGame"
       >
         {{ t('game.start') }}
       </button>
       <button 
         v-else-if="gameRun.isPaused"
         class="btn-resume"
-        @click="resumeGame"
+        @click.stop.prevent="resumeGame"
+        @touchstart.stop.prevent="resumeGame"
       >
         {{ t('game.start') }}
       </button>
