@@ -22,28 +22,29 @@
       @tap="handleTap"
     />
 
-    <!-- Кнопка паузы/старта -->
+    <!-- Кнопка старта/паузы (главное управление игрой) -->
     <div class="game-controls-ui">
       <button
         v-if="!gameRun.isRunning"
         class="btn-start"
-        @click.stop.prevent="startGame"
-        @touchstart.stop.prevent="startGame"
+        @click.stop.prevent="togglePlayPause"
+        @touchstart.stop.prevent="togglePlayPause"
       >
         {{ t('game.start') }}
       </button>
       <button 
         v-else-if="gameRun.isPaused"
         class="btn-resume"
-        @click.stop.prevent="resumeGame"
-        @touchstart.stop.prevent="resumeGame"
+        @click.stop.prevent="togglePlayPause"
+        @touchstart.stop.prevent="togglePlayPause"
       >
         {{ t('game.start') }}
       </button>
       <button
         v-else
         class="btn-pause"
-        @click="pauseGame"
+        @click.stop.prevent="togglePlayPause"
+        @touchstart.stop.prevent="togglePlayPause"
       >
         {{ t('game.pause') }}
       </button>
@@ -185,6 +186,20 @@ const pauseGame = () => {
 const resumeGame = () => {
   gameRun.resumeRun()
   startGameLoop()
+}
+
+// Унифицированный обработчик для кнопки:
+// - если ещё не запущено — старт;
+// - если идёт забег — пауза;
+// - если стоит на паузе — продолжение.
+const togglePlayPause = () => {
+  if (!gameRun.isRunning.value) {
+    startGame()
+  } else if (gameRun.isPaused.value) {
+    resumeGame()
+  } else {
+    pauseGame()
+  }
 }
 
 const startGameLoop = () => {
@@ -391,16 +406,10 @@ const handleSwipeDown = () => {
 
 // Тап по экрану: если игра ещё не запущена — стартуем забег
 // Тап по экрану:
-// - если игра ещё не запущена — стартуем;
-// - если идёт забег — ставим на паузу;
-// - если стоит на паузе — продолжаем.
+// - только стартует игру, чтобы не конфликтовать с кнопкой.
 const handleTap = () => {
   if (!gameRun.isRunning.value) {
     startGame()
-  } else if (!gameRun.isPaused.value) {
-    pauseGame()
-  } else {
-    resumeGame()
   }
 }
 
