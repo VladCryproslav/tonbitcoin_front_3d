@@ -284,9 +284,10 @@ export function useGameWorld(scene, camera) {
   // Обновление препятствий
   // Важно: по оси Z игрок фактически стоит около 0, "движется" дорога,
   // поэтому в коллизии сравниваем с мировым Z=0, а не с playerZ.
-  // Для X используем не координату в мире, а фактическую полосу (lane),
-  // чтобы хит происходил ТОЛЬКО когда игрок и препятствие в одной полосе.
-  const updateObstacles = (playerZ, playerX, playerY, onCollision) => {
+  // Для X/полосы используем дискретный индекс полосы игрока (playerLaneIndex),
+  // а не пересчёт из мирового X, чтобы избежать расхождений между визуальной
+  // позицией и логикой (когда персонаж уже "ушёл" в бок, а X ещё не успел догнать).
+  const updateObstacles = (playerZ, playerX, playerY, playerLaneIndex, onCollision) => {
     const obstaclesToRemove = []
     
     obstacles.value.forEach((obstacle, index) => {
@@ -299,17 +300,8 @@ export function useGameWorld(scene, camera) {
       const obstacleHeight = obstacle.userData.height || 1.5
       const zHalfWidth = 1.2   // "длина" хита по Z (перед/за персонажем)
 
-      // Определяем текущую полосу игрока по его X:
-      let playerLaneIndex = 0
-      let bestDx = Infinity
-      lanes.forEach((laneX, idx) => {
-        const d = Math.abs(playerX - laneX)
-        if (d < bestDx) {
-          bestDx = d
-          playerLaneIndex = idx
-        }
-      })
-
+      // Полоса игрока приходит явно из физики (playerLaneIndex),
+      // не пересчитываем её из мировых координат X.
       const hitByLane = obstacle.userData.lane === playerLaneIndex
       const hitByZ = Math.abs(dz) < zHalfWidth
       const hitByY = Math.abs(dy) < obstacleHeight / 2 + 0.5
@@ -333,7 +325,8 @@ export function useGameWorld(scene, camera) {
   
   // Обновление собираемых предметов
   // Аналогично препятствиям, по Z игрок стоит вблизи нуля.
-  const updateCollectibles = (playerZ, playerX, playerY, onCollect) => {
+  // Для X/полосы используем дискретный индекс полосы игрока.
+  const updateCollectibles = (playerZ, playerX, playerY, playerLaneIndex, onCollect) => {
     const collectiblesToRemove = []
     
     collectibles.value.forEach((collectible, index) => {
@@ -360,17 +353,7 @@ export function useGameWorld(scene, camera) {
 
       const zHalfWidth = 1.2
 
-      // Полоса игрока по его X
-      let playerLaneIndex = 0
-      let bestDx = Infinity
-      lanes.forEach((laneX, idx) => {
-        const d = Math.abs(playerX - laneX)
-        if (d < bestDx) {
-          bestDx = d
-          playerLaneIndex = idx
-        }
-      })
-
+      // Полоса игрока приходит явно из физики.
       const hitByLane = collectible.userData.lane === playerLaneIndex
       const hitByZ = Math.abs(dz) < zHalfWidth
       const hitByY = Math.abs(dy) < 1
