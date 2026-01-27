@@ -111,7 +111,8 @@ const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeR
   
   // Инициализация физики и создание игрока
   gamePhysics.value = useGamePhysics(scene)
-  gamePhysics.value.createPlayer(scene)
+  // Используем 3D-модель игрока из public/models/running.glb
+  gamePhysics.value.createPlayer(scene, '/models/running.glb')
   
   // Инициализация эффектов
   gameEffects.value = useGameEffects(scene)
