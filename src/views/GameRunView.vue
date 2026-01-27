@@ -390,9 +390,17 @@ const handleSwipeDown = () => {
 }
 
 // Тап по экрану: если игра ещё не запущена — стартуем забег
+// Тап по экрану:
+// - если игра ещё не запущена — стартуем;
+// - если идёт забег — ставим на паузу;
+// - если стоит на паузе — продолжаем.
 const handleTap = () => {
   if (!gameRun.isRunning.value) {
     startGame()
+  } else if (!gameRun.isPaused.value) {
+    pauseGame()
+  } else {
+    resumeGame()
   }
 }
 
