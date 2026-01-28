@@ -278,8 +278,11 @@ export function useGamePhysics(scene) {
   }
 
   const slide = () => {
-    if (!isSliding.value && !isJumping.value) {
+    // Разрешаем слайд в любой момент, даже во время прыжка.
+    // Если игрок был в прыжке — прерываем его и переходим в roll/slide.
+    if (!isSliding.value) {
       isSliding.value = true
+      isJumping.value = false
       slideStartTime = Date.now()
 
       // Переключаемся на анимацию переката/скольжения, если есть
@@ -377,6 +380,9 @@ export function useGamePhysics(scene) {
     const startTime = Date.now()
 
     const animate = () => {
+      // Прыжок мог быть отменён (например, начался slide) — в этом случае
+      // просто прекращаем дальнейшую анимацию подъёма/спуска.
+      if (!isJumping.value) return
       const elapsed = Date.now() - startTime
       const progress = elapsed / duration
 
