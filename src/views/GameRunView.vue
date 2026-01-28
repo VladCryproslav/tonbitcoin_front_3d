@@ -242,7 +242,7 @@ const startGameLoop = () => {
         // Обновление препятствий и проверка коллизий
         gameWorld.value.updateObstacles(
           playerBox,
-          () => {
+          (hitObstacle) => {
             // Коллизия с препятствием
             gameRun.hitObstacle()
             const newPower = gameRun.currentPower.value - 10
@@ -270,6 +270,13 @@ const startGameLoop = () => {
                 }
               }
               shake()
+            }
+
+            // После первого удара "замораживаем" движение дороги и игрока,
+            // чтобы препятствие визуально осталось на месте столкновения.
+            gameSpeed.value = 0
+            if (gameWorld.value) {
+              gameWorld.value.setRoadSpeed(0)
             }
 
             if (newPower <= 0) {

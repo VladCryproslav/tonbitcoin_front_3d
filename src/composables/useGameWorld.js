@@ -297,16 +297,18 @@ export function useGameWorld(scene, camera) {
         const obstacleBox = obstacle.userData.box || (obstacle.userData.box = new Box3())
         obstacleBox.setFromObject(obstacle)
 
-        if (playerBox.intersectsBox(obstacleBox)) {
-          onCollision()
-          obstaclesToRemove.push(index)
-          scene.remove(obstacle)
+        // Флаг, чтобы по одному и тому же препятствию не бить каждый кадр.
+        if (!obstacle.userData.hit && playerBox.intersectsBox(obstacleBox)) {
+          obstacle.userData.hit = true
+          onCollision(obstacle)
+          // Не удаляем препятствие: оно остаётся "на месте" столкновения.
+          // Также сразу выходим, чтобы не обрабатывать уход за камеру в этот кадр.
           return
         }
       }
 
       if (obstacle.position.z > 10) {
-        // Удаление ушедших препятствий
+        // Удаление ушедших препятствий (которые игрок не задел).
         obstaclesToRemove.push(index)
         scene.remove(obstacle)
       }
@@ -346,6 +348,12 @@ export function useGameWorld(scene, camera) {
 
         if (playerBox.intersectsBox(collBox)) {
           collectible.userData.collected = true
+          // Мгновенно убираем объект с экрана, даже до remove,
+          // чтобы он гарантированно не "ехал" с игроком один-два кадра.
+          collectible.visible = false
+          collectible.position.y = -9999
+          collectible.position.z = -9999
+
           onCollect(0.5) // Количество энергии
           collectiblesToRemove.push(index)
           scene.remove(collectible)
