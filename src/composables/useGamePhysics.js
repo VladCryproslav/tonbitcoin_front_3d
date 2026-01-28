@@ -281,10 +281,28 @@ export function useGamePhysics(scene) {
     // Разрешаем слайд в любой момент, даже во время прыжка.
     // Если игрок был в прыжке — прерываем его и переходим в roll/slide.
     if (!isSliding.value) {
-      // Сначала "приземляем" персонажа, чтобы не зависнуть в воздухе
+      // Сначала мягко "приземляем" персонажа, если он был в воздухе,
+      // чтобы переход из прыжка в слайд не выглядел рваным.
       if (playerMesh) {
-        playerMesh.position.y = 0
-        playerMesh.rotation.x = 0
+        const startY = playerMesh.position.y
+        const startRotX = playerMesh.rotation.x
+        const targetY = 0
+        const targetRotX = 0
+        const landDuration = 150 // мс
+        const landStart = Date.now()
+
+        const land = () => {
+          const t = Math.min((Date.now() - landStart) / landDuration, 1)
+          // плавное сглаживание (smoothstep)
+          const k = t * t * (3 - 2 * t)
+          playerMesh.position.y = startY + (targetY - startY) * k
+          playerMesh.rotation.x = startRotX + (targetRotX - startRotX) * k
+          if (t < 1 && isSliding.value) {
+            requestAnimationFrame(land)
+          }
+        }
+        // Стартуем приземление параллельно с roll
+        requestAnimationFrame(land)
       }
 
       isSliding.value = true
