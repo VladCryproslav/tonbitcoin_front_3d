@@ -281,6 +281,12 @@ export function useGamePhysics(scene) {
     // Разрешаем слайд в любой момент, даже во время прыжка.
     // Если игрок был в прыжке — прерываем его и переходим в roll/slide.
     if (!isSliding.value) {
+      // Сначала "приземляем" персонажа, чтобы не зависнуть в воздухе
+      if (playerMesh) {
+        playerMesh.position.y = 0
+        playerMesh.rotation.x = 0
+      }
+
       isSliding.value = true
       isJumping.value = false
       slideStartTime = Date.now()
