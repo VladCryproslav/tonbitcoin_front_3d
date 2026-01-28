@@ -569,9 +569,9 @@ onUnmounted(() => {
 
 .game-top-bar {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 300;
+  top: calc(env(safe-area-inset-top, 0px) + 72px);
+  right: 20px;
+  z-index: 450; // чуть выше GameUI, но ниже финального оверлея
   display: flex;
   gap: 8px;
 }
