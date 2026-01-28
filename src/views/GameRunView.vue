@@ -99,6 +99,7 @@ let threeLoop = null
 const gameSpeed = ref(0.15)
 const playerZ = ref(0)
 const lastSpeedIncrease = ref(0)
+const hitCount = ref(0)
 
 const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeRenderer }) => {
   scene = threeScene
@@ -171,6 +172,7 @@ const startGame = () => {
     }
   }
   gameRun.startRun()
+  hitCount.value = 0
   // При старте забега переключаемся на анимацию бега
   if (gamePhysics.value?.setAnimationState) {
     gamePhysics.value.setAnimationState('running')
@@ -244,6 +246,7 @@ const startGameLoop = () => {
           playerBox,
           (hitObstacle) => {
             // Коллизия с препятствием
+            hitCount.value += 1
             gameRun.hitObstacle()
             const newPower = gameRun.currentPower.value - 10
             app.setPower(Math.max(0, newPower))
@@ -270,20 +273,6 @@ const startGameLoop = () => {
                 }
               }
               shake()
-            }
-
-            // После первого удара "замораживаем" движение дороги и игрока,
-            // чтобы препятствие визуально осталось на месте столкновения.
-            gameSpeed.value = 0
-            if (gameWorld.value) {
-              gameWorld.value.setRoadSpeed(0)
-            }
-
-            if (newPower <= 0) {
-              if (gamePhysics.value?.setAnimationState) {
-                gamePhysics.value.setAnimationState('fall')
-              }
-              endGame()
             }
           }
         )
@@ -332,8 +321,13 @@ const startGameLoop = () => {
       gameSpeed.value = Math.min(gameSpeed.value + 0.003, 0.32)
     }
 
-    // Проверка условий окончания забега
-    if (gameRun.currentPower.value <= 0) {
+    // Проверка условий окончания забега:
+    // персонажу даётся 3 удара по препятствиям, на третьем забег останавливается.
+    if (hitCount.value >= 3) {
+      if (gameWorld.value) {
+        gameWorld.value.setRoadSpeed(0)
+      }
+      gameSpeed.value = 0
       if (gamePhysics.value?.setAnimationState) {
         gamePhysics.value.setAnimationState('fall')
       }
