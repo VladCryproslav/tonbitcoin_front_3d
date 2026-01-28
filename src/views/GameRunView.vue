@@ -32,7 +32,7 @@
       >
         {{ t('game.start') }}
       </button>
-      <button 
+      <button
         v-else-if="gameRun.isPaused"
         class="btn-resume"
         @click.stop.prevent="togglePlayPause"
@@ -328,20 +328,12 @@ const startGameLoop = () => {
         gameWorld.value.setRoadSpeed(0)
       }
       gameSpeed.value = 0
-      // На третьем ударе проигрываем анимацию "4" (fall/death),
-      // затем по завершении (условно через ~1с) возвращаемся в 0 (standing)
-      // и завершаем забег.
       if (gamePhysics.value?.setAnimationState) {
         gamePhysics.value.setAnimationState('fall')
-        setTimeout(() => {
-          if (gamePhysics.value?.setAnimationState) {
-            gamePhysics.value.setAnimationState('standing')
-          }
-          endGame()
-        }, 1000)
-      } else {
-        endGame()
       }
+      // Анимация "fall" (клип 4) настроена так, чтобы отыграть один раз и
+      // "замереть" в конце. Просто завершаем забег, не переключаясь на 0/1.
+      endGame()
       return
     }
 

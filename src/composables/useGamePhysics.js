@@ -63,6 +63,18 @@ export function useGamePhysics(scene) {
     if (currentAnimation) {
       currentAnimation.fadeOut(0.1)
     }
+
+    // Для "fall/death" играем анимацию один раз и замираем в конце,
+    // без зацикливания и без автоперехода обратно в бег.
+    if (state === 'fall' || state === 'death') {
+      action.setLoop(THREE.LoopOnce, 1)
+      action.clampWhenFinished = true
+    } else {
+      // Все остальные состояния (run/standing/win и т.д.) крутятся в цикле.
+      action.setLoop(THREE.LoopRepeat, Infinity)
+      action.clampWhenFinished = false
+    }
+
     action.reset().fadeIn(0.1).play()
     currentAnimation = action
   }
