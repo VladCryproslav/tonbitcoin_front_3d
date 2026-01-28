@@ -1,22 +1,14 @@
 <template>
   <div class="game-run-view">
-    <!-- Верхняя панель лаунчера (кнопка выхода/паузы) -->
-    <div class="game-top-bar">
-      <button
-        class="btn-exit"
-        @click.stop.prevent="exitToMain"
-      >
-        ✕
-      </button>
-    </div>
     <!-- Three.js сцена -->
     <GameScene
       ref="gameSceneRef"
       @scene-ready="onSceneReady"
     />
 
-    <!-- UI поверх игры -->
+    <!-- UI поверх игры: только после старта забега -->
     <GameUI
+      v-if="gameRun.isRunning || gameRun.isPaused"
       :energy="gameRun.energyCollected"
       :distance="gameRun.distance"
       :power="gameRun.currentPower"
@@ -31,23 +23,78 @@
       @tap="handleTap"
     />
 
-    <!-- Кнопка старта (главное управление игрой).
-         Современный оверлей, показывается только когда забег не идёт
-         или стоит на паузе. Во время бега исчезает. -->
+    <!-- Верхняя панель: пауза только во время бега -->
     <div
-      v-if="!gameRun.isRunning || gameRun.isPaused"
-      class="game-controls-ui"
+      v-if="gameRun.isRunning && !gameRun.isPaused && !showGameOver"
+      class="game-top-bar"
     >
       <button
-        class="btn-primary"
-        @click.stop.prevent="togglePlayPause"
-        @touchstart.stop.prevent="togglePlayPause"
+        class="btn-exit"
+        @click.stop.prevent="openPauseOverlay"
       >
-        {{ gameRun.isPaused ? t('game.resume') : t('game.start') }}
+        ❚❚
       </button>
     </div>
 
-    <!-- Современный полноэкранный экран окончания забега -->
+    <!-- Стартовый оверлей лаунчера -->
+    <div
+      v-if="launcherOverlayMode === 'idle' && !showGameOver"
+      class="game-over-overlay"
+    >
+      <div class="game-over-card">
+        <div class="game-over-title">
+          Начать забег
+        </div>
+        <div class="game-over-subtitle">
+          Собирайте энергию и обходите препятствия, чтобы набрать максимальную мощность.
+        </div>
+        <div class="game-over-actions">
+          <button
+            class="btn-primary btn-primary--wide"
+            @click.stop.prevent="handleStartClick"
+          >
+            Начать забег
+          </button>
+          <button
+            class="btn-secondary btn-primary--wide"
+            @click.stop.prevent="exitToMain"
+          >
+            Вернуться на главный экран
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Пауза -->
+    <div
+      v-if="launcherOverlayMode === 'pause' && !showGameOver"
+      class="game-over-overlay"
+    >
+      <div class="game-over-card">
+        <div class="game-over-title">
+          Пауза
+        </div>
+        <div class="game-over-subtitle">
+          Забег приостановлен. Можно сделать передышку или вернуться на главный экран.
+        </div>
+        <div class="game-over-actions">
+          <button
+            class="btn-primary btn-primary--wide"
+            @click.stop.prevent="handleResumeClick"
+          >
+            Продолжить
+          </button>
+          <button
+            class="btn-secondary btn-primary--wide"
+            @click.stop.prevent="exitToMain"
+          >
+            Вернуться на главный экран
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Экран окончания забега -->
     <div
       v-if="showGameOver"
       class="game-over-overlay"
@@ -61,12 +108,14 @@
             ? 'Отличный забег — энергия начислена.'
             : 'Попробуйте ещё раз, чтобы собрать больше энергии.' }}
         </div>
-        <button
-          class="btn-primary btn-primary--wide"
-          @click.stop.prevent="exitToMain"
-        >
-          Вернуться на главный экран
-        </button>
+        <div class="game-over-actions">
+          <button
+            class="btn-primary btn-primary--wide"
+            @click.stop.prevent="exitToMain"
+          >
+            Вернуться на главный экран
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -102,6 +151,10 @@ let renderer = null
 // Экран окончания забега (win/lose)
 const showGameOver = ref(false)
 const gameOverType = ref('lose') // 'win' | 'lose'
+
+// Режим оверлея лаунчера: старт до забега или пауза.
+// 'idle' — до первого старта, 'pause' — пауза, 'none' — нет оверлея.
+const launcherOverlayMode = ref('idle')
 
 let gameLoop = null
 let threeLoop = null
@@ -183,6 +236,7 @@ const startGame = () => {
   gameRun.startRun()
   hitCount.value = 0
   showGameOver.value = false
+  launcherOverlayMode.value = 'none'
   // При старте забега переключаемся на анимацию бега
   if (gamePhysics.value?.setAnimationState) {
     gamePhysics.value.setAnimationState('running')
@@ -193,11 +247,13 @@ const startGame = () => {
 const pauseGame = () => {
   gameRun.pauseRun()
   stopGameLoop()
+  launcherOverlayMode.value = 'pause'
 }
 
 const resumeGame = () => {
   gameRun.resumeRun()
   startGameLoop()
+  launcherOverlayMode.value = 'none'
 }
 
 // Унифицированный обработчик для кнопки:
@@ -345,6 +401,7 @@ const startGameLoop = () => {
       // Фиксируем состояние "проигрыш" и показываем оверлей.
       gameOverType.value = 'lose'
       showGameOver.value = true
+      launcherOverlayMode.value = 'none'
 
       // Анимация "fall" (клип 4) настроена так, чтобы отыграть один раз и
       // "замереть" в конце. Просто завершаем забег, не переключаясь на 0/1.
@@ -397,7 +454,21 @@ const endGame = async (isWinByState = false) => {
     }
     gameOverType.value = 'win'
     showGameOver.value = true
+    launcherOverlayMode.value = 'none'
   }
+}
+
+// Обработчики кнопок из оверлеев
+const handleStartClick = () => {
+  startGame()
+}
+
+const handleResumeClick = () => {
+  resumeGame()
+}
+
+const openPauseOverlay = () => {
+  pauseGame()
 }
 
 const handleSwipeLeft = () => {
@@ -454,6 +525,7 @@ const exitToMain = () => {
     gameEffects.value.clearAll()
   }
   showGameOver.value = false
+  launcherOverlayMode.value = 'none'
   router.push('/')
 }
 
@@ -557,6 +629,18 @@ onUnmounted(() => {
   width: 100%;
 }
 
+.btn-secondary {
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.85);
+
+  &:active {
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.85);
+    opacity: 0.95;
+  }
+}
+
 .game-over-overlay {
   position: absolute;
   inset: 0;
@@ -593,5 +677,11 @@ onUnmounted(() => {
   font-size: 14px;
   color: #9ca3af;
   margin-bottom: 20px;
+}
+
+.game-over-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 </style>
