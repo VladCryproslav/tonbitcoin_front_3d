@@ -56,7 +56,7 @@
             Начать забег
           </button>
           <button
-            class="btn-secondary btn-primary--wide"
+            class="btn-primary btn-secondary btn-primary--wide"
             @click.stop.prevent="exitToMain"
           >
             Вернуться на главный экран
@@ -85,7 +85,7 @@
             Продолжить
           </button>
           <button
-            class="btn-secondary btn-primary--wide"
+            class="btn-primary btn-secondary btn-primary--wide"
             @click.stop.prevent="exitToMain"
           >
             Вернуться на главный экран
@@ -398,14 +398,13 @@ const startGameLoop = () => {
         gamePhysics.value.setAnimationState('fall')
       }
 
-      // Фиксируем состояние "проигрыш" и показываем оверлей.
-      gameOverType.value = 'lose'
-      showGameOver.value = true
-      launcherOverlayMode.value = 'none'
-
-      // Анимация "fall" (клип 4) настроена так, чтобы отыграть один раз и
-      // "замереть" в конце. Просто завершаем забег, не переключаясь на 0/1.
-      endGame(false)
+      // Даём анимации падения отыграть, затем показываем модалку и завершаем забег.
+      setTimeout(() => {
+        gameOverType.value = 'lose'
+        showGameOver.value = true
+        launcherOverlayMode.value = 'none'
+        endGame(false)
+      }, 1000)
       return
     }
 
