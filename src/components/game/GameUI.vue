@@ -9,14 +9,14 @@
         <div class="distance-counter">
           <span class="label">{{ t('game.distance') }}:</span>
           <span class="value distance-value">{{ formatDistance(distance) }}m</span>
+          <button
+            v-if="showPause"
+            class="pause-button"
+            @click.stop="$emit('pause')"
+          >
+            ❚❚
+          </button>
         </div>
-        <button
-          v-if="props.showPause"
-          class="pause-button"
-          @click.stop="$emit('pause')"
-        >
-          ❚❚
-        </button>
       </div>
     </div>
 
@@ -41,7 +41,7 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
-const props = defineProps({
+const { energy, distance, power, showPause } = defineProps({
   energy: { type: Number, default: 0 },
   distance: { type: Number, default: 0 },
   power: { type: Number, default: 100 },
@@ -87,18 +87,21 @@ const formatDistance = (value) => {
 
 .top-right {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
 }
 
 .energy-counter,
 .distance-counter {
   background: rgba(0, 0, 0, 0.7);
-  padding: 10px 16px;
+  padding: 8px 12px;
   border-radius: 12px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  max-width: 180px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
 
   .label {
     color: rgba(255, 255, 255, 0.7);
@@ -125,9 +128,10 @@ const formatDistance = (value) => {
 
 .pause-button {
   pointer-events: auto;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
+  margin-left: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   border: none;
   background: rgba(15, 23, 42, 0.9);
   color: #fff;
