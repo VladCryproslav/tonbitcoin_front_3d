@@ -452,11 +452,14 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .game-run-view {
-  width: 100%;
-  height: 100vh;
-  position: relative;
+  // Полноэкранный лаунчер раннера: занимаем всю область окна.
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
   overflow: hidden;
   background: #000;
+  z-index: 100; // Выше обычного контента приложения
 }
 
 .game-controls-ui {
