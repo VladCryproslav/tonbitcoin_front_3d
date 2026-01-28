@@ -10,7 +10,6 @@
           <span class="label">{{ t('game.distance') }}:</span>
           <span class="value distance-value">{{ formatDistance(distance) }}m</span>
           <button
-            v-if="showPause"
             class="pause-button"
             @click.stop="$emit('pause')"
           >
