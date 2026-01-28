@@ -9,13 +9,13 @@
         <div class="distance-counter">
           <span class="label">{{ t('game.distance') }}:</span>
           <span class="value distance-value">{{ formatDistance(distance) }}m</span>
-          <button
-            class="pause-button"
-            @click.stop="$emit('pause')"
-          >
-            ❚❚
-          </button>
         </div>
+        <button
+          class="pause-button"
+          @click.stop="$emit('pause')"
+        >
+          ❚❚
+        </button>
       </div>
     </div>
 
@@ -86,7 +86,8 @@ const formatDistance = (value) => {
 
 .top-right {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  gap: 10px;
 }
 
 .energy-counter,
@@ -127,19 +128,18 @@ const formatDistance = (value) => {
 
 .pause-button {
   pointer-events: auto;
-  margin-left: 8px;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   border: none;
-  background: rgba(15, 23, 42, 0.9);
+  background: radial-gradient(circle at 30% 0%, #38bdf8, #4c1d95);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 18px;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.6);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(12px);
   transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
 
