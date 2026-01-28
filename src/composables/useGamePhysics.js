@@ -230,7 +230,7 @@ export function useGamePhysics(scene) {
   }
 
   const moveLeft = () => {
-    if (playerLane.value > 0 && !isJumping.value && !isSliding.value) {
+    if (playerLane.value > 0) {
       playerLane.value--
       playerPosition.value.x = lanes[playerLane.value]
 
@@ -245,7 +245,7 @@ export function useGamePhysics(scene) {
   }
 
   const moveRight = () => {
-    if (playerLane.value < 2 && !isJumping.value && !isSliding.value) {
+    if (playerLane.value < 2) {
       playerLane.value++
       playerPosition.value.x = lanes[playerLane.value]
 
@@ -257,8 +257,11 @@ export function useGamePhysics(scene) {
   }
 
   const jump = () => {
-    if (!isJumping.value && !isSliding.value) {
+    if (!isJumping.value) {
       isJumping.value = true
+      // Если во время прыжка был активный слайд — сбрасываем его,
+      // чтобы новое действие не блокировалось старым состоянием.
+      isSliding.value = false
       jumpStartTime = Date.now()
 
       // Переключаемся на анимацию прыжка, если есть
