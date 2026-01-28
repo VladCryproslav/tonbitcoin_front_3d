@@ -2,12 +2,25 @@
   <div class="game-ui">
     <div class="ui-top">
       <div class="energy-counter">
-        <span class="label">{{ t('game.energy') }}:</span>
+        <img
+          class="icon energy-icon"
+          src="@/assets/kW.png"
+          alt="energy"
+        />
         <span class="value energy-value">{{ formatEnergy(energy) }} kW</span>
       </div>
       <div class="top-right">
         <div class="distance-counter">
-          <span class="label">{{ t('game.distance') }}:</span>
+          <svg
+            class="icon distance-icon"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M5 19h14a1 1 0 0 0 .9-1.45L16.5 8.5 13.8 13l-3.3-6L8 11 5.4 5.2A1 1 0 0 0 4.5 4.6 1 1 0 0 0 3.9 5.8L7 13l2-3.5 3.2 5.8L16.7 9l2.9 8H5a1 1 0 0 0 0 2Z"
+              fill="currentColor"
+            />
+          </svg>
           <span class="value distance-value">{{ formatDistance(distance) }}m</span>
         </div>
         <button
@@ -93,12 +106,12 @@ const formatDistance = (value) => {
 .energy-counter,
 .distance-counter {
   background: rgba(0, 0, 0, 0.7);
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 12px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  max-width: 180px;
+  max-width: 140px;
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
@@ -111,10 +124,17 @@ const formatDistance = (value) => {
 
   .value {
     color: #fff;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   }
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  flex-shrink: 0;
 }
 
 .energy-value {
@@ -128,11 +148,10 @@ const formatDistance = (value) => {
 
 .pause-button {
   pointer-events: auto;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  padding: 6px 12px;
+  border-radius: 12px;
   border: none;
-  background: radial-gradient(circle at 30% 0%, #38bdf8, #4c1d95);
+  background: rgba(15, 23, 42, 0.9);
   color: #fff;
   display: flex;
   align-items: center;
