@@ -1,5 +1,14 @@
 <template>
   <div class="game-run-view">
+    <!-- Верхняя панель лаунчера (кнопка выхода/паузы) -->
+    <div class="game-top-bar">
+      <button
+        class="btn-exit"
+        @click.stop.prevent="exitToMain"
+      >
+        ✕
+      </button>
+    </div>
     <!-- Three.js сцена -->
     <GameScene
       ref="gameSceneRef"
@@ -22,40 +31,44 @@
       @tap="handleTap"
     />
 
-    <!-- Кнопка старта/паузы (главное управление игрой) -->
-    <div class="game-controls-ui">
+    <!-- Кнопка старта (главное управление игрой).
+         Современный оверлей, показывается только когда забег не идёт
+         или стоит на паузе. Во время бега исчезает. -->
+    <div
+      v-if="!gameRun.isRunning || gameRun.isPaused"
+      class="game-controls-ui"
+    >
       <button
-        v-if="!gameRun.isRunning"
-        class="btn-start"
+        class="btn-primary"
         @click.stop.prevent="togglePlayPause"
         @touchstart.stop.prevent="togglePlayPause"
       >
-        {{ t('game.start') }}
-      </button>
-      <button
-        v-else-if="gameRun.isPaused"
-        class="btn-resume"
-        @click.stop.prevent="togglePlayPause"
-        @touchstart.stop.prevent="togglePlayPause"
-      >
-        {{ t('game.start') }}
-      </button>
-      <button
-        v-else
-        class="btn-pause"
-        @click.stop.prevent="togglePlayPause"
-        @touchstart.stop.prevent="togglePlayPause"
-      >
-        {{ t('game.pause') }}
+        {{ gameRun.isPaused ? t('game.resume') : t('game.start') }}
       </button>
     </div>
 
-    <!-- Модалка результатов -->
-    <RunCompleteModal
-      :visible="showResults"
-      :results="runResults"
-      @close="handleRunComplete"
-    />
+    <!-- Современный полноэкранный экран окончания забега -->
+    <div
+      v-if="showGameOver"
+      class="game-over-overlay"
+    >
+      <div class="game-over-card">
+        <div class="game-over-title">
+          {{ gameOverType === 'win' ? 'Вы выиграли!' : 'Вы проиграли' }}
+        </div>
+        <div class="game-over-subtitle">
+          {{ gameOverType === 'win'
+            ? 'Отличный забег — энергия начислена.'
+            : 'Попробуйте ещё раз, чтобы собрать больше энергии.' }}
+        </div>
+        <button
+          class="btn-primary btn-primary--wide"
+          @click.stop.prevent="exitToMain"
+        >
+          Вернуться на главный экран
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -86,13 +99,9 @@ const gameEffects = ref(null)
 let scene = null
 let camera = null
 let renderer = null
-const showResults = ref(false)
-const runResults = ref({
-  distance: 0,
-  energyCollected: 0,
-  energyGained: 0,
-  bonuses: null
-})
+// Экран окончания забега (win/lose)
+const showGameOver = ref(false)
+const gameOverType = ref('lose') // 'win' | 'lose'
 
 let gameLoop = null
 let threeLoop = null
@@ -173,6 +182,7 @@ const startGame = () => {
   }
   gameRun.startRun()
   hitCount.value = 0
+  showGameOver.value = false
   // При старте забега переключаемся на анимацию бега
   if (gamePhysics.value?.setAnimationState) {
     gamePhysics.value.setAnimationState('running')
@@ -331,9 +341,14 @@ const startGameLoop = () => {
       if (gamePhysics.value?.setAnimationState) {
         gamePhysics.value.setAnimationState('fall')
       }
+
+      // Фиксируем состояние "проигрыш" и показываем оверлей.
+      gameOverType.value = 'lose'
+      showGameOver.value = true
+
       // Анимация "fall" (клип 4) настроена так, чтобы отыграть один раз и
       // "замереть" в конце. Просто завершаем забег, не переключаясь на 0/1.
-      endGame()
+      endGame(false)
       return
     }
 
@@ -356,7 +371,7 @@ const stopGameLoop = () => {
   }
 }
 
-const endGame = async () => {
+const endGame = async (isWinByState = false) => {
   stopGameLoop()
 
   // Полная очистка объектов мира и эффектов, чтобы собранные кубы/препятствия
@@ -368,45 +383,47 @@ const endGame = async () => {
     gameEffects.value.clearAll()
   }
 
-  const result = await gameRun.completeRun()
+  const result = await gameRun.completeRun().catch((e) => {
+    console.error('Ошибка завершения забега:', e)
+    return null
+  })
 
-  if (result && result.success) {
+  const isSuccess = isWinByState || (result && result.success)
+
+  if (isSuccess) {
     // Успешное завершение забега — проигрываем победную анимацию
     if (gamePhysics.value?.setAnimationState) {
       gamePhysics.value.setAnimationState('win')
     }
-    runResults.value = {
-      distance: gameRun.distance,
-      energyCollected: gameRun.energyCollected,
-      energyGained: result.energyGained,
-      bonuses: result.bonuses
-    }
-    showResults.value = true
-  } else {
-    // Обработка ошибки
-    console.error('Ошибка завершения забега:', result?.error)
+    gameOverType.value = 'win'
+    showGameOver.value = true
   }
 }
 
 const handleSwipeLeft = () => {
+  // Игрок реагирует на свайпы только во время активного забега
+  if (!gameRun.isRunning.value || gameRun.isPaused.value) return
   if (gamePhysics.value) {
     gamePhysics.value.moveLeft()
   }
 }
 
 const handleSwipeRight = () => {
+  if (!gameRun.isRunning.value || gameRun.isPaused.value) return
   if (gamePhysics.value) {
     gamePhysics.value.moveRight()
   }
 }
 
 const handleSwipeUp = () => {
+  if (!gameRun.isRunning.value || gameRun.isPaused.value) return
   if (gamePhysics.value) {
     gamePhysics.value.jump()
   }
 }
 
 const handleSwipeDown = () => {
+  if (!gameRun.isRunning.value || gameRun.isPaused.value) return
   if (gamePhysics.value) {
     gamePhysics.value.slide()
   }
@@ -421,12 +438,23 @@ const handleTap = () => {
   }
 }
 
-const handleRunComplete = () => {
-  showResults.value = false
-  // Небольшая задержка перед возвратом для плавности
-  setTimeout(() => {
-    router.push('/')
-  }, 300)
+// Выход из лаунчера обратно в основное приложение.
+const exitToMain = () => {
+  stopGameLoop()
+  if (threeLoop) {
+    cancelAnimationFrame(threeLoop)
+  }
+  if (gameRun.isRunning.value) {
+    gameRun.stopRun()
+  }
+  if (gameWorld.value) {
+    gameWorld.value.clearAll()
+  }
+  if (gameEffects.value) {
+    gameEffects.value.clearAll()
+  }
+  showGameOver.value = false
+  router.push('/')
 }
 
 onMounted(() => {
@@ -459,39 +487,111 @@ onUnmounted(() => {
   height: 100dvh;
   overflow: hidden;
   background: #000;
-  z-index: 100; // Выше обычного контента приложения
+  z-index: 9999; // Выше всего остального интерфейса приложения
+}
+
+.game-top-bar {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 300;
+  display: flex;
+  gap: 8px;
+}
+
+.btn-exit {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(15, 23, 42, 0.8);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+
+  &:active {
+    transform: scale(0.9);
+    opacity: 0.85;
+  }
 }
 
 .game-controls-ui {
   position: absolute;
-  bottom: 100px;
+  bottom: 96px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 200;
 }
 
-.btn-start,
-.btn-resume,
-.btn-pause {
-  background: #8143FC;
-  color: #fff;
+.btn-primary {
+  min-width: 220px;
+  padding: 14px 32px;
+  border-radius: 999px;
   border: none;
-  padding: 14px 28px;
-  border-radius: 12px;
-  font-size: 16px;
+  background: linear-gradient(135deg, #7c3aed, #22d3ee);
+  color: #fff;
+  font-size: 17px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(129, 67, 252, 0.4);
-  transition: all 0.2s;
+  box-shadow: 0 12px 30px rgba(56, 189, 248, 0.45);
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 
   &:active {
-    transform: scale(0.95);
-    opacity: 0.8;
+    transform: scale(0.96);
+    box-shadow: 0 6px 18px rgba(56, 189, 248, 0.35);
+    opacity: 0.9;
   }
 }
 
-.btn-pause {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
+.btn-primary--wide {
+  width: 100%;
+}
+
+.game-over-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.95));
+  z-index: 400;
+  padding: 24px;
+}
+
+.game-over-card {
+  width: 100%;
+  max-width: 360px;
+  border-radius: 24px;
+  padding: 24px 20px 20px;
+  background: radial-gradient(circle at top, rgba(30, 64, 175, 0.35), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow:
+    0 18px 45px rgba(15, 23, 42, 0.9),
+    0 0 0 1px rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(20px);
+  color: #e5e7eb;
+  text-align: center;
+}
+
+.game-over-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.game-over-subtitle {
+  font-size: 14px;
+  color: #9ca3af;
+  margin-bottom: 20px;
 }
 </style>
