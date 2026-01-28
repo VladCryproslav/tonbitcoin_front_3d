@@ -1,15 +1,15 @@
 <template>
   <div class="game-ui">
     <div class="ui-top">
-      <div class="energy-counter">
-        <img
-          class="icon energy-icon"
-          src="@/assets/kW.png"
-          alt="energy"
-        />
-        <span class="value energy-value">{{ formatEnergy(energy) }} kW</span>
-      </div>
-      <div class="top-right">
+      <div class="top-left">
+        <div class="energy-counter">
+          <img
+            class="icon energy-icon"
+            src="@/assets/kW.png"
+            alt="energy"
+          />
+          <span class="value energy-value">{{ formatEnergy(energy) }} kW</span>
+        </div>
         <div class="distance-counter">
           <svg
             class="icon distance-icon"
@@ -23,6 +23,8 @@
           </svg>
           <span class="value distance-value">{{ formatDistance(distance) }}m</span>
         </div>
+      </div>
+      <div class="top-right">
         <button
           class="pause-button"
           @click.stop="$emit('pause')"
@@ -94,13 +96,18 @@ const formatDistance = (value) => {
 .ui-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+}
+
+.top-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .top-right {
   display: flex;
   align-items: center;
-  gap: 10px;
 }
 
 .energy-counter,
@@ -148,10 +155,11 @@ const formatDistance = (value) => {
 
 .pause-button {
   pointer-events: auto;
-  padding: 6px 12px;
-  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   border: none;
-  background: rgba(15, 23, 42, 0.9);
+  background: radial-gradient(circle at 30% 0%, #38bdf8, #4c1d95);
   color: #fff;
   display: flex;
   align-items: center;
