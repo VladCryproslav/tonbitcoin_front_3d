@@ -12,6 +12,8 @@
       :energy="gameRun.energyCollected"
       :distance="gameRun.distance"
       :power="gameRun.currentPower"
+      :show-pause="gameRun.isRunning && !gameRun.isPaused && !showGameOver"
+      @pause="openPauseOverlay"
     />
 
     <!-- Управление (свайпы + тап для старта на мобильных) -->
@@ -22,19 +24,6 @@
       @swipe-down="handleSwipeDown"
       @tap="handleTap"
     />
-
-    <!-- Верхняя панель: пауза только во время бега -->
-    <div
-      v-if="gameRun.isRunning && !gameRun.isPaused && !showGameOver"
-      class="game-top-bar"
-    >
-      <button
-        class="btn-exit"
-        @click.stop.prevent="openPauseOverlay"
-      >
-        ❚❚
-      </button>
-    </div>
 
     <!-- Стартовый оверлей лаунчера -->
     <div

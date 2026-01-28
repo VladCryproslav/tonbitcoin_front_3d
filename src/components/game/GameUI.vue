@@ -5,18 +5,27 @@
         <span class="label">{{ t('game.energy') }}:</span>
         <span class="value energy-value">{{ formatEnergy(energy) }} kW</span>
       </div>
-      <div class="distance-counter">
-        <span class="label">{{ t('game.distance') }}:</span>
-        <span class="value distance-value">{{ formatDistance(distance) }}m</span>
+      <div class="top-right">
+        <div class="distance-counter">
+          <span class="label">{{ t('game.distance') }}:</span>
+          <span class="value distance-value">{{ formatDistance(distance) }}m</span>
+        </div>
+        <button
+          v-if="showPause"
+          class="pause-button"
+          @click.stop="$emit('pause')"
+        >
+          ❚❚
+        </button>
       </div>
     </div>
-    
+
     <div class="ui-bottom">
       <div class="power-bar-container">
         <div class="power-label">{{ t('game.power') }}</div>
         <div class="power-bar">
-          <div 
-            class="power-fill" 
+          <div
+            class="power-fill"
             :style="{ width: `${Math.max(0, Math.min(100, power))}%` }"
             :class="{ 'low-power': power < 30, 'critical-power': power < 10 }"
           ></div>
@@ -35,8 +44,11 @@ const { t } = useI18n()
 const props = defineProps({
   energy: { type: Number, default: 0 },
   distance: { type: Number, default: 0 },
-  power: { type: Number, default: 100 }
+  power: { type: Number, default: 100 },
+  showPause: { type: Boolean, default: false }
 })
+
+defineEmits(['pause'])
 
 const formatEnergy = (value) => {
   const v = Number(value ?? 0)
@@ -73,6 +85,12 @@ const formatDistance = (value) => {
   align-items: flex-start;
 }
 
+.top-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .energy-counter,
 .distance-counter {
   background: rgba(0, 0, 0, 0.7);
@@ -81,13 +99,13 @@ const formatDistance = (value) => {
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  
+
   .label {
     color: rgba(255, 255, 255, 0.7);
     font-size: 12px;
     margin-right: 8px;
   }
-  
+
   .value {
     color: #fff;
     font-size: 18px;
@@ -103,6 +121,29 @@ const formatDistance = (value) => {
 
 .distance-value {
   color: #8143FC;
+}
+
+.pause-button {
+  pointer-events: auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(15, 23, 42, 0.9);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+
+  &:active {
+    transform: scale(0.9);
+    opacity: 0.85;
+  }
 }
 
 @keyframes pulse-glow {
@@ -149,11 +190,11 @@ const formatDistance = (value) => {
   background: linear-gradient(90deg, #00ff00, #ffff00);
   transition: width 0.3s ease;
   border-radius: 4px;
-  
+
   &.low-power {
     background: linear-gradient(90deg, #ffff00, #ff8800);
   }
-  
+
   &.critical-power {
     background: linear-gradient(90deg, #ff8800, #ff0000);
     animation: pulse 1s ease-in-out infinite;

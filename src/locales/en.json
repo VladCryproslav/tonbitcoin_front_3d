@@ -453,7 +453,7 @@
     "distance_bonus": "Distance Bonus",
     "collection_bonus": "Collection Bonus",
     "run_start_title": "Start a run",
-    "run_start_subtitle": "Collect energy and dodge obstacles to reach maximum power.",
+    "run_start_subtitle": "Dodge obstacles to reach maximum energy.",
     "run_start_button": "Start run",
     "pause_title": "Paused",
     "pause_subtitle": "The run is paused. Take a short break or return to the main screen.",
