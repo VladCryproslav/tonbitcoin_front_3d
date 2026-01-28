@@ -11,7 +11,7 @@
           <span class="value distance-value">{{ formatDistance(distance) }}m</span>
         </div>
         <button
-          v-if="showPause"
+          v-if="props.showPause"
           class="pause-button"
           @click.stop="$emit('pause')"
         >
