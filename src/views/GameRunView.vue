@@ -318,11 +318,11 @@ const startGameLoop = () => {
       camera.lookAt(lookAtX, 1 + cameraBob * 0.5, 0)
     }
 
-    // Увеличение скорости со временем (чуть медленнее)
-    const distanceCheck = Math.floor(gameRun.distance.value / 120)
+    // Увеличение скорости со временем (ещё медленнее)
+    const distanceCheck = Math.floor(gameRun.distance.value / 200)
     if (distanceCheck > 0 && distanceCheck !== lastSpeedIncrease.value) {
       lastSpeedIncrease.value = distanceCheck
-      gameSpeed.value = Math.min(gameSpeed.value + 0.006, 0.38)
+      gameSpeed.value = Math.min(gameSpeed.value + 0.003, 0.32)
     }
 
     // Проверка условий окончания забега
@@ -355,6 +355,15 @@ const stopGameLoop = () => {
 
 const endGame = async () => {
   stopGameLoop()
+
+  // Полная очистка объектов мира и эффектов, чтобы собранные кубы/препятствия
+  // не "зависали" возле персонажа после удара/завершения забега.
+  if (gameWorld.value) {
+    gameWorld.value.clearAll()
+  }
+  if (gameEffects.value) {
+    gameEffects.value.clearAll()
+  }
 
   // Возвращаем стоячую анимацию
   if (gamePhysics.value?.setAnimationState) {
