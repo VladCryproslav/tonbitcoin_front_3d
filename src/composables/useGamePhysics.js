@@ -64,9 +64,9 @@ export function useGamePhysics(scene) {
       currentAnimation.fadeOut(0.1)
     }
 
-    // Для "fall/death" играем анимацию один раз и замираем в конце,
+    // Для "fall/death" и "roll/slide" играем анимацию один раз и замираем в конце,
     // без зацикливания и без автоперехода обратно в бег.
-    if (state === 'fall' || state === 'death') {
+    if (state === 'fall' || state === 'death' || state === 'roll' || state === 'slide') {
       action.setLoop(THREE.LoopOnce, 1)
       action.clampWhenFinished = true
     } else {
@@ -284,8 +284,15 @@ export function useGamePhysics(scene) {
 
       // Для GLB‑модели (mixer существует) всё скольжение делается только скелетной
       // анимацией клипа 3. Ни масштаб, ни позицию/вращение вручную не трогаем.
-      // Ниже — fallback‑логика только для кубического персонажа без анимаций.
-      if (playerMesh && !mixer) {
+      // По завершении клипа возвращаемся в бег и снимаем isSliding.
+      if (mixer) {
+        const rollClip = animations[animationIndexByState.roll]
+        const rollDuration = rollClip ? rollClip.duration * 1000 : 600
+        setTimeout(() => {
+          isSliding.value = false
+          playAnimationState('running')
+        }, rollDuration)
+      } else if (playerMesh && !mixer) {
         // Плавная анимация скольжения для кубического фоллбэка
         const startY = playerMesh.position.y
         const startScaleY = playerMesh.scale.y

@@ -149,7 +149,8 @@ export function useGameWorld(scene, camera) {
             (min, m) => m.position.z < min.position.z ? m : min,
             marking
           )
-          marking.position.z = lastMarking.position.z - markingLength * 2
+          // Небольшое перекрытие (‑0.05) чтобы не было видимого разрыва разметки.
+          marking.position.z = lastMarking.position.z - markingLength * 2 + 0.05
         } else {
           marking.position.z = -50
         }
@@ -272,12 +273,17 @@ export function useGameWorld(scene, camera) {
     roadSegments.value.forEach((segment, index) => {
       segment.position.z += roadSpeed.value
 
-      // Перемещаем сегмент вперед когда он уходит назад
-      if (segment.position.z > 10) {
+      // Перемещаем сегмент вперед только когда он ушёл ДАЛЕКО за камеру,
+      // чтобы дорога пропадала уже вне поля зрения.
+      const cameraZ = camera ? camera.position.z : 8
+      const cutoffZ = cameraZ + roadLength * 1.5
+      if (segment.position.z > cutoffZ) {
         const lastSegment = roadSegments.value.reduce((min, seg) =>
           seg.position.z < min.position.z ? seg : min
         )
-        segment.position.z = lastSegment.position.z - roadLength
+        // Небольшое перекрытие (‑0.1) между сегментами,
+        // чтобы даже при накоплении float‑ошибок не было щели.
+        segment.position.z = lastSegment.position.z - roadLength + 0.1
       }
     })
 
