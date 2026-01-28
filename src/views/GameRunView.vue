@@ -43,23 +43,23 @@
     >
       <div class="game-over-card">
         <div class="game-over-title">
-          Начать забег
+          {{ t('game.run_start_title') }}
         </div>
         <div class="game-over-subtitle">
-          Собирайте энергию и обходите препятствия, чтобы набрать максимальную мощность.
+          {{ t('game.run_start_subtitle') }}
         </div>
         <div class="game-over-actions">
           <button
             class="btn-primary btn-primary--wide"
             @click.stop.prevent="handleStartClick"
           >
-            Начать забег
+            {{ t('game.run_start_button') }}
           </button>
           <button
             class="btn-primary btn-secondary btn-primary--wide"
             @click.stop.prevent="exitToMain"
           >
-            Вернуться на главный экран
+            {{ t('game.back_to_main') }}
           </button>
         </div>
       </div>
@@ -72,23 +72,23 @@
     >
       <div class="game-over-card">
         <div class="game-over-title">
-          Пауза
+          {{ t('game.pause_title') }}
         </div>
         <div class="game-over-subtitle">
-          Забег приостановлен. Можно сделать передышку или вернуться на главный экран.
+          {{ t('game.pause_subtitle') }}
         </div>
         <div class="game-over-actions">
           <button
             class="btn-primary btn-primary--wide"
             @click.stop.prevent="handleResumeClick"
           >
-            Продолжить
+            {{ t('game.resume') }}
           </button>
           <button
             class="btn-primary btn-secondary btn-primary--wide"
             @click.stop.prevent="exitToMain"
           >
-            Вернуться на главный экран
+          {{ t('game.back_to_main') }}
           </button>
         </div>
       </div>
@@ -101,19 +101,25 @@
     >
       <div class="game-over-card">
         <div class="game-over-title">
-          {{ gameOverType === 'win' ? 'Вы выиграли!' : 'Вы проиграли' }}
+          {{
+            gameOverType === 'win'
+              ? t('game.win_title')
+              : t('game.lose_title')
+          }}
         </div>
         <div class="game-over-subtitle">
-          {{ gameOverType === 'win'
-            ? 'Отличный забег — энергия начислена.'
-            : 'Попробуйте ещё раз, чтобы собрать больше энергии.' }}
+          {{
+            gameOverType === 'win'
+              ? t('game.win_subtitle')
+              : t('game.lose_subtitle')
+          }}
         </div>
         <div class="game-over-actions">
           <button
             class="btn-primary btn-primary--wide"
             @click.stop.prevent="exitToMain"
           >
-            Вернуться на главный экран
+            {{ t('game.back_to_main') }}
           </button>
         </div>
       </div>
