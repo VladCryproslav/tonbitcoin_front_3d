@@ -282,8 +282,11 @@ export function useGamePhysics(scene) {
       // Переключаемся на анимацию переката/скольжения, если есть
       playAnimationState('roll')
 
-      if (playerMesh) {
-        // Плавная анимация скольжения
+      // Для GLB‑модели (mixer существует) всё скольжение делается только скелетной
+      // анимацией клипа 3. Ни масштаб, ни позицию/вращение вручную не трогаем.
+      // Ниже — fallback‑логика только для кубического персонажа без анимаций.
+      if (playerMesh && !mixer) {
+        // Плавная анимация скольжения для кубического фоллбэка
         const startY = playerMesh.position.y
         const startScaleY = playerMesh.scale.y
         const startTime = Date.now()
@@ -321,7 +324,7 @@ export function useGamePhysics(scene) {
                 playerMesh.position.y = startY
                 playerMesh.rotation.x = 0
                 isSliding.value = false
-                // Возвращаем анимацию бега
+                // Возвращаем анимацию бега (только для кубического фоллбэка)
                 playAnimationState('running')
               }
             }
@@ -329,6 +332,10 @@ export function useGamePhysics(scene) {
           }
         }
         animate()
+      } else if (mixer) {
+        // Для GLTF‑модели просто ждём завершения анимации roll по клипу.
+        // Флаг скольжения сбросится извне, когда игра сочтёт нужным.
+        // Здесь ничего не трогаем, чтобы не мешать скелетной анимации.
       }
     }
   }

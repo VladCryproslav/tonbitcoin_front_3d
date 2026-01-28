@@ -1,8 +1,8 @@
 import { ref } from 'vue'
-import { 
-  BoxGeometry, 
-  MeshStandardMaterial, 
-  Mesh, 
+import {
+  BoxGeometry,
+  MeshStandardMaterial,
+  Mesh,
   Vector3,
   PlaneGeometry,
   Group,
@@ -11,6 +11,10 @@ import {
 } from 'three'
 
 export function useGameWorld(scene, camera) {
+  // Длина одного сегмента дороги и количество сегментов.
+  // Чуть увеличены, чтобы дорога рисовалась дальше без разрывов.
+  const roadLength = 25
+  const segmentCount = 7
   const roadSegments = ref([])
   const obstacles = ref([])
   const collectibles = ref([])
@@ -18,7 +22,7 @@ export function useGameWorld(scene, camera) {
   const spawnDistance = ref(0)
   const lanes = [-2, 0, 2] // Позиции полос
   const laneMarkings = ref([])
-  
+
   // Создание фона
   const createBackground = () => {
     // Небо - яркие цвета Subway Surfers (голубое небо)
@@ -27,7 +31,7 @@ export function useGameWorld(scene, camera) {
       const skyColor = new Color()
       // Яркое голубое небо как в Subway Surfers
       skyColor.setHSL(0.55, 0.5, 0.75 + i * 0.08) // Более насыщенный и яркий
-      const skyMaterial = new MeshStandardMaterial({ 
+      const skyMaterial = new MeshStandardMaterial({
         color: skyColor,
         side: 2, // DoubleSide
         flatShading: true
@@ -37,60 +41,58 @@ export function useGameWorld(scene, camera) {
       sky.rotation.x = -Math.PI / 3
       scene.add(sky)
     }
-    
+
     // Боковые барьеры - яркие цвета Subway Surfers
     const barrierGeometry = new BoxGeometry(0.5, 2.5, 200)
-    const barrierMaterial = new MeshStandardMaterial({ 
+    const barrierMaterial = new MeshStandardMaterial({
       color: 0x666666, // Светлее для cartoon стиля
       metalness: 0.1,
       roughness: 0.9,
       flatShading: true
     })
-    
+
     // Левый барьер
     const leftBarrier = new Mesh(barrierGeometry, barrierMaterial)
     leftBarrier.position.set(-3.5, 1.25, 0)
     scene.add(leftBarrier)
-    
+
     // Правый барьер
     const rightBarrier = new Mesh(barrierGeometry, barrierMaterial)
     rightBarrier.position.set(3.5, 1.25, 0)
     scene.add(rightBarrier)
-    
+
     // Декоративные элементы на барьерах - яркие цвета Subway Surfers
     for (let i = 0; i < 10; i++) {
       const markerGeometry = new BoxGeometry(0.1, 0.3, 0.1)
       const colors = [0xFEFF28, 0xEB7D26, 0xDE2126] // Желтый, оранжевый, красный
       const color = colors[i % colors.length]
-      const markerMaterial = new MeshStandardMaterial({ 
+      const markerMaterial = new MeshStandardMaterial({
         color: color,
         emissive: color,
         emissiveIntensity: 0.2,
         flatShading: true
       })
-      
+
       // Левый барьер
       const leftMarker = new Mesh(markerGeometry, markerMaterial)
       leftMarker.position.set(-3.5, 2, -i * 5)
       scene.add(leftMarker)
-      
+
       // Правый барьер
       const rightMarker = new Mesh(markerGeometry, markerMaterial)
       rightMarker.position.set(3.5, 2, -i * 5)
       scene.add(rightMarker)
     }
   }
-  
+
   // Создание дорожки
   const createRoad = () => {
     createBackground()
     const roadWidth = 6
-    const roadLength = 20
-    const segmentCount = 5
-    
+
     for (let i = 0; i < segmentCount; i++) {
       const roadGeometry = new PlaneGeometry(roadWidth, roadLength)
-      const roadMaterial = new MeshStandardMaterial({ 
+      const roadMaterial = new MeshStandardMaterial({
         color: 0x2A2A2A, // Темно-серый асфальт
         roughness: 0.9,
         flatShading: true // Cartoon стиль
@@ -102,20 +104,21 @@ export function useGameWorld(scene, camera) {
       scene.add(road)
       roadSegments.value.push(road)
     }
-    
+
     // Разметка полос
     createLaneMarkings()
   }
-  
+
   // Разметка полос
   const createLaneMarkings = () => {
     const markingLength = 2
     const markingWidth = 0.1
-    
-    for (let z = -50; z < 10; z += markingLength * 2) {
+
+    // Увеличиваем диапазон разметки по Z, чтобы дорога рисовалась дальше.
+    for (let z = -80; z < 15; z += markingLength * 2) {
       lanes.forEach(laneX => {
         const markingGeometry = new BoxGeometry(markingWidth, 0.01, markingLength)
-        const markingMaterial = new MeshStandardMaterial({ 
+        const markingMaterial = new MeshStandardMaterial({
           color: 0xFEFF28, // Яркий желтый Subway Surfers
           emissive: 0xFEFF28,
           emissiveIntensity: 0.3,
@@ -129,13 +132,13 @@ export function useGameWorld(scene, camera) {
       })
     }
   }
-  
+
   // Обновление разметки
   const updateLaneMarkings = () => {
     const markingLength = 2
     laneMarkings.value.forEach(marking => {
       marking.position.z += roadSpeed.value
-      
+
       // Перемещаем разметку вперед
       if (marking.position.z > 10) {
         const sameLaneMarkings = laneMarkings.value.filter(
@@ -153,7 +156,7 @@ export function useGameWorld(scene, camera) {
       }
     })
   }
-  
+
   // Создание препятствия - Subway Surfers стиль
   const createObstacle = (lane, z) => {
     const obstacleTypes = [
@@ -161,10 +164,10 @@ export function useGameWorld(scene, camera) {
       { height: 2.5, color: 0xEB7D26, name: 'high' }, // Оранжевый
       { height: 1.8, color: 0x444444, name: 'barrier' }, // Серый барьер
     ]
-    
+
     const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)]
     const obstacleGeometry = new BoxGeometry(1, type.height, 1)
-    const obstacleMaterial = new MeshStandardMaterial({ 
+    const obstacleMaterial = new MeshStandardMaterial({
       color: type.color,
       metalness: 0.1,
       roughness: 0.9,
@@ -178,15 +181,15 @@ export function useGameWorld(scene, camera) {
     obstacles.value.push(obstacle)
     return obstacle
   }
-  
+
   // Создание собираемого предмета (энергия)
   const createCollectible = (lane, z) => {
     // Создаем группу для вращения
     const group = new Group()
-    
+
     // Основной куб энергии
     const collectibleGeometry = new BoxGeometry(0.6, 0.6, 0.6)
-    const collectibleMaterial = new MeshStandardMaterial({ 
+    const collectibleMaterial = new MeshStandardMaterial({
       color: 0x00FF00,
       emissive: 0x00FF00,
       emissiveIntensity: 0.8,
@@ -195,103 +198,103 @@ export function useGameWorld(scene, camera) {
     })
     const collectible = new Mesh(collectibleGeometry, collectibleMaterial)
     group.add(collectible)
-    
+
     // Внутреннее свечение
     const innerGeometry = new BoxGeometry(0.4, 0.4, 0.4)
-    const innerMaterial = new MeshStandardMaterial({ 
+    const innerMaterial = new MeshStandardMaterial({
       color: 0xFFFFFF,
       emissive: 0xFFFFFF,
       emissiveIntensity: 1
     })
     const inner = new Mesh(innerGeometry, innerMaterial)
     group.add(inner)
-    
+
     group.position.set(lanes[lane], 1, z)
     group.userData = { type: 'collectible', lane, collected: false }
     scene.add(group)
     collectibles.value.push(group)
     return group
   }
-  
+
   // Генерация препятствий и предметов
   const spawnObjects = (playerZ) => {
     if (spawnDistance.value >= playerZ - 5) return
-    
+
     spawnDistance.value = playerZ
-    
+
     // Генерация препятствий (более часто при увеличении скорости)
     const obstacleChance = Math.min(0.5, 0.25 + (roadSpeed.value - 0.15) * 2)
     if (Math.random() < obstacleChance) {
       const lane = Math.floor(Math.random() * 3)
-      // Спавним препятствия в «туннеле» перед камерой, в диапазоне [-60, -30] по Z,
-      // чтобы они всегда шли навстречу игроку независимо от накопленного playerZ.
-      const obstacleZ = -30 - Math.random() * 30
+      // Спавним препятствия в «туннеле» перед камерой, в более глубоком диапазоне [-80, -40] по Z,
+      // чтобы игрок видел дорогу и объекты дальше.
+      const obstacleZ = -40 - Math.random() * 40
       createObstacle(lane, obstacleZ)
-      
+
       // Иногда создаем препятствие в соседней полосе (более сложно)
       if (Math.random() < 0.3) {
         const nextLane = (lane + (Math.random() < 0.5 ? 1 : -1) + 3) % 3
         createObstacle(nextLane, obstacleZ)
       }
     }
-    
+
     // Генерация собираемых предметов (чаще чем препятствия)
     const collectibleChance = 0.7 - (roadSpeed.value - 0.15) * 0.5
     if (Math.random() < collectibleChance) {
       const lane = Math.floor(Math.random() * 3)
-      // Энергия тоже спавнится в минусовом Z, чуть ближе к камере, чем препятствия.
-      const collectibleZ = -25 - Math.random() * 25
+      // Энергия тоже спавнится глубже: [-70, -30] по Z.
+      const collectibleZ = -30 - Math.random() * 40
       createCollectible(lane, collectibleZ)
     }
-    
+
     // Иногда генерируем несколько предметов подряд (бонусная линия)
     if (Math.random() < 0.15) {
       const startLane = Math.floor(Math.random() * 3)
-      const baseZ = -25 - Math.random() * 25
+      const baseZ = -30 - Math.random() * 40
       for (let i = 0; i < 3; i++) {
         const lane = (startLane + i) % 3
         createCollectible(lane, baseZ - i * 2)
       }
     }
-    
+
     // Редко генерируем препятствие и предмет рядом (сложная ситуация)
     if (Math.random() < 0.1) {
       const lane = Math.floor(Math.random() * 3)
-      const obstacleZ = -30 - Math.random() * 30
+      const obstacleZ = -40 - Math.random() * 40
       createObstacle(lane, obstacleZ)
       const collectibleLane = (lane + (Math.random() < 0.5 ? 1 : -1) + 3) % 3
       createCollectible(collectibleLane, obstacleZ + 3)
     }
   }
-  
+
   // Обновление дорожки (бесконечная прокрутка)
   const updateRoad = (playerZ) => {
     roadSegments.value.forEach((segment, index) => {
       segment.position.z += roadSpeed.value
-      
+
       // Перемещаем сегмент вперед когда он уходит назад
       if (segment.position.z > 10) {
-        const lastSegment = roadSegments.value.reduce((min, seg) => 
+        const lastSegment = roadSegments.value.reduce((min, seg) =>
           seg.position.z < min.position.z ? seg : min
         )
-        segment.position.z = lastSegment.position.z - 20
+        segment.position.z = lastSegment.position.z - roadLength
       }
     })
-    
+
     // Обновляем разметку
     updateLaneMarkings()
   }
-  
+
   // Обновление препятствий.
   // Теперь коллизия считается через реальные AABB (Box3) игрока и препятствий,
   // без каких‑либо эвристик по полосам/X/Z. Это устраняет баги, когда визуально
   // игрок в одной полосе, а логика считает, что он в другой.
   const updateObstacles = (playerBox, onCollision) => {
     const obstaclesToRemove = []
-    
+
     obstacles.value.forEach((obstacle, index) => {
       obstacle.position.z += roadSpeed.value
-      
+
       // Если ещё нет меша игрока/box — просто прокручиваем препятствия.
       if (playerBox) {
         const obstacleBox = obstacle.userData.box || (obstacle.userData.box = new Box3())
@@ -313,35 +316,35 @@ export function useGameWorld(scene, camera) {
         scene.remove(obstacle)
       }
     })
-    
+
     // Удаляем в обратном порядке чтобы индексы не сбились
     obstaclesToRemove.sort((a, b) => b - a).forEach(index => {
       obstacles.value.splice(index, 1)
     })
   }
-  
+
   // Обновление собираемых предметов
   // Аналогично препятствиям, используем реальные AABB.
   const updateCollectibles = (playerBox, onCollect) => {
     const collectiblesToRemove = []
-    
+
     collectibles.value.forEach((collectible, index) => {
       if (collectible.userData.collected) {
         collectiblesToRemove.push(index)
         return
       }
-      
+
       collectible.position.z += roadSpeed.value
       collectible.rotation.y += 0.05
       collectible.rotation.x += 0.03
-      
+
       // Пульсация для привлечения внимания
       const pulse = 1 + Math.sin(Date.now() * 0.01) * 0.15
       collectible.scale.setScalar(pulse)
-      
+
       // Вертикальное движение
       collectible.position.y = 1 + Math.sin(Date.now() * 0.005) * 0.3
-      
+
       if (playerBox) {
         const collBox = collectible.userData.box || (collectible.userData.box = new Box3())
         collBox.setFromObject(collectible)
@@ -367,7 +370,7 @@ export function useGameWorld(scene, camera) {
         scene.remove(collectible)
       }
     })
-    
+
     // Удаляем в обратном порядке
     collectiblesToRemove.sort((a, b) => b - a).forEach(index => {
       collectibles.value.splice(index, 1)
@@ -382,12 +385,12 @@ export function useGameWorld(scene, camera) {
     collectibles.value = []
     spawnDistance.value = 0
   }
-  
+
   // Обновление скорости дороги
   const setRoadSpeed = (speed) => {
     roadSpeed.value = speed
   }
-  
+
   return {
     createRoad,
     spawnObjects,
