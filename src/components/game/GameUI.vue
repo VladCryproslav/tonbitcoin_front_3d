@@ -74,9 +74,6 @@ const formatDistance = (value) => {
   pointer-events: none;
   z-index: 100;
   padding: 20px;
-  // Сдвигаем верхние элементы UI (энергия/дистанция/пауза)
-  // ниже хедера Telegram mini app, чтобы их было видно.
-  padding-top: calc(env(safe-area-inset-top, 0px) + 80px);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
