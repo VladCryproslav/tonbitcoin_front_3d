@@ -328,10 +328,20 @@ const startGameLoop = () => {
         gameWorld.value.setRoadSpeed(0)
       }
       gameSpeed.value = 0
+      // На третьем ударе проигрываем анимацию "4" (fall/death),
+      // затем по завершении (условно через ~1с) возвращаемся в 0 (standing)
+      // и завершаем забег.
       if (gamePhysics.value?.setAnimationState) {
         gamePhysics.value.setAnimationState('fall')
+        setTimeout(() => {
+          if (gamePhysics.value?.setAnimationState) {
+            gamePhysics.value.setAnimationState('standing')
+          }
+          endGame()
+        }, 1000)
+      } else {
+        endGame()
       }
-      endGame()
       return
     }
 
@@ -364,11 +374,6 @@ const endGame = async () => {
   }
   if (gameEffects.value) {
     gameEffects.value.clearAll()
-  }
-
-  // Возвращаем стоячую анимацию
-  if (gamePhysics.value?.setAnimationState) {
-    gamePhysics.value.setAnimationState('standing')
   }
 
   const result = await gameRun.completeRun()
