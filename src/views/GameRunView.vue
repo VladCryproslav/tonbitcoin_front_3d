@@ -163,9 +163,9 @@ const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeR
   camera = threeCamera
   renderer = threeRenderer
 
-  // Настройка камеры для раннера
-  camera.position.set(0, 4, 8)
-  camera.lookAt(0, 1, 0)
+  // Настройка камеры для раннера: ниже, ближе, персонаж смещён вниз по кадру
+  camera.position.set(0, 2.5, 5.5)
+  camera.lookAt(0, 0.4, 0)
 
   // Инициализация игрового мира
   gameWorld.value = useGameWorld(scene, camera)
@@ -368,11 +368,11 @@ const startGameLoop = () => {
 
       // Небольшое покачивание камеры для динамики
       const cameraBob = Math.sin(Date.now() * 0.003) * 0.1
-      camera.position.y = 4 + cameraBob
+      camera.position.y = 2.5 + cameraBob
 
-      // Камера следит за игроком
+      // Камера следит за игроком (точка взгляда ниже — персонаж в нижней части кадра)
       const lookAtX = baseX * 0.2
-      camera.lookAt(lookAtX, 1 + cameraBob * 0.5, 0)
+      camera.lookAt(lookAtX, 0.4 + cameraBob * 0.5, 0)
     }
 
     // Увеличение скорости со временем (ещё медленнее)
