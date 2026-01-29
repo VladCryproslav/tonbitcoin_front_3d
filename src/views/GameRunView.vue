@@ -165,9 +165,9 @@ const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeR
   camera = threeCamera
   renderer = threeRenderer
 
-  // Настройка камеры для раннера: ниже, ближе, персонаж ближе к нижнему краю кадра
+  // Настройка камеры: персонаж ближе к низу экрана (точка взгляда по Y ниже)
   camera.position.set(0, 2.5, 5.5)
-  camera.lookAt(0, 0.4, 0)
+  camera.lookAt(0, -0.2, 0)
 
   // Инициализация игрового мира
   gameWorld.value = useGameWorld(scene, camera)
@@ -208,8 +208,8 @@ const startThreeLoop = () => {
       const cameraBob = Math.sin(Date.now() * 0.003) * 0.08
       camera.position.y = 2.5 + cameraBob
 
-      // Точка взгляда по X = позиция камеры → камера не поворачивается, только сдвиг по горизонтали
-      camera.lookAt(camera.position.x, 0.2 + cameraBob * 0.5, 0)
+      // Точка взгляда: X = камера (без поворота), Y ниже — персонаж ближе к низу экрана
+      camera.lookAt(camera.position.x, -0.2 + cameraBob * 0.5, 0)
     }
     if (renderer && scene && camera) {
       renderer.render(scene, camera)
