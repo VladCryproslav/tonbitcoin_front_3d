@@ -392,7 +392,7 @@ const startGameLoop = () => {
     const distanceCheck = Math.floor(gameRun.distance.value / 200)
     if (distanceCheck > 0 && distanceCheck !== lastSpeedIncrease.value) {
       lastSpeedIncrease.value = distanceCheck
-      gameSpeed.value = Math.min(gameSpeed.value + 0.003, 0.32)
+      gameSpeed.value = Math.min(gameSpeed.value + 0.003, 0.45)
     }
 
     // Проверка условий окончания забега:

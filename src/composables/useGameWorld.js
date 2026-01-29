@@ -22,7 +22,7 @@ export function useGameWorld(scene, camera) {
   const lanes = [-2, 0, 2] // Позиции полос (левая, центр, правая)
 
   // Секции дороги: меньше дистанция — спавн чаще
-  const SECTION_SPACING = 6 // мин. «расстояние» (по playerZ) между секциями
+  const SECTION_SPACING = 4 // мин. «расстояние» (по playerZ) между секциями
   const SECTION_WORLD_LENGTH = 14
   let lastSpawnPlayerZ = -999
   let nextSectionWorldZ = -48
@@ -31,12 +31,12 @@ export function useGameWorld(scene, camera) {
 
   // 4 типа: нет преграды, непроходимая (кувырок), прыжок, кувырок (свайп вниз)
   const OBSTACLE_KIND = { NONE: 'none', IMPASSABLE: 'impassable', JUMP: 'jump', ROLL: 'roll' }
-  // ROLL: bar над дорогой (bottomY + height), чтобы визуально был зазор для кувырка
+  // ROLL: высота как у непроходимого (2.5), бар висит высоко — снизу зазор 1.0 для кувырка
   const OBSTACLE_DEF = {
     [OBSTACLE_KIND.NONE]: null,
     [OBSTACLE_KIND.IMPASSABLE]: { height: 2.5, color: 0xDE2126, name: 'impassable' },
     [OBSTACLE_KIND.JUMP]: { height: 0.9, color: 0xEB7D26, name: 'jump' },
-    [OBSTACLE_KIND.ROLL]: { height: 0.5, bottomY: 0.5, color: 0x2288CC, name: 'roll' }
+    [OBSTACLE_KIND.ROLL]: { height: 2.5, bottomY: 1.0, color: 0x2288CC, name: 'roll' }
   }
   // Пустых меньше при разгоне: в начале NONE 32–35%, с ростом скорости −5..10%
   const NONE_BASE = 33
