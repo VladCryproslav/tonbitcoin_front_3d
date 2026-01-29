@@ -246,7 +246,7 @@ export function useGamePhysics(scene) {
 
       if (playerMesh && !mixer) {
         const targetX = lanes[playerLane.value]
-        animatePosition(playerMesh.position, 'x', targetX, 0.1)
+        animatePosition(playerMesh.position, 'x', targetX, 0.18)
       }
     }
   }
@@ -258,7 +258,7 @@ export function useGamePhysics(scene) {
 
       if (playerMesh) {
         const targetX = lanes[playerLane.value]
-        animatePosition(playerMesh.position, 'x', targetX, 0.1)
+        animatePosition(playerMesh.position, 'x', targetX, 0.18)
       }
     }
   }
