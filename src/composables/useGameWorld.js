@@ -21,38 +21,48 @@ export function useGameWorld(scene, camera) {
   const roadSpeed = ref(0.3)
   const lanes = [-2, 0, 2] // Позиции полос (левая, центр, правая)
 
-  // Секции дороги: прямоугольники с минимальным расстоянием между собой
-  const SECTION_SPACING = 18 // мин. «расстояние» (по playerZ) между секциями
-  const SECTION_WORLD_LENGTH = 22 // «длина» секции по миру (шаг следующей секции по Z)
+  // Секции дороги: меньше дистанция — спавн чаще
+  const SECTION_SPACING = 10 // мин. «расстояние» (по playerZ) между секциями
+  const SECTION_WORLD_LENGTH = 14
   let lastSpawnPlayerZ = -999
   let nextSectionWorldZ = -48
 
   const laneMarkings = ref([])
 
-  // 4 типа состояния сектора: нет преграды, непроходимая (кувырок), прыжок, кувырок
+  // 4 типа: нет преграды, непроходимая (кувырок), прыжок, кувырок (свайп вниз)
   const OBSTACLE_KIND = { NONE: 'none', IMPASSABLE: 'impassable', JUMP: 'jump', ROLL: 'roll' }
   const OBSTACLE_DEF = {
     [OBSTACLE_KIND.NONE]: null,
     [OBSTACLE_KIND.IMPASSABLE]: { height: 2.5, color: 0xDE2126, name: 'impassable' },
     [OBSTACLE_KIND.JUMP]: { height: 0.9, color: 0xEB7D26, name: 'jump' },
-    [OBSTACLE_KIND.ROLL]: { height: 1.5, color: 0x444444, name: 'roll' }
+    [OBSTACLE_KIND.ROLL]: { height: 1.5, color: 0x2288CC, name: 'roll' }
   }
-  // Веса при выборе типа сектора (NONE чаще, чтобы не забивать дорогу)
-  const OBSTACLE_WEIGHTS = [
-    { kind: OBSTACLE_KIND.NONE, weight: 55 },
-    { kind: OBSTACLE_KIND.JUMP, weight: 18 },
-    { kind: OBSTACLE_KIND.ROLL, weight: 18 },
-    { kind: OBSTACLE_KIND.IMPASSABLE, weight: 9 }
+  // Пустых меньше при разгоне: в начале NONE 32–35%, с ростом скорости −5..10%
+  const NONE_BASE = 33
+  const NONE_SPEED_PENALTY_MAX = 10
+  const OBSTACLE_SHARES = [
+    { kind: OBSTACLE_KIND.JUMP, share: 23 },
+    { kind: OBSTACLE_KIND.ROLL, share: 23 },
+    { kind: OBSTACLE_KIND.IMPASSABLE, share: 22 }
   ]
-  const totalWeight = OBSTACLE_WEIGHTS.reduce((s, w) => s + w.weight, 0)
+  const OBSTACLE_TOTAL_SHARE = OBSTACLE_SHARES.reduce((s, o) => s + o.share, 0)
 
   function pickObstacleKind() {
-    let r = Math.random() * totalWeight
-    for (const { kind, weight } of OBSTACLE_WEIGHTS) {
-      r -= weight
+    const speed = roadSpeed.value
+    const nonePenalty = Math.min(
+      NONE_SPEED_PENALTY_MAX,
+      Math.max(0, (speed - 0.15) * 55)
+    )
+    const noneWeight = Math.max(23, NONE_BASE - nonePenalty)
+    let r = Math.random() * 100
+    if (r < noneWeight) return OBSTACLE_KIND.NONE
+    r = (r - noneWeight) / (100 - noneWeight)
+    for (const { kind, share } of OBSTACLE_SHARES) {
+      const w = share / OBSTACLE_TOTAL_SHARE
+      r -= w
       if (r <= 0) return kind
     }
-    return OBSTACLE_KIND.NONE
+    return OBSTACLE_KIND.IMPASSABLE
   }
 
   // Создание фона
