@@ -185,17 +185,22 @@ const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeR
   startThreeLoop()
 }
 
-// Плавное следование камеры: коэффициент не быстрее анимации смены полосы персонажа (0.18s)
-const CAMERA_LERP = 0.1
+// Очень плавное следование камеры: без рывков, незаметный дрейф от центра при смене полосы
+const CAMERA_SMOOTH_TIME = 0.55 // секунд до ~95% к цели (frame-rate independent)
+let lastCameraTime = 0
 
 const startThreeLoop = () => {
   const animate = () => {
     threeLoop = requestAnimationFrame(animate)
     if (camera) {
+      const now = performance.now() / 1000
+      const dt = lastCameraTime > 0 ? Math.min(now - lastCameraTime, 0.05) : 0.016
+      lastCameraTime = now
       const laneX = cameraLaneX.value
-      // Центр = 0; влево/вправо = слегка смещаем камеру (0.9), персонаж остаётся слегка в кадре в ту сторону
       const targetCamX = laneX === 0 ? 0 : laneX * 0.9
-      camera.position.x += (targetCamX - camera.position.x) * CAMERA_LERP
+      const k = -Math.log(0.05) / CAMERA_SMOOTH_TIME
+      const t = 1 - Math.exp(-k * dt)
+      camera.position.x += (targetCamX - camera.position.x) * t
       const cameraBob = Math.sin(Date.now() * 0.003) * 0.08
       camera.position.y = 2.5 + cameraBob
       camera.lookAt(laneX, 0.2 + cameraBob * 0.5, 0)
@@ -241,6 +246,7 @@ const startGame = () => {
       laneRef.value = 1
     }
     cameraLaneX.value = 0
+    lastCameraTime = 0
   }
   gameRun.startRun()
   hitCount.value = 0
