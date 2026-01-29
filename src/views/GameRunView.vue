@@ -196,14 +196,20 @@ const startThreeLoop = () => {
       const now = performance.now() / 1000
       const dt = lastCameraTime > 0 ? Math.min(now - lastCameraTime, 0.05) : 0.016
       lastCameraTime = now
+
       const laneX = cameraLaneX.value
       const targetCamX = laneX === 0 ? 0 : laneX * 0.9
       const k = -Math.log(0.05) / CAMERA_SMOOTH_TIME
       const t = 1 - Math.exp(-k * dt)
+
+      // Камера только плавно смещается по X, без поворота за персонажем
       camera.position.x += (targetCamX - camera.position.x) * t
+
       const cameraBob = Math.sin(Date.now() * 0.003) * 0.08
       camera.position.y = 2.5 + cameraBob
-      camera.lookAt(laneX, 0.2 + cameraBob * 0.5, 0)
+
+      // Фиксированный взгляд по центру сцены, без поворота при смене полосы
+      camera.lookAt(0, 0.2 + cameraBob * 0.5, 0)
     }
     if (renderer && scene && camera) {
       renderer.render(scene, camera)
