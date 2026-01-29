@@ -208,9 +208,8 @@ const startThreeLoop = () => {
       const cameraBob = Math.sin(Date.now() * 0.003) * 0.08
       camera.position.y = 2.5 + cameraBob
 
-      // Очень лёгкий поворот взгляда в сторону полосы (0.25), без резкого поворота
-      const lookAtX = laneX * 0.25
-      camera.lookAt(lookAtX, 0.2 + cameraBob * 0.5, 0)
+      // Без поворота камеры по X — фиксированный взгляд вперёд
+      camera.lookAt(0, 0.2 + cameraBob * 0.5, 0)
     }
     if (renderer && scene && camera) {
       renderer.render(scene, camera)
