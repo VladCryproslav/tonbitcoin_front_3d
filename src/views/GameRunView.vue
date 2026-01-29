@@ -165,9 +165,9 @@ const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeR
   camera = threeCamera
   renderer = threeRenderer
 
-  // Камера выше (Y) — персонаж ниже в кадре; ближе (Z) — крупнее
-  camera.position.set(0, 2.95, 3.7)
-  camera.lookAt(0, -0.2, 0)
+  // Камера в мире: смотрит вдаль (точка впереди по дороге), персонаж внизу кадра, виден горизонт/небо
+  camera.position.set(0, 2.2, 5)
+  camera.lookAt(0, 0.2, -18)
 
   // Инициализация игрового мира
   gameWorld.value = useGameWorld(scene, camera)
@@ -206,10 +206,10 @@ const startThreeLoop = () => {
       camera.position.x += (targetCamX - camera.position.x) * t
 
       const cameraBob = Math.sin(Date.now() * 0.003) * 0.08
-      camera.position.y = 2.95 + cameraBob
+      camera.position.y = 2.2 + cameraBob
 
-      // Точка взгляда: X = камера (без поворота), Y ниже — персонаж ближе к низу экрана
-      camera.lookAt(camera.position.x, -0.2 + cameraBob * 0.5, 0)
+      // Взгляд вдаль по миру (точка впереди по дороге, фикс. Z) — без поворота по X, виден горизонт, персонаж внизу
+      camera.lookAt(camera.position.x, 0.2 + cameraBob * 0.5, -18)
     }
     if (renderer && scene && camera) {
       renderer.render(scene, camera)
