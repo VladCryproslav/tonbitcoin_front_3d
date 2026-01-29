@@ -186,10 +186,18 @@ const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeR
 const startThreeLoop = () => {
   const animate = () => {
     threeLoop = requestAnimationFrame(animate)
+    // Камера за полосой — обновляем перед рендером, чтобы не зависеть от порядка циклов
+    if (camera && gamePhysics.value && gamePhysics.value.playerLane != null) {
+      const laneIndex = gamePhysics.value.playerLane.value ?? 1
+      const laneX = [-2, 0, 2][laneIndex]
+      camera.position.x = laneX
+      const cameraBob = Math.sin(Date.now() * 0.003) * 0.08
+      camera.position.y = 2.5 + cameraBob
+      camera.lookAt(laneX, 0.2 + cameraBob * 0.5, 0)
+    }
     if (renderer && scene && camera) {
       renderer.render(scene, camera)
     }
-    // Обновляем анимации игрока (standing/running) каждый кадр
     if (gamePhysics.value) {
       gamePhysics.value.update()
     }
@@ -355,22 +363,6 @@ const startGameLoop = () => {
           gameEffects.value.updateEffects()
         }
       }
-    }
-
-    // Камера жёстко «закреплена» за персонажем по горизонтали
-    if (camera && gamePhysics.value) {
-      const playerPosRef = gamePhysics.value.playerPosition
-      const baseX = (playerPosRef && playerPosRef.value)
-        ? playerPosRef.value.x
-        : 0
-      // Камера всегда смотрит строго по центру полосы, где стоит персонаж
-      camera.position.x = baseX
-
-      const cameraBob = Math.sin(Date.now() * 0.003) * 0.08
-      camera.position.y = 2.5 + cameraBob
-
-      const lookAtX = baseX
-      camera.lookAt(lookAtX, 0.2 + cameraBob * 0.5, 0)
     }
 
     // Увеличение скорости со временем (ещё медленнее)
