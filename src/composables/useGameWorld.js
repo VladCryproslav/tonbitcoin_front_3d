@@ -323,10 +323,14 @@ export function useGameWorld(scene, camera) {
     updateLaneMarkings()
   }
 
+  // Окно неуязвимости к синему блоку (мс): после свайпа вниз не бьём по ROLL, не зависим от порядка rAF.
+  const ROLL_IMMUNE_MS = 950
+
   // Обновление препятствий.
-  // Коллизия через AABB (Box3). При кувырке (isSliding) не считаем столкновение с ROLL.
-  const updateObstacles = (playerBox, onCollision, isSliding = false) => {
+  // Коллизия через AABB (Box3). ROLL: не бьём при isSliding, по высоте (underBar) или в окне по времени.
+  const updateObstacles = (playerBox, onCollision, isSliding = false, slideStartTime = 0) => {
     const obstaclesToRemove = []
+    const inRollImmuneWindow = slideStartTime > 0 && Date.now() - slideStartTime < ROLL_IMMUNE_MS
 
     obstacles.value.forEach((obstacle, index) => {
       obstacle.position.z += roadSpeed.value
@@ -337,10 +341,9 @@ export function useGameWorld(scene, camera) {
         obstacleBox.setFromObject(obstacle)
 
         if (kind === OBSTACLE_KIND.ROLL) {
-          // Синий блок: не бьём при кувырке (isSliding) или если верх игрока ниже низа бара.
-          // AABB модели при кувырке может быть ещё «стоячим» (обновляется в другом rAF).
+          // Синий блок: не бьём при кувырке, по высоте под баром или в окне неуязвимости по времени.
           const underBar = playerBox.max.y < obstacleBox.min.y + 0.4
-          const safeFromRoll = isSliding || underBar
+          const safeFromRoll = isSliding || underBar || inRollImmuneWindow
           if (!safeFromRoll && !obstacle.userData.hit && playerBox.intersectsBox(obstacleBox)) {
             obstacle.userData.hit = true
             onCollision(obstacle)

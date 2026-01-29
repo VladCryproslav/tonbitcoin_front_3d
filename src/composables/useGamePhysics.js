@@ -522,6 +522,15 @@ export function useGamePhysics(scene) {
   /** X-координата камеры по текущей полосе (-2, 0, 2) — для привязки камеры за персонажем */
   const getCameraLaneX = () => lanes[playerLane.value]
 
+  /** Время начала последнего слайда (Date.now()). Нужно для окна неуязвимости к ROLL по времени. */
+  const getSlideStartTime = () => slideStartTime
+
+  /** Сброс состояния слайда при старте нового забега. */
+  const resetSlideState = () => {
+    slideStartTime = 0
+    isSliding.value = false
+  }
+
   return {
     playerPosition,
     playerLane,
@@ -533,6 +542,8 @@ export function useGamePhysics(scene) {
     slide,
     getPlayerY,
     getCameraLaneX,
+    getSlideStartTime,
+    resetSlideState,
     createPlayer,
     loadPlayerModel,
     setAnimationState: playAnimationState,

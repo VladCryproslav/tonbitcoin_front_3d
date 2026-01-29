@@ -234,6 +234,7 @@ const startGame = () => {
     gameWorld.value.createRoad()
   }
   if (gamePhysics.value) {
+    gamePhysics.value.resetSlideState?.()
     const mesh = gamePhysics.value.playerMesh()
     if (mesh) {
       mesh.position.set(0, 0, 0)
@@ -336,7 +337,6 @@ const startGameLoop = () => {
         gameWorld.value.updateObstacles(
           playerBox,
           (hitObstacle) => {
-            // Коллизия с препятствием (при кувырке ROLL не бьёт)
             hitCount.value += 1
             gameRun.hitObstacle()
             const newPower = gameRun.currentPower.value - 10
@@ -366,7 +366,8 @@ const startGameLoop = () => {
               shake()
             }
           },
-          gamePhysics.value.isSliding?.value === true
+          gamePhysics.value.isSliding?.value === true,
+          gamePhysics.value.getSlideStartTime?.() ?? 0
         )
 
         // Обновление собираемых предметов
