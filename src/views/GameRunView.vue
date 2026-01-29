@@ -185,12 +185,17 @@ const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeR
   startThreeLoop()
 }
 
+// Плавное следование камеры: коэффициент не быстрее анимации смены полосы персонажа (0.18s)
+const CAMERA_LERP = 0.1
+
 const startThreeLoop = () => {
   const animate = () => {
     threeLoop = requestAnimationFrame(animate)
     if (camera) {
       const laneX = cameraLaneX.value
-      camera.position.x = laneX
+      // Центр = 0; влево/вправо = слегка смещаем камеру (0.9), персонаж остаётся слегка в кадре в ту сторону
+      const targetCamX = laneX === 0 ? 0 : laneX * 0.9
+      camera.position.x += (targetCamX - camera.position.x) * CAMERA_LERP
       const cameraBob = Math.sin(Date.now() * 0.003) * 0.08
       camera.position.y = 2.5 + cameraBob
       camera.lookAt(laneX, 0.2 + cameraBob * 0.5, 0)
