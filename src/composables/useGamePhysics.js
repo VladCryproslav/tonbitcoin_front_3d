@@ -519,6 +519,9 @@ export function useGamePhysics(scene) {
     return box
   }
 
+  /** X-координата камеры по текущей полосе (-2, 0, 2) — для привязки камеры за персонажем */
+  const getCameraLaneX = () => lanes[playerLane.value]
+
   return {
     playerPosition,
     playerLane,
@@ -529,6 +532,7 @@ export function useGamePhysics(scene) {
     jump,
     slide,
     getPlayerY,
+    getCameraLaneX,
     createPlayer,
     loadPlayerModel,
     setAnimationState: playAnimationState,

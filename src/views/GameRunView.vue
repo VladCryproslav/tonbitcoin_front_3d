@@ -157,6 +157,8 @@ const gameSpeed = ref(0.15)
 const playerZ = ref(0)
 const lastSpeedIncrease = ref(0)
 const hitCount = ref(0)
+/** X камеры по полосе (-2, 0, 2); обновляется в игровом цикле, читается в рендер-цикле */
+const cameraLaneX = ref(0)
 
 const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeRenderer }) => {
   scene = threeScene
@@ -186,10 +188,8 @@ const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeR
 const startThreeLoop = () => {
   const animate = () => {
     threeLoop = requestAnimationFrame(animate)
-    // Камера за полосой — обновляем перед рендером, чтобы не зависеть от порядка циклов
-    if (camera && gamePhysics.value && gamePhysics.value.playerLane != null) {
-      const laneIndex = gamePhysics.value.playerLane.value ?? 1
-      const laneX = [-2, 0, 2][laneIndex]
+    if (camera) {
+      const laneX = cameraLaneX.value
       camera.position.x = laneX
       const cameraBob = Math.sin(Date.now() * 0.003) * 0.08
       camera.position.y = 2.5 + cameraBob
@@ -235,6 +235,7 @@ const startGame = () => {
     if (laneRef && typeof laneRef === 'object' && 'value' in laneRef) {
       laneRef.value = 1
     }
+    cameraLaneX.value = 0
   }
   gameRun.startRun()
   hitCount.value = 0
@@ -287,6 +288,11 @@ const startGameLoop = () => {
     // Обновление дистанции
     playerZ.value += gameSpeed.value
     gameRun.updateDistance(gameRun.distance.value + gameSpeed.value * 10)
+
+    // Целевой X камеры по полосе — обновляем здесь, в игровом цикле; рендер-цикл читает cameraLaneX
+    if (gamePhysics.value?.getCameraLaneX) {
+      cameraLaneX.value = gamePhysics.value.getCameraLaneX()
+    }
 
     // Обновление игрока (позиции и коллизии)
     if (gamePhysics.value) {
