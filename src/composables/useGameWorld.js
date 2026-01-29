@@ -337,10 +337,11 @@ export function useGameWorld(scene, camera) {
         obstacleBox.setFromObject(obstacle)
 
         if (kind === OBSTACLE_KIND.ROLL) {
-          // Синий блок: удар только если верх игрока выше низа бара (не проскользнул).
-          // AABB модели при кувырке всё ещё высокий — проверяем по высоте.
-          const underBar = playerBox.max.y < obstacleBox.min.y + 0.25
-          if (!underBar && !obstacle.userData.hit && playerBox.intersectsBox(obstacleBox)) {
+          // Синий блок: не бьём при кувырке (isSliding) или если верх игрока ниже низа бара.
+          // AABB модели при кувырке может быть ещё «стоячим» (обновляется в другом rAF).
+          const underBar = playerBox.max.y < obstacleBox.min.y + 0.4
+          const safeFromRoll = isSliding || underBar
+          if (!safeFromRoll && !obstacle.userData.hit && playerBox.intersectsBox(obstacleBox)) {
             obstacle.userData.hit = true
             onCollision(obstacle)
             return
