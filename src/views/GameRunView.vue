@@ -236,8 +236,8 @@ const startGame = () => {
   if (gamePhysics.value) {
     const mesh = gamePhysics.value.playerMesh()
     if (mesh) {
-      // Сбрасываем позицию меша
-      mesh.position.set(0, 0, 0)
+      const groundY = gamePhysics.value.getPlayerGroundY?.() ?? 0
+      mesh.position.set(0, groundY, 0)
     }
     // Сбрасываем вычислительную позицию игрока
     if (gamePhysics.value.playerPosition?.value) {
