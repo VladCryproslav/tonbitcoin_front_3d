@@ -15,6 +15,7 @@ import { ref } from 'vue'
 const emit = defineEmits(['swipe-left', 'swipe-right', 'swipe-up', 'swipe-down', 'tap'])
 
 const touchStart = ref({ x: 0, y: 0, time: 0 })
+const swipeFired = ref(false)
 const minSwipeDistance = 36
 const maxSwipeTime = 420
 
@@ -25,6 +26,22 @@ const handleTouchStart = (e) => {
     y: touch.clientY,
     time: Date.now()
   }
+  swipeFired.value = false
+}
+
+function tryEmitSwipe(deltaX, deltaY, deltaTime) {
+  const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+  if (distance < minSwipeDistance || deltaTime > maxSwipeTime) return false
+  const absX = Math.abs(deltaX)
+  const absY = Math.abs(deltaY)
+  if (absX > absY) {
+    if (deltaX > 0) emit('swipe-right')
+    else emit('swipe-left')
+  } else {
+    if (deltaY > 0) emit('swipe-down')
+    else emit('swipe-up')
+  }
+  return true
 }
 
 const handleTouchEnd = (e) => {
@@ -36,41 +53,28 @@ const handleTouchEnd = (e) => {
   const deltaTime = Date.now() - touchStart.value.time
   const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
 
-  // Тап: короткое касание без заметного движения
-  if (distance < 12 && deltaTime < 200) {
-    emit('tap', { x: touch.clientX, y: touch.clientY })
-    touchStart.value = { x: 0, y: 0, time: 0 }
-    return
-  }
-
-  // Проверка на свайп
-  if (distance > minSwipeDistance && deltaTime < maxSwipeTime) {
-    const absX = Math.abs(deltaX)
-    const absY = Math.abs(deltaY)
-
-    if (absX > absY) {
-      // Горизонтальный свайп
-      if (deltaX > 0) {
-        emit('swipe-right')
-      } else {
-        emit('swipe-left')
-      }
+  if (!swipeFired.value) {
+    if (distance < 12 && deltaTime < 200) {
+      emit('tap', { x: touch.clientX, y: touch.clientY })
     } else {
-      // Вертикальный свайп
-      if (deltaY > 0) {
-        emit('swipe-down')
-      } else {
-        emit('swipe-up')
-      }
+      tryEmitSwipe(deltaX, deltaY, deltaTime)
     }
   }
 
   touchStart.value = { x: 0, y: 0, time: 0 }
+  swipeFired.value = false
 }
 
 const handleTouchMove = (e) => {
-  // Предотвращаем скролл страницы во время игры
   e.preventDefault()
+  if (!touchStart.value.x || swipeFired.value) return
+  const touch = e.touches[0]
+  const deltaX = touch.clientX - touchStart.value.x
+  const deltaY = touch.clientY - touchStart.value.y
+  const deltaTime = Date.now() - touchStart.value.time
+  if (tryEmitSwipe(deltaX, deltaY, deltaTime)) {
+    swipeFired.value = true
+  }
 }
 </script>
 
