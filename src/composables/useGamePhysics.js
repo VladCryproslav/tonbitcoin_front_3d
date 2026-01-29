@@ -23,8 +23,6 @@ export function useGamePhysics(scene) {
   const playerY = ref(0)
 
   const lanes = [-2, 0, 2] // Позиции полос
-  /** Базовая Y персонажа в мире — ниже центра кадра */
-  const PLAYER_GROUND_Y = -0.55
   let playerMesh = null
   let jumpStartTime = 0
   let slideStartTime = 0
@@ -104,7 +102,7 @@ export function useGamePhysics(scene) {
       const model = gltf.scene
       // При необходимости подправь масштаб/позицию под конкретную модель
       model.scale.set(1, 1, 1)
-      model.position.set(0, PLAYER_GROUND_Y, 0)
+      model.position.set(0, 0, 0)
       // Разворачиваем модель спиной к камере (камера стоит с +Z и смотрит в 0)
       model.rotation.y = Math.PI
 
@@ -217,7 +215,7 @@ export function useGamePhysics(scene) {
     rightLeg.name = 'rightLeg'
     group.add(rightLeg)
 
-    group.position.set(0, PLAYER_GROUND_Y, 0)
+    group.position.set(0, 0, 0)
     // Кубический персонаж тоже смотрит от камеры вперёд по -Z
     group.rotation.y = Math.PI
     gameSceneToUse.add(group)
@@ -295,7 +293,7 @@ export function useGamePhysics(scene) {
       if (playerMesh) {
         const startY = playerMesh.position.y
         const startRotX = playerMesh.rotation.x
-        const targetY = PLAYER_GROUND_Y
+        const targetY = 0
         const targetRotX = 0
         const landDuration = 150 // мс
         const landStart = Date.now()
@@ -346,7 +344,7 @@ export function useGamePhysics(scene) {
             // Плавное уменьшение
             const scaleProgress = progress < 0.3 ? progress / 0.3 : 1
             playerMesh.scale.y = startScaleY - (startScaleY - 0.5) * scaleProgress
-            playerMesh.position.y = startY - (startY - (PLAYER_GROUND_Y + 0.3)) * scaleProgress
+            playerMesh.position.y = startY - (startY - 0.3) * scaleProgress
 
             // Наклон вперед
             playerMesh.rotation.x = progress * 0.5
@@ -362,7 +360,7 @@ export function useGamePhysics(scene) {
 
               if (returnProgress < 1) {
                 playerMesh.scale.y = 0.5 + (startScaleY - 0.5) * returnProgress
-                playerMesh.position.y = (PLAYER_GROUND_Y + 0.3) + (startY - (PLAYER_GROUND_Y + 0.3)) * returnProgress
+                playerMesh.position.y = 0.3 + (startY - 0.3) * returnProgress
                 playerMesh.rotation.x = 0.5 * (1 - returnProgress)
                 requestAnimationFrame(returnAnimate)
               } else {
@@ -431,7 +429,7 @@ export function useGamePhysics(scene) {
 
         requestAnimationFrame(animate)
       } else {
-        playerMesh.position.y = PLAYER_GROUND_Y
+        playerMesh.position.y = startY
         playerMesh.rotation.x = 0
         isJumping.value = false
         // После прыжка возвращаемся к бегу
@@ -445,12 +443,10 @@ export function useGamePhysics(scene) {
     if (playerMesh) {
       return playerMesh.position.y
     }
-    if (isJumping.value) return PLAYER_GROUND_Y + 1.5
-    if (isSliding.value) return PLAYER_GROUND_Y + 0.3
-    return PLAYER_GROUND_Y
+    if (isJumping.value) return 1.5
+    if (isSliding.value) return 0.3
+    return 0
   }
-
-  const getPlayerGroundY = () => PLAYER_GROUND_Y
 
   const update = () => {
     // Обновление анимаций из GLTF модели
@@ -492,7 +488,7 @@ export function useGamePhysics(scene) {
         }
 
         // Небольшое вертикальное покачивание при беге
-        const baseY = isSliding.value ? PLAYER_GROUND_Y + 0.3 : PLAYER_GROUND_Y
+        const baseY = isSliding.value ? 0.3 : 0
         playerMesh.position.y = baseY + Math.abs(Math.sin(time * runSpeed * 2)) * 0.1
       } else {
         // Сброс анимации при прыжке/скольжении
@@ -536,7 +532,6 @@ export function useGamePhysics(scene) {
     jump,
     slide,
     getPlayerY,
-    getPlayerGroundY,
     getCameraLaneX,
     createPlayer,
     loadPlayerModel,

@@ -165,8 +165,8 @@ const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeR
   camera = threeCamera
   renderer = threeRenderer
 
-  // Настройка камеры: персонаж ближе к низу экрана (точка взгляда по Y ниже)
-  camera.position.set(0, 2.5, 5.5)
+  // Камера ближе к персонажу (Z меньше) — персонаж крупнее и ближе к низу кадра
+  camera.position.set(0, 2.5, 4.2)
   camera.lookAt(0, -0.2, 0)
 
   // Инициализация игрового мира
@@ -236,8 +236,7 @@ const startGame = () => {
   if (gamePhysics.value) {
     const mesh = gamePhysics.value.playerMesh()
     if (mesh) {
-      const groundY = gamePhysics.value.getPlayerGroundY?.() ?? 0
-      mesh.position.set(0, groundY, 0)
+      mesh.position.set(0, 0, 0)
     }
     // Сбрасываем вычислительную позицию игрока
     if (gamePhysics.value.playerPosition?.value) {
