@@ -1,6 +1,6 @@
 <template>
-  <div 
-    class="game-controls" 
+  <div
+    class="game-controls"
     @touchstart="handleTouchStart"
     @touchend="handleTouchEnd"
     @touchmove="handleTouchMove"
@@ -15,8 +15,8 @@ import { ref } from 'vue'
 const emit = defineEmits(['swipe-left', 'swipe-right', 'swipe-up', 'swipe-down', 'tap'])
 
 const touchStart = ref({ x: 0, y: 0, time: 0 })
-const minSwipeDistance = 50
-const maxSwipeTime = 300
+const minSwipeDistance = 36
+const maxSwipeTime = 420
 
 const handleTouchStart = (e) => {
   const touch = e.touches[0]
@@ -36,8 +36,8 @@ const handleTouchEnd = (e) => {
   const deltaTime = Date.now() - touchStart.value.time
   const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
 
-  // Проверка на тап
-  if (distance < 10 && deltaTime < 200) {
+  // Тап: короткое касание без заметного движения
+  if (distance < 12 && deltaTime < 200) {
     emit('tap', { x: touch.clientX, y: touch.clientY })
     touchStart.value = { x: 0, y: 0, time: 0 }
     return

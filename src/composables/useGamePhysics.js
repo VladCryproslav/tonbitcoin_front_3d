@@ -246,11 +246,7 @@ export function useGamePhysics(scene) {
 
       if (playerMesh && !mixer) {
         const targetX = lanes[playerLane.value]
-        animatePosition(playerMesh.position, 'x', targetX, 0.3)
-      }
-      // Анимация уклонения (клип после победы) при свайпе влево
-      if (mixer && animations.length > 6) {
-        playAnimationState('dodge')
+        animatePosition(playerMesh.position, 'x', targetX, 0.18)
       }
     }
   }
@@ -262,11 +258,7 @@ export function useGamePhysics(scene) {
 
       if (playerMesh) {
         const targetX = lanes[playerLane.value]
-        animatePosition(playerMesh.position, 'x', targetX, 0.3)
-      }
-      // Анимация уклонения (клип после победы) при свайпе вправо
-      if (mixer && animations.length > 6) {
-        playAnimationState('dodge')
+        animatePosition(playerMesh.position, 'x', targetX, 0.18)
       }
     }
   }
