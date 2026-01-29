@@ -336,7 +336,7 @@ const startGameLoop = () => {
         gameWorld.value.updateObstacles(
           playerBox,
           (hitObstacle) => {
-            // Коллизия с препятствием
+            // Коллизия с препятствием (при кувырке ROLL не бьёт)
             hitCount.value += 1
             gameRun.hitObstacle()
             const newPower = gameRun.currentPower.value - 10
@@ -365,7 +365,8 @@ const startGameLoop = () => {
               }
               shake()
             }
-          }
+          },
+          gamePhysics.value.isSliding?.value === true
         )
 
         // Обновление собираемых предметов

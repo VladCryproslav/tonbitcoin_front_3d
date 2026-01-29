@@ -22,7 +22,7 @@ export function useGameWorld(scene, camera) {
   const lanes = [-2, 0, 2] // Позиции полос (левая, центр, правая)
 
   // Секции дороги: меньше дистанция — спавн чаще
-  const SECTION_SPACING = 10 // мин. «расстояние» (по playerZ) между секциями
+  const SECTION_SPACING = 6 // мин. «расстояние» (по playerZ) между секциями
   const SECTION_WORLD_LENGTH = 14
   let lastSpawnPlayerZ = -999
   let nextSectionWorldZ = -48
@@ -31,11 +31,12 @@ export function useGameWorld(scene, camera) {
 
   // 4 типа: нет преграды, непроходимая (кувырок), прыжок, кувырок (свайп вниз)
   const OBSTACLE_KIND = { NONE: 'none', IMPASSABLE: 'impassable', JUMP: 'jump', ROLL: 'roll' }
+  // ROLL: bar над дорогой (bottomY + height), чтобы визуально был зазор для кувырка
   const OBSTACLE_DEF = {
     [OBSTACLE_KIND.NONE]: null,
     [OBSTACLE_KIND.IMPASSABLE]: { height: 2.5, color: 0xDE2126, name: 'impassable' },
     [OBSTACLE_KIND.JUMP]: { height: 0.9, color: 0xEB7D26, name: 'jump' },
-    [OBSTACLE_KIND.ROLL]: { height: 1.5, color: 0x2288CC, name: 'roll' }
+    [OBSTACLE_KIND.ROLL]: { height: 0.5, bottomY: 0.5, color: 0x2288CC, name: 'roll' }
   }
   // Пустых меньше при разгоне: в начале NONE 32–35%, с ростом скорости −5..10%
   const NONE_BASE = 33
@@ -212,7 +213,8 @@ export function useGameWorld(scene, camera) {
       flatShading: true
     })
     const obstacle = new Mesh(obstacleGeometry, obstacleMaterial)
-    obstacle.position.set(lanes[lane], def.height / 2, z)
+    const posY = def.bottomY != null ? def.bottomY + def.height / 2 : def.height / 2
+    obstacle.position.set(lanes[lane], posY, z)
     obstacle.userData = { type: 'obstacle', lane, height: def.height, kind }
     obstacle.castShadow = true
     scene.add(obstacle)
@@ -256,6 +258,7 @@ export function useGameWorld(scene, camera) {
 
   // Генерация по секциям: дорога — прямоугольники, каждый прямоугольник — 3 сектора (полосы).
   // В каждом секторе один из 4 типов: нет преграды, непроходимая (кувырок), прыжок, кувырок.
+  // Правило: три в ряд непроходимых (IMPASSABLE) быть не может — максимум 2 в секции.
   // Между секциями — минимальное расстояние SECTION_SPACING по playerZ.
   const spawnObjects = (playerZ) => {
     if (playerZ - lastSpawnPlayerZ < SECTION_SPACING) return
@@ -264,19 +267,35 @@ export function useGameWorld(scene, camera) {
     const sectionZ = nextSectionWorldZ
     nextSectionWorldZ -= SECTION_WORLD_LENGTH
 
-    // Для каждой из 3 полос (секторов) выбираем тип препятствия
+    const kinds = []
     for (let lane = 0; lane < 3; lane++) {
-      const kind = pickObstacleKind()
+      let kind = pickObstacleKind()
+      kinds.push(kind)
+    }
+    // Не допускаем три IMPASSABLE в ряд: заменяем один на NONE
+    const impassableCount = kinds.filter(k => k === OBSTACLE_KIND.IMPASSABLE).length
+    if (impassableCount >= 3) {
+      const idx = kinds.findIndex(k => k === OBSTACLE_KIND.IMPASSABLE)
+      kinds[idx] = OBSTACLE_KIND.NONE
+    }
+
+    for (let lane = 0; lane < 3; lane++) {
+      const kind = kinds[lane]
       if (kind !== OBSTACLE_KIND.NONE) {
         createObstacle(lane, sectionZ, kind)
       }
     }
 
-    // Собираемые предметы: отдельно от секций, с меньшей частотой и без жёсткой привязки к секциям
-    const collectibleChance = 0.4
+    // Собираемые предметы: чаще спавн и иногда два за секцию
+    const collectibleChance = 0.72
     if (Math.random() < collectibleChance) {
       const lane = Math.floor(Math.random() * 3)
       const collectibleZ = sectionZ - 5 - Math.random() * 8
+      createCollectible(lane, collectibleZ)
+    }
+    if (Math.random() < 0.35) {
+      const lane = Math.floor(Math.random() * 3)
+      const collectibleZ = sectionZ - 3 - Math.random() * 6
       createCollectible(lane, collectibleZ)
     }
   }
@@ -305,27 +324,26 @@ export function useGameWorld(scene, camera) {
   }
 
   // Обновление препятствий.
-  // Теперь коллизия считается через реальные AABB (Box3) игрока и препятствий,
-  // без каких‑либо эвристик по полосам/X/Z. Это устраняет баги, когда визуально
-  // игрок в одной полосе, а логика считает, что он в другой.
-  const updateObstacles = (playerBox, onCollision) => {
+  // Коллизия через AABB (Box3). При кувырке (isSliding) не считаем столкновение с ROLL.
+  const updateObstacles = (playerBox, onCollision, isSliding = false) => {
     const obstaclesToRemove = []
 
     obstacles.value.forEach((obstacle, index) => {
       obstacle.position.z += roadSpeed.value
 
-      // Если ещё нет меша игрока/box — просто прокручиваем препятствия.
       if (playerBox) {
-        const obstacleBox = obstacle.userData.box || (obstacle.userData.box = new Box3())
-        obstacleBox.setFromObject(obstacle)
+        const kind = obstacle.userData.kind
+        if (isSliding && kind === OBSTACLE_KIND.ROLL) {
+          // Во время кувырка под синим блоком проскальзываем без удара
+        } else {
+          const obstacleBox = obstacle.userData.box || (obstacle.userData.box = new Box3())
+          obstacleBox.setFromObject(obstacle)
 
-        // Флаг, чтобы по одному и тому же препятствию не бить каждый кадр.
-        if (!obstacle.userData.hit && playerBox.intersectsBox(obstacleBox)) {
-          obstacle.userData.hit = true
-          onCollision(obstacle)
-          // Не удаляем препятствие: оно остаётся "на месте" столкновения.
-          // Также сразу выходим, чтобы не обрабатывать уход за камеру в этот кадр.
-          return
+          if (!obstacle.userData.hit && playerBox.intersectsBox(obstacleBox)) {
+            obstacle.userData.hit = true
+            onCollision(obstacle)
+            return
+          }
         }
       }
 
