@@ -19,9 +19,41 @@ export function useGameWorld(scene, camera) {
   const obstacles = ref([])
   const collectibles = ref([])
   const roadSpeed = ref(0.3)
-  const spawnDistance = ref(0)
-  const lanes = [-2, 0, 2] // Позиции полос
+  const lanes = [-2, 0, 2] // Позиции полос (левая, центр, правая)
+
+  // Секции дороги: прямоугольники с минимальным расстоянием между собой
+  const SECTION_SPACING = 18 // мин. «расстояние» (по playerZ) между секциями
+  const SECTION_WORLD_LENGTH = 22 // «длина» секции по миру (шаг следующей секции по Z)
+  let lastSpawnPlayerZ = -999
+  let nextSectionWorldZ = -48
+
   const laneMarkings = ref([])
+
+  // 4 типа состояния сектора: нет преграды, непроходимая (кувырок), прыжок, кувырок
+  const OBSTACLE_KIND = { NONE: 'none', IMPASSABLE: 'impassable', JUMP: 'jump', ROLL: 'roll' }
+  const OBSTACLE_DEF = {
+    [OBSTACLE_KIND.NONE]: null,
+    [OBSTACLE_KIND.IMPASSABLE]: { height: 2.5, color: 0xDE2126, name: 'impassable' },
+    [OBSTACLE_KIND.JUMP]: { height: 0.9, color: 0xEB7D26, name: 'jump' },
+    [OBSTACLE_KIND.ROLL]: { height: 1.5, color: 0x444444, name: 'roll' }
+  }
+  // Веса при выборе типа сектора (NONE чаще, чтобы не забивать дорогу)
+  const OBSTACLE_WEIGHTS = [
+    { kind: OBSTACLE_KIND.NONE, weight: 55 },
+    { kind: OBSTACLE_KIND.JUMP, weight: 18 },
+    { kind: OBSTACLE_KIND.ROLL, weight: 18 },
+    { kind: OBSTACLE_KIND.IMPASSABLE, weight: 9 }
+  ]
+  const totalWeight = OBSTACLE_WEIGHTS.reduce((s, w) => s + w.weight, 0)
+
+  function pickObstacleKind() {
+    let r = Math.random() * totalWeight
+    for (const { kind, weight } of OBSTACLE_WEIGHTS) {
+      r -= weight
+      if (r <= 0) return kind
+    }
+    return OBSTACLE_KIND.NONE
+  }
 
   // Создание фона
   const createBackground = () => {
@@ -158,25 +190,20 @@ export function useGameWorld(scene, camera) {
     })
   }
 
-  // Создание препятствия - Subway Surfers стиль
-  const createObstacle = (lane, z) => {
-    const obstacleTypes = [
-      { height: 1.5, color: 0xDE2126, name: 'low' }, // Красный Subway Surfers
-      { height: 2.5, color: 0xEB7D26, name: 'high' }, // Оранжевый
-      { height: 1.8, color: 0x444444, name: 'barrier' }, // Серый барьер
-    ]
-
-    const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)]
-    const obstacleGeometry = new BoxGeometry(1, type.height, 1)
+  // Создание препятствия по типу: jump (прыжок), roll (кувырок), impassable (непроходимая — кувырок)
+  const createObstacle = (lane, z, kind) => {
+    const def = OBSTACLE_DEF[kind]
+    if (!def) return null
+    const obstacleGeometry = new BoxGeometry(1, def.height, 1)
     const obstacleMaterial = new MeshStandardMaterial({
-      color: type.color,
+      color: def.color,
       metalness: 0.1,
       roughness: 0.9,
-      flatShading: true // Cartoon стиль
+      flatShading: true
     })
     const obstacle = new Mesh(obstacleGeometry, obstacleMaterial)
-    obstacle.position.set(lanes[lane], type.height / 2, z)
-    obstacle.userData = { type: 'obstacle', lane, height: type.height }
+    obstacle.position.set(lanes[lane], def.height / 2, z)
+    obstacle.userData = { type: 'obstacle', lane, height: def.height, kind }
     obstacle.castShadow = true
     scene.add(obstacle)
     obstacles.value.push(obstacle)
@@ -217,54 +244,30 @@ export function useGameWorld(scene, camera) {
     return group
   }
 
-  // Генерация препятствий и предметов
+  // Генерация по секциям: дорога — прямоугольники, каждый прямоугольник — 3 сектора (полосы).
+  // В каждом секторе один из 4 типов: нет преграды, непроходимая (кувырок), прыжок, кувырок.
+  // Между секциями — минимальное расстояние SECTION_SPACING по playerZ.
   const spawnObjects = (playerZ) => {
-    if (spawnDistance.value >= playerZ - 5) return
+    if (playerZ - lastSpawnPlayerZ < SECTION_SPACING) return
 
-    spawnDistance.value = playerZ
+    lastSpawnPlayerZ = playerZ
+    const sectionZ = nextSectionWorldZ
+    nextSectionWorldZ -= SECTION_WORLD_LENGTH
 
-    // Генерация препятствий (более часто при увеличении скорости)
-    const obstacleChance = Math.min(0.5, 0.25 + (roadSpeed.value - 0.15) * 2)
-    if (Math.random() < obstacleChance) {
-      const lane = Math.floor(Math.random() * 3)
-      // Спавним препятствия в «туннеле» перед камерой, в более глубоком диапазоне [-80, -40] по Z,
-      // чтобы игрок видел дорогу и объекты дальше.
-      const obstacleZ = -40 - Math.random() * 40
-      createObstacle(lane, obstacleZ)
-
-      // Иногда создаем препятствие в соседней полосе (более сложно)
-      if (Math.random() < 0.3) {
-        const nextLane = (lane + (Math.random() < 0.5 ? 1 : -1) + 3) % 3
-        createObstacle(nextLane, obstacleZ)
+    // Для каждой из 3 полос (секторов) выбираем тип препятствия
+    for (let lane = 0; lane < 3; lane++) {
+      const kind = pickObstacleKind()
+      if (kind !== OBSTACLE_KIND.NONE) {
+        createObstacle(lane, sectionZ, kind)
       }
     }
 
-    // Генерация собираемых предметов (чаще чем препятствия)
-    const collectibleChance = 0.7 - (roadSpeed.value - 0.15) * 0.5
+    // Собираемые предметы: отдельно от секций, с меньшей частотой и без жёсткой привязки к секциям
+    const collectibleChance = 0.4
     if (Math.random() < collectibleChance) {
       const lane = Math.floor(Math.random() * 3)
-      // Энергия тоже спавнится глубже: [-70, -30] по Z.
-      const collectibleZ = -30 - Math.random() * 40
+      const collectibleZ = sectionZ - 5 - Math.random() * 8
       createCollectible(lane, collectibleZ)
-    }
-
-    // Иногда генерируем несколько предметов подряд (бонусная линия)
-    if (Math.random() < 0.15) {
-      const startLane = Math.floor(Math.random() * 3)
-      const baseZ = -30 - Math.random() * 40
-      for (let i = 0; i < 3; i++) {
-        const lane = (startLane + i) % 3
-        createCollectible(lane, baseZ - i * 2)
-      }
-    }
-
-    // Редко генерируем препятствие и предмет рядом (сложная ситуация)
-    if (Math.random() < 0.1) {
-      const lane = Math.floor(Math.random() * 3)
-      const obstacleZ = -40 - Math.random() * 40
-      createObstacle(lane, obstacleZ)
-      const collectibleLane = (lane + (Math.random() < 0.5 ? 1 : -1) + 3) % 3
-      createCollectible(collectibleLane, obstacleZ + 3)
     }
   }
 
@@ -389,7 +392,8 @@ export function useGameWorld(scene, camera) {
     collectibles.value.forEach(collectible => scene.remove(collectible))
     obstacles.value = []
     collectibles.value = []
-    spawnDistance.value = 0
+    lastSpawnPlayerZ = -999
+    nextSectionWorldZ = -48
   }
 
   // Обновление скорости дороги
