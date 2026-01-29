@@ -165,7 +165,7 @@ const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeR
 
   // Настройка камеры для раннера: ниже, ближе, персонаж ближе к нижнему краю кадра
   camera.position.set(0, 2.5, 5.5)
-  camera.lookAt(0, 0.2, 0)
+  camera.lookAt(0, 0.4, 0)
 
   // Инициализация игрового мира
   gameWorld.value = useGameWorld(scene, camera)
@@ -357,21 +357,19 @@ const startGameLoop = () => {
       }
     }
 
-    // Камера плавно следует за персонажем по горизонтали (при смене полосы)
+    // Камера жёстко «закреплена» за персонажем по горизонтали
     if (camera && gamePhysics.value) {
       const playerPosRef = gamePhysics.value.playerPosition
       const baseX = (playerPosRef && playerPosRef.value)
         ? playerPosRef.value.x
         : 0
-      const followFactor = 0.6
-      const targetCamX = baseX * followFactor
-      const smooth = 0.07
-      camera.position.x += (targetCamX - camera.position.x) * smooth
+      // Камера всегда смотрит строго по центру полосы, где стоит персонаж
+      camera.position.x = baseX
 
       const cameraBob = Math.sin(Date.now() * 0.003) * 0.08
       camera.position.y = 2.5 + cameraBob
 
-      const lookAtX = baseX * 0.55
+      const lookAtX = baseX
       camera.lookAt(lookAtX, 0.2 + cameraBob * 0.5, 0)
     }
 
