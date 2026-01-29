@@ -32,7 +32,7 @@ export function useGamePhysics(scene) {
   let animations = []
 
   // Маппинг логических состояний на индексы клипов в main.glb:
-  // 0: standing, 1: running, 2: jump, 3: roll, 4: fall, 5: win
+  // 0: standing, 1: running, 2: jump, 3: roll, 4: fall, 5: win, 6: dodge (свайп влево/вправо)
   const animationIndexByState = {
     standing: 0,
     idle: 0,
@@ -45,7 +45,9 @@ export function useGamePhysics(scene) {
     death: 4,
     win: 5,
     victory: 5,
-    success: 5
+    success: 5,
+    dodge: 6,
+    sidestep: 6
   }
 
   const playAnimationState = (state) => {
@@ -64,11 +66,19 @@ export function useGamePhysics(scene) {
       currentAnimation.fadeOut(0.1)
     }
 
-    // Для "fall/death" и "roll/slide" играем анимацию один раз и замираем в конце,
-    // без зацикливания и без автоперехода обратно в бег.
+    // Для "fall/death", "roll/slide" и "dodge" играем анимацию один раз.
     if (state === 'fall' || state === 'death' || state === 'roll' || state === 'slide') {
       action.setLoop(THREE.LoopOnce, 1)
       action.clampWhenFinished = true
+    } else if (state === 'dodge' || state === 'sidestep') {
+      action.setLoop(THREE.LoopOnce, 1)
+      action.clampWhenFinished = true
+      const onFinished = (e) => {
+        if (e.action !== action) return
+        mixer.removeEventListener('finished', onFinished)
+        playAnimationState('running')
+      }
+      mixer.addEventListener('finished', onFinished)
     } else {
       // Все остальные состояния (run/standing/win и т.д.) крутятся в цикле.
       action.setLoop(THREE.LoopRepeat, Infinity)
@@ -234,12 +244,13 @@ export function useGamePhysics(scene) {
       playerLane.value--
       playerPosition.value.x = lanes[playerLane.value]
 
-      // Плавная анимация перемещения
-      // Для GLB‑модели полагаемся только на скелетную анимацию,
-      // "прижимание вниз" оставляем только для кубического фоллбэка.
       if (playerMesh && !mixer) {
         const targetX = lanes[playerLane.value]
         animatePosition(playerMesh.position, 'x', targetX, 0.3)
+      }
+      // Анимация уклонения (клип после победы) при свайпе влево
+      if (mixer && animations.length > 6) {
+        playAnimationState('dodge')
       }
     }
   }
@@ -252,6 +263,10 @@ export function useGamePhysics(scene) {
       if (playerMesh) {
         const targetX = lanes[playerLane.value]
         animatePosition(playerMesh.position, 'x', targetX, 0.3)
+      }
+      // Анимация уклонения (клип после победы) при свайпе вправо
+      if (mixer && animations.length > 6) {
+        playAnimationState('dodge')
       }
     }
   }
