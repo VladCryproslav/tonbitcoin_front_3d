@@ -23,11 +23,16 @@ export function useGamePhysics(scene) {
   const playerY = ref(0)
 
   const lanes = [-2, 0, 2] // Позиции полос
+  const LANE_CHANGE_DURATION_MS = 180 // длительность смены полосы, time-based в update()
   let playerMesh = null
   let jumpStartTime = 0
   let slideStartTime = 0
   let mixer = null // Для анимаций из GLTF
   let clock = new Clock()
+  // Смена полосы в одном цикле (update), без отдельного rAF — убирает микрофризы
+  let laneTransitionStartTime = 0
+  let laneTransitionStartX = 0
+  let laneTransitionTargetX = null
   let currentAnimation = null
   let animations = []
 
@@ -242,10 +247,10 @@ export function useGamePhysics(scene) {
     if (playerLane.value > 0) {
       playerLane.value--
       playerPosition.value.x = lanes[playerLane.value]
-
-      if (playerMesh && !mixer) {
-        const targetX = lanes[playerLane.value]
-        animatePosition(playerMesh.position, 'x', targetX, 0.18)
+      if (playerMesh) {
+        laneTransitionStartTime = Date.now()
+        laneTransitionStartX = playerMesh.position.x
+        laneTransitionTargetX = lanes[playerLane.value]
       }
     }
   }
@@ -254,10 +259,10 @@ export function useGamePhysics(scene) {
     if (playerLane.value < 2) {
       playerLane.value++
       playerPosition.value.x = lanes[playerLane.value]
-
       if (playerMesh) {
-        const targetX = lanes[playerLane.value]
-        animatePosition(playerMesh.position, 'x', targetX, 0.18)
+        laneTransitionStartTime = Date.now()
+        laneTransitionStartX = playerMesh.position.x
+        laneTransitionTargetX = lanes[playerLane.value]
       }
     }
   }
@@ -448,15 +453,26 @@ export function useGamePhysics(scene) {
   }
 
   const update = () => {
-    // Обновление анимаций из GLTF модели
     if (mixer) {
       mixer.update(clock.getDelta())
     }
 
     if (playerMesh) {
-      // Обновляем позицию игрока по X
-      const targetX = playerPosition.value.x
-      playerMesh.position.x += (targetX - playerMesh.position.x) * 0.2
+      // Смена полосы: один раз в кадр, time-based lerp в том же цикле что и рендер — без микрофризов
+      if (laneTransitionTargetX !== null) {
+        const elapsed = Date.now() - laneTransitionStartTime
+        const progress = Math.min(elapsed / LANE_CHANGE_DURATION_MS, 1)
+        const ease = progress < 0.5
+          ? 2 * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 2) / 2
+        playerMesh.position.x = laneTransitionStartX + (laneTransitionTargetX - laneTransitionStartX) * ease
+        if (progress >= 1) {
+          playerMesh.position.x = laneTransitionTargetX
+          laneTransitionTargetX = null
+        }
+      } else {
+        playerMesh.position.x = playerPosition.value.x
+      }
 
       // Анимация бега - движение рук и ног (только для простой модели)
       // Для GLTF моделей анимации управляются через AnimationMixer
@@ -530,6 +546,11 @@ export function useGamePhysics(scene) {
     isSliding.value = false
   }
 
+  /** Сброс перехода полосы при старте забега. */
+  const resetLaneTransition = () => {
+    laneTransitionTargetX = null
+  }
+
   return {
     playerPosition,
     playerLane,
@@ -543,6 +564,7 @@ export function useGamePhysics(scene) {
     getCameraLaneX,
     getSlideStartTime,
     resetSlideState,
+    resetLaneTransition,
     createPlayer,
     loadPlayerModel,
     setAnimationState: playAnimationState,

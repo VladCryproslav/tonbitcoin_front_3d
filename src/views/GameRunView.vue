@@ -238,6 +238,7 @@ const startGame = () => {
   }
   if (gamePhysics.value) {
     gamePhysics.value.resetSlideState?.()
+    gamePhysics.value.resetLaneTransition?.()
     const mesh = gamePhysics.value.playerMesh()
     if (mesh) {
       mesh.position.set(0, 0, 0)
