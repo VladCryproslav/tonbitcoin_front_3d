@@ -106,14 +106,14 @@
 
 | Что сделать | Где | Эффект |
 |-------------|-----|--------|
-| Очищать roadSegments, laneMarkings и фон перед createRoad / создавать фон один раз | useGameWorld | Устранение утечки и роста draw calls |
-| playerBox один раз за шаг; updateEffects один раз за кадр | GameRunView | Меньше CPU на AABB и эффекты |
-| Тряска камеры в основном цикле по времени | GameRunView | Нет лишних rAF |
-| Один проход updateLaneMarkings (сделано: 2 прохода) | useGameWorld | Меньше итераций |
-| Shared geometry/material для разметки (сделано), препятствий, коллектов | useGameWorld | Меньше draw calls и памяти |
+| Очищать roadSegments, laneMarkings; фон один раз ✅ | useGameWorld | Устранение утечки |
+| playerBox один раз за шаг; updateEffects один раз за кадр ✅ | GameRunView | Меньше CPU |
+| Тряска камеры в основном цикле ✅ | GameRunView | Нет лишних rAF |
+| updateLaneMarkings: 2 прохода ✅ | useGameWorld | Меньше итераций |
+| Shared geometry/material: разметка, препятствия, коллекты ✅ | useGameWorld | Меньше draw calls и памяти |
+| Синусы для коллектов один раз за кадр ✅ | useGameWorld | Микро-оптимизация |
 | Object pool препятствий и коллектов | useGameWorld | Меньше GC |
 | Object pool эффектов | useGameEffects | Меньше аллокаций/GC |
-| Синусы для коллектов один раз за кадр | useGameWorld | Микро-оптимизация |
 | Опционально: Lambert/Basic для фона, тени 1024 или отключение на слабых | GameScene, useGameWorld | Снижение нагрузки на GPU |
 
 Разметку дороги (логику создания линий, диапазон Z, шаг) по условию не меняем — только оптимизация кода обновления и переиспользование геометрии/материалов.

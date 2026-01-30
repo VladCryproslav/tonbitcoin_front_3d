@@ -172,13 +172,8 @@ export function useGameWorld(scene, camera) {
     }
   }
 
-  // Создание дорожки. Перед пересозданием удаляем старые сегменты и разметку (устранение утечки при рестарте).
+  // Создание дорожки
   const createRoad = () => {
-    roadSegments.value.forEach(seg => scene.remove(seg))
-    roadSegments.value = []
-    laneMarkings.value.forEach(m => scene.remove(m))
-    laneMarkings.value = []
-
     createBackground()
     const roadWidth = 6
 
