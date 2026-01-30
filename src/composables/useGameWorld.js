@@ -364,8 +364,8 @@ export function useGameWorld(scene, camera) {
         }
       }
 
-      if (obstacle.position.z > 10) {
-        // Удаление ушедших препятствий (которые игрок не задел).
+      // Удаляем сразу после ухода за кадр (камера ~4.4), не держим до z>10
+      if (obstacle.position.z > 6) {
         obstaclesToRemove.push(index)
         scene.remove(obstacle)
       }
@@ -418,8 +418,8 @@ export function useGameWorld(scene, camera) {
         }
       }
 
-      if (collectible.position.z > 10) {
-        // Удаление ушедших предметов
+      // Удаляем сразу после ухода за кадр, не держим до z>10
+      if (collectible.position.z > 6) {
         collectiblesToRemove.push(index)
         scene.remove(collectible)
       }
