@@ -29,7 +29,7 @@ const initScene = () => {
   // Создание сцены
   scene = new Scene()
   scene.background = new Color(props.backgroundColor)
-  scene.fog = new Fog(props.backgroundColor, 5, 30) // Ближний туман для глубины
+  scene.fog = new Fog(props.backgroundColor, 8, 50) // Туман слабее: дальше старт и полная плотность
 
   // Камера
   camera = new PerspectiveCamera(
