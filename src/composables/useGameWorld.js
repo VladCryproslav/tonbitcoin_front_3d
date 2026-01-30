@@ -351,12 +351,15 @@ export function useGameWorld(scene, camera) {
 
   // Окно неуязвимости к синему блоку (мс): после свайпа вниз не бьём по ROLL, не зависим от порядка rAF.
   const ROLL_IMMUNE_MS = 950
+  const _obstaclesToRemove = []
+  const _collectiblesToRemove = []
 
   // Обновление препятствий.
   // Коллизия через ручной AABB по известной геометрии куба.
   // ROLL: не бьём при isSliding, по высоте (underBar) или в окне по времени.
   const updateObstacles = (playerBox, onCollision, isSliding = false, slideStartTime = 0) => {
-    const obstaclesToRemove = []
+    _obstaclesToRemove.length = 0
+    const obstaclesToRemove = _obstaclesToRemove
     const inRollImmuneWindow = slideStartTime > 0 && Date.now() - slideStartTime < ROLL_IMMUNE_MS
 
     obstacles.value.forEach((obstacle, index) => {
@@ -425,7 +428,8 @@ export function useGameWorld(scene, camera) {
   // Обновление собираемых предметов
   // Аналогично препятствиям, используем ручной AABB по известным размерам куба.
   const updateCollectibles = (playerBox, onCollect) => {
-    const collectiblesToRemove = []
+    _collectiblesToRemove.length = 0
+    const collectiblesToRemove = _collectiblesToRemove
     const now = Date.now()
     const pulse = 1 + Math.sin(now * 0.01) * 0.15
     const offsetY = Math.sin(now * 0.005) * 0.3

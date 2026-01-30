@@ -198,15 +198,16 @@ const startThreeLoop = () => {
       gamePhysics.value.update()
     }
 
-    // 2) Игровая логика в том же rAF (фикс. шаг), без конкурирующего цикла — убирает микрофризы
+    // 2) Игровая логика в том же rAF (фикс. шаг). playerBox один раз за кадр — меньше setFromObject при наборе скорости.
     if (gameRun.isRunning.value && !gameRun.isPaused.value) {
       const now = performance.now()
       if (lastUpdateTime <= 0) lastUpdateTime = now
       let frameTime = Math.min(now - lastUpdateTime, 100)
       lastUpdateTime = now
+      const framePlayerBox = gamePhysics.value?.getPlayerBox?.() ?? null
       let steps = 0
       while (frameTime >= FIXED_STEP_MS && steps < MAX_STEPS) {
-        doOneStep()
+        doOneStep(framePlayerBox)
         frameTime -= FIXED_STEP_MS
         steps++
       }
@@ -322,20 +323,14 @@ const togglePlayPause = () => {
   }
 }
 
-function doOneStep() {
+function doOneStep(playerBox) {
   playerZ.value += gameSpeed.value
   gameRun.updateDistance(gameRun.distance.value + gameSpeed.value * 10)
 
   if (gamePhysics.value) {
-      const playerY = gamePhysics.value.getPlayerY()
-      const playerPosRef = gamePhysics.value.playerPosition
-      const playerX = (playerPosRef && playerPosRef.value) ? playerPosRef.value.x : 0
-
       if (gameWorld.value) {
         gameWorld.value.setRoadSpeed(gameSpeed.value)
         gameWorld.value.updateRoad(playerZ.value)
-
-        const playerBox = gamePhysics.value.getPlayerBox ? gamePhysics.value.getPlayerBox() : null
 
         gameWorld.value.updateObstacles(
           playerBox,

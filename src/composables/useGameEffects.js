@@ -14,7 +14,9 @@ import {
 
 export function useGameEffects(scene) {
   const particles = ref([])
-  
+  const _toRemove = []
+  const _deferredDispose = []
+
   // Создание эффекта сбора энергии
   const createEnergyCollectEffect = (position) => {
     // Защита от некорректных координат (NaN/Infinity),
@@ -129,22 +131,27 @@ export function useGameEffects(scene) {
     return points
   }
   
-  // Обновление всех эффектов
+  // Обновление всех эффектов. Dispose откладываем на следующий кадр — меньше микрофриза при наборе скорости.
   const updateEffects = () => {
+    _deferredDispose.forEach(({ geometry, material }) => {
+      geometry.dispose()
+      material.dispose()
+    })
+    _deferredDispose.length = 0
+
     const now = Date.now()
-    const toRemove = []
-    
+    _toRemove.length = 0
+    const toRemove = _toRemove
+
     particles.value.forEach((particle, index) => {
       const elapsed = now - particle.userData.startTime
       const progress = elapsed / particle.userData.duration
-      
+
       if (progress >= 1) {
         scene.remove(particle)
-        particle.geometry.dispose()
-        particle.material.dispose()
+        _deferredDispose.push({ geometry: particle.geometry, material: particle.material })
         toRemove.push(index)
       } else {
-        // Обновление позиций частиц
         const positions = particle.geometry.attributes.position.array
         const velArray = particle.userData.velocity
         for (let i = 0; i < positions.length; i += 3) {
@@ -155,14 +162,11 @@ export function useGameEffects(scene) {
           positions[i + 2] += vel.z
         }
         particle.geometry.attributes.position.needsUpdate = true
-        
-        // Затухание
         particle.material.opacity = 1 - progress
       }
     })
-    
-    // Удаляем завершенные эффекты
-    toRemove.sort((a, b) => b - a).forEach(index => {
+
+    toRemove.sort((a, b) => b - a).forEach((index) => {
       particles.value.splice(index, 1)
     })
   }
@@ -175,6 +179,11 @@ export function useGameEffects(scene) {
       particle.material.dispose()
     })
     particles.value = []
+    _deferredDispose.forEach(({ geometry, material }) => {
+      geometry.dispose()
+      material.dispose()
+    })
+    _deferredDispose.length = 0
   }
   
   return {
