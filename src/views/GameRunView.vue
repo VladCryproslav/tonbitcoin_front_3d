@@ -151,7 +151,6 @@ const gameOverType = ref('lose') // 'win' | 'lose'
 // 'idle' — до первого старта, 'pause' — пауза, 'none' — нет оверлея.
 const launcherOverlayMode = ref('idle')
 
-let gameLoop = null
 let threeLoop = null
 let lastUpdateTime = 0
 const FIXED_STEP_MS = 1000 / 60
@@ -160,8 +159,6 @@ const gameSpeed = ref(0.15)
 const playerZ = ref(0)
 const lastSpeedIncrease = ref(0)
 const hitCount = ref(0)
-/** X камеры по полосе (-2, 0, 2); обновляется в игровом цикле, читается в рендер-цикле */
-const cameraLaneX = ref(0)
 
 const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeRenderer }) => {
   scene = threeScene
@@ -195,30 +192,55 @@ let lastCameraTime = 0
 const startThreeLoop = () => {
   const animate = () => {
     threeLoop = requestAnimationFrame(animate)
-    if (camera) {
+
+    // 1) Сначала физика (позиция персонажа, смена полосы) — потом рендер, без кадра задержки
+    if (gamePhysics.value) {
+      gamePhysics.value.update()
+    }
+
+    // 2) Игровая логика в том же rAF (фикс. шаг), без конкурирующего цикла — убирает микрофризы
+    if (gameRun.isRunning.value && !gameRun.isPaused.value) {
+      const now = performance.now()
+      if (lastUpdateTime <= 0) lastUpdateTime = now
+      let frameTime = Math.min(now - lastUpdateTime, 100)
+      lastUpdateTime = now
+      let steps = 0
+      while (frameTime >= FIXED_STEP_MS && steps < MAX_STEPS) {
+        doOneStep()
+        frameTime -= FIXED_STEP_MS
+        steps++
+      }
+      if (hitCount.value >= 3) {
+        if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
+        gameSpeed.value = 0
+        if (gamePhysics.value?.setAnimationState) gamePhysics.value.setAnimationState('fall')
+        setTimeout(() => {
+          gameOverType.value = 'lose'
+          showGameOver.value = true
+          launcherOverlayMode.value = 'none'
+          endGame(false)
+        }, 1000)
+      }
+    }
+
+    // 3) Камера: цель из физики напрямую (не из game loop), плавное следование
+    if (camera && gamePhysics.value?.getCameraLaneX) {
       const now = performance.now() / 1000
       const dt = lastCameraTime > 0 ? Math.min(now - lastCameraTime, 0.05) : 0.016
       lastCameraTime = now
-
-      const laneX = cameraLaneX.value
-      // Слегка сдвигаем камеру на полосу персонажа (0.95), очень плавно
+      const laneX = gamePhysics.value.getCameraLaneX()
       const targetCamX = laneX === 0 ? 0 : laneX * 0.95
       const k = -Math.log(0.05) / CAMERA_SMOOTH_TIME
       const t = 1 - Math.exp(-k * dt)
-
       camera.position.x += (targetCamX - camera.position.x) * t
-
       const cameraBob = Math.sin(Date.now() * 0.003) * 0.08
       camera.position.y = 2.5 + cameraBob
-
-      // Взгляд вдаль, чуть сверху вниз (lookAt Y ниже)
       camera.lookAt(camera.position.x, -0.15 + cameraBob * 0.5, -18)
     }
+
+    // 4) Рендер после обновления позиции и камеры
     if (renderer && scene && camera) {
       renderer.render(scene, camera)
-    }
-    if (gamePhysics.value) {
-      gamePhysics.value.update()
     }
   }
   animate()
@@ -255,18 +277,16 @@ const startGame = () => {
     if (laneRef && typeof laneRef === 'object' && 'value' in laneRef) {
       laneRef.value = 1
     }
-    cameraLaneX.value = 0
     lastCameraTime = 0
   }
   gameRun.startRun()
   hitCount.value = 0
   showGameOver.value = false
   launcherOverlayMode.value = 'none'
-  // При старте забега переключаемся на анимацию бега
   if (gamePhysics.value?.setAnimationState) {
     gamePhysics.value.setAnimationState('running')
   }
-  startGameLoop()
+  lastUpdateTime = 0
 }
 
 const pauseGame = () => {
@@ -277,7 +297,7 @@ const pauseGame = () => {
 
 const resumeGame = () => {
   gameRun.resumeRun()
-  startGameLoop()
+  lastUpdateTime = 0
   launcherOverlayMode.value = 'none'
 }
 
@@ -295,20 +315,11 @@ const togglePlayPause = () => {
   }
 }
 
-const startGameLoop = () => {
-  if (gameLoop) return
-  lastUpdateTime = 0
+function doOneStep() {
+  playerZ.value += gameSpeed.value
+  gameRun.updateDistance(gameRun.distance.value + gameSpeed.value * 10)
 
-  const doOneStep = () => {
-    // Обновление дистанции
-    playerZ.value += gameSpeed.value
-    gameRun.updateDistance(gameRun.distance.value + gameSpeed.value * 10)
-
-    if (gamePhysics.value?.getCameraLaneX) {
-      cameraLaneX.value = gamePhysics.value.getCameraLaneX()
-    }
-
-    if (gamePhysics.value) {
+  if (gamePhysics.value) {
       const playerY = gamePhysics.value.getPlayerY()
       const playerPosRef = gamePhysics.value.playerPosition
       const playerX = (playerPosRef && playerPosRef.value) ? playerPosRef.value.x : 0
@@ -366,69 +377,16 @@ const startGameLoop = () => {
       }
     }
 
-    // Увеличение скорости: каждые 80 дистанции +0.008, макс 0.45
-    const distanceCheck = Math.floor(gameRun.distance.value / 80)
-    if (distanceCheck > 0 && distanceCheck !== lastSpeedIncrease.value) {
-      lastSpeedIncrease.value = distanceCheck
-      gameSpeed.value = Math.min(gameSpeed.value + 0.008, 0.45)
-    }
+  // Увеличение скорости: каждые 80 дистанции +0.008, макс 0.45
+  const distanceCheck = Math.floor(gameRun.distance.value / 80)
+  if (distanceCheck > 0 && distanceCheck !== lastSpeedIncrease.value) {
+    lastSpeedIncrease.value = distanceCheck
+    gameSpeed.value = Math.min(gameSpeed.value + 0.008, 0.45)
   }
-
-  const update = (now = 0) => {
-    if (!gameRun.isRunning.value || gameRun.isPaused.value) {
-      gameLoop = null
-      return
-    }
-
-    if (lastUpdateTime <= 0) lastUpdateTime = now
-    let frameTime = Math.min(now - lastUpdateTime, 100)
-    lastUpdateTime = now
-
-    let steps = 0
-    while (frameTime >= FIXED_STEP_MS && steps < MAX_STEPS) {
-      doOneStep()
-      frameTime -= FIXED_STEP_MS
-      steps++
-    }
-
-    // Проверка условий окончания забега:
-    // персонажу даётся 3 удара по препятствиям, на третьем забег останавливается.
-    if (hitCount.value >= 3) {
-      if (gameWorld.value) {
-        gameWorld.value.setRoadSpeed(0)
-      }
-      gameSpeed.value = 0
-      if (gamePhysics.value?.setAnimationState) {
-        gamePhysics.value.setAnimationState('fall')
-      }
-
-      // Даём анимации падения отыграть, затем показываем модалку и завершаем забег.
-      setTimeout(() => {
-        gameOverType.value = 'lose'
-        showGameOver.value = true
-        launcherOverlayMode.value = 'none'
-        endGame(false)
-      }, 1000)
-      return
-    }
-
-    // Автоматическое завершение при достижении максимальной дистанции (опционально)
-    // if (gameRun.distance >= 10000) {
-    //   endGame()
-    //   return
-    // }
-
-    gameLoop = requestAnimationFrame(update)
-  }
-
-  gameLoop = requestAnimationFrame(update)
 }
 
 const stopGameLoop = () => {
-  if (gameLoop) {
-    cancelAnimationFrame(gameLoop)
-    gameLoop = null
-  }
+  lastUpdateTime = 0
 }
 
 const endGame = async (isWinByState = false) => {
