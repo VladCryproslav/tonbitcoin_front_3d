@@ -153,6 +153,9 @@ const launcherOverlayMode = ref('idle')
 
 let gameLoop = null
 let threeLoop = null
+let lastUpdateTime = 0
+const FIXED_STEP_MS = 1000 / 60
+const MAX_STEPS = 3
 const gameSpeed = ref(0.15)
 const playerZ = ref(0)
 const lastSpeedIncrease = ref(0)
@@ -293,47 +296,29 @@ const togglePlayPause = () => {
 
 const startGameLoop = () => {
   if (gameLoop) return
+  lastUpdateTime = 0
 
-  const update = () => {
-    if (!gameRun.isRunning.value || gameRun.isPaused.value) {
-      gameLoop = null
-      return
-    }
-
-    const deltaTime = 0.016 // ~60 FPS
-
+  const doOneStep = () => {
     // Обновление дистанции
     playerZ.value += gameSpeed.value
     gameRun.updateDistance(gameRun.distance.value + gameSpeed.value * 10)
 
-    // Целевой X камеры по полосе — обновляем здесь, в игровом цикле; рендер-цикл читает cameraLaneX
     if (gamePhysics.value?.getCameraLaneX) {
       cameraLaneX.value = gamePhysics.value.getCameraLaneX()
     }
 
-    // Обновление игрока (позиции и коллизии)
     if (gamePhysics.value) {
       const playerY = gamePhysics.value.getPlayerY()
-      // Защита от ситуаций, когда playerPosition или его value ещё не инициализированы
       const playerPosRef = gamePhysics.value.playerPosition
-      const playerX = (playerPosRef && playerPosRef.value)
-        ? playerPosRef.value.x
-        : 0
+      const playerX = (playerPosRef && playerPosRef.value) ? playerPosRef.value.x : 0
 
-      // Обновление мира
       if (gameWorld.value) {
-        // Синхронизируем скорость дороги с игровой скоростью
         gameWorld.value.setRoadSpeed(gameSpeed.value)
-
         gameWorld.value.updateRoad(playerZ.value)
         gameWorld.value.spawnObjects(playerZ.value)
 
-        // Реальный AABB игрока для точной коллизии (без привязки к индексам полос).
-        const playerBox = gamePhysics.value.getPlayerBox
-          ? gamePhysics.value.getPlayerBox()
-          : null
+        const playerBox = gamePhysics.value.getPlayerBox ? gamePhysics.value.getPlayerBox() : null
 
-        // Обновление препятствий и проверка коллизий
         gameWorld.value.updateObstacles(
           playerBox,
           (hitObstacle) => {
@@ -341,13 +326,9 @@ const startGameLoop = () => {
             gameRun.hitObstacle()
             const newPower = gameRun.currentPower.value - 10
             app.setPower(Math.max(0, newPower))
-
-            // Эффект частиц при столкновении
             if (gameEffects.value) {
               gameEffects.value.createCollisionEffect(new Vector3(playerX, playerY, playerZ.value))
             }
-
-            // Эффект тряски камеры при столкновении
             if (camera) {
               const originalX = camera.position.x
               const originalY = camera.position.y
@@ -370,30 +351,43 @@ const startGameLoop = () => {
           gamePhysics.value.getSlideStartTime?.() ?? 0
         )
 
-        // Обновление собираемых предметов
         gameWorld.value.updateCollectibles(
           playerBox,
           (energy) => {
             gameRun.collectEnergy(energy)
-            // Визуальный эффект при сборе
             if (gameEffects.value) {
               gameEffects.value.createEnergyCollectEffect(new Vector3(playerX, playerY, playerZ.value))
             }
           }
         )
 
-        // Обновление эффектов
-        if (gameEffects.value) {
-          gameEffects.value.updateEffects()
-        }
+        if (gameEffects.value) gameEffects.value.updateEffects()
       }
     }
 
-    // Увеличение скорости со временем (ещё медленнее)
-    const distanceCheck = Math.floor(gameRun.distance.value / 200)
+    // Увеличение скорости: каждые 80 дистанции +0.008, макс 0.45
+    const distanceCheck = Math.floor(gameRun.distance.value / 80)
     if (distanceCheck > 0 && distanceCheck !== lastSpeedIncrease.value) {
       lastSpeedIncrease.value = distanceCheck
-      gameSpeed.value = Math.min(gameSpeed.value + 0.003, 0.45)
+      gameSpeed.value = Math.min(gameSpeed.value + 0.008, 0.45)
+    }
+  }
+
+  const update = (now = 0) => {
+    if (!gameRun.isRunning.value || gameRun.isPaused.value) {
+      gameLoop = null
+      return
+    }
+
+    if (lastUpdateTime <= 0) lastUpdateTime = now
+    let frameTime = Math.min(now - lastUpdateTime, 100)
+    lastUpdateTime = now
+
+    let steps = 0
+    while (frameTime >= FIXED_STEP_MS && steps < MAX_STEPS) {
+      doOneStep()
+      frameTime -= FIXED_STEP_MS
+      steps++
     }
 
     // Проверка условий окончания забега:

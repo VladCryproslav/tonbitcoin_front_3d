@@ -332,10 +332,16 @@ export function useGameWorld(scene, camera) {
     const obstaclesToRemove = []
     const inRollImmuneWindow = slideStartTime > 0 && Date.now() - slideStartTime < ROLL_IMMUNE_MS
 
+    // Зона, где возможна коллизия с игроком (игрок условно у z≈0, препятствия едут к +z)
+    const COLLIDE_Z_MIN = -24
+    const COLLIDE_Z_MAX = 5
+
     obstacles.value.forEach((obstacle, index) => {
       obstacle.position.z += roadSpeed.value
 
-      if (playerBox) {
+      const inCollideZone = obstacle.position.z >= COLLIDE_Z_MIN && obstacle.position.z <= COLLIDE_Z_MAX
+
+      if (playerBox && inCollideZone) {
         const kind = obstacle.userData.kind
         const obstacleBox = obstacle.userData.box || (obstacle.userData.box = new Box3())
         obstacleBox.setFromObject(obstacle)
