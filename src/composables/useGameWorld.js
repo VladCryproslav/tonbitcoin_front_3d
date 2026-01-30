@@ -6,8 +6,7 @@ import {
   Vector3,
   PlaneGeometry,
   Group,
-  Color,
-  Box3
+  Color
 } from 'three'
 
 export function useGameWorld(scene, camera) {
@@ -47,6 +46,11 @@ export function useGameWorld(scene, camera) {
     { kind: OBSTACLE_KIND.IMPASSABLE, share: 22 }
   ]
   const OBSTACLE_TOTAL_SHARE = OBSTACLE_SHARES.reduce((s, o) => s + o.share, 0)
+
+  // Глобальная зона по Z, где вообще возможна коллизия с игроком
+  // (игрок условно у z≈0, препятствия/коллекты едут к +z).
+  const COLLIDE_Z_MIN = -24
+  const COLLIDE_Z_MAX = 5
 
   function pickObstacleKind() {
     const speed = roadSpeed.value
@@ -327,14 +331,11 @@ export function useGameWorld(scene, camera) {
   const ROLL_IMMUNE_MS = 950
 
   // Обновление препятствий.
-  // Коллизия через AABB (Box3). ROLL: не бьём при isSliding, по высоте (underBar) или в окне по времени.
+  // Коллизия через ручной AABB по известной геометрии куба.
+  // ROLL: не бьём при isSliding, по высоте (underBar) или в окне по времени.
   const updateObstacles = (playerBox, onCollision, isSliding = false, slideStartTime = 0) => {
     const obstaclesToRemove = []
     const inRollImmuneWindow = slideStartTime > 0 && Date.now() - slideStartTime < ROLL_IMMUNE_MS
-
-    // Зона, где возможна коллизия с игроком (игрок условно у z≈0, препятствия едут к +z)
-    const COLLIDE_Z_MIN = -24
-    const COLLIDE_Z_MAX = 5
 
     obstacles.value.forEach((obstacle, index) => {
       obstacle.position.z += roadSpeed.value
@@ -343,20 +344,43 @@ export function useGameWorld(scene, camera) {
 
       if (playerBox && inCollideZone) {
         const kind = obstacle.userData.kind
-        const obstacleBox = obstacle.userData.box || (obstacle.userData.box = new Box3())
-        obstacleBox.setFromObject(obstacle)
+
+        // Ручной AABB препятствия: знаем, что это куб 1xH x1, центр в obstacle.position.
+        const halfX = 0.5
+        const halfZ = 0.5
+        const halfY = (obstacle.userData.height || 1) / 2
+
+        const cx = obstacle.position.x
+        const cy = obstacle.position.y
+        const cz = obstacle.position.z
+
+        const minX = cx - halfX
+        const maxX = cx + halfX
+        const minY = cy - halfY
+        const maxY = cy + halfY
+        const minZ = cz - halfZ
+        const maxZ = cz + halfZ
+
+        const pMin = playerBox.min
+        const pMax = playerBox.max
+
+        const intersects =
+          pMax.x >= minX && pMin.x <= maxX &&
+          pMax.y >= minY && pMin.y <= maxY &&
+          pMax.z >= minZ && pMin.z <= maxZ
 
         if (kind === OBSTACLE_KIND.ROLL) {
           // Синий блок: не бьём при кувырке, по высоте под баром или в окне неуязвимости по времени.
-          const underBar = playerBox.max.y < obstacleBox.min.y + 0.4
+          const bottomY = minY
+          const underBar = pMax.y < bottomY + 0.4
           const safeFromRoll = isSliding || underBar || inRollImmuneWindow
-          if (!safeFromRoll && !obstacle.userData.hit && playerBox.intersectsBox(obstacleBox)) {
+          if (!safeFromRoll && !obstacle.userData.hit && intersects) {
             obstacle.userData.hit = true
             onCollision(obstacle)
             return
           }
         } else {
-          if (!obstacle.userData.hit && playerBox.intersectsBox(obstacleBox)) {
+          if (!obstacle.userData.hit && intersects) {
             obstacle.userData.hit = true
             onCollision(obstacle)
             return
@@ -378,7 +402,7 @@ export function useGameWorld(scene, camera) {
   }
 
   // Обновление собираемых предметов
-  // Аналогично препятствиям, используем реальные AABB.
+  // Аналогично препятствиям, используем ручной AABB по известным размерам куба.
   const updateCollectibles = (playerBox, onCollect) => {
     const collectiblesToRemove = []
 
@@ -399,11 +423,31 @@ export function useGameWorld(scene, camera) {
       // Вертикальное движение
       collectible.position.y = 1 + Math.sin(Date.now() * 0.005) * 0.3
 
-      if (playerBox) {
-        const collBox = collectible.userData.box || (collectible.userData.box = new Box3())
-        collBox.setFromObject(collectible)
+      const inCollideZone = collectible.position.z >= COLLIDE_Z_MIN && collectible.position.z <= COLLIDE_Z_MAX
 
-        if (playerBox.intersectsBox(collBox)) {
+      if (playerBox && inCollideZone) {
+        // Внешний куб энергии 0.6x0.6x0.6, центр в collectible.position.
+        const half = 0.3
+        const cx = collectible.position.x
+        const cy = collectible.position.y
+        const cz = collectible.position.z
+
+        const minX = cx - half
+        const maxX = cx + half
+        const minY = cy - half
+        const maxY = cy + half
+        const minZ = cz - half
+        const maxZ = cz + half
+
+        const pMin = playerBox.min
+        const pMax = playerBox.max
+
+        const intersects =
+          pMax.x >= minX && pMin.x <= maxX &&
+          pMax.y >= minY && pMin.y <= maxY &&
+          pMax.z >= minZ && pMin.z <= maxZ
+
+        if (intersects) {
           collectible.userData.collected = true
           // Мгновенно убираем объект с экрана, даже до remove,
           // чтобы он гарантированно не "ехал" с игроком один-два кадра.
