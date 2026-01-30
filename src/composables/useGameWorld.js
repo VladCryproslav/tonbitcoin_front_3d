@@ -3,7 +3,6 @@ import {
   BoxGeometry,
   MeshStandardMaterial,
   Mesh,
-  Vector3,
   PlaneGeometry,
   Group,
   Color
@@ -59,6 +58,32 @@ export function useGameWorld(scene, camera) {
   ]
   const OBSTACLE_TOTAL_SHARE = OBSTACLE_SHARES.reduce((s, o) => s + o.share, 0)
 
+  // Общая геометрия и материалы препятствий (высота 0.9 и 2.5, три цвета).
+  const sharedObstacleGeometry = {
+    0.9: new BoxGeometry(1, 0.9, 1),
+    2.5: new BoxGeometry(1, 2.5, 1)
+  }
+  const sharedObstacleMaterial = {
+    [OBSTACLE_KIND.IMPASSABLE]: new MeshStandardMaterial({
+      color: 0xDE2126,
+      metalness: 0.1,
+      roughness: 0.9,
+      flatShading: true
+    }),
+    [OBSTACLE_KIND.JUMP]: new MeshStandardMaterial({
+      color: 0xEB7D26,
+      metalness: 0.1,
+      roughness: 0.9,
+      flatShading: true
+    }),
+    [OBSTACLE_KIND.ROLL]: new MeshStandardMaterial({
+      color: 0x2288CC,
+      metalness: 0.1,
+      roughness: 0.9,
+      flatShading: true
+    })
+  }
+
   // Глобальная зона по Z, где вообще возможна коллизия с игроком
   // (игрок условно у z≈0, препятствия/коллекты едут к +z).
   const COLLIDE_Z_MIN = -24
@@ -82,8 +107,11 @@ export function useGameWorld(scene, camera) {
     return OBSTACLE_KIND.IMPASSABLE
   }
 
-  // Создание фона
+  // Фон создаём один раз; при повторном createRoad только дорога и разметка пересоздаются.
+  let backgroundCreated = false
   const createBackground = () => {
+    if (backgroundCreated) return
+    backgroundCreated = true
     // Небо - яркие цвета Subway Surfers (голубое небо)
     for (let i = 0; i < 3; i++) {
       const skyGeometry = new PlaneGeometry(50, 30)
@@ -144,8 +172,13 @@ export function useGameWorld(scene, camera) {
     }
   }
 
-  // Создание дорожки
+  // Создание дорожки. Перед пересозданием удаляем старые сегменты и разметку (устранение утечки при рестарте).
   const createRoad = () => {
+    roadSegments.value.forEach(seg => scene.remove(seg))
+    roadSegments.value = []
+    laneMarkings.value.forEach(m => scene.remove(m))
+    laneMarkings.value = []
+
     createBackground()
     const roadWidth = 6
 
@@ -212,14 +245,10 @@ export function useGameWorld(scene, camera) {
   const createObstacle = (lane, z, kind) => {
     const def = OBSTACLE_DEF[kind]
     if (!def) return null
-    const obstacleGeometry = new BoxGeometry(1, def.height, 1)
-    const obstacleMaterial = new MeshStandardMaterial({
-      color: def.color,
-      metalness: 0.1,
-      roughness: 0.9,
-      flatShading: true
-    })
-    const obstacle = new Mesh(obstacleGeometry, obstacleMaterial)
+    const obstacle = new Mesh(
+      sharedObstacleGeometry[def.height],
+      sharedObstacleMaterial[kind]
+    )
     const posY = def.bottomY != null ? def.bottomY + def.height / 2 : def.height / 2
     obstacle.position.set(lanes[lane], posY, z)
     obstacle.userData = { type: 'obstacle', lane, height: def.height, kind }
@@ -229,31 +258,28 @@ export function useGameWorld(scene, camera) {
     return obstacle
   }
 
+  // Общая геометрия и материалы коллектов (внешний куб 0.6, внутренний 0.4).
+  const sharedCollectibleOuterGeo = new BoxGeometry(0.6, 0.6, 0.6)
+  const sharedCollectibleOuterMat = new MeshStandardMaterial({
+    color: 0x00FF00,
+    emissive: 0x00FF00,
+    emissiveIntensity: 0.8,
+    transparent: true,
+    opacity: 0.9
+  })
+  const sharedCollectibleInnerGeo = new BoxGeometry(0.4, 0.4, 0.4)
+  const sharedCollectibleInnerMat = new MeshStandardMaterial({
+    color: 0xFFFFFF,
+    emissive: 0xFFFFFF,
+    emissiveIntensity: 1
+  })
+
   // Создание собираемого предмета (энергия)
   const createCollectible = (lane, z) => {
-    // Создаем группу для вращения
     const group = new Group()
-
-    // Основной куб энергии
-    const collectibleGeometry = new BoxGeometry(0.6, 0.6, 0.6)
-    const collectibleMaterial = new MeshStandardMaterial({
-      color: 0x00FF00,
-      emissive: 0x00FF00,
-      emissiveIntensity: 0.8,
-      transparent: true,
-      opacity: 0.9
-    })
-    const collectible = new Mesh(collectibleGeometry, collectibleMaterial)
+    const collectible = new Mesh(sharedCollectibleOuterGeo, sharedCollectibleOuterMat)
     group.add(collectible)
-
-    // Внутреннее свечение
-    const innerGeometry = new BoxGeometry(0.4, 0.4, 0.4)
-    const innerMaterial = new MeshStandardMaterial({
-      color: 0xFFFFFF,
-      emissive: 0xFFFFFF,
-      emissiveIntensity: 1
-    })
-    const inner = new Mesh(innerGeometry, innerMaterial)
+    const inner = new Mesh(sharedCollectibleInnerGeo, sharedCollectibleInnerMat)
     group.add(inner)
 
     group.position.set(lanes[lane], 1, z)
@@ -408,6 +434,8 @@ export function useGameWorld(scene, camera) {
   const updateCollectibles = (playerBox, onCollect) => {
     const collectiblesToRemove = []
     const now = Date.now()
+    const pulse = 1 + Math.sin(now * 0.01) * 0.15
+    const offsetY = Math.sin(now * 0.005) * 0.3
 
     collectibles.value.forEach((collectible, index) => {
       if (collectible.userData.collected) {
@@ -419,9 +447,8 @@ export function useGameWorld(scene, camera) {
       collectible.rotation.y += 0.05
       collectible.rotation.x += 0.03
 
-      const pulse = 1 + Math.sin(now * 0.01) * 0.15
       collectible.scale.setScalar(pulse)
-      collectible.position.y = 1 + Math.sin(now * 0.005) * 0.3
+      collectible.position.y = 1 + offsetY
 
       const inCollideZone = collectible.position.z >= COLLIDE_Z_MIN && collectible.position.z <= COLLIDE_Z_MAX
 

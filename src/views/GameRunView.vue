@@ -152,6 +152,7 @@ const launcherOverlayMode = ref('idle')
 
 let threeLoop = null
 let lastUpdateTime = 0
+let shakeFramesLeft = 0
 const FIXED_STEP_MS = 1000 / 60
 const MAX_STEPS = 3
 const gameSpeed = ref(0.15)
@@ -209,6 +210,7 @@ const startThreeLoop = () => {
         frameTime -= FIXED_STEP_MS
         steps++
       }
+      if (gameEffects.value) gameEffects.value.updateEffects()
       if (hitCount.value >= 3) {
         if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
         gameSpeed.value = 0
@@ -235,6 +237,11 @@ const startThreeLoop = () => {
       const cameraBob = Math.sin(Date.now() * 0.003) * 0.08
       camera.position.y = 2.5 + cameraBob
       camera.lookAt(camera.position.x, -0.15 + cameraBob * 0.5, -18)
+    }
+    if (camera && shakeFramesLeft > 0) {
+      camera.position.x += (Math.random() - 0.5) * 0.3
+      camera.position.y += (Math.random() - 0.5) * 0.3
+      shakeFramesLeft--
     }
 
     // 4) Рендер после обновления позиции и камеры
@@ -337,23 +344,7 @@ function doOneStep() {
             gameRun.hitObstacle()
             const newPower = gameRun.currentPower.value - 10
             app.setPower(Math.max(0, newPower))
-            if (camera) {
-              const originalX = camera.position.x
-              const originalY = camera.position.y
-              let shakeCount = 0
-              const shake = () => {
-                if (shakeCount < 10) {
-                  camera.position.x = originalX + (Math.random() - 0.5) * 0.3
-                  camera.position.y = originalY + (Math.random() - 0.5) * 0.3
-                  shakeCount++
-                  requestAnimationFrame(shake)
-                } else {
-                  camera.position.x = originalX
-                  camera.position.y = originalY
-                }
-              }
-              shake()
-            }
+            shakeFramesLeft = 10
           },
           gamePhysics.value.isSliding?.value === true,
           gamePhysics.value.getSlideStartTime?.() ?? 0
@@ -365,8 +356,6 @@ function doOneStep() {
             gameRun.collectEnergy(energy)
           }
         )
-
-        if (gameEffects.value) gameEffects.value.updateEffects()
       }
     }
 
