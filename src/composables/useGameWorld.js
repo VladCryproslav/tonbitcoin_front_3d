@@ -58,10 +58,11 @@ export function useGameWorld(scene, camera) {
   ]
   const OBSTACLE_TOTAL_SHARE = OBSTACLE_SHARES.reduce((s, o) => s + o.share, 0)
 
-  // Общая геометрия и материалы препятствий (высота 0.9 и 2.5, три цвета).
+  // Общая геометрия и материалы препятствий. ROLL — отдельная геометрия 2.5, чтобы не было артефакта «появление сверху вниз» при shared с IMPASSABLE.
   const sharedObstacleGeometry = {
     0.9: new BoxGeometry(1, 0.9, 1),
-    2.5: new BoxGeometry(1, 2.5, 1)
+    2.5: new BoxGeometry(1, 2.5, 1),
+    roll: new BoxGeometry(1, 2.5, 1)
   }
   const sharedObstacleMaterial = {
     [OBSTACLE_KIND.IMPASSABLE]: new MeshStandardMaterial({
@@ -240,15 +241,15 @@ export function useGameWorld(scene, camera) {
   const createObstacle = (lane, z, kind) => {
     const def = OBSTACLE_DEF[kind]
     if (!def) return null
-    const obstacle = new Mesh(
-      sharedObstacleGeometry[def.height],
-      sharedObstacleMaterial[kind]
-    )
+    const geo = kind === OBSTACLE_KIND.ROLL ? sharedObstacleGeometry.roll : sharedObstacleGeometry[def.height]
+    const obstacle = new Mesh(geo, sharedObstacleMaterial[kind])
     const posY = def.bottomY != null ? def.bottomY + def.height / 2 : def.height / 2
     obstacle.position.set(lanes[lane], posY, z)
     obstacle.userData = { type: 'obstacle', lane, height: def.height, kind }
     obstacle.castShadow = true
+    obstacle.renderOrder = 1
     scene.add(obstacle)
+    obstacle.updateMatrixWorld(true)
     obstacles.value.push(obstacle)
     return obstacle
   }
@@ -328,26 +329,23 @@ export function useGameWorld(scene, camera) {
     }
   }
 
-  // Обновление дорожки (бесконечная прокрутка)
+  // Обновление дорожки (бесконечная прокрутка). minZ один раз за вызов — без reduce в цикле (меньше микрофризов при высокой скорости).
   const updateRoad = (playerZ) => {
-    roadSegments.value.forEach((segment, index) => {
+    const segments = roadSegments.value
+    const cameraZ = camera ? camera.position.z : 8
+    const cutoffZ = cameraZ + roadLength * 1.5
+    let minZ = segments.length ? segments[0].position.z : 0
+    for (let i = 1; i < segments.length; i++) {
+      const z = segments[i].position.z
+      if (z < minZ) minZ = z
+    }
+    segments.forEach((segment) => {
       segment.position.z += roadSpeed.value
-
-      // Перемещаем сегмент вперед только когда он ушёл ДАЛЕКО за камеру,
-      // чтобы дорога пропадала уже вне поля зрения.
-      const cameraZ = camera ? camera.position.z : 8
-      const cutoffZ = cameraZ + roadLength * 1.5
       if (segment.position.z > cutoffZ) {
-        const lastSegment = roadSegments.value.reduce((min, seg) =>
-          seg.position.z < min.position.z ? seg : min
-        )
-        // Небольшое перекрытие (‑0.1) между сегментами,
-        // чтобы даже при накоплении float‑ошибок не было щели.
-        segment.position.z = lastSegment.position.z - roadLength + 0.1
+        segment.position.z = minZ - roadLength + 0.1
+        minZ = segment.position.z
       }
     })
-
-    // Обновляем разметку
     updateLaneMarkings()
   }
 
@@ -419,8 +417,8 @@ export function useGameWorld(scene, camera) {
     })
 
     if (obstaclesToRemove.length > 0) {
-      const set = new Set(obstaclesToRemove)
-      obstacles.value = obstacles.value.filter((_, i) => !set.has(i))
+      obstaclesToRemove.sort((a, b) => b - a)
+      obstaclesToRemove.forEach((i) => obstacles.value.splice(i, 1))
     }
   }
 
@@ -491,8 +489,8 @@ export function useGameWorld(scene, camera) {
     })
 
     if (collectiblesToRemove.length > 0) {
-      const set = new Set(collectiblesToRemove)
-      collectibles.value = collectibles.value.filter((_, i) => !set.has(i))
+      collectiblesToRemove.sort((a, b) => b - a)
+      collectiblesToRemove.forEach((i) => collectibles.value.splice(i, 1))
     }
   }
 
