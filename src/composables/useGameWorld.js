@@ -180,27 +180,27 @@ export function useGameWorld(scene, camera) {
     }
   }
 
-  // Обновление разметки
+  // Обновление разметки: O(n) — minZ только по ещё не ушедшим (z<=10), затем перенос ушедших
   const updateLaneMarkings = () => {
     const markingLength = 2
     laneMarkings.value.forEach(marking => {
       marking.position.z += roadSpeed.value
-
-      // Перемещаем разметку вперед
-      if (marking.position.z > 10) {
-        const sameLaneMarkings = laneMarkings.value.filter(
-          m => Math.abs(m.position.x - marking.position.x) < 0.1
-        )
-        if (sameLaneMarkings.length > 0) {
-          const lastMarking = sameLaneMarkings.reduce(
-            (min, m) => m.position.z < min.position.z ? m : min,
-            marking
-          )
-          // Небольшое перекрытие (‑0.05) чтобы не было видимого разрыва разметки.
-          marking.position.z = lastMarking.position.z - markingLength * 2 + 0.05
-        } else {
-          marking.position.z = -50
+    })
+    const minZByLane = {}
+    laneMarkings.value.forEach(marking => {
+      if (marking.position.z <= 10) {
+        const laneKey = Math.round(marking.position.x * 10) / 10
+        const z = marking.position.z
+        if (minZByLane[laneKey] === undefined || z < minZByLane[laneKey]) {
+          minZByLane[laneKey] = z
         }
+      }
+    })
+    laneMarkings.value.forEach(marking => {
+      if (marking.position.z > 10) {
+        const laneKey = Math.round(marking.position.x * 10) / 10
+        const minZ = minZByLane[laneKey]
+        marking.position.z = minZ !== undefined ? minZ - markingLength * 2 + 0.05 : -50
       }
     })
   }
@@ -388,23 +388,23 @@ export function useGameWorld(scene, camera) {
         }
       }
 
-      // Удаляем сразу после ухода за кадр (камера ~4.4), не держим до z>10
       if (obstacle.position.z > 6) {
         obstaclesToRemove.push(index)
         scene.remove(obstacle)
       }
     })
 
-    // Удаляем в обратном порядке чтобы индексы не сбились
-    obstaclesToRemove.sort((a, b) => b - a).forEach(index => {
-      obstacles.value.splice(index, 1)
-    })
+    if (obstaclesToRemove.length > 0) {
+      const set = new Set(obstaclesToRemove)
+      obstacles.value = obstacles.value.filter((_, i) => !set.has(i))
+    }
   }
 
   // Обновление собираемых предметов
   // Аналогично препятствиям, используем ручной AABB по известным размерам куба.
   const updateCollectibles = (playerBox, onCollect) => {
     const collectiblesToRemove = []
+    const now = Date.now()
 
     collectibles.value.forEach((collectible, index) => {
       if (collectible.userData.collected) {
@@ -416,12 +416,9 @@ export function useGameWorld(scene, camera) {
       collectible.rotation.y += 0.05
       collectible.rotation.x += 0.03
 
-      // Пульсация для привлечения внимания
-      const pulse = 1 + Math.sin(Date.now() * 0.01) * 0.15
+      const pulse = 1 + Math.sin(now * 0.01) * 0.15
       collectible.scale.setScalar(pulse)
-
-      // Вертикальное движение
-      collectible.position.y = 1 + Math.sin(Date.now() * 0.005) * 0.3
+      collectible.position.y = 1 + Math.sin(now * 0.005) * 0.3
 
       const inCollideZone = collectible.position.z >= COLLIDE_Z_MIN && collectible.position.z <= COLLIDE_Z_MAX
 
@@ -462,17 +459,16 @@ export function useGameWorld(scene, camera) {
         }
       }
 
-      // Удаляем сразу после ухода за кадр, не держим до z>10
       if (collectible.position.z > 6) {
         collectiblesToRemove.push(index)
         scene.remove(collectible)
       }
     })
 
-    // Удаляем в обратном порядке
-    collectiblesToRemove.sort((a, b) => b - a).forEach(index => {
-      collectibles.value.splice(index, 1)
-    })
+    if (collectiblesToRemove.length > 0) {
+      const set = new Set(collectiblesToRemove)
+      collectibles.value = collectibles.value.filter((_, i) => !set.has(i))
+    }
   }
 
   // Очистка всех объектов

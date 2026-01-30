@@ -474,64 +474,56 @@ export function useGamePhysics(scene) {
         playerMesh.position.x = playerPosition.value.x
       }
 
-      // Анимация бега - движение рук и ног (только для простой модели)
-      // Для GLTF моделей анимации управляются через AnimationMixer
+      // Анимация бега (только для кубического фоллбэка); части тела кэшируем — не find() каждый кадр
       if (playerMesh.children && playerMesh.children.length > 0 && !mixer) {
+        let u = playerMesh.userData
+        if (!u._leftArm) {
+          u._leftArm = playerMesh.children.find(c => c.name === 'leftArm')
+          u._rightArm = playerMesh.children.find(c => c.name === 'rightArm')
+          u._leftLeg = playerMesh.children.find(c => c.name === 'leftLeg')
+          u._rightLeg = playerMesh.children.find(c => c.name === 'rightLeg')
+        }
+        const leftArm = u._leftArm
+        const rightArm = u._rightArm
+        const leftLeg = u._leftLeg
+        const rightLeg = u._rightLeg
+
         if (!isJumping.value && !isSliding.value) {
-        const time = Date.now() * 0.008
-        const runSpeed = 1.5
-
-        // Покачивание тела при беге
-        playerMesh.rotation.z = Math.sin(time * runSpeed) * 0.05
-
-        // Находим части тела по имени
-        const leftArm = playerMesh.children.find(child => child.name === 'leftArm')
-        const rightArm = playerMesh.children.find(child => child.name === 'rightArm')
-        const leftLeg = playerMesh.children.find(child => child.name === 'leftLeg')
-        const rightLeg = playerMesh.children.find(child => child.name === 'rightLeg')
-
-        // Движение рук
-        if (leftArm && rightArm) {
-          leftArm.rotation.x = Math.sin(time * runSpeed) * 0.8
-          rightArm.rotation.x = -Math.sin(time * runSpeed) * 0.8
+          const time = Date.now() * 0.008
+          const runSpeed = 1.5
+          playerMesh.rotation.z = Math.sin(time * runSpeed) * 0.05
+          if (leftArm && rightArm) {
+            leftArm.rotation.x = Math.sin(time * runSpeed) * 0.8
+            rightArm.rotation.x = -Math.sin(time * runSpeed) * 0.8
+          }
+          if (leftLeg && rightLeg) {
+            leftLeg.rotation.x = -Math.sin(time * runSpeed) * 0.5
+            rightLeg.rotation.x = Math.sin(time * runSpeed) * 0.5
+          }
+          const baseY = isSliding.value ? 0.3 : 0
+          playerMesh.position.y = baseY + Math.abs(Math.sin(time * runSpeed * 2)) * 0.1
+        } else {
+          playerMesh.rotation.z = 0
+          if (leftArm && rightArm) {
+            leftArm.rotation.x = 0
+            rightArm.rotation.x = 0
+          }
+          if (leftLeg && rightLeg) {
+            leftLeg.rotation.x = 0
+            rightLeg.rotation.x = 0
+          }
         }
-
-        // Движение ног
-        if (leftLeg && rightLeg) {
-          leftLeg.rotation.x = -Math.sin(time * runSpeed) * 0.5
-          rightLeg.rotation.x = Math.sin(time * runSpeed) * 0.5
-        }
-
-        // Небольшое вертикальное покачивание при беге
-        const baseY = isSliding.value ? 0.3 : 0
-        playerMesh.position.y = baseY + Math.abs(Math.sin(time * runSpeed * 2)) * 0.1
-      } else {
-        // Сброс анимации при прыжке/скольжении
-        playerMesh.rotation.z = 0
-        const leftArm = playerMesh.children.find(child => child.name === 'leftArm')
-        const rightArm = playerMesh.children.find(child => child.name === 'rightArm')
-        const leftLeg = playerMesh.children.find(child => child.name === 'leftLeg')
-        const rightLeg = playerMesh.children.find(child => child.name === 'rightLeg')
-
-        if (leftArm && rightArm) {
-          leftArm.rotation.x = 0
-          rightArm.rotation.x = 0
-        }
-        if (leftLeg && rightLeg) {
-          leftLeg.rotation.x = 0
-          rightLeg.rotation.x = 0
-        }
-      }
       }
     }
   }
 
-  // Ось‑aligned bounding box игрока для точной коллизии с препятствиями
+  // Один Box3 на кадр — переиспользуем, не аллоцируем каждый вызов
+  let _playerBoxCache = null
   const getPlayerBox = () => {
     if (!playerMesh) return null
-    const box = new THREE.Box3()
-    box.setFromObject(playerMesh)
-    return box
+    if (!_playerBoxCache) _playerBoxCache = new THREE.Box3()
+    _playerBoxCache.setFromObject(playerMesh)
+    return _playerBoxCache
   }
 
   /** X-координата камеры по текущей полосе (-2, 0, 2) — для привязки камеры за персонажем */
