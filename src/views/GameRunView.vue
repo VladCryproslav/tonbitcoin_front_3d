@@ -158,8 +158,6 @@ const gameSpeed = ref(0.15)
 const playerZ = ref(0)
 const lastSpeedIncrease = ref(0)
 const hitCount = ref(0)
-// Переиспользуемый объект позиции для эффектов — не аллоцируем Vector3 каждый раз
-const effectPos = { x: 0, y: 0, z: 0 }
 
 const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeRenderer }) => {
   scene = threeScene
@@ -339,12 +337,6 @@ function doOneStep() {
             gameRun.hitObstacle()
             const newPower = gameRun.currentPower.value - 10
             app.setPower(Math.max(0, newPower))
-            if (gameEffects.value) {
-              effectPos.x = playerX
-              effectPos.y = playerY
-              effectPos.z = playerZ.value
-              gameEffects.value.createCollisionEffect(effectPos)
-            }
             if (camera) {
               const originalX = camera.position.x
               const originalY = camera.position.y
@@ -371,12 +363,6 @@ function doOneStep() {
           playerBox,
           (energy) => {
             gameRun.collectEnergy(energy)
-            if (gameEffects.value) {
-              effectPos.x = playerX
-              effectPos.y = playerY
-              effectPos.z = playerZ.value
-              gameEffects.value.createEnergyCollectEffect(effectPos)
-            }
           }
         )
 
