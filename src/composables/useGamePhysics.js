@@ -115,9 +115,9 @@ export function useGamePhysics(scene) {
           if (!child.material.map) {
             child.material.color.set(0xEB7D26)
           }
-          // Всегда задаём матовость как в Blender: иначе Three.js дефолты (0.5/0.5) дают глянец
-          child.material.metalness = 0.05
-          child.material.roughness = 0.9
+          // Как в Blender: Metallic 0, Roughness 0.85 (IOR в Three.js нет — оставляем дефолт)
+          child.material.metalness = 0
+          child.material.roughness = 0.85
         }
       })
 
