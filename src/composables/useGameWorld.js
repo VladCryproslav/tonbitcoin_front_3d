@@ -28,6 +28,18 @@ export function useGameWorld(scene, camera) {
 
   const laneMarkings = ref([])
 
+  // Общая геометрия и материал для разметки полос (один draw call на тип, меньше памяти).
+  // Логику спавна/телепорта не меняем: разметка движется только в updateLaneMarkings с roadSpeed.
+  const MARKING_LENGTH = 2
+  const MARKING_WIDTH = 0.1
+  const sharedMarkingGeometry = new BoxGeometry(MARKING_WIDTH, 0.01, MARKING_LENGTH)
+  const sharedMarkingMaterial = new MeshStandardMaterial({
+    color: 0xFEFF28,
+    emissive: 0xFEFF28,
+    emissiveIntensity: 0.3,
+    flatShading: true
+  })
+
   // 4 типа: нет преграды, непроходимая (кувырок), прыжок, кувырок (свайп вниз)
   const OBSTACLE_KIND = { NONE: 'none', IMPASSABLE: 'impassable', JUMP: 'jump', ROLL: 'roll' }
   // ROLL: высота как у непроходимого (2.5), бар чуть опущен (зазор снизу ~1.2)
@@ -156,22 +168,13 @@ export function useGameWorld(scene, camera) {
     createLaneMarkings()
   }
 
-  // Разметка полос
+  // Разметка полос. Одна геометрия и один материал на все меши — логика спавна по Z и полосам та же.
+  // Обновление только в updateLaneMarkings (вызов из updateRoad), одна скорость roadSpeed — без «двух шаров».
   const createLaneMarkings = () => {
-    const markingLength = 2
-    const markingWidth = 0.1
-
-    // Увеличиваем диапазон разметки по Z, чтобы дорога рисовалась дальше.
-    for (let z = -80; z < 15; z += markingLength * 2) {
+    const stepZ = MARKING_LENGTH * 2
+    for (let z = -80; z < 15; z += stepZ) {
       lanes.forEach(laneX => {
-        const markingGeometry = new BoxGeometry(markingWidth, 0.01, markingLength)
-        const markingMaterial = new MeshStandardMaterial({
-          color: 0xFEFF28, // Яркий желтый Subway Surfers
-          emissive: 0xFEFF28,
-          emissiveIntensity: 0.3,
-          flatShading: true
-        })
-        const marking = new Mesh(markingGeometry, markingMaterial)
+        const marking = new Mesh(sharedMarkingGeometry, sharedMarkingMaterial)
         marking.position.set(laneX, 0.01, z)
         marking.userData = { type: 'marking' }
         scene.add(marking)
@@ -180,14 +183,14 @@ export function useGameWorld(scene, camera) {
     }
   }
 
-  // Обновление разметки: O(n) — minZ только по ещё не ушедшим (z<=10), затем перенос ушедших
+  // Обновление разметки: двигаем с roadSpeed, ушедшие (z>10) телепортируем за хвост полосы.
+  // Два прохода вместо трёх; логика та же — одна скорость, один массив, без расслоения «два шара».
   const updateLaneMarkings = () => {
-    const markingLength = 2
-    laneMarkings.value.forEach(marking => {
-      marking.position.z += roadSpeed.value
-    })
     const minZByLane = {}
+    const speed = roadSpeed.value
+    const stepZ = MARKING_LENGTH * 2
     laneMarkings.value.forEach(marking => {
+      marking.position.z += speed
       if (marking.position.z <= 10) {
         const laneKey = Math.round(marking.position.x * 10) / 10
         const z = marking.position.z
@@ -200,7 +203,7 @@ export function useGameWorld(scene, camera) {
       if (marking.position.z > 10) {
         const laneKey = Math.round(marking.position.x * 10) / 10
         const minZ = minZByLane[laneKey]
-        marking.position.z = minZ !== undefined ? minZ - markingLength * 2 + 0.05 : -50
+        marking.position.z = minZ !== undefined ? minZ - stepZ + 0.05 : -50
       }
     })
   }
