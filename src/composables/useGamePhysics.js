@@ -280,7 +280,7 @@ export function useGamePhysics(scene) {
 
       if (playerMesh) {
         // Анимация прыжка (высота чуть ниже)
-        const jumpHeight = 1.9
+        const jumpHeight = 1.7
         const jumpDuration = 600
 
         animateJump(jumpHeight, jumpDuration)

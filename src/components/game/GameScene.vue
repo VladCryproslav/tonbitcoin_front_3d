@@ -29,7 +29,7 @@ const initScene = () => {
   // Создание сцены
   scene = new Scene()
   scene.background = new Color(props.backgroundColor)
-  scene.fog = new Fog(props.backgroundColor, 8, 50) // Туман слабее: дальше старт и полная плотность
+  scene.fog = new Fog(props.backgroundColor, 6, 40) // Туман слабее: дальше старт и полная плотность
 
   // Камера
   camera = new PerspectiveCamera(
@@ -42,8 +42,8 @@ const initScene = () => {
   camera.lookAt(0, 0, 0)
 
   // Рендерер
-  renderer = new WebGLRenderer({ 
-    antialias: true, 
+  renderer = new WebGLRenderer({
+    antialias: true,
     alpha: true,
     powerPreference: 'high-performance'
   })
@@ -62,7 +62,7 @@ const initScene = () => {
   directionalLight.shadow.mapSize.width = 2048
   directionalLight.shadow.mapSize.height = 2048
   scene.add(directionalLight)
-  
+
   // Дополнительный свет спереди для яркости
   const frontLight = new DirectionalLight(0xffffff, 0.5)
   frontLight.position.set(0, 5, 10)
@@ -83,7 +83,7 @@ const initScene = () => {
 
 const handleResize = () => {
   if (!camera || !renderer) return
-  
+
   camera.aspect = window.innerWidth / window.innerHeight
   camera.updateProjectionMatrix()
   renderer.setSize(window.innerWidth, window.innerHeight)
@@ -96,18 +96,18 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  
+
   if (animationId) {
     cancelAnimationFrame(animationId)
   }
-  
+
   if (renderer) {
     renderer.dispose()
     if (container.value && renderer.domElement) {
       container.value.removeChild(renderer.domElement)
     }
   }
-  
+
   // Очистка сцены
   if (scene) {
     while (scene.children.length > 0) {
