@@ -210,6 +210,7 @@ const startThreeLoop = () => {
         frameTime -= FIXED_STEP_MS
         steps++
       }
+      if (gameWorld.value) gameWorld.value.spawnObjects(playerZ.value)
       if (gameEffects.value) gameEffects.value.updateEffects()
       if (hitCount.value >= 3) {
         if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
@@ -333,7 +334,6 @@ function doOneStep() {
       if (gameWorld.value) {
         gameWorld.value.setRoadSpeed(gameSpeed.value)
         gameWorld.value.updateRoad(playerZ.value)
-        gameWorld.value.spawnObjects(playerZ.value)
 
         const playerBox = gamePhysics.value.getPlayerBox ? gamePhysics.value.getPlayerBox() : null
 
