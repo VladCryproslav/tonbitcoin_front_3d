@@ -112,13 +112,12 @@ export function useGamePhysics(scene) {
           child.castShadow = true
           child.receiveShadow = true
 
-          // Если у меша нет текстурной карты — зададим базовый цвет,
-          // чтобы он не выглядел просто серым.
           if (!child.material.map) {
             child.material.color.set(0xEB7D26)
-            child.material.metalness = 0.1
-            child.material.roughness = 0.9
           }
+          // Всегда задаём матовость как в Blender: иначе Three.js дефолты (0.5/0.5) дают глянец
+          child.material.metalness = 0.05
+          child.material.roughness = 0.9
         }
       })
 
