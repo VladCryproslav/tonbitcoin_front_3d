@@ -177,7 +177,6 @@ const MAX_STEPS = 3
 const ROLL_IMMUNE_MS = 950
 const gameSpeed = ref(0.15)
 const playerZ = ref(0)
-const lastSpeedIncrease = ref(0)
 const hitCount = ref(0)
 const MAX_LIVES = 3
 const livesLeft = computed(() => Math.max(0, MAX_LIVES - hitCount.value))
@@ -336,7 +335,6 @@ const startGame = () => {
 
   playerZ.value = 0
   gameSpeed.value = 0.15
-  lastSpeedIncrease.value = 0
   if (gameWorld.value) {
     // Очищаем объекты прошлого забега и пересоздаём дорожку/разметку
     gameWorld.value.clearAll()
@@ -431,12 +429,10 @@ function doOneStep(playerBox, inRollImmuneWindow) {
       }
     }
 
-  // Увеличение скорости: каждые 80 дистанции +0.008, макс 0.45
-  const distanceCheck = Math.floor(gameRun.distance.value / 80)
-  if (distanceCheck > 0 && distanceCheck !== lastSpeedIncrease.value) {
-    lastSpeedIncrease.value = distanceCheck
-    gameSpeed.value = Math.min(gameSpeed.value + 0.008, 0.45)
-  }
+  // Плавный набор скорости: интерполяция от 0.15 до 0.45 по прогрессу дистанции (0–100%)
+  const progress = (gameRun.distanceProgress?.value ?? 0) / 100
+  const targetSpeed = 0.15 + 0.3 * Math.min(1, progress)
+  gameSpeed.value = 0.92 * gameSpeed.value + 0.08 * targetSpeed
 }
 
 const stopGameLoop = () => {
