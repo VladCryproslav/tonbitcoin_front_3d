@@ -1,9 +1,5 @@
 <template>
   <div class="game-ui">
-    <div
-      class="low-life-vignette"
-      :class="{ 'low-life-vignette--active': isLastLife }"
-    ></div>
     <div class="ui-top">
       <div class="top-left">
         <div class="energy-counter">
@@ -223,26 +219,6 @@ const formatEnergy = (value) => {
   animation: life-critical-pulse 0.7s ease-in-out infinite;
 }
 
-.low-life-vignette {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at top left, rgba(248, 113, 113, 0.28), transparent 55%),
-    radial-gradient(circle at top right, rgba(248, 113, 113, 0.28), transparent 55%),
-    radial-gradient(circle at bottom left, rgba(248, 113, 113, 0.28), transparent 55%),
-    radial-gradient(circle at bottom right, rgba(248, 113, 113, 0.28), transparent 55%);
-  mix-blend-mode: screen;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  z-index: -1;
-}
-
-.low-life-vignette--active {
-  opacity: 0.35;
-  animation: vignette-pulse 1.2s ease-in-out infinite;
-}
-
 .power-bar-container {
   background: rgba(0, 0, 0, 0.7);
   padding: 12px 20px;
@@ -312,15 +288,6 @@ const formatEnergy = (value) => {
   100% {
     transform: scale(1) translateY(0);
     text-shadow: 0 0 6px rgba(248, 113, 113, 0.8);
-  }
-}
-
-@keyframes vignette-pulse {
-  0%, 100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 0.6;
   }
 }
 </style>
