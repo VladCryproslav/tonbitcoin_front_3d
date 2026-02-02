@@ -228,10 +228,10 @@ const formatEnergy = (value) => {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at top left, rgba(248, 113, 113, 0.45), transparent 55%),
-    radial-gradient(circle at top right, rgba(248, 113, 113, 0.45), transparent 55%),
-    radial-gradient(circle at bottom left, rgba(248, 113, 113, 0.45), transparent 55%),
-    radial-gradient(circle at bottom right, rgba(248, 113, 113, 0.45), transparent 55%);
+    radial-gradient(circle at top left, rgba(248, 113, 113, 0.28), transparent 55%),
+    radial-gradient(circle at top right, rgba(248, 113, 113, 0.28), transparent 55%),
+    radial-gradient(circle at bottom left, rgba(248, 113, 113, 0.28), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(248, 113, 113, 0.28), transparent 55%);
   mix-blend-mode: screen;
   opacity: 0;
   transition: opacity 0.4s ease;
@@ -239,7 +239,7 @@ const formatEnergy = (value) => {
 }
 
 .low-life-vignette--active {
-  opacity: 0.55;
+  opacity: 0.35;
   animation: vignette-pulse 1.2s ease-in-out infinite;
 }
 
@@ -317,10 +317,10 @@ const formatEnergy = (value) => {
 
 @keyframes vignette-pulse {
   0%, 100% {
-    opacity: 0.4;
+    opacity: 0.3;
   }
   50% {
-    opacity: 0.8;
+    opacity: 0.6;
   }
 }
 </style>
