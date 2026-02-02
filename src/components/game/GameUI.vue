@@ -1,8 +1,8 @@
 <template>
   <div class="game-ui">
     <div
-      v-if="isLastLife"
       class="low-life-vignette"
+      :class="{ 'low-life-vignette--active': isLastLife }"
     ></div>
     <div class="ui-top">
       <div class="top-left">
@@ -228,14 +228,19 @@ const formatEnergy = (value) => {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at top left, rgba(248, 113, 113, 0.7), transparent 55%),
-    radial-gradient(circle at top right, rgba(248, 113, 113, 0.7), transparent 55%),
-    radial-gradient(circle at bottom left, rgba(248, 113, 113, 0.7), transparent 55%),
-    radial-gradient(circle at bottom right, rgba(248, 113, 113, 0.7), transparent 55%);
+    radial-gradient(circle at top left, rgba(248, 113, 113, 0.45), transparent 55%),
+    radial-gradient(circle at top right, rgba(248, 113, 113, 0.45), transparent 55%),
+    radial-gradient(circle at bottom left, rgba(248, 113, 113, 0.45), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(248, 113, 113, 0.45), transparent 55%);
   mix-blend-mode: screen;
-  opacity: 0.75;
-  animation: vignette-pulse 1s ease-in-out infinite;
+  opacity: 0;
+  transition: opacity 0.4s ease;
   z-index: -1;
+}
+
+.low-life-vignette--active {
+  opacity: 0.55;
+  animation: vignette-pulse 1.2s ease-in-out infinite;
 }
 
 .power-bar-container {
@@ -312,10 +317,10 @@ const formatEnergy = (value) => {
 
 @keyframes vignette-pulse {
   0%, 100% {
-    opacity: 0.5;
+    opacity: 0.4;
   }
   50% {
-    opacity: 0.9;
+    opacity: 0.8;
   }
 }
 </style>
