@@ -48,6 +48,12 @@
           </button>
           <button
             class="btn-primary btn-secondary btn-primary--wide"
+            @click.stop.prevent="toggleGraphicsQuality"
+          >
+            {{ graphicsLabel }}
+          </button>
+          <button
+            class="btn-primary btn-secondary btn-primary--wide"
             @click.stop.prevent="exitToMain"
           >
             {{ t('game.back_to_main') }}
@@ -164,6 +170,11 @@ const hitCount = ref(0)
 const MAX_LIVES = 3
 const livesLeft = computed(() => Math.max(0, MAX_LIVES - hitCount.value))
 
+const graphicsQuality = ref('normal') // 'normal' | 'low'
+const graphicsLabel = computed(() =>
+  graphicsQuality.value === 'normal' ? 'Графика: Нормально' : 'Графика: Низко'
+)
+
 const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeRenderer }) => {
   scene = threeScene
   camera = threeCamera
@@ -187,6 +198,8 @@ const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeR
 
   // Запуск рендеринга Three.js
   startThreeLoop()
+
+  applyGraphicsQuality()
 }
 
 // Очень плавное следование камеры: без рывков, незаметный дрейф от центра при смене полосы
@@ -219,7 +232,9 @@ const startThreeLoop = () => {
         steps++
       }
       if (gameWorld.value) gameWorld.value.spawnObjects(playerZ.value)
-      if (gameEffects.value) gameEffects.value.updateEffects()
+      if (gameEffects.value && graphicsQuality.value === 'normal') {
+        gameEffects.value.updateEffects()
+      }
       if (hitCount.value >= 3) {
         if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
         gameSpeed.value = 0
@@ -259,6 +274,31 @@ const startThreeLoop = () => {
     }
   }
   animate()
+}
+
+const applyGraphicsQuality = () => {
+  if (!renderer || !scene) return
+
+  const isLow = graphicsQuality.value === 'low'
+
+  // Тени и качество рендера
+  renderer.shadowMap.enabled = !isLow
+  if (isLow) {
+    renderer.setPixelRatio(1)
+  } else {
+    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
+    renderer.setPixelRatio(Math.min(dpr, 2))
+  }
+
+  // Отключаем castShadow/receiveShadow у объектов и источников света на низкой графике
+  scene.traverse?.((obj) => {
+    if ('castShadow' in obj) {
+      obj.castShadow = !isLow
+    }
+    if ('receiveShadow' in obj && isLow) {
+      obj.receiveShadow = false
+    }
+  })
 }
 
 const startGame = () => {
@@ -358,6 +398,11 @@ function doOneStep(playerBox, inRollImmuneWindow, nowMs) {
 
 const stopGameLoop = () => {
   lastUpdateTime = 0
+}
+
+const toggleGraphicsQuality = () => {
+  graphicsQuality.value = graphicsQuality.value === 'normal' ? 'low' : 'normal'
+  applyGraphicsQuality()
 }
 
 const endGame = async (isWinByState = false) => {
