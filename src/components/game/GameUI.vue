@@ -10,22 +10,32 @@
           />
           <span class="value energy-value">{{ formatEnergy(energy) }} kW</span>
         </div>
-        <div class="distance-counter">
+        <div class="lives-counter">
           <svg
-            class="icon distance-icon"
+            class="icon lives-icon"
             viewBox="0 0 24 24"
             aria-hidden="true"
           >
             <path
-              d="M5 19h14a1 1 0 0 0 .9-1.45L16.5 8.5 13.8 13l-3.3-6L8 11 5.4 5.2A1 1 0 0 0 4.5 4.6 1 1 0 0 0 3.9 5.8L7 13l2-3.5 3.2 5.8L16.7 9l2.9 8H5a1 1 0 0 0 0 2Z"
+              d="M12.1 21.35 10 19.45C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8 10.95l-1.9 1.9Z"
               fill="currentColor"
             />
           </svg>
-          <span class="value distance-value">{{ formatDistance(distance) }}m</span>
+          <div class="lives-hearts">
+            <span
+              v-for="n in maxLives"
+              :key="n"
+              class="life-heart"
+              :class="{ 'life-heart--lost': n > lives }"
+            >
+              ♥
+            </span>
+          </div>
         </div>
       </div>
       <div class="top-right">
         <button
+          v-if="showPause"
           class="pause-button"
           @click.stop="$emit('pause')"
         >
@@ -55,10 +65,11 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
-const { energy, distance, power, showPause } = defineProps({
+const { energy, power, lives, maxLives, showPause } = defineProps({
   energy: { type: Number, default: 0 },
-  distance: { type: Number, default: 0 },
   power: { type: Number, default: 100 },
+  lives: { type: Number, default: 3 },
+  maxLives: { type: Number, default: 3 },
   showPause: { type: Boolean, default: false }
 })
 
@@ -69,13 +80,8 @@ const formatEnergy = (value) => {
   return v.toFixed(1)
 }
 
-const formatDistance = (value) => {
-  const v = Number(value ?? 0)
-  if (v >= 1000) {
-    return (v / 1000).toFixed(2) + 'k'
-  }
-  return Math.round(v)
-}
+// formatDistance оставлен на будущее, когда блок дистанции переедет вниз
+// и будет связан с логикой.
 </script>
 
 <style lang="scss" scoped>
@@ -111,7 +117,7 @@ const formatDistance = (value) => {
 }
 
 .energy-counter,
-.distance-counter {
+.lives-counter {
   background: rgba(0, 0, 0, 0.7);
   padding: 6px 10px;
   border-radius: 12px;
@@ -149,22 +155,18 @@ const formatDistance = (value) => {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-.distance-value {
-  color: #8143FC;
-}
-
 .pause-button {
   pointer-events: auto;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
   border: none;
   background: radial-gradient(circle at 30% 0%, #38bdf8, #4c1d95);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 22px;
   cursor: pointer;
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(12px);
@@ -188,6 +190,28 @@ const formatDistance = (value) => {
 .ui-bottom {
   display: flex;
   justify-content: center;
+}
+
+.lives-hearts {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.life-heart {
+  font-size: 16px;
+  color: #f97373;
+  text-shadow: 0 0 6px rgba(248, 113, 113, 0.8);
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    filter 0.2s ease;
+}
+
+.life-heart--lost {
+  opacity: 0.25;
+  filter: grayscale(1);
+  transform: scale(0.7) translateY(2px);
+  text-shadow: none;
 }
 
 .power-bar-container {

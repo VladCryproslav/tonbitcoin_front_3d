@@ -12,6 +12,8 @@
       :energy="gameRun.energyCollected"
       :distance="gameRun.distance"
       :power="gameRun.currentPower"
+      :lives="livesLeft"
+      :max-lives="MAX_LIVES"
       :show-pause="gameRun.isRunning && !gameRun.isPaused && !showGameOver"
       @pause="openPauseOverlay"
     />
@@ -117,13 +119,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import GameScene from '@/components/game/GameScene.vue'
 import GameUI from '@/components/game/GameUI.vue'
 import GameControls from '@/components/game/GameControls.vue'
-import RunCompleteModal from '@/components/game/RunCompleteModal.vue'
 import { useGameRun } from '@/composables/useGameRun'
 import { useGamePhysics } from '@/composables/useGamePhysics'
 import { useGameWorld } from '@/composables/useGameWorld'
@@ -160,6 +161,8 @@ const gameSpeed = ref(0.15)
 const playerZ = ref(0)
 const lastSpeedIncrease = ref(0)
 const hitCount = ref(0)
+const MAX_LIVES = 3
+const livesLeft = computed(() => Math.max(0, MAX_LIVES - hitCount.value))
 
 const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeRenderer }) => {
   scene = threeScene
@@ -313,20 +316,6 @@ const resumeGame = () => {
   launcherOverlayMode.value = 'none'
 }
 
-// Унифицированный обработчик для кнопки:
-// - если ещё не запущено — старт;
-// - если идёт забег — пауза;
-// - если стоит на паузе — продолжение.
-const togglePlayPause = () => {
-  if (!gameRun.isRunning.value) {
-    startGame()
-  } else if (gameRun.isPaused.value) {
-    resumeGame()
-  } else {
-    pauseGame()
-  }
-}
-
 function doOneStep(playerBox, inRollImmuneWindow, nowMs) {
   playerZ.value += gameSpeed.value
   gameRun.updateDistance(gameRun.distance.value + gameSpeed.value * 10)
@@ -338,7 +327,7 @@ function doOneStep(playerBox, inRollImmuneWindow, nowMs) {
 
         gameWorld.value.updateObstacles(
           playerBox,
-          (hitObstacle) => {
+          () => {
             hitCount.value += 1
             gameRun.hitObstacle()
             const newPower = gameRun.currentPower.value - 10
