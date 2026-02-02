@@ -35,7 +35,6 @@
       </div>
       <div class="top-right">
         <button
-          v-if="showPause"
           class="pause-button"
           @click.stop="$emit('pause')"
         >
@@ -46,7 +45,7 @@
 
     <div class="ui-bottom">
       <div class="power-bar-container">
-        <div class="power-label">{{ t('game.power') }}</div>
+        <div class="power-label">Дистанция</div>
         <div class="power-bar">
           <div
             class="power-fill"
@@ -61,16 +60,11 @@
 </template>
 
 <script setup>
-import { useI18n } from 'vue-i18n'
-
-const { t } = useI18n()
-
-const { energy, power, lives, maxLives, showPause } = defineProps({
+const { energy, power, lives, maxLives } = defineProps({
   energy: { type: Number, default: 0 },
   power: { type: Number, default: 100 },
   lives: { type: Number, default: 3 },
-  maxLives: { type: Number, default: 3 },
-  showPause: { type: Boolean, default: false }
+  maxLives: { type: Number, default: 3 }
 })
 
 defineEmits(['pause'])
