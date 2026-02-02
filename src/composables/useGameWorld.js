@@ -268,7 +268,6 @@ export function useGameWorld(scene, camera) {
 
     const halfY = def.height / 2
     const bounds = { halfX: 0.5, halfY, halfZ: 0.5 }
-    const posY = def.bottomY != null ? def.bottomY + halfY : halfY
     const pool = inactiveObstaclesByKind[kind]
     const template = barrierTemplates[kind]
 
@@ -299,12 +298,20 @@ export function useGameWorld(scene, camera) {
       scene.add(obstacle)
     }
 
+    // GLB из Blender: origin внизу модели → position.y = низ. BoxGeometry: origin в центре.
+    const isGLB = !obstacle.isMesh
+    const posY = isGLB
+      ? (def.bottomY ?? 0)
+      : (def.bottomY != null ? def.bottomY + halfY : halfY)
+
     obstacle.position.set(lanes[lane], posY, z)
     obstacle.visible = true
     obstacle.userData.lane = lane
     obstacle.userData.height = def.height
     obstacle.userData.kind = kind
     obstacle.userData.hit = false
+    // Для коллизии: центр AABB (у GLB position = низ, у Box = центр)
+    obstacle.userData.collisionCenterY = isGLB ? posY + halfY : posY
 
     obstacles.push(obstacle)
     return obstacle
@@ -448,7 +455,7 @@ export function useGameWorld(scene, camera) {
         const { halfX, halfY, halfZ } = obstacle.userData.bounds || { halfX: 0.5, halfY: (obstacle.userData.height || 1) / 2, halfZ: 0.5 }
 
         const cx = obstacle.position.x
-        const cy = obstacle.position.y
+        const cy = obstacle.userData.collisionCenterY ?? obstacle.position.y
         const cz = obstacle.position.z
 
         const minX = cx - halfX
