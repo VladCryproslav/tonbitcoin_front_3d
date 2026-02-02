@@ -9,9 +9,8 @@
     <!-- UI поверх игры: только после старта забега -->
     <GameUI
       v-if="gameRun.isRunning || gameRun.isPaused"
-      :energy="gameRun.energyCollected"
-      :distance="gameRun.distance"
-      :power="gameRun.distanceProgress"
+      :energy="gameRun.energyCollected?.value ?? 0"
+      :power="gameRun.distanceProgress?.value ?? 0"
       :lives="livesLeft"
       :max-lives="MAX_LIVES"
       :show-pause="gameRun.isRunning && !gameRun.isPaused && !showGameOver"

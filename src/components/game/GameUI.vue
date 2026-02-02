@@ -52,10 +52,10 @@
         <div class="power-bar">
           <div
             class="power-fill power-fill--distance"
-            :style="{ width: `${Math.max(0, Math.min(100, power))}%` }"
+            :style="{ width: `${Math.max(0, Math.min(100, Number.isFinite(power) ? power : 0))}%` }"
           ></div>
         </div>
-        <div class="power-value">{{ Math.round(power) }}%</div>
+        <div class="power-value">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</div>
       </div>
     </div>
   </div>
@@ -77,7 +77,7 @@ defineEmits(['pause'])
 
 const formatEnergy = (value) => {
   const v = Number(value ?? 0)
-  return v.toFixed(1)
+  return Number.isFinite(v) ? v.toFixed(1) : '0.0'
 }
 
 // formatDistance оставлен на будущее, когда блок дистанции переедет вниз
