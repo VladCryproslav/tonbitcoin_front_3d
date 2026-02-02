@@ -298,11 +298,12 @@ export function useGameWorld(scene, camera) {
       scene.add(obstacle)
     }
 
-    // GLB из Blender: origin внизу модели → position.y = низ. BoxGeometry: origin в центре.
+    // Центр AABB для коллизии: низ (bottomY) + половина высоты, либо просто половина высоты.
+    const collisionCenterY = def.bottomY != null ? def.bottomY + halfY : halfY
+    // GLB из Blender: origin внизу модели → визуально ставим низ на дорогу (y=0).
+    // BoxGeometry: origin в центре → ставим центр туда же, где и центр AABB.
     const isGLB = !obstacle.isMesh
-    const posY = isGLB
-      ? (def.bottomY ?? 0)
-      : (def.bottomY != null ? def.bottomY + halfY : halfY)
+    const posY = isGLB ? 0 : collisionCenterY
 
     obstacle.position.set(lanes[lane], posY, z)
     obstacle.visible = true
@@ -310,8 +311,8 @@ export function useGameWorld(scene, camera) {
     obstacle.userData.height = def.height
     obstacle.userData.kind = kind
     obstacle.userData.hit = false
-    // Для коллизии: центр AABB (у GLB position = низ, у Box = центр)
-    obstacle.userData.collisionCenterY = isGLB ? posY + halfY : posY
+    // Для коллизии: центр AABB (один и тот же для GLB и боксов)
+    obstacle.userData.collisionCenterY = collisionCenterY
 
     obstacles.push(obstacle)
     return obstacle
