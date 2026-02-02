@@ -153,7 +153,6 @@ const formatEnergy = (value) => {
 
 .energy-value {
   color: #00FF88;
-  animation: pulse-glow 2s ease-in-out infinite;
 }
 
 .pause-button {
@@ -176,15 +175,6 @@ const formatEnergy = (value) => {
   &:active {
     transform: scale(0.9);
     opacity: 0.85;
-  }
-}
-
-@keyframes pulse-glow {
-  0%, 100% {
-    text-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
-  }
-  50% {
-    text-shadow: 0 0 15px rgba(0, 255, 136, 0.8);
   }
 }
 

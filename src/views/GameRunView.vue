@@ -245,7 +245,7 @@ const startThreeLoop = () => {
       const framePlayerBox = gamePhysics.value?.getPlayerBox?.() ?? null
       let steps = 0
       while (frameTime >= FIXED_STEP_MS && steps < MAX_STEPS) {
-        doOneStep(framePlayerBox, inRollImmuneWindow, nowMs)
+        doOneStep(framePlayerBox, inRollImmuneWindow)
         frameTime -= FIXED_STEP_MS
         steps++
       }
@@ -385,7 +385,7 @@ const resumeGame = () => {
   launcherOverlayMode.value = 'none'
 }
 
-function doOneStep(playerBox, inRollImmuneWindow, nowMs) {
+function doOneStep(playerBox, inRollImmuneWindow) {
   playerZ.value += gameSpeed.value
   gameRun.updateDistance(gameRun.distance.value + gameSpeed.value * 10)
 
@@ -411,8 +411,7 @@ function doOneStep(playerBox, inRollImmuneWindow, nowMs) {
           playerBox,
           (energy) => {
             gameRun.collectEnergy(energy)
-          },
-          nowMs
+          }
         )
       }
     }

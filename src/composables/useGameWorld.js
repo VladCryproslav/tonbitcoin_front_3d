@@ -445,11 +445,9 @@ export function useGameWorld(scene, camera) {
 
   // Обновление собираемых предметов
   // Аналогично препятствиям, используем ручной AABB по известным размерам куба.
-  const updateCollectibles = (playerBox, onCollect, now) => {
+  const updateCollectibles = (playerBox, onCollect) => {
     _collectiblesToRemove.length = 0
     const collectiblesToRemove = _collectiblesToRemove
-    const pulse = 1 + Math.sin(now * 0.01) * 0.15
-    const offsetY = Math.sin(now * 0.005) * 0.3
 
     collectibles.forEach((collectible, index) => {
       if (collectible.userData.collected) {
@@ -459,10 +457,6 @@ export function useGameWorld(scene, camera) {
 
       collectible.position.z += roadSpeed.value
       collectible.rotation.y += 0.05
-      collectible.rotation.x += 0.03
-
-      collectible.scale.setScalar(pulse)
-      collectible.position.y = 1 + offsetY
 
       const inCollideZone = collectible.position.z >= COLLIDE_Z_MIN && collectible.position.z <= COLLIDE_Z_MAX
 
