@@ -1,5 +1,9 @@
 <template>
   <div class="game-ui">
+    <div
+      v-if="isLastLife"
+      class="low-life-vignette"
+    ></div>
     <div class="ui-top">
       <div class="top-left">
         <div class="energy-counter">
@@ -26,7 +30,10 @@
               v-for="n in maxLives"
               :key="n"
               class="life-heart"
-              :class="{ 'life-heart--lost': n > lives }"
+              :class="{
+                'life-heart--lost': n > lives,
+                'life-heart--critical': isLastLife && n === lives
+              }"
             >
               ♥
             </span>
@@ -60,12 +67,16 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+
 const { energy, power, lives, maxLives } = defineProps({
   energy: { type: Number, default: 0 },
   power: { type: Number, default: 100 },
   lives: { type: Number, default: 3 },
   maxLives: { type: Number, default: 3 }
 })
+
+const isLastLife = computed(() => lives === 1)
 
 defineEmits(['pause'])
 
@@ -208,6 +219,25 @@ const formatEnergy = (value) => {
   text-shadow: none;
 }
 
+.life-heart--critical {
+  animation: life-critical-pulse 0.7s ease-in-out infinite;
+}
+
+.low-life-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at top left, rgba(248, 113, 113, 0.7), transparent 55%),
+    radial-gradient(circle at top right, rgba(248, 113, 113, 0.7), transparent 55%),
+    radial-gradient(circle at bottom left, rgba(248, 113, 113, 0.7), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(248, 113, 113, 0.7), transparent 55%);
+  mix-blend-mode: screen;
+  opacity: 0.75;
+  animation: vignette-pulse 1s ease-in-out infinite;
+  z-index: -1;
+}
+
 .power-bar-container {
   background: rgba(0, 0, 0, 0.7);
   padding: 12px 20px;
@@ -262,6 +292,30 @@ const formatEnergy = (value) => {
   }
   50% {
     opacity: 0.7;
+  }
+}
+
+@keyframes life-critical-pulse {
+  0% {
+    transform: scale(1) translateY(0);
+    text-shadow: 0 0 6px rgba(248, 113, 113, 0.8);
+  }
+  50% {
+    transform: scale(1.3) translateY(-1px);
+    text-shadow: 0 0 16px rgba(248, 113, 113, 1);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    text-shadow: 0 0 6px rgba(248, 113, 113, 0.8);
+  }
+}
+
+@keyframes vignette-pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.9;
   }
 }
 </style>
