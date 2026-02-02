@@ -15,9 +15,9 @@ export function useGameWorld(scene, camera) {
   // Чуть увеличены, чтобы дорога рисовалась дальше без разрывов.
   const roadLength = 25
   const segmentCount = 7
-  const roadSegments = ref([])
-  const obstacles = ref([])
-  const collectibles = ref([])
+  const roadSegments = []
+  const obstacles = []
+  const collectibles = []
   const roadSpeed = ref(0.3)
   const lanes = [-2, 0, 2] // Позиции полос (левая, центр, правая)
 
@@ -27,7 +27,7 @@ export function useGameWorld(scene, camera) {
   let lastSpawnPlayerZ = -999
   let nextSectionWorldZ = -48
 
-  const laneMarkings = ref([])
+  const laneMarkings = []
 
   // Общая геометрия и материал для разметки полос (один draw call на тип, меньше памяти).
   // Логику спавна/телепорта не меняем: разметка движется только в updateLaneMarkings с roadSpeed.
@@ -172,7 +172,7 @@ export function useGameWorld(scene, camera) {
       road.position.z = -i * roadLength
       road.position.y = 0
       scene.add(road)
-      roadSegments.value.push(road)
+      roadSegments.push(road)
     }
 
     // Разметка полос
@@ -189,7 +189,7 @@ export function useGameWorld(scene, camera) {
         marking.position.set(laneX, 0.01, z)
         marking.userData = { type: 'marking' }
         scene.add(marking)
-        laneMarkings.value.push(marking)
+        laneMarkings.push(marking)
       })
     }
   }
@@ -200,7 +200,7 @@ export function useGameWorld(scene, camera) {
     const minZByLane = {}
     const speed = roadSpeed.value
     const stepZ = MARKING_LENGTH * 2
-    laneMarkings.value.forEach(marking => {
+    laneMarkings.forEach(marking => {
       marking.position.z += speed
       if (marking.position.z <= 10) {
         const laneKey = Math.round(marking.position.x * 10) / 10
@@ -210,7 +210,7 @@ export function useGameWorld(scene, camera) {
         }
       }
     })
-    laneMarkings.value.forEach(marking => {
+    laneMarkings.forEach(marking => {
       if (marking.position.z > 10) {
         const laneKey = Math.round(marking.position.x * 10) / 10
         const minZ = minZByLane[laneKey]
@@ -220,19 +220,44 @@ export function useGameWorld(scene, camera) {
   }
 
   // Создание препятствия по типу: jump (прыжок), roll (кувырок), impassable (непроходимая — кувырок)
+  const inactiveObstaclesByKind = {
+    [OBSTACLE_KIND.IMPASSABLE]: [],
+    [OBSTACLE_KIND.JUMP]: [],
+    [OBSTACLE_KIND.ROLL]: []
+  }
+
   const createObstacle = (lane, z, kind) => {
     const def = OBSTACLE_DEF[kind]
     if (!def) return null
+
     const geo = kind === OBSTACLE_KIND.ROLL ? sharedObstacleGeometry.roll : sharedObstacleGeometry[def.height]
-    const obstacle = new Mesh(geo, sharedObstacleMaterial[kind])
+    const mat = sharedObstacleMaterial[kind]
+    const pool = inactiveObstaclesByKind[kind]
+
+    let obstacle
+    if (pool.length > 0) {
+      obstacle = pool.pop()
+      obstacle.geometry = geo
+      obstacle.material = mat
+    } else {
+      obstacle = new Mesh(geo, mat)
+      const halfY = def.height / 2
+      obstacle.userData.bounds = { halfX: 0.5, halfY, halfZ: 0.5 }
+      obstacle.userData.type = 'obstacle'
+      obstacle.castShadow = true
+      obstacle.renderOrder = 1
+      scene.add(obstacle)
+    }
+
     const posY = def.bottomY != null ? def.bottomY + def.height / 2 : def.height / 2
     obstacle.position.set(lanes[lane], posY, z)
-    obstacle.userData = { type: 'obstacle', lane, height: def.height, kind }
-    obstacle.castShadow = true
-    obstacle.renderOrder = 1
-    scene.add(obstacle)
-    obstacle.updateMatrixWorld(true)
-    obstacles.value.push(obstacle)
+    obstacle.visible = true
+    obstacle.userData.lane = lane
+    obstacle.userData.height = def.height
+    obstacle.userData.kind = kind
+    obstacle.userData.hit = false
+
+    obstacles.push(obstacle)
     return obstacle
   }
 
@@ -252,18 +277,30 @@ export function useGameWorld(scene, camera) {
     emissiveIntensity: 1
   })
 
+  const inactiveCollectibles = []
+  const COLLECTIBLE_HALF = 0.3
+
   // Создание собираемого предмета (энергия)
   const createCollectible = (lane, z) => {
-    const group = new Group()
-    const collectible = new Mesh(sharedCollectibleOuterGeo, sharedCollectibleOuterMat)
-    group.add(collectible)
-    const inner = new Mesh(sharedCollectibleInnerGeo, sharedCollectibleInnerMat)
-    group.add(inner)
+    let group
+    if (inactiveCollectibles.length > 0) {
+      group = inactiveCollectibles.pop()
+    } else {
+      group = new Group()
+      const collectible = new Mesh(sharedCollectibleOuterGeo, sharedCollectibleOuterMat)
+      const inner = new Mesh(sharedCollectibleInnerGeo, sharedCollectibleInnerMat)
+      group.add(collectible)
+      group.add(inner)
+      group.userData.bounds = { half: COLLECTIBLE_HALF }
+      group.userData.type = 'collectible'
+      scene.add(group)
+    }
 
     group.position.set(lanes[lane], 1, z)
-    group.userData = { type: 'collectible', lane, collected: false }
-    scene.add(group)
-    collectibles.value.push(group)
+    group.visible = true
+    group.userData.lane = lane
+    group.userData.collected = false
+    collectibles.push(group)
     return group
   }
 
@@ -312,8 +349,8 @@ export function useGameWorld(scene, camera) {
   }
 
   // Обновление дорожки (бесконечная прокрутка). minZ один раз за вызов — без reduce в цикле (меньше микрофризов при высокой скорости).
-  const updateRoad = (playerZ) => {
-    const segments = roadSegments.value
+  const updateRoad = () => {
+    const segments = roadSegments
     const cameraZ = camera ? camera.position.z : 8
     const cutoffZ = cameraZ + roadLength * 1.5
     let minZ = segments.length ? segments[0].position.z : 0
@@ -331,20 +368,17 @@ export function useGameWorld(scene, camera) {
     updateLaneMarkings()
   }
 
-  // Окно неуязвимости к синему блоку (мс): после свайпа вниз не бьём по ROLL, не зависим от порядка rAF.
-  const ROLL_IMMUNE_MS = 950
   const _obstaclesToRemove = []
   const _collectiblesToRemove = []
 
   // Обновление препятствий.
   // Коллизия через ручной AABB по известной геометрии куба.
   // ROLL: не бьём при isSliding, по высоте (underBar) или в окне по времени.
-  const updateObstacles = (playerBox, onCollision, isSliding = false, slideStartTime = 0) => {
+  const updateObstacles = (playerBox, onCollision, isSliding = false, inRollImmuneWindow = false) => {
     _obstaclesToRemove.length = 0
     const obstaclesToRemove = _obstaclesToRemove
-    const inRollImmuneWindow = slideStartTime > 0 && Date.now() - slideStartTime < ROLL_IMMUNE_MS
 
-    obstacles.value.forEach((obstacle, index) => {
+    obstacles.forEach((obstacle, index) => {
       obstacle.position.z += roadSpeed.value
 
       const inCollideZone = obstacle.position.z >= COLLIDE_Z_MIN && obstacle.position.z <= COLLIDE_Z_MAX
@@ -353,9 +387,7 @@ export function useGameWorld(scene, camera) {
         const kind = obstacle.userData.kind
 
         // Ручной AABB препятствия: знаем, что это куб 1xH x1, центр в obstacle.position.
-        const halfX = 0.5
-        const halfZ = 0.5
-        const halfY = (obstacle.userData.height || 1) / 2
+        const { halfX, halfY, halfZ } = obstacle.userData.bounds || { halfX: 0.5, halfY: (obstacle.userData.height || 1) / 2, halfZ: 0.5 }
 
         const cx = obstacle.position.x
         const cy = obstacle.position.y
@@ -397,26 +429,29 @@ export function useGameWorld(scene, camera) {
 
       if (obstacle.position.z > 6) {
         obstaclesToRemove.push(index)
-        scene.remove(obstacle)
+        obstacle.visible = false
+        const k = obstacle.userData.kind
+        if (k && inactiveObstaclesByKind[k]) {
+          inactiveObstaclesByKind[k].push(obstacle)
+        }
       }
     })
 
     if (obstaclesToRemove.length > 0) {
       obstaclesToRemove.sort((a, b) => b - a)
-      obstaclesToRemove.forEach((i) => obstacles.value.splice(i, 1))
+      obstaclesToRemove.forEach((i) => obstacles.splice(i, 1))
     }
   }
 
   // Обновление собираемых предметов
   // Аналогично препятствиям, используем ручной AABB по известным размерам куба.
-  const updateCollectibles = (playerBox, onCollect) => {
+  const updateCollectibles = (playerBox, onCollect, now) => {
     _collectiblesToRemove.length = 0
     const collectiblesToRemove = _collectiblesToRemove
-    const now = Date.now()
     const pulse = 1 + Math.sin(now * 0.01) * 0.15
     const offsetY = Math.sin(now * 0.005) * 0.3
 
-    collectibles.value.forEach((collectible, index) => {
+    collectibles.forEach((collectible, index) => {
       if (collectible.userData.collected) {
         collectiblesToRemove.push(index)
         return
@@ -433,7 +468,7 @@ export function useGameWorld(scene, camera) {
 
       if (playerBox && inCollideZone) {
         // Внешний куб энергии 0.6x0.6x0.6, центр в collectible.position.
-        const half = 0.3
+        const half = collectible.userData.bounds?.half ?? COLLECTIBLE_HALF
         const cx = collectible.position.x
         const cy = collectible.position.y
         const cz = collectible.position.z
@@ -463,29 +498,40 @@ export function useGameWorld(scene, camera) {
 
           onCollect(0.5) // Количество энергии
           collectiblesToRemove.push(index)
-          scene.remove(collectible)
+          inactiveCollectibles.push(collectible)
           return
         }
       }
 
       if (collectible.position.z > 6) {
         collectiblesToRemove.push(index)
-        scene.remove(collectible)
+        collectible.visible = false
+        inactiveCollectibles.push(collectible)
       }
     })
 
     if (collectiblesToRemove.length > 0) {
       collectiblesToRemove.sort((a, b) => b - a)
-      collectiblesToRemove.forEach((i) => collectibles.value.splice(i, 1))
+      collectiblesToRemove.forEach((i) => collectibles.splice(i, 1))
     }
   }
 
   // Очистка всех объектов
   const clearAll = () => {
-    obstacles.value.forEach(obstacle => scene.remove(obstacle))
-    collectibles.value.forEach(collectible => scene.remove(collectible))
-    obstacles.value = []
-    collectibles.value = []
+    obstacles.forEach(obstacle => {
+      obstacle.visible = false
+      const k = obstacle.userData.kind
+      if (k && inactiveObstaclesByKind[k]) {
+        inactiveObstaclesByKind[k].push(obstacle)
+      }
+    })
+    collectibles.forEach(collectible => {
+      collectible.visible = false
+      collectible.userData.collected = false
+      inactiveCollectibles.push(collectible)
+    })
+    obstacles.length = 0
+    collectibles.length = 0
     lastSpawnPlayerZ = -999
     nextSectionWorldZ = -48
   }

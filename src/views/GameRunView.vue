@@ -155,6 +155,7 @@ let lastUpdateTime = 0
 let shakeFramesLeft = 0
 const FIXED_STEP_MS = 1000 / 60
 const MAX_STEPS = 3
+const ROLL_IMMUNE_MS = 950
 const gameSpeed = ref(0.15)
 const playerZ = ref(0)
 const lastSpeedIncrease = ref(0)
@@ -204,10 +205,13 @@ const startThreeLoop = () => {
       if (lastUpdateTime <= 0) lastUpdateTime = now
       let frameTime = Math.min(now - lastUpdateTime, 100)
       lastUpdateTime = now
+      const nowMs = Date.now()
+      const slideStartTime = gamePhysics.value?.getSlideStartTime?.() ?? 0
+      const inRollImmuneWindow = slideStartTime > 0 && nowMs - slideStartTime < ROLL_IMMUNE_MS
       const framePlayerBox = gamePhysics.value?.getPlayerBox?.() ?? null
       let steps = 0
       while (frameTime >= FIXED_STEP_MS && steps < MAX_STEPS) {
-        doOneStep(framePlayerBox)
+        doOneStep(framePlayerBox, inRollImmuneWindow, nowMs)
         frameTime -= FIXED_STEP_MS
         steps++
       }
@@ -323,14 +327,14 @@ const togglePlayPause = () => {
   }
 }
 
-function doOneStep(playerBox) {
+function doOneStep(playerBox, inRollImmuneWindow, nowMs) {
   playerZ.value += gameSpeed.value
   gameRun.updateDistance(gameRun.distance.value + gameSpeed.value * 10)
 
   if (gamePhysics.value) {
       if (gameWorld.value) {
         gameWorld.value.setRoadSpeed(gameSpeed.value)
-        gameWorld.value.updateRoad(playerZ.value)
+        gameWorld.value.updateRoad()
 
         gameWorld.value.updateObstacles(
           playerBox,
@@ -342,14 +346,15 @@ function doOneStep(playerBox) {
             shakeFramesLeft = 10
           },
           gamePhysics.value.isSliding?.value === true,
-          gamePhysics.value.getSlideStartTime?.() ?? 0
+          inRollImmuneWindow
         )
 
         gameWorld.value.updateCollectibles(
           playerBox,
           (energy) => {
             gameRun.collectEnergy(energy)
-          }
+          },
+          nowMs
         )
       }
     }
