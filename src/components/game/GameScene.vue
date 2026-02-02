@@ -59,8 +59,17 @@ const initScene = () => {
   const directionalLight = new DirectionalLight(0xffffff, 1.0) // Очень яркое
   directionalLight.position.set(5, 10, 5)
   directionalLight.castShadow = true
-  directionalLight.shadow.mapSize.width = 2048
-  directionalLight.shadow.mapSize.height = 2048
+  const cores = typeof navigator !== 'undefined' && navigator.hardwareConcurrency ? navigator.hardwareConcurrency : 4
+  if (cores <= 2) {
+    renderer.shadowMap.enabled = false
+    directionalLight.castShadow = false
+  } else if (cores <= 4) {
+    directionalLight.shadow.mapSize.width = 1024
+    directionalLight.shadow.mapSize.height = 1024
+  } else {
+    directionalLight.shadow.mapSize.width = 2048
+    directionalLight.shadow.mapSize.height = 2048
+  }
   scene.add(directionalLight)
 
   // Дополнительный свет спереди для яркости

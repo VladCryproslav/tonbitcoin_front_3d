@@ -2,6 +2,8 @@ import { ref } from 'vue'
 import {
   BoxGeometry,
   MeshStandardMaterial,
+  MeshLambertMaterial,
+  MeshBasicMaterial,
   Mesh,
   PlaneGeometry,
   Group,
@@ -113,64 +115,44 @@ export function useGameWorld(scene, camera) {
   const createBackground = () => {
     if (backgroundCreated) return
     backgroundCreated = true
-    // Небо - яркие цвета Subway Surfers (голубое небо)
+    // Небо - простое, без освещения (MeshBasicMaterial).
     for (let i = 0; i < 3; i++) {
       const skyGeometry = new PlaneGeometry(50, 30)
       const skyColor = new Color()
-      // Яркое голубое небо как в Subway Surfers
-      skyColor.setHSL(0.55, 0.5, 0.75 + i * 0.08) // Более насыщенный и яркий
-      const skyMaterial = new MeshStandardMaterial({
+      skyColor.setHSL(0.55, 0.5, 0.75 + i * 0.08)
+      const skyMaterial = new MeshBasicMaterial({
         color: skyColor,
-        side: 2, // DoubleSide
-        flatShading: true
+        side: 2 // DoubleSide
       })
       const sky = new Mesh(skyGeometry, skyMaterial)
       sky.position.set(0, 15 - i * 5, -20 - i * 10)
       sky.rotation.x = -Math.PI / 3
+      sky.castShadow = false
+      sky.receiveShadow = false
       scene.add(sky)
     }
 
-    // Боковые барьеры - яркие цвета Subway Surfers
+    // Боковые барьеры - Lambert, без лишней физики материала.
     const barrierGeometry = new BoxGeometry(0.5, 2.5, 200)
-    const barrierMaterial = new MeshStandardMaterial({
-      color: 0x666666, // Светлее для cartoon стиля
-      metalness: 0.1,
-      roughness: 0.9,
-      flatShading: true
+    const barrierMaterial = new MeshLambertMaterial({
+      color: 0x666666
     })
 
     // Левый барьер
     const leftBarrier = new Mesh(barrierGeometry, barrierMaterial)
     leftBarrier.position.set(-3.5, 1.25, 0)
+    leftBarrier.castShadow = false
+    leftBarrier.receiveShadow = false
     scene.add(leftBarrier)
 
     // Правый барьер
     const rightBarrier = new Mesh(barrierGeometry, barrierMaterial)
     rightBarrier.position.set(3.5, 1.25, 0)
+    rightBarrier.castShadow = false
+    rightBarrier.receiveShadow = false
     scene.add(rightBarrier)
 
-    // Декоративные элементы на барьерах - яркие цвета Subway Surfers
-    for (let i = 0; i < 10; i++) {
-      const markerGeometry = new BoxGeometry(0.1, 0.3, 0.1)
-      const colors = [0xFEFF28, 0xEB7D26, 0xDE2126] // Желтый, оранжевый, красный
-      const color = colors[i % colors.length]
-      const markerMaterial = new MeshStandardMaterial({
-        color: color,
-        emissive: color,
-        emissiveIntensity: 0.2,
-        flatShading: true
-      })
-
-      // Левый барьер
-      const leftMarker = new Mesh(markerGeometry, markerMaterial)
-      leftMarker.position.set(-3.5, 2, -i * 5)
-      scene.add(leftMarker)
-
-      // Правый барьер
-      const rightMarker = new Mesh(markerGeometry, markerMaterial)
-      rightMarker.position.set(3.5, 2, -i * 5)
-      scene.add(rightMarker)
-    }
+    // Барьерные маркеры как декоративный шум убраны для снижения нагрузки.
   }
 
   // Создание дорожки
