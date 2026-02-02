@@ -6,7 +6,6 @@ import {
   MeshBasicMaterial,
   Mesh,
   PlaneGeometry,
-  Group,
   Color
 } from 'three'
 
@@ -261,32 +260,17 @@ export function useGameWorld(scene, camera) {
     return obstacle
   }
 
-  // Общая геометрия и материалы коллектов (внешний куб 0.6, внутренний 0.4).
-  const sharedCollectibleOuterGeo = new BoxGeometry(0.6, 0.6, 0.6)
-  const sharedCollectibleOuterMat = new MeshStandardMaterial({
-    color: 0x00FF00,
-    emissive: 0x00FF00,
-    emissiveIntensity: 0.8,
-    transparent: true,
-    opacity: 0.9
+  // Общая геометрия и материалы коллектов (простой зелёный куб).
+  const sharedCollectibleGeo = new BoxGeometry(0.6, 0.6, 0.6)
+  const sharedCollectibleMat = new MeshStandardMaterial({
+    color: 0x00ff00,
+    emissive: 0x00ff00,
+    emissiveIntensity: 0.7
   })
-  const sharedCollectibleOuterMatGlow = new MeshStandardMaterial({
-    color: 0x00FF88,
-    emissive: 0x00FF88,
-    emissiveIntensity: 1.2,
-    transparent: true,
-    opacity: 0.95
-  })
-  const sharedCollectibleInnerGeo = new BoxGeometry(0.4, 0.4, 0.4)
-  const sharedCollectibleInnerMat = new MeshStandardMaterial({
-    color: 0xFFFFFF,
-    emissive: 0xFFFFFF,
-    emissiveIntensity: 1
-  })
-  const sharedCollectibleInnerMatGlow = new MeshStandardMaterial({
-    color: 0xAAFFCC,
-    emissive: 0xAAFFCC,
-    emissiveIntensity: 1.5
+  const sharedCollectibleMatGlow = new MeshStandardMaterial({
+    color: 0x00ff55,
+    emissive: 0x00ff55,
+    emissiveIntensity: 1.2
   })
 
   const inactiveCollectibles = []
@@ -294,33 +278,27 @@ export function useGameWorld(scene, camera) {
 
   // Создание собираемого предмета (энергия). point = { value, isGlowing }
   const createCollectible = (lane, z, point) => {
-    let group
+    let mesh
     const isGlow = point?.isGlowing ?? false
-    const outerMat = isGlow ? sharedCollectibleOuterMatGlow : sharedCollectibleOuterMat
-    const innerMat = isGlow ? sharedCollectibleInnerMatGlow : sharedCollectibleInnerMat
+    const mat = isGlow ? sharedCollectibleMatGlow : sharedCollectibleMat
 
     if (inactiveCollectibles.length > 0) {
-      group = inactiveCollectibles.pop()
-      group.children[0].material = outerMat
-      group.children[1].material = innerMat
+      mesh = inactiveCollectibles.pop()
+      mesh.material = mat
     } else {
-      group = new Group()
-      const collectible = new Mesh(sharedCollectibleOuterGeo, outerMat)
-      const inner = new Mesh(sharedCollectibleInnerGeo, innerMat)
-      group.add(collectible)
-      group.add(inner)
-      group.userData.bounds = { half: COLLECTIBLE_HALF }
-      group.userData.type = 'collectible'
-      scene.add(group)
+      mesh = new Mesh(sharedCollectibleGeo, mat)
+      mesh.userData.bounds = { half: COLLECTIBLE_HALF }
+      mesh.userData.type = 'collectible'
+      scene.add(mesh)
     }
 
-    group.position.set(lanes[lane], 1, z)
-    group.visible = true
-    group.userData.lane = lane
-    group.userData.collected = false
-    group.userData.energyValue = point?.value ?? 0.5
-    collectibles.push(group)
-    return group
+    mesh.position.set(lanes[lane], 1, z)
+    mesh.visible = true
+    mesh.userData.lane = lane
+    mesh.userData.collected = false
+    mesh.userData.energyValue = point?.value ?? 0.5
+    collectibles.push(mesh)
+    return mesh
   }
 
   // Генерация по секциям: дорога — прямоугольники, каждый прямоугольник — 3 сектора (полосы).
