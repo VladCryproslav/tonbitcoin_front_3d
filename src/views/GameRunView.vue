@@ -197,7 +197,7 @@ const graphicsLabel = computed(() =>
   graphicsQuality.value === 'normal' ? t('game.graphics_label_normal') : t('game.graphics_label_low')
 )
 
-const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeRenderer }) => {
+const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: threeRenderer }) => {
   scene = threeScene
   camera = threeCamera
   renderer = threeRenderer
@@ -209,6 +209,7 @@ const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeR
   // Инициализация игрового мира
   gameWorld.value = useGameWorld(scene, camera)
   gameWorld.value.createRoad()
+  await gameWorld.value.loadBarrierModels()
 
   // Инициализация физики и создание игрока
   gamePhysics.value = useGamePhysics(scene)

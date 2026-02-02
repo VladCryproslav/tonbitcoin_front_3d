@@ -8,6 +8,13 @@ import {
   PlaneGeometry,
   Color
 } from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+
+const BARRIER_PATHS = {
+  jump: '/models/jump_barrier.glb',
+  roll: '/models/roll_barrier.glb',
+  impassable: '/models/impassable_barrier.glb'
+}
 
 export function useGameWorld(scene, camera) {
   // Длина одного сегмента дороги и количество сегментов.
@@ -86,6 +93,34 @@ export function useGameWorld(scene, camera) {
       roughness: 0.9,
       flatShading: true
     })
+  }
+
+  // GLB-барьеры: шаблоны для клонирования (fallback — боксы)
+  const barrierTemplates = {
+    [OBSTACLE_KIND.JUMP]: null,
+    [OBSTACLE_KIND.ROLL]: null,
+    [OBSTACLE_KIND.IMPASSABLE]: null
+  }
+
+  const loadBarrierModels = () => {
+    const loader = new GLTFLoader()
+    const load = (kind) =>
+      loader.loadAsync(BARRIER_PATHS[kind]).then((gltf) => {
+        const template = gltf.scene
+        template.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true
+          }
+        })
+        barrierTemplates[kind] = template
+      }).catch((err) => {
+        console.warn(`Barrier ${kind} load failed:`, err)
+      })
+    return Promise.all([
+      load(OBSTACLE_KIND.JUMP),
+      load(OBSTACLE_KIND.ROLL),
+      load(OBSTACLE_KIND.IMPASSABLE)
+    ])
   }
 
   // Глобальная зона по Z, где вообще возможна коллизия с игроком
@@ -231,26 +266,39 @@ export function useGameWorld(scene, camera) {
     const def = OBSTACLE_DEF[kind]
     if (!def) return null
 
-    const geo = kind === OBSTACLE_KIND.ROLL ? sharedObstacleGeometry.roll : sharedObstacleGeometry[def.height]
-    const mat = sharedObstacleMaterial[kind]
+    const halfY = def.height / 2
+    const bounds = { halfX: 0.5, halfY, halfZ: 0.5 }
+    const posY = def.bottomY != null ? def.bottomY + halfY : halfY
     const pool = inactiveObstaclesByKind[kind]
+    const template = barrierTemplates[kind]
 
     let obstacle
     if (pool.length > 0) {
       obstacle = pool.pop()
-      obstacle.geometry = geo
-      obstacle.material = mat
+      if (obstacle.isMesh) {
+        const geo = kind === OBSTACLE_KIND.ROLL ? sharedObstacleGeometry.roll : sharedObstacleGeometry[def.height]
+        obstacle.geometry = geo
+        obstacle.material = sharedObstacleMaterial[kind]
+      }
+    } else if (template) {
+      obstacle = template.clone(true)
+      obstacle.traverse((child) => {
+        if (child.isMesh) child.castShadow = true
+      })
+      obstacle.renderOrder = 1
+      obstacle.userData.bounds = bounds
+      obstacle.userData.type = 'obstacle'
+      scene.add(obstacle)
     } else {
-      obstacle = new Mesh(geo, mat)
-      const halfY = def.height / 2
-      obstacle.userData.bounds = { halfX: 0.5, halfY, halfZ: 0.5 }
+      const geo = kind === OBSTACLE_KIND.ROLL ? sharedObstacleGeometry.roll : sharedObstacleGeometry[def.height]
+      obstacle = new Mesh(geo, sharedObstacleMaterial[kind])
+      obstacle.userData.bounds = bounds
       obstacle.userData.type = 'obstacle'
       obstacle.castShadow = true
       obstacle.renderOrder = 1
       scene.add(obstacle)
     }
 
-    const posY = def.bottomY != null ? def.bottomY + def.height / 2 : def.height / 2
     obstacle.position.set(lanes[lane], posY, z)
     obstacle.visible = true
     obstacle.userData.lane = lane
@@ -548,6 +596,7 @@ export function useGameWorld(scene, camera) {
 
   return {
     createRoad,
+    loadBarrierModels,
     spawnObjects,
     updateRoad,
     updateObstacles,
