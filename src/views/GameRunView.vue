@@ -429,9 +429,11 @@ function doOneStep(playerBox, inRollImmuneWindow) {
       }
     }
 
-  // Плавный набор скорости: интерполяция от 0.15 до 0.45 по прогрессу дистанции (0–100%)
+  // Плавный набор: к 40% дистанции выходим на почти макс. скорость
   const progress = (gameRun.distanceProgress?.value ?? 0) / 100
-  const targetSpeed = 0.15 + 0.3 * Math.min(1, progress)
+  const maxSpeed = 0.52
+  const rampProgress = Math.min(1, progress / 0.4)
+  const targetSpeed = 0.15 + (maxSpeed - 0.15) * rampProgress
   gameSpeed.value = 0.92 * gameSpeed.value + 0.08 * targetSpeed
 }
 
