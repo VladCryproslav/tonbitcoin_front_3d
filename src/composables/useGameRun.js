@@ -62,7 +62,7 @@ export function useGameRun() {
     obstaclesHit.value = 0
     runStartTime.value = Date.now()
 
-    const storageKw = app.user?.storage_limit ?? app.storage ?? 70
+    const storageKw = app.storage ?? 70
     energyPoints.value = generateEnergyPoints(storageKw)
     energyPointsIndex.value = 0
     passedPointsCount.value = 0
