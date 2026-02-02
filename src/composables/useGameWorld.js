@@ -23,8 +23,10 @@ export function useGameWorld(scene, camera) {
   // Секции дороги: меньше дистанция — спавн чаще
   const SECTION_SPACING = 4 // мин. «расстояние» (по playerZ) между секциями
   const SECTION_WORLD_LENGTH = 14
+  const COLLECTIBLE_MIN_Z_DISTANCE = 5 // мин. расстояние по Z между коллектами (избегаем наложения)
   let lastSpawnPlayerZ = -999
   let nextSectionWorldZ = -48
+  let lastCollectibleZ = -9999
 
   const laneMarkings = []
 
@@ -332,20 +334,25 @@ export function useGameWorld(scene, camera) {
       }
     }
 
-    // Собираемые предметы: из очереди поинтов (1–2 за секцию)
+    // Собираемые предметы: из очереди поинтов (1–2 за секцию), мин. расстояние между ними
     if (typeof getNextEnergyPoint === 'function') {
       const point = getNextEnergyPoint()
       if (point) {
         const lane = Math.floor(Math.random() * 3)
-        const collectibleZ = sectionZ - 5 - Math.random() * 8
-        createCollectible(lane, collectibleZ, point)
+        const baseZ = lastCollectibleZ < -9000 ? sectionZ - 5 : lastCollectibleZ - COLLECTIBLE_MIN_Z_DISTANCE
+        const firstCollectibleZ = Math.min(sectionZ - 5, baseZ) - Math.random() * 4
+        createCollectible(lane, firstCollectibleZ, point)
+        lastCollectibleZ = firstCollectibleZ
       }
       if (Math.random() < 0.4) {
         const point2 = getNextEnergyPoint()
         if (point2) {
           const lane = Math.floor(Math.random() * 3)
-          const collectibleZ = sectionZ - 3 - Math.random() * 6
-          createCollectible(lane, collectibleZ, point2)
+          const secondZ = lastCollectibleZ - COLLECTIBLE_MIN_Z_DISTANCE - Math.random() * 3
+          if (secondZ < sectionZ + 2) {
+            createCollectible(lane, secondZ, point2)
+            lastCollectibleZ = secondZ
+          }
         }
       }
     }
@@ -531,6 +538,7 @@ export function useGameWorld(scene, camera) {
     collectibles.length = 0
     lastSpawnPlayerZ = -999
     nextSectionWorldZ = -48
+    lastCollectibleZ = -9999
   }
 
   // Обновление скорости дороги

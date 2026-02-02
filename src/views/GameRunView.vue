@@ -181,6 +181,11 @@ const hitCount = ref(0)
 const MAX_LIVES = 3
 const livesLeft = computed(() => Math.max(0, MAX_LIVES - hitCount.value))
 let winTriggered = false
+let winDecelerating = false
+let winAnimationStartTime = 0
+const WIN_DECEL_RATE = 0.92
+const WIN_SPEED_THRESHOLD = 0.02
+const WIN_ANIMATION_DURATION_MS = 2500
 
 // Настройки графики: normal | low
 const graphicsQuality = ref('normal')
@@ -364,6 +369,8 @@ const startGame = () => {
   gameRun.startRun()
   hitCount.value = 0
   winTriggered = false
+  winDecelerating = false
+  winAnimationStartTime = 0
   showGameOver.value = false
   launcherOverlayMode.value = 'none'
   if (gamePhysics.value?.setAnimationState) {
@@ -417,24 +424,37 @@ function doOneStep(playerBox, inRollImmuneWindow) {
 
       if (!winTriggered && gameRun.isRunComplete()) {
         winTriggered = true
-        if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
-        gameSpeed.value = 0
-        if (gamePhysics.value?.setAnimationState) gamePhysics.value.setAnimationState('win')
-        setTimeout(() => {
-          gameOverType.value = 'win'
-          showGameOver.value = true
-          launcherOverlayMode.value = 'none'
-          endGame(true)
-        }, 800)
+        winDecelerating = true
       }
     }
 
-  // Плавный набор: к 40% дистанции выходим на почти макс. скорость
-  const progress = (gameRun.distanceProgress?.value ?? 0) / 100
-  const maxSpeed = 0.52
-  const rampProgress = Math.min(1, progress / 0.4)
-  const targetSpeed = 0.15 + (maxSpeed - 0.15) * rampProgress
-  gameSpeed.value = 0.92 * gameSpeed.value + 0.08 * targetSpeed
+    // Плавная остановка при победе
+    if (winDecelerating) {
+      gameSpeed.value *= WIN_DECEL_RATE
+      if (gameWorld.value) gameWorld.value.setRoadSpeed(gameSpeed.value)
+      if (gameSpeed.value < WIN_SPEED_THRESHOLD) {
+        gameSpeed.value = 0
+        if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
+        winDecelerating = false
+        if (gamePhysics.value?.setAnimationState) gamePhysics.value.setAnimationState('win')
+        winAnimationStartTime = performance.now()
+      }
+    } else if (winAnimationStartTime > 0) {
+      if (performance.now() - winAnimationStartTime >= WIN_ANIMATION_DURATION_MS) {
+        gameOverType.value = 'win'
+        showGameOver.value = true
+        launcherOverlayMode.value = 'none'
+        endGame(true)
+        winAnimationStartTime = 0
+      }
+    } else if (!winTriggered) {
+      // Плавный набор: к 40% дистанции выходим на почти макс. скорость
+      const progress = (gameRun.distanceProgress?.value ?? 0) / 100
+      const maxSpeed = 0.52
+      const rampProgress = Math.min(1, progress / 0.4)
+      const targetSpeed = 0.15 + (maxSpeed - 0.15) * rampProgress
+      gameSpeed.value = 0.92 * gameSpeed.value + 0.08 * targetSpeed
+    }
 }
 
 const stopGameLoop = () => {
