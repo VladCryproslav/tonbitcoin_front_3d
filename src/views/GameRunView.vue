@@ -127,11 +127,10 @@
       @close="handleGraphicsInfoClose"
     >
       <template #header>
-        Настройки графики
+        {{ t('game.graphics_modal_title') }}
       </template>
       <template #modal-body>
-        Для вашего устройства мы рекомендуем режим графики «Низко».
-        Включение режима «Нормально» может снизить FPS и увеличить нагрев устройства.
+        {{ t('game.graphics_modal_body') }}
       </template>
     </InfoModal>
   </div>
@@ -191,7 +190,7 @@ const showGraphicsInfoModal = ref(false)
 const pendingGraphicsQuality = ref(null)
 
 const graphicsLabel = computed(() =>
-  graphicsQuality.value === 'normal' ? 'Графика: Нормально' : 'Графика: Низко'
+  graphicsQuality.value === 'normal' ? t('game.graphics_label_normal') : t('game.graphics_label_low')
 )
 
 const onSceneReady = ({ scene: threeScene, camera: threeCamera, renderer: threeRenderer }) => {
@@ -548,11 +547,33 @@ const exitToMain = () => {
 
 const detectWeakDevice = () => {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
+
+  const ua = navigator.userAgent || ''
   const cores = navigator.hardwareConcurrency || 4
   const dpr = window.devicePixelRatio || 1
+  const mem = navigator.deviceMemory || 0
+  const width = window.innerWidth || 0
+  const height = window.innerHeight || 0
+  const shortSide = Math.min(width, height)
 
-  if (cores <= 2) return true
-  if (cores <= 4 && dpr >= 2) return true
+  const isIOS = /iPhone|iPad|iPod/.test(ua)
+
+  // Современные iOS‑устройства с высоким DPI и >=4 потоками считаем достаточно мощными,
+  // не форсим для них low по умолчанию — пользователь сам может переключиться.
+  if (isIOS && dpr >= 3 && cores >= 4) {
+    return false
+  }
+
+  // Явно слабые устройства: очень мало ядер или мало памяти (там, где она доступна).
+  if (cores && cores <= 2) return true
+  if (mem && mem <= 2) return true
+
+  // Старые/маленькие телефоны: маленький экран + низкий DPI + не больше 4 ядер.
+  // Это, в частности, бьёт по типичным 4.7" устройствам вроде iPhone SE 1‑го поколения.
+  if (!isIOS && cores <= 4 && dpr <= 2 && shortSide && shortSide <= 640) {
+    return true
+  }
+
   return false
 }
 

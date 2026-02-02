@@ -461,7 +461,11 @@
     "win_subtitle": "Great run — energy has been credited.",
     "lose_title": "You lost",
     "lose_subtitle": "Try again to collect more energy.",
-    "back_to_main": "Back to main screen"
+    "back_to_main": "Back to main screen",
+    "graphics_label_normal": "Graphics: Normal",
+    "graphics_label_low": "Graphics: Low",
+    "graphics_modal_title": "Graphics settings",
+    "graphics_modal_body": "For your device we recommend the \"Low\" graphics mode.\nEnabling the \"Normal\" mode may reduce FPS and increase device temperature."
   },
   "common": {
     "lvl": "lvl",
