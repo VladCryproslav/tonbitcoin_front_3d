@@ -270,25 +270,43 @@ export function useGameWorld(scene, camera) {
     transparent: true,
     opacity: 0.9
   })
+  const sharedCollectibleOuterMatGlow = new MeshStandardMaterial({
+    color: 0x00FF88,
+    emissive: 0x00FF88,
+    emissiveIntensity: 1.2,
+    transparent: true,
+    opacity: 0.95
+  })
   const sharedCollectibleInnerGeo = new BoxGeometry(0.4, 0.4, 0.4)
   const sharedCollectibleInnerMat = new MeshStandardMaterial({
     color: 0xFFFFFF,
     emissive: 0xFFFFFF,
     emissiveIntensity: 1
   })
+  const sharedCollectibleInnerMatGlow = new MeshStandardMaterial({
+    color: 0xAAFFCC,
+    emissive: 0xAAFFCC,
+    emissiveIntensity: 1.5
+  })
 
   const inactiveCollectibles = []
   const COLLECTIBLE_HALF = 0.3
 
-  // Создание собираемого предмета (энергия)
-  const createCollectible = (lane, z) => {
+  // Создание собираемого предмета (энергия). point = { value, isGlowing }
+  const createCollectible = (lane, z, point) => {
     let group
+    const isGlow = point?.isGlowing ?? false
+    const outerMat = isGlow ? sharedCollectibleOuterMatGlow : sharedCollectibleOuterMat
+    const innerMat = isGlow ? sharedCollectibleInnerMatGlow : sharedCollectibleInnerMat
+
     if (inactiveCollectibles.length > 0) {
       group = inactiveCollectibles.pop()
+      group.children[0].material = outerMat
+      group.children[1].material = innerMat
     } else {
       group = new Group()
-      const collectible = new Mesh(sharedCollectibleOuterGeo, sharedCollectibleOuterMat)
-      const inner = new Mesh(sharedCollectibleInnerGeo, sharedCollectibleInnerMat)
+      const collectible = new Mesh(sharedCollectibleOuterGeo, outerMat)
+      const inner = new Mesh(sharedCollectibleInnerGeo, innerMat)
       group.add(collectible)
       group.add(inner)
       group.userData.bounds = { half: COLLECTIBLE_HALF }
@@ -300,6 +318,7 @@ export function useGameWorld(scene, camera) {
     group.visible = true
     group.userData.lane = lane
     group.userData.collected = false
+    group.userData.energyValue = point?.value ?? 0.5
     collectibles.push(group)
     return group
   }
@@ -308,7 +327,8 @@ export function useGameWorld(scene, camera) {
   // В каждом секторе один из 4 типов: нет преграды, непроходимая (кувырок), прыжок, кувырок.
   // Правило: три в ряд непроходимых (IMPASSABLE) быть не может — максимум 2 в секции.
   // Между секциями — минимальное расстояние SECTION_SPACING по playerZ.
-  const spawnObjects = (playerZ) => {
+  // getNextEnergyPoint: () => { value, isGlowing } | null — очередь поинтов из useGameRun
+  const spawnObjects = (playerZ, getNextEnergyPoint) => {
     if (playerZ - lastSpawnPlayerZ < SECTION_SPACING) return
 
     lastSpawnPlayerZ = playerZ
@@ -334,17 +354,22 @@ export function useGameWorld(scene, camera) {
       }
     }
 
-    // Собираемые предметы: чаще спавн и иногда два за секцию
-    const collectibleChance = 0.72
-    if (Math.random() < collectibleChance) {
-      const lane = Math.floor(Math.random() * 3)
-      const collectibleZ = sectionZ - 5 - Math.random() * 8
-      createCollectible(lane, collectibleZ)
-    }
-    if (Math.random() < 0.35) {
-      const lane = Math.floor(Math.random() * 3)
-      const collectibleZ = sectionZ - 3 - Math.random() * 6
-      createCollectible(lane, collectibleZ)
+    // Собираемые предметы: из очереди поинтов (1–2 за секцию)
+    if (typeof getNextEnergyPoint === 'function') {
+      const point = getNextEnergyPoint()
+      if (point) {
+        const lane = Math.floor(Math.random() * 3)
+        const collectibleZ = sectionZ - 5 - Math.random() * 8
+        createCollectible(lane, collectibleZ, point)
+      }
+      if (Math.random() < 0.4) {
+        const point2 = getNextEnergyPoint()
+        if (point2) {
+          const lane = Math.floor(Math.random() * 3)
+          const collectibleZ = sectionZ - 3 - Math.random() * 6
+          createCollectible(lane, collectibleZ, point2)
+        }
+      }
     }
   }
 
@@ -443,9 +468,9 @@ export function useGameWorld(scene, camera) {
     }
   }
 
-  // Обновление собираемых предметов
-  // Аналогично препятствиям, используем ручной AABB по известным размерам куба.
-  const updateCollectibles = (playerBox, onCollect) => {
+  // Обновление собираемых предметов.
+  // onCollect(energy) — при сборе, onPassed() — при уходе за экран без сбора.
+  const updateCollectibles = (playerBox, onCollect, onPassed) => {
     _collectiblesToRemove.length = 0
     const collectiblesToRemove = _collectiblesToRemove
 
@@ -461,7 +486,6 @@ export function useGameWorld(scene, camera) {
       const inCollideZone = collectible.position.z >= COLLIDE_Z_MIN && collectible.position.z <= COLLIDE_Z_MAX
 
       if (playerBox && inCollideZone) {
-        // Внешний куб энергии 0.6x0.6x0.6, центр в collectible.position.
         const half = collectible.userData.bounds?.half ?? COLLECTIBLE_HALF
         const cx = collectible.position.x
         const cy = collectible.position.y
@@ -484,13 +508,13 @@ export function useGameWorld(scene, camera) {
 
         if (intersects) {
           collectible.userData.collected = true
-          // Мгновенно убираем объект с экрана, даже до remove,
-          // чтобы он гарантированно не "ехал" с игроком один-два кадра.
           collectible.visible = false
           collectible.position.y = -9999
           collectible.position.z = -9999
 
-          onCollect(0.5) // Количество энергии
+          const energy = collectible.userData.energyValue ?? 0.5
+          onCollect(energy)
+          if (typeof onPassed === 'function') onPassed()
           collectiblesToRemove.push(index)
           inactiveCollectibles.push(collectible)
           return
@@ -498,6 +522,7 @@ export function useGameWorld(scene, camera) {
       }
 
       if (collectible.position.z > 6) {
+        if (typeof onPassed === 'function') onPassed()
         collectiblesToRemove.push(index)
         collectible.visible = false
         inactiveCollectibles.push(collectible)

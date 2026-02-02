@@ -11,7 +11,7 @@
       v-if="gameRun.isRunning || gameRun.isPaused"
       :energy="gameRun.energyCollected"
       :distance="gameRun.distance"
-      :power="gameRun.currentPower"
+      :power="gameRun.distanceProgress"
       :lives="livesLeft"
       :max-lives="MAX_LIVES"
       :show-pause="gameRun.isRunning && !gameRun.isPaused && !showGameOver"
@@ -182,6 +182,7 @@ const lastSpeedIncrease = ref(0)
 const hitCount = ref(0)
 const MAX_LIVES = 3
 const livesLeft = computed(() => Math.max(0, MAX_LIVES - hitCount.value))
+let winTriggered = false
 
 // Настройки графики: normal | low
 const graphicsQuality = ref('normal')
@@ -249,7 +250,7 @@ const startThreeLoop = () => {
         frameTime -= FIXED_STEP_MS
         steps++
       }
-      if (gameWorld.value) gameWorld.value.spawnObjects(playerZ.value)
+      if (gameWorld.value) gameWorld.value.spawnObjects(playerZ.value, gameRun.getNextEnergyPoint)
       if (gameEffects.value && graphicsQuality.value === 'normal') {
         gameEffects.value.updateEffects()
       }
@@ -365,6 +366,7 @@ const startGame = () => {
   }
   gameRun.startRun()
   hitCount.value = 0
+  winTriggered = false
   showGameOver.value = false
   launcherOverlayMode.value = 'none'
   if (gamePhysics.value?.setAnimationState) {
@@ -411,8 +413,22 @@ function doOneStep(playerBox, inRollImmuneWindow) {
           playerBox,
           (energy) => {
             gameRun.collectEnergy(energy)
-          }
+          },
+          () => gameRun.markPointPassed()
         )
+      }
+
+      if (!winTriggered && gameRun.isRunComplete()) {
+        winTriggered = true
+        if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
+        gameSpeed.value = 0
+        if (gamePhysics.value?.setAnimationState) gamePhysics.value.setAnimationState('win')
+        setTimeout(() => {
+          gameOverType.value = 'win'
+          showGameOver.value = true
+          launcherOverlayMode.value = 'none'
+          endGame(true)
+        }, 800)
       }
     }
 

@@ -51,9 +51,8 @@
         <div class="power-label">Дистанция</div>
         <div class="power-bar">
           <div
-            class="power-fill"
+            class="power-fill power-fill--distance"
             :style="{ width: `${Math.max(0, Math.min(100, power))}%` }"
-            :class="{ 'low-power': power < 30, 'critical-power': power < 10 }"
           ></div>
         </div>
         <div class="power-value">{{ Math.round(power) }}%</div>
@@ -236,17 +235,11 @@ const formatEnergy = (value) => {
 
 .power-fill {
   height: 100%;
-  background: linear-gradient(90deg, #00ff00, #ffff00);
   transition: width 0.3s ease;
   border-radius: 4px;
 
-  &.low-power {
-    background: linear-gradient(90deg, #ffff00, #ff8800);
-  }
-
-  &.critical-power {
-    background: linear-gradient(90deg, #ff8800, #ff0000);
-    animation: pulse 1s ease-in-out infinite;
+  &--distance {
+    background: linear-gradient(90deg, #00ff00, #ffff00);
   }
 }
 

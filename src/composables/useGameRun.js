@@ -2,9 +2,35 @@ import { ref, computed } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { host } from '../../axios.config'
 
+// Количество энергетических поинтов за забег (редактируемо)
+const ENERGY_POINTS_COUNT = 100
+
+/**
+ * Генерирует массив поинтов энергии: 0.5%, 1%, 2% от storage.
+ * Сумма = storage. 2% поинты — светящиеся (isGlowing).
+ * Распределение: 40×1%, 40×0.5%, 20×2% = 100%
+ */
+function generateEnergyPoints(storageKw) {
+  const storage = Math.max(1, Number(storageKw) || 70)
+  const points = []
+  for (let i = 0; i < 40; i++) points.push({ pct: 1, isGlowing: false })
+  for (let i = 0; i < 40; i++) points.push({ pct: 0.5, isGlowing: false })
+  for (let i = 0; i < 20; i++) points.push({ pct: 2, isGlowing: true })
+
+  for (let i = points.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[points[i], points[j]] = [points[j], points[i]]
+  }
+
+  return points.map((p) => ({
+    value: (storage * p.pct) / 100,
+    isGlowing: p.isGlowing
+  }))
+}
+
 export function useGameRun() {
   const app = useAppStore()
-  
+
   const isRunning = ref(false)
   const isPaused = ref(false)
   const distance = ref(0)
@@ -12,11 +38,22 @@ export function useGameRun() {
   const obstaclesHit = ref(0)
   const runStartTime = ref(0)
   const runDuration = ref(0)
-  
+
   const currentPower = computed(() => app.power || 100)
   const currentEnergy = computed(() => app.score || 0)
   const currentStorage = computed(() => app.storage || 0)
-  
+
+  const energyPoints = ref([])
+  const energyPointsIndex = ref(0)
+  const passedPointsCount = ref(0)
+
+  const totalPoints = computed(() => energyPoints.value.length)
+  const distanceProgress = computed(() => {
+    const total = totalPoints.value
+    if (total <= 0) return 0
+    return Math.min(100, (passedPointsCount.value / total) * 100)
+  })
+
   const startRun = () => {
     isRunning.value = true
     isPaused.value = false
@@ -24,42 +61,61 @@ export function useGameRun() {
     energyCollected.value = 0
     obstaclesHit.value = 0
     runStartTime.value = Date.now()
+
+    const storageKw = app.user?.storage_limit ?? app.storage ?? 70
+    energyPoints.value = generateEnergyPoints(storageKw)
+    energyPointsIndex.value = 0
+    passedPointsCount.value = 0
   }
-  
+
+  const getNextEnergyPoint = () => {
+    const idx = energyPointsIndex.value
+    if (idx >= energyPoints.value.length) return null
+    energyPointsIndex.value = idx + 1
+    return energyPoints.value[idx]
+  }
+
+  const markPointPassed = () => {
+    passedPointsCount.value += 1
+  }
+
+  const isRunComplete = () =>
+    totalPoints.value > 0 && passedPointsCount.value >= totalPoints.value
+
   const pauseRun = () => {
     isPaused.value = true
   }
-  
+
   const resumeRun = () => {
     isPaused.value = false
     runStartTime.value = Date.now() - runDuration.value * 1000
   }
-  
+
   const stopRun = () => {
     isRunning.value = false
     isPaused.value = false
   }
-  
+
   const updateDistance = (newDistance) => {
     distance.value = newDistance
     if (runStartTime.value > 0) {
       runDuration.value = (Date.now() - runStartTime.value) / 1000
     }
   }
-  
+
   const collectEnergy = (amount) => {
     energyCollected.value += amount
   }
-  
+
   const hitObstacle = () => {
     obstaclesHit.value++
   }
-  
+
   const completeRun = async () => {
     if (!isRunning.value) return null
-    
+
     const finalDuration = runDuration.value || ((Date.now() - runStartTime.value) / 1000)
-    
+
     const runData = {
       distance: distance.value,
       energy_collected: energyCollected.value,
@@ -68,16 +124,16 @@ export function useGameRun() {
       power_used: Math.max(0, 100 - currentPower.value),
       bonus_multiplier: 1.0 // Можно добавить логику бустеров
     }
-    
+
     try {
       const response = await host.post('game-run-complete/', runData)
-      
+
       if (response.status === 200) {
         // Обновляем состояние приложения
         app.setScore(response.data.total_energy)
         app.setStorage(response.data.storage)
         app.setPower(response.data.power)
-        
+
         return {
           success: true,
           energyGained: response.data.energy_gained,
@@ -96,10 +152,10 @@ export function useGameRun() {
     } finally {
       stopRun()
     }
-    
+
     return null
   }
-  
+
   return {
     isRunning,
     isPaused,
@@ -110,6 +166,13 @@ export function useGameRun() {
     currentPower,
     currentEnergy,
     currentStorage,
+    energyPoints,
+    totalPoints,
+    passedPointsCount,
+    distanceProgress,
+    getNextEnergyPoint,
+    markPointPassed,
+    isRunComplete,
     startRun,
     pauseRun,
     resumeRun,
