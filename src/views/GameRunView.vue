@@ -121,6 +121,19 @@
         </div>
       </div>
     </div>
+
+    <InfoModal
+      v-if="showGraphicsInfoModal"
+      @close="handleGraphicsInfoClose"
+    >
+      <template #header>
+        Настройки графики
+      </template>
+      <template #modal-body>
+        Для вашего устройства мы рекомендуем режим графики «Низко».
+        Включение режима «Нормально» может снизить FPS и увеличить нагрев устройства.
+      </template>
+    </InfoModal>
   </div>
 </template>
 
@@ -131,6 +144,7 @@ import { useI18n } from 'vue-i18n'
 import GameScene from '@/components/game/GameScene.vue'
 import GameUI from '@/components/game/GameUI.vue'
 import GameControls from '@/components/game/GameControls.vue'
+import InfoModal from '@/components/InfoModal.vue'
 import { useGameRun } from '@/composables/useGameRun'
 import { useGamePhysics } from '@/composables/useGamePhysics'
 import { useGameWorld } from '@/composables/useGameWorld'
@@ -170,7 +184,12 @@ const hitCount = ref(0)
 const MAX_LIVES = 3
 const livesLeft = computed(() => Math.max(0, MAX_LIVES - hitCount.value))
 
-const graphicsQuality = ref('normal') // 'normal' | 'low'
+// Настройки графики: normal | low
+const graphicsQuality = ref('normal')
+const isWeakDevice = ref(false)
+const showGraphicsInfoModal = ref(false)
+const pendingGraphicsQuality = ref(null)
+
 const graphicsLabel = computed(() =>
   graphicsQuality.value === 'normal' ? 'Графика: Нормально' : 'Графика: Низко'
 )
@@ -301,6 +320,17 @@ const applyGraphicsQuality = () => {
   })
 }
 
+const applyGraphicsQualityAndSave = () => {
+  applyGraphicsQuality()
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem('game_graphics_quality', graphicsQuality.value)
+    } catch {
+      // ignore quota / privacy errors
+    }
+  }
+}
+
 const startGame = () => {
   // Если забег уже идёт — игнорируем повторный старт
   if (gameRun.isRunning.value && !gameRun.isPaused.value) return
@@ -401,8 +431,18 @@ const stopGameLoop = () => {
 }
 
 const toggleGraphicsQuality = () => {
-  graphicsQuality.value = graphicsQuality.value === 'normal' ? 'low' : 'normal'
-  applyGraphicsQuality()
+  const current = graphicsQuality.value
+  const next = current === 'normal' ? 'low' : 'normal'
+
+  // Слабое устройство и попытка включить "Нормально" — показываем рекомендацию.
+  if (isWeakDevice.value && current === 'low' && next === 'normal') {
+    pendingGraphicsQuality.value = next
+    showGraphicsInfoModal.value = true
+    return
+  }
+
+  graphicsQuality.value = next
+  applyGraphicsQualityAndSave()
 }
 
 const endGame = async (isWinByState = false) => {
@@ -506,8 +546,41 @@ const exitToMain = () => {
   router.push('/')
 }
 
+const detectWeakDevice = () => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
+  const cores = navigator.hardwareConcurrency || 4
+  const dpr = window.devicePixelRatio || 1
+
+  if (cores <= 2) return true
+  if (cores <= 4 && dpr >= 2) return true
+  return false
+}
+
+const handleGraphicsInfoClose = (e) => {
+  showGraphicsInfoModal.value = false
+  if (e?.check && pendingGraphicsQuality.value) {
+    graphicsQuality.value = pendingGraphicsQuality.value
+    applyGraphicsQualityAndSave()
+  }
+  pendingGraphicsQuality.value = null
+}
+
 onMounted(() => {
   // Инициализация при монтировании
+  isWeakDevice.value = detectWeakDevice()
+
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = window.localStorage?.getItem('game_graphics_quality')
+      if (saved === 'normal' || saved === 'low') {
+        graphicsQuality.value = saved
+      } else {
+        graphicsQuality.value = isWeakDevice.value ? 'low' : 'normal'
+      }
+    } catch {
+      graphicsQuality.value = isWeakDevice.value ? 'low' : 'normal'
+    }
+  }
 })
 
 onUnmounted(() => {
