@@ -169,13 +169,13 @@ export function useGameWorld(scene, camera) {
     if (backgroundCreated) return
     backgroundCreated = true
     // Небо — одна плоскость, один материал, однородный цвет (1 draw call вместо 3)
-    const skyGeometry = new PlaneGeometry(80, 50)
+    const skyGeometry = new PlaneGeometry(100, 60)
     const skyMaterial = new MeshBasicMaterial({
       color: new Color().setHSL(0.55, 0.5, 0.82),
       side: 2 // DoubleSide
     })
     const sky = new Mesh(skyGeometry, skyMaterial)
-    sky.position.set(0, 12, -35)
+    sky.position.set(0, 14, -55)
     sky.rotation.x = -Math.PI / 3
     sky.castShadow = false
     sky.receiveShadow = false
