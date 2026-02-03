@@ -15,7 +15,10 @@ const BARRIER_PATHS = {
   roll: '/models/roll_barrier.glb',
   impassable: '/models/impassable_barrier.glb'
 }
-const TOKEN_PATH = '/models/token_v1.glb'
+const TOKEN_PATHS = {
+  v1: '/models/token_v1.glb',
+  v2: '/models/token_v2.glb'
+}
 
 export function useGameWorld(scene, camera) {
   // Длина одного сегмента дороги и количество сегментов.
@@ -102,7 +105,8 @@ export function useGameWorld(scene, camera) {
     [OBSTACLE_KIND.ROLL]: null,
     [OBSTACLE_KIND.IMPASSABLE]: null
   }
-  let tokenTemplate = null
+  let tokenV1Template = null
+  let tokenV2Template = null
 
   const loadBarrierModels = () => {
     const loader = new GLTFLoader()
@@ -116,20 +120,23 @@ export function useGameWorld(scene, camera) {
       }).catch((err) => {
         console.warn(`Barrier ${kind} load failed:`, err)
       })
-    const loadToken = () =>
-      loader.loadAsync(TOKEN_PATH).then((gltf) => {
-        tokenTemplate = gltf.scene
-        tokenTemplate.traverse((child) => {
+    const loadToken = (key) =>
+      loader.loadAsync(TOKEN_PATHS[key]).then((gltf) => {
+        const tmpl = gltf.scene
+        tmpl.traverse((child) => {
           if (child.isMesh) child.castShadow = true
         })
+        if (key === 'v1') tokenV1Template = tmpl
+        else tokenV2Template = tmpl
       }).catch((err) => {
-        console.warn('Token load failed:', err)
+        console.warn(`Token ${key} load failed:`, err)
       })
     return Promise.all([
       loadBarrier(OBSTACLE_KIND.JUMP),
       loadBarrier(OBSTACLE_KIND.ROLL),
       loadBarrier(OBSTACLE_KIND.IMPASSABLE),
-      loadToken()
+      loadToken('v1'),
+      loadToken('v2')
     ])
   }
 
@@ -344,8 +351,8 @@ export function useGameWorld(scene, camera) {
   const inactiveCollectibles = []
   const COLLECTIBLE_HALF = 0.3
 
-  // Создание собираемого предмета (энергия). point = { value, isGlowing }
-  // token_v1.glb: origin по центру модели. Box: origin в центре.
+  // Создание собираемого предмета (энергия). point = { value, isGlowing }.
+  // token_v1.glb/token_v2.glb: origin по центру модели. Box: origin в центре.
   const createCollectible = (lane, z, point) => {
     const isGlow = point?.isGlowing ?? false
     const mat = isGlow ? sharedCollectibleMatGlow : sharedCollectibleMat
@@ -354,20 +361,31 @@ export function useGameWorld(scene, camera) {
     let mesh
     if (inactiveCollectibles.length > 0) {
       mesh = inactiveCollectibles.pop()
-      if (mesh.isMesh) mesh.material = mat
-    } else if (tokenTemplate) {
-      mesh = tokenTemplate.clone(true)
-      mesh.traverse((child) => {
-        if (child.isMesh) child.castShadow = true
-      })
-      mesh.userData.bounds = bounds
-      mesh.userData.type = 'collectible'
-      scene.add(mesh)
-    } else {
-      mesh = new Mesh(sharedCollectibleGeo, mat)
-      mesh.userData.bounds = bounds
-      mesh.userData.type = 'collectible'
-      scene.add(mesh)
+      // Если в пуле старый куб, а токены уже есть — избавляемся от него и создаём GLB.
+      if (mesh.isMesh && (tokenV1Template || tokenV2Template)) {
+        scene.remove(mesh)
+        mesh = null
+      } else if (mesh.isMesh) {
+        mesh.material = mat
+      }
+    }
+
+    if (!mesh) {
+      const template = isGlow ? (tokenV2Template || tokenV1Template) : (tokenV1Template || tokenV2Template)
+      if (template) {
+        mesh = template.clone(true)
+        mesh.traverse((child) => {
+          if (child.isMesh) child.castShadow = true
+        })
+        mesh.userData.bounds = bounds
+        mesh.userData.type = 'collectible'
+        scene.add(mesh)
+      } else {
+        mesh = new Mesh(sharedCollectibleGeo, mat)
+        mesh.userData.bounds = bounds
+        mesh.userData.type = 'collectible'
+        scene.add(mesh)
+      }
     }
 
     mesh.position.set(lanes[lane], 1, z)

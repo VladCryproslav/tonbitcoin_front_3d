@@ -271,7 +271,7 @@ const startThreeLoop = () => {
       }
     }
 
-    // 3) Камера: цель из физики напрямую (не из game loop), плавное следование
+    // 3) Камера: цель из физики напрямую (не из game loop), плавное следование без качания
     if (camera && gamePhysics.value?.getCameraLaneX) {
       const now = performance.now() / 1000
       const dt = lastCameraTime > 0 ? Math.min(now - lastCameraTime, 0.05) : 0.016
@@ -281,9 +281,8 @@ const startThreeLoop = () => {
       const k = -Math.log(0.05) / CAMERA_SMOOTH_TIME
       const t = 1 - Math.exp(-k * dt)
       camera.position.x += (targetCamX - camera.position.x) * t
-      const cameraBob = Math.sin(Date.now() * 0.003) * 0.08
-      camera.position.y = 2.5 + cameraBob
-      camera.lookAt(camera.position.x, -0.15 + cameraBob * 0.5, -18)
+      camera.position.y = 2.5
+      camera.lookAt(camera.position.x, -0.15, -18)
     }
     if (camera && shakeFramesLeft > 0) {
       camera.position.x += (Math.random() - 0.5) * 0.3
