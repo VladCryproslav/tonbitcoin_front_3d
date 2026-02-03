@@ -462,6 +462,9 @@ def main_mint():
     # Данные полные ТОЛЬКО если: is_data_complete вернул True И не было failed_pages
     data_is_complete = is_data_complete(all_nfts, collection_addr, failed_pages) and len(failed_pages) == 0
 
+    # Флаг: использовали ли кэш (для правильной обработки hydro/orbital owners)
+    used_cache = False
+
     # Проверка на полноту данных
     if not is_data_complete(all_nfts, collection_addr, failed_pages):
         logger.error(
@@ -474,6 +477,7 @@ def main_mint():
         if cached_nfts:
             logger.info(f"Using cached NFT data from previous successful request")
             all_nfts = cached_nfts
+            used_cache = True  # Отмечаем, что использовали кэш
             # Пересоздаем users dict из кэшированных данных
             users = {}
             for nft in all_nfts:
@@ -499,58 +503,85 @@ def main_mint():
     hydro_owners = dict()
     orbital_owners = dict()
     
-    # Process default NFTs
-    for nft in all_nfts:
-        address = nft.owner.address.root
-        nft_address = nft.address.root
-        sale = nft.sale
-        meta: dict = nft.metadata
-        name = meta.get("name")
+    # КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: При использовании кэша НЕ строим hydro_owners/orbital_owners из кэша
+    # Вместо этого используем данные из БД, чтобы избежать ложных откатов из-за устаревшего/неполного кэша
+    # При использовании кэша data_is_complete = False, поэтому отключения не произойдет
+    # Но мы все равно строим словари для консистентности кода
+    if used_cache:
+        logger.info("Using database data for hydro/orbital owners (cache was used, data_is_complete=False, no rollbacks will occur)")
         
-        name = name.split("(")[0].strip()
+        # Получаем hydro owners из LinkedUserNFT
+        # НЕ проверяем кэш, так как он может быть неполным/устаревшим
+        # При использовании кэша data_is_complete = False, поэтому отключения не произойдет в любом случае
+        hydro_linked = LinkedUserNFT.objects.select_related("user").filter(
+            nft_address__in=[nft.address.root for nft in all_nfts 
+                            if nft.metadata and nft.metadata.get("name", "").split("(")[0].strip() == "Hydroelectric Power Station"]
+        )
+        for linked in hydro_linked:
+            if linked.user:
+                hydro_owners[linked.user.user_id] = {"nft_address": linked.nft_address}
         
-        if name in ["Hydroelectric Power Station", "Orbital Power Station"]:
-            full_name = meta.get("name")
-            linked = LinkedUserNFT.objects.select_related("user").filter(nft_address=nft_address).first()
-                
-            if linked and (
-                linked.wallet != address or # owner_changed
-                (linked.user and linked.user.ton_wallet and linked.user.ton_wallet != linked.wallet) or # user_changed_wallet
-                (linked.user and UserProfile.objects.filter(ton_wallet=linked.wallet).exclude(id=linked.user.id).exists()) # someone_else_has_wallet
-            ):
-                print(f"linked {linked} owner changed {linked.wallet} != {address} or user changed {linked.user} != {linked.wallet}")
-                linked.delete()
-                linked = None
+        # Получаем orbital owners из OrbitalOwner
+        orbital_db = OrbitalOwner.objects.select_related("user").all()
+        for orbital in orbital_db:
+            if orbital.user:
+                orbital_owners[orbital.user.user_id] = {"nft_address": orbital.nft_address}
+        
+        logger.info(f"Loaded from DB: {len(hydro_owners)} hydro owners, {len(orbital_owners)} orbital owners")
+    else:
+        # При полных данных строим из API ответа (существующий код)
+        # Process default NFTs
+        for nft in all_nfts:
+            address = nft.owner.address.root
+            nft_address = nft.address.root
+            sale = nft.sale
+            meta: dict = nft.metadata
+            name = meta.get("name")
+            
+            name = name.split("(")[0].strip()
+            
+            if name in ["Hydroelectric Power Station", "Orbital Power Station"]:
+                full_name = meta.get("name")
+                linked = LinkedUserNFT.objects.select_related("user").filter(nft_address=nft_address).first()
+                    
+                if linked and (
+                    linked.wallet != address or # owner_changed
+                    (linked.user and linked.user.ton_wallet and linked.user.ton_wallet != linked.wallet) or # user_changed_wallet
+                    (linked.user and UserProfile.objects.filter(ton_wallet=linked.wallet).exclude(id=linked.user.id).exists()) # someone_else_has_wallet
+                ):
+                    print(f"linked {linked} owner changed {linked.wallet} != {address} or user changed {linked.user} != {linked.wallet}")
+                    linked.delete()
+                    linked = None
 
-            
-            if linked is None:
-                linked = LinkedUserNFT.objects.create(
-                    user=UserProfile.objects.filter(ton_wallet=address).first(),
-                    wallet=address,
-                    nft_address=nft_address,
-                )
                 
-            user = linked.user
-            if user is None:
-                user = UserProfile.objects.filter(ton_wallet=address).first()
-                if user:
-                    LinkedUserNFT.objects.filter(wallet=address).update(
-                        user=user
+                if linked is None:
+                    linked = LinkedUserNFT.objects.create(
+                        user=UserProfile.objects.filter(ton_wallet=address).first(),
+                        wallet=address,
+                        nft_address=nft_address,
                     )
+                    
+                user = linked.user
+                if user is None:
+                    user = UserProfile.objects.filter(ton_wallet=address).first()
+                    if user:
+                        LinkedUserNFT.objects.filter(wallet=address).update(
+                            user=user
+                        )
+                    continue
+                
+                # JARVIS
+                if name == "Hydroelectric Power Station":
+                    hydro_owners[user.user_id] = {"nft_address": nft_address}
+                if name == "Orbital Power Station":
+                    if not OrbitalOwner.objects.filter(nft_address=nft_address).exists():
+                        # if this is new orbital station, assign it to the first owner
+                        OrbitalOwner.objects.create(
+                            user=user,
+                            nft_address=nft_address
+                        )
+                    orbital_owners[user.user_id] = {"nft_address": nft_address}
                 continue
-            
-            # JARVIS
-            if name == "Hydroelectric Power Station":
-                hydro_owners[user.user_id] = {"nft_address": nft_address}
-            if name == "Orbital Power Station":
-                if not OrbitalOwner.objects.filter(nft_address=nft_address).exists():
-                    # if this is new orbital station, assign it to the first owner
-                    OrbitalOwner.objects.create(
-                        user=user,
-                        nft_address=nft_address
-                    )
-                orbital_owners[user.user_id] = {"nft_address": nft_address}
-            continue
 
         users.setdefault(
             address,
@@ -574,58 +605,68 @@ def main_mint():
     # print("hello2")
     # Отключаем hydro только при полных данных API (иначе возможны ложные откаты)
     if data_is_complete:
-        for u in UserProfile.objects.filter(
-            has_hydro_station=True,
-            has_orbital_station=False,
-        ).exclude(user_id__in=list(hydro_owners.keys())):
-            try:
-                # Обновляем объект для получения актуальных значений
-                u.refresh_from_db()
-                
-                with transaction.atomic():
-                    # Логируем баланс энергии на момент отката hydro станции
-                    StationRollbackLog.objects.create(
-                        user=u,
-                        from_station=u.station_type,
-                        generation_level=u.generation_level,
-                        storage_level=u.storage_level,
-                        engineer_level=u.engineer_level,
-                        energy=u.energy,
-                        nft_address=u.current_station_nft if u.current_station_nft else "",
-                    )
-                    
-                    UserProfile.objects.filter(user_id=u.user_id).update(
-                        current_station_nft="",
-                        has_hydro_station=False,
-                        energy=F("hydro_prev_energy"),
-                        power=F("hydro_prev_power"),
-                        hydro_prev_power=F("power"),
-                        station_type=F("hydro_prev_station_type"),
-                        storage_level=F("hydro_prev_storage_level"),
-                        generation_level=F("hydro_prev_generation_level"),
-                        engineer_level=F("hydro_prev_engineer_level"),
-                        storage=0,
-                        storage_limit=StoragePowerStationConfig.objects.filter(
-                            station_type=u.hydro_prev_station_type,
-                            level=u.hydro_prev_storage_level,
+        # ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: убедиться, что hydro_owners не пустой
+        # Если пустой при полных данных, это может означать проблему с данными
+        if len(hydro_owners) == 0:
+            logger.warning(
+                "hydro_owners is empty despite data_is_complete=True, "
+                "skipping disconnect to prevent false rollback"
+            )
+        else:
+            for u in UserProfile.objects.filter(
+                has_hydro_station=True,
+                has_orbital_station=False,
+            ).exclude(user_id__in=list(hydro_owners.keys())):
+                try:
+                    # Обновляем объект для получения актуальных значений
+                    u.refresh_from_db()
+
+                    with transaction.atomic():
+                        # Логируем баланс энергии на момент отката hydro станции
+                        StationRollbackLog.objects.create(
+                            user=u,
+                            from_station=u.station_type,
+                            generation_level=u.generation_level,
+                            storage_level=u.storage_level,
+                            engineer_level=u.engineer_level,
+                            energy=u.energy,
+                            nft_address=(
+                                u.current_station_nft if u.current_station_nft else ""
+                            ),
                         )
-                        .first()
-                        .storage_limit,
-                    generation_rate=GenPowerStationConfig.objects.filter(
-                        station_type=u.hydro_prev_station_type,
-                        level=u.hydro_prev_generation_level,
-                    )
-                    .first()
-                    .generation_rate,
-                    kw_per_tap=EngineerConfig.objects.get(
-                        level=u.hydro_prev_engineer_level
-                    ).tap_power
-                    )
-                    # u.check_storage_generation()
-            except Exception:
-                # traceback.print_exc()
-                print("user_id", u.user_id)
-                continue
+
+                        UserProfile.objects.filter(user_id=u.user_id).update(
+                            current_station_nft="",
+                            has_hydro_station=False,
+                            energy=F("hydro_prev_energy"),
+                            power=F("hydro_prev_power"),
+                            hydro_prev_power=F("power"),
+                            station_type=F("hydro_prev_station_type"),
+                            storage_level=F("hydro_prev_storage_level"),
+                            generation_level=F("hydro_prev_generation_level"),
+                            engineer_level=F("hydro_prev_engineer_level"),
+                            storage=0,
+                            storage_limit=StoragePowerStationConfig.objects.filter(
+                                station_type=u.hydro_prev_station_type,
+                                level=u.hydro_prev_storage_level,
+                            )
+                            .first()
+                            .storage_limit,
+                            generation_rate=GenPowerStationConfig.objects.filter(
+                                station_type=u.hydro_prev_station_type,
+                                level=u.hydro_prev_generation_level,
+                            )
+                            .first()
+                            .generation_rate,
+                            kw_per_tap=EngineerConfig.objects.get(
+                                level=u.hydro_prev_engineer_level
+                            ).tap_power,
+                        )
+                        # u.check_storage_generation()
+                except Exception:
+                    # traceback.print_exc()
+                    print("user_id", u.user_id)
+                    continue
     else:
         logger.info("Skipping hydro disconnect: data_is_complete=False")
     
@@ -660,59 +701,76 @@ def main_mint():
 
     # Отключаем orbital только при полных данных API (иначе возможны ложные откаты)
     if data_is_complete:
-        for u in UserProfile.objects.filter(
-            has_orbital_station=True,
-            has_hydro_station=False,
-        ).exclude(user_id__in=list(orbital_owners.keys())):
-            try:
-                # Обновляем объект для получения актуальных значений
-                u.refresh_from_db()
-                
-                with transaction.atomic():
-                    # Логируем баланс энергии на момент отката orbital станции
-                    StationRollbackLog.objects.create(
-                        user=u,
-                        from_station=u.station_type,
-                        generation_level=u.generation_level,
-                        storage_level=u.storage_level,
-                        engineer_level=u.engineer_level,
-                        energy=u.energy,
-                        nft_address=u.current_station_nft if u.current_station_nft else "",
-                    )
-                    
-                    UserProfile.objects.filter(user_id=u.user_id).update(
-                        current_station_nft="",
-                        orbital_force_basic=False,
-                        has_orbital_station=False,
-                        energy=F("hydro_prev_energy")+(F("energy") if (u.orbital_first_owner and not u.orbital_is_blue) else 0),
-                        power=F("hydro_prev_power"),
-                        hydro_prev_power=F("power"),
-                        station_type=F("hydro_prev_station_type"),
-                        storage_level=F("hydro_prev_storage_level"),
-                        generation_level=F("hydro_prev_generation_level"),
-                        engineer_level=F("hydro_prev_engineer_level"),
-                        storage=0,
-                        storage_limit=StoragePowerStationConfig.objects.filter(
-                            station_type=u.hydro_prev_station_type,
-                            level=u.hydro_prev_storage_level,
+        # ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: убедиться, что orbital_owners не пустой
+        # Если пустой при полных данных, это может означать проблему с данными
+        if len(orbital_owners) == 0:
+            logger.warning(
+                "orbital_owners is empty despite data_is_complete=True, "
+                "skipping disconnect to prevent false rollback"
+            )
+        else:
+            for u in UserProfile.objects.filter(
+                has_orbital_station=True,
+                has_hydro_station=False,
+            ).exclude(user_id__in=list(orbital_owners.keys())):
+                try:
+                    # Обновляем объект для получения актуальных значений
+                    u.refresh_from_db()
+
+                    with transaction.atomic():
+                        # Логируем баланс энергии на момент отката orbital станции
+                        StationRollbackLog.objects.create(
+                            user=u,
+                            from_station=u.station_type,
+                            generation_level=u.generation_level,
+                            storage_level=u.storage_level,
+                            engineer_level=u.engineer_level,
+                            energy=u.energy,
+                            nft_address=(
+                                u.current_station_nft if u.current_station_nft else ""
+                            ),
                         )
-                        .first()
-                        .storage_limit,
-                    generation_rate=GenPowerStationConfig.objects.filter(
-                        station_type=u.hydro_prev_station_type,
-                        level=u.hydro_prev_generation_level,
-                    )
-                    .first()
-                    .generation_rate,
-                    kw_per_tap=EngineerConfig.objects.get(
-                        level=u.hydro_prev_engineer_level
-                    ).tap_power
-                    )
-                    # u.check_storage_generation()
-            except Exception:
-                # traceback.print_exc()
-                print("user_id", u.user_id)
-                continue
+
+                        UserProfile.objects.filter(user_id=u.user_id).update(
+                            current_station_nft="",
+                            orbital_force_basic=False,
+                            has_orbital_station=False,
+                            energy=F("hydro_prev_energy")
+                            + (
+                                F("energy")
+                                if (
+                                    u.orbital_first_owner and not u.orbital_is_blue
+                                )
+                                else 0
+                            ),
+                            power=F("hydro_prev_power"),
+                            hydro_prev_power=F("power"),
+                            station_type=F("hydro_prev_station_type"),
+                            storage_level=F("hydro_prev_storage_level"),
+                            generation_level=F("hydro_prev_generation_level"),
+                            engineer_level=F("hydro_prev_engineer_level"),
+                            storage=0,
+                            storage_limit=StoragePowerStationConfig.objects.filter(
+                                station_type=u.hydro_prev_station_type,
+                                level=u.hydro_prev_storage_level,
+                            )
+                            .first()
+                            .storage_limit,
+                            generation_rate=GenPowerStationConfig.objects.filter(
+                                station_type=u.hydro_prev_station_type,
+                                level=u.hydro_prev_generation_level,
+                            )
+                            .first()
+                            .generation_rate,
+                            kw_per_tap=EngineerConfig.objects.get(
+                                level=u.hydro_prev_engineer_level
+                            ).tap_power,
+                        )
+                        # u.check_storage_generation()
+                except Exception:
+                    # traceback.print_exc()
+                    print("user_id", u.user_id)
+                    continue
     else:
         logger.info("Skipping orbital disconnect: data_is_complete=False")
     
