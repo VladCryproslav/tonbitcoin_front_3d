@@ -568,8 +568,8 @@ export function useGameWorld(scene, camera) {
           pMax.z >= minZ && pMin.z <= maxZ
 
         if (kind === OBSTACLE_KIND.ROLL) {
-          const bottomY = minY
-          const underBar = pMax.y < bottomY + 0.4
+          const barBottom = minY
+          const underBar = pMax.y < barBottom
           const safeFromRoll = isSliding || underBar || inRollImmuneWindow
           if (!safeFromRoll && !obstacle.userData.hit && intersects) {
             obstacle.userData.hit = true

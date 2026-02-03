@@ -369,10 +369,10 @@ const startGame = () => {
   playerZ.value = 0
   gameSpeed.value = 0.15
   if (gameWorld.value) {
-    // Очищаем объекты прошлого забега и пересоздаём дорожку/разметку
     gameWorld.value.clearAll()
     gameWorld.value.createRoad()
   }
+  applyGraphicsQuality()
   if (gamePhysics.value) {
     gamePhysics.value.resetSlideState?.()
     gamePhysics.value.resetLaneTransition?.()

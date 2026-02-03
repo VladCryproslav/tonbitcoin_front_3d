@@ -62,12 +62,19 @@ const initScene = () => {
   scene.add(ambientLight)
 
   const directionalLight = new DirectionalLight(0xffffff, 1.0) // Очень яркое
-  directionalLight.position.set(5, 10, 5)
+  directionalLight.position.set(0, 12, -6)
+  directionalLight.target.position.set(0, 0, 0)
   directionalLight.castShadow = props.graphicsQuality !== 'low'
   const shadowSize = props.graphicsQuality === 'normal' ? 2048 : 1024
   if (props.graphicsQuality !== 'low') {
     directionalLight.shadow.mapSize.width = shadowSize
     directionalLight.shadow.mapSize.height = shadowSize
+    directionalLight.shadow.camera.near = 0.5
+    directionalLight.shadow.camera.far = 25
+    directionalLight.shadow.camera.left = -4
+    directionalLight.shadow.camera.right = 4
+    directionalLight.shadow.camera.top = 4
+    directionalLight.shadow.camera.bottom = -4
   }
   scene.add(directionalLight)
 
