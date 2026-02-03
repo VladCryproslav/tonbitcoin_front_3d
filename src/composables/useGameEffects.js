@@ -1,4 +1,3 @@
-import { ref } from 'vue'
 import {
   BufferGeometry,
   Float32BufferAttribute,
@@ -8,10 +7,10 @@ import {
 
 const ENERGY_PARTICLE_COUNT = 20
 const COLLISION_PARTICLE_COUNT = 15
-const POOL_SIZE = 4
 
 export function useGameEffects(scene) {
-  const particles = ref([])
+  // Обычный массив вместо ref — убираем reactivity из hot path (updateEffects вызывается каждый кадр)
+  const _particles = []
   const _toRemove = []
 
   // Пул неактивных эффектов: переиспользуем Points вместо create/dispose
@@ -86,11 +85,11 @@ export function useGameEffects(scene) {
     }
     points.geometry.attributes.position.needsUpdate = true
     points.material.opacity = 1
-    points.userData.startTime = Date.now()
+    points.userData.startTime = performance.now()
     points.userData.duration = duration
 
     scene.add(points)
-    particles.value.push(points)
+    _particles.push(points)
     return points
   }
 
@@ -98,11 +97,12 @@ export function useGameEffects(scene) {
   const createCollisionEffect = (position) => createPooledEffect(position, 'collision')
 
   const updateEffects = () => {
-    const now = Date.now()
+    const now = performance.now()
     _toRemove.length = 0
     const toRemove = _toRemove
 
-    particles.value.forEach((particle, index) => {
+    for (let i = 0; i < _particles.length; i++) {
+      const particle = _particles[i]
       const elapsed = now - particle.userData.startTime
       const progress = elapsed / particle.userData.duration
 
@@ -110,34 +110,33 @@ export function useGameEffects(scene) {
         scene.remove(particle)
         const pool = particle.userData.type === 'energyEffect' ? inactiveEnergyPool : inactiveCollisionPool
         pool.push(particle)
-        toRemove.push(index)
+        toRemove.push(i)
       } else {
         const positions = particle.geometry.attributes.position.array
         const velArray = particle.userData.velocity
-        for (let i = 0; i < positions.length; i += 3) {
-          const vel = velArray[Math.floor(i / 3)]
+        for (let j = 0; j < positions.length; j += 3) {
+          const vel = velArray[Math.floor(j / 3)]
           if (!vel) continue
-          positions[i] += vel.x
-          positions[i + 1] += vel.y
-          positions[i + 2] += vel.z
+          positions[j] += vel.x
+          positions[j + 1] += vel.y
+          positions[j + 2] += vel.z
         }
         particle.geometry.attributes.position.needsUpdate = true
         particle.material.opacity = 1 - progress
       }
-    })
+    }
 
-    toRemove.sort((a, b) => b - a).forEach((index) => {
-      particles.value.splice(index, 1)
-    })
+    toRemove.sort((a, b) => b - a)
+    toRemove.forEach((idx) => _particles.splice(idx, 1))
   }
 
   const clearAll = () => {
-    particles.value.forEach(particle => {
+    _particles.forEach(particle => {
       scene.remove(particle)
       const pool = particle.userData.type === 'energyEffect' ? inactiveEnergyPool : inactiveCollisionPool
       pool.push(particle)
     })
-    particles.value = []
+    _particles.length = 0
   }
 
   return {

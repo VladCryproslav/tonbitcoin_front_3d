@@ -31,8 +31,9 @@ export function useGameWorld(scene, camera) {
   const roadSpeed = ref(0.3)
   const lanes = [-2, 0, 2] // Позиции полос (левая, центр, правая)
 
-  // Секции дороги: меньше дистанция — спавн чаще
-  const SECTION_SPACING = 4 // мин. «расстояние» (по playerZ) между секциями
+  // Секции дороги: меньше дистанция — спавн чаще. При разгоне увеличиваем spacing — меньше спавна, меньше clone/GC
+  const SECTION_SPACING = 4
+  const SECTION_SPACING_HIGH_SPEED = 6 // при speed > 0.4
   const SECTION_WORLD_LENGTH = 14
   const COLLECTIBLE_MIN_Z_DISTANCE = 5 // мин. расстояние по Z между коллектами (избегаем наложения)
   let lastSpawnPlayerZ = -999
@@ -137,7 +138,56 @@ export function useGameWorld(scene, camera) {
       loadBarrier(OBSTACLE_KIND.IMPASSABLE),
       loadToken('v1'),
       loadToken('v2')
-    ])
+    ]).then(() => {
+      prewarmPools()
+      return undefined
+    })
+  }
+
+  // Предзаполнение пулов — меньше clone() при разгоне
+  const PREWARM_OBSTACLES_PER_KIND = 4
+  const PREWARM_COLLECTIBLES = 6
+  const prewarmPools = () => {
+    for (const kind of [OBSTACLE_KIND.IMPASSABLE, OBSTACLE_KIND.JUMP, OBSTACLE_KIND.ROLL]) {
+      const def = OBSTACLE_DEF[kind]
+      if (!def) continue
+      const template = barrierTemplates[kind]
+      const halfY = def.height / 2
+      const bounds = { halfX: 0.5, halfY, halfZ: 0.5 }
+      const pool = inactiveObstaclesByKind[kind]
+      for (let i = 0; i < PREWARM_OBSTACLES_PER_KIND; i++) {
+        let obstacle
+        if (template) {
+          obstacle = template.clone(true)
+          obstacle.traverse((child) => {
+            if (child.isMesh) child.castShadow = true
+          })
+        } else {
+          const geo = kind === OBSTACLE_KIND.ROLL ? sharedObstacleGeometry.roll : sharedObstacleGeometry[def.height]
+          obstacle = new Mesh(geo, sharedObstacleMaterial[kind])
+        }
+        obstacle.visible = false
+        obstacle.position.set(-999, -999, -999)
+        obstacle.userData = { bounds, type: 'obstacle', kind, collisionCenterY: def.bottomY != null ? def.bottomY + halfY : halfY }
+        scene.add(obstacle)
+        pool.push(obstacle)
+      }
+    }
+    const tmpl = tokenV1Template || tokenV2Template
+    for (let i = 0; i < PREWARM_COLLECTIBLES; i++) {
+      let mesh
+      if (tmpl) {
+        mesh = tmpl.clone(true)
+        mesh.traverse((child) => { if (child.isMesh) child.castShadow = true })
+      } else {
+        mesh = new Mesh(sharedCollectibleGeo, sharedCollectibleMat)
+      }
+      mesh.visible = false
+      mesh.position.set(-999, -999, -999)
+      mesh.userData = { bounds: { half: COLLECTIBLE_HALF }, type: 'collectible' }
+      scene.add(mesh)
+      inactiveCollectibles.push(mesh)
+    }
   }
 
   // Глобальная зона по Z, где вообще возможна коллизия с игроком
@@ -244,10 +294,8 @@ export function useGameWorld(scene, camera) {
   }
 
   // Обновление разметки: двигаем с roadSpeed, ушедшие (z>10) телепортируем за хвост полосы.
-  // Два прохода вместо трёх; логика та же — одна скорость, один массив, без расслоения «два шара».
-  const updateLaneMarkings = () => {
+  const updateLaneMarkings = (speed = roadSpeed.value) => {
     const minZByLane = {}
-    const speed = roadSpeed.value
     const stepZ = MARKING_LENGTH * 2
     laneMarkings.forEach(marking => {
       marking.position.z += speed
@@ -399,7 +447,9 @@ export function useGameWorld(scene, camera) {
   // Между секциями — минимальное расстояние SECTION_SPACING по playerZ.
   // getNextEnergyPoint: () => { value, isGlowing } | null — очередь поинтов из useGameRun
   const spawnObjects = (playerZ, getNextEnergyPoint) => {
-    if (playerZ - lastSpawnPlayerZ < SECTION_SPACING) return
+    const speed = roadSpeed.value
+    const spacing = speed > 0.4 ? SECTION_SPACING_HIGH_SPEED : SECTION_SPACING
+    if (playerZ - lastSpawnPlayerZ < spacing) return
 
     lastSpawnPlayerZ = playerZ
     const sectionZ = nextSectionWorldZ
@@ -448,8 +498,9 @@ export function useGameWorld(scene, camera) {
     }
   }
 
-  // Обновление дорожки (бесконечная прокрутка). minZ один раз за вызов — без reduce в цикле (меньше микрофризов при высокой скорости).
+  // Обновление дорожки (бесконечная прокрутка). Кэшируем roadSpeed — меньше обращений к ref.
   const updateRoad = () => {
+    const speed = roadSpeed.value
     const segments = roadSegments
     const cameraZ = camera ? camera.position.z : 8
     const cutoffZ = cameraZ + roadLength * 1.5
@@ -458,32 +509,39 @@ export function useGameWorld(scene, camera) {
       const z = segments[i].position.z
       if (z < minZ) minZ = z
     }
-    segments.forEach((segment) => {
-      segment.position.z += roadSpeed.value
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i]
+      segment.position.z += speed
       if (segment.position.z > cutoffZ) {
         segment.position.z = minZ - roadLength + 0.1
         minZ = segment.position.z
       }
-    })
-    updateLaneMarkings()
+    }
+    updateLaneMarkings(speed)
   }
 
   const _obstaclesToRemove = []
   const _collectiblesToRemove = []
 
-  // Обновление препятствий.
-  // Коллизия через ручной AABB по известной геометрии куба.
-  // ROLL: не бьём при isSliding, по высоте (underBar) или в окне по времени.
+  // Обновление препятствий. Кэшируем speed.
   const updateObstacles = (playerBox, onCollision, isSliding = false, inRollImmuneWindow = false) => {
     _obstaclesToRemove.length = 0
     const obstaclesToRemove = _obstaclesToRemove
+    const speed = roadSpeed.value
 
-    obstacles.forEach((obstacle, index) => {
-      obstacle.position.z += roadSpeed.value
+    for (let i = 0; i < obstacles.length; i++) {
+      const obstacle = obstacles[i]
+      obstacle.position.z += speed
+
+      if (obstacle.position.z > 6) {
+        obstaclesToRemove.push(i)
+        continue
+      }
 
       const inCollideZone = obstacle.position.z >= COLLIDE_Z_MIN && obstacle.position.z <= COLLIDE_Z_MAX
+      if (!inCollideZone) continue
 
-      if (playerBox && inCollideZone) {
+      if (playerBox) {
         const kind = obstacle.userData.kind
 
         // Ручной AABB препятствия: знаем, что это куб 1xH x1, центр в obstacle.position.
@@ -509,37 +567,33 @@ export function useGameWorld(scene, camera) {
           pMax.z >= minZ && pMin.z <= maxZ
 
         if (kind === OBSTACLE_KIND.ROLL) {
-          // Синий блок: не бьём при кувырке, по высоте под баром или в окне неуязвимости по времени.
           const bottomY = minY
           const underBar = pMax.y < bottomY + 0.4
           const safeFromRoll = isSliding || underBar || inRollImmuneWindow
           if (!safeFromRoll && !obstacle.userData.hit && intersects) {
             obstacle.userData.hit = true
             onCollision(obstacle)
-            return
           }
         } else {
           if (!obstacle.userData.hit && intersects) {
             obstacle.userData.hit = true
             onCollision(obstacle)
-            return
           }
         }
       }
+    }
 
-      if (obstacle.position.z > 6) {
-        obstaclesToRemove.push(index)
+    if (obstaclesToRemove.length > 0) {
+      obstaclesToRemove.sort((a, b) => b - a)
+      obstaclesToRemove.forEach((idx) => {
+        const obstacle = obstacles[idx]
         obstacle.visible = false
         const k = obstacle.userData.kind
         if (k && inactiveObstaclesByKind[k]) {
           inactiveObstaclesByKind[k].push(obstacle)
         }
-      }
-    })
-
-    if (obstaclesToRemove.length > 0) {
-      obstaclesToRemove.sort((a, b) => b - a)
-      obstaclesToRemove.forEach((i) => obstacles.splice(i, 1))
+        obstacles.splice(idx, 1)
+      })
     }
   }
 
@@ -548,6 +602,7 @@ export function useGameWorld(scene, camera) {
   const updateCollectibles = (playerBox, onCollect, onPassed) => {
     _collectiblesToRemove.length = 0
     const collectiblesToRemove = _collectiblesToRemove
+    const speed = roadSpeed.value
 
     collectibles.forEach((collectible, index) => {
       if (collectible.userData.collected) {
@@ -555,7 +610,7 @@ export function useGameWorld(scene, camera) {
         return
       }
 
-      collectible.position.z += roadSpeed.value
+      collectible.position.z += speed
       collectible.rotation.y += 0.05
 
       const inCollideZone = collectible.position.z >= COLLIDE_Z_MIN && collectible.position.z <= COLLIDE_Z_MAX

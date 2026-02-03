@@ -4,12 +4,10 @@ import {
   MeshStandardMaterial,
   Mesh,
   Vector3,
-  PlaneGeometry,
-  RepeatWrapping,
-  TextureLoader,
   Group,
   AnimationMixer,
-  Clock
+  Clock,
+  Box3
 } from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
@@ -20,13 +18,17 @@ export function useGamePhysics(scene) {
   const playerLane = ref(1) // 0 = left, 1 = center, 2 = right
   const isJumping = ref(false)
   const isSliding = ref(false)
-  const playerY = ref(0)
 
   const lanes = [-2, 0, 2] // Позиции полос
   const LANE_CHANGE_DURATION_MS = 180 // длительность смены полосы, time-based в update()
   let playerMesh = null
   let jumpStartTime = 0
+  let jumpHeight = 1.7
+  let jumpDuration = 600
+  let jumpStartY = 0
   let slideStartTime = 0
+  let slideLandState = null // { startY, startRotX, startTime, duration } — приземление при slide из прыжка
+  let slideFallbackState = null // { startTime, startY, startScaleY, phase, returnStartTime } — анимация кубика
   let mixer = null // Для анимаций из GLTF
   let clock = new Clock()
   // Смена полосы в одном цикле (update), без отдельного rAF — убирает микрофризы
@@ -248,7 +250,7 @@ export function useGamePhysics(scene) {
       playerLane.value--
       playerPosition.value.x = lanes[playerLane.value]
       if (playerMesh) {
-        laneTransitionStartTime = Date.now()
+        laneTransitionStartTime = performance.now()
         laneTransitionStartX = playerMesh.position.x
         laneTransitionTargetX = lanes[playerLane.value]
       }
@@ -260,7 +262,7 @@ export function useGamePhysics(scene) {
       playerLane.value++
       playerPosition.value.x = lanes[playerLane.value]
       if (playerMesh) {
-        laneTransitionStartTime = Date.now()
+        laneTransitionStartTime = performance.now()
         laneTransitionStartX = playerMesh.position.x
         laneTransitionTargetX = lanes[playerLane.value]
       }
@@ -270,62 +272,33 @@ export function useGamePhysics(scene) {
   const jump = () => {
     if (!isJumping.value) {
       isJumping.value = true
-      // Если во время прыжка был активный слайд — сбрасываем его,
-      // чтобы новое действие не блокировалось старым состоянием.
       isSliding.value = false
-      jumpStartTime = Date.now()
+      jumpStartTime = performance.now()
+      jumpHeight = 1.7
+      jumpDuration = 600
+      if (playerMesh) jumpStartY = playerMesh.position.y
 
-      // Переключаемся на анимацию прыжка, если есть
       playAnimationState('jump')
-
-      if (playerMesh) {
-        // Анимация прыжка (высота чуть ниже)
-        const jumpHeight = 1.7
-        const jumpDuration = 600
-
-        animateJump(jumpHeight, jumpDuration)
-      }
     }
   }
 
   const slide = () => {
-    // Разрешаем слайд в любой момент, даже во время прыжка.
-    // Если игрок был в прыжке — прерываем его и переходим в roll/slide.
     if (!isSliding.value) {
-      // Сначала мягко "приземляем" персонажа, если он был в воздухе,
-      // чтобы переход из прыжка в слайд не выглядел рваным.
-      if (playerMesh) {
-        const startY = playerMesh.position.y
-        const startRotX = playerMesh.rotation.x
-        const targetY = 0
-        const targetRotX = 0
-        const landDuration = 150 // мс
-        const landStart = Date.now()
-
-        const land = () => {
-          const t = Math.min((Date.now() - landStart) / landDuration, 1)
-          // плавное сглаживание (smoothstep)
-          const k = t * t * (3 - 2 * t)
-          playerMesh.position.y = startY + (targetY - startY) * k
-          playerMesh.rotation.x = startRotX + (targetRotX - startRotX) * k
-          if (t < 1 && isSliding.value) {
-            requestAnimationFrame(land)
-          }
+      if (playerMesh && (isJumping.value || playerMesh.position.y > 0.1)) {
+        slideLandState = {
+          startY: playerMesh.position.y,
+          startRotX: playerMesh.rotation.x,
+          startTime: performance.now(),
+          duration: 150
         }
-        // Стартуем приземление параллельно с roll
-        requestAnimationFrame(land)
       }
 
       isSliding.value = true
       isJumping.value = false
-      slideStartTime = Date.now()
+      slideStartTime = performance.now()
 
-      // Переключаемся на анимацию переката/скольжения, если есть
       playAnimationState('roll')
 
-      // Для GLB‑модели (mixer существует) всё скольжение делается только скелетной
-      // анимацией клипа 3. Ни масштаб, ни позицию/вращение вручную не трогаем.
-      // По завершении клипа возвращаемся в бег и снимаем isSliding.
       if (mixer) {
         const rollClip = animations[animationIndexByState.roll]
         const rollDuration = rollClip ? rollClip.duration * 1000 : 600
@@ -334,113 +307,15 @@ export function useGamePhysics(scene) {
           playAnimationState('running')
         }, rollDuration)
       } else if (playerMesh && !mixer) {
-        // Плавная анимация скольжения для кубического фоллбэка
-        const startY = playerMesh.position.y
-        const startScaleY = playerMesh.scale.y
-        const startTime = Date.now()
-        const duration = 500
-
-        const animate = () => {
-          const elapsed = Date.now() - startTime
-          const progress = Math.min(elapsed / duration, 1)
-
-          if (progress < 1) {
-            // Плавное уменьшение
-            const scaleProgress = progress < 0.3 ? progress / 0.3 : 1
-            playerMesh.scale.y = startScaleY - (startScaleY - 0.5) * scaleProgress
-            playerMesh.position.y = startY - (startY - 0.3) * scaleProgress
-
-            // Наклон вперед
-            playerMesh.rotation.x = progress * 0.5
-
-            requestAnimationFrame(animate)
-          } else {
-            // Возврат в исходное положение
-            const returnStart = Date.now()
-            const returnDuration = 200
-            const returnAnimate = () => {
-              const returnElapsed = Date.now() - returnStart
-              const returnProgress = Math.min(returnElapsed / returnDuration, 1)
-
-              if (returnProgress < 1) {
-                playerMesh.scale.y = 0.5 + (startScaleY - 0.5) * returnProgress
-                playerMesh.position.y = 0.3 + (startY - 0.3) * returnProgress
-                playerMesh.rotation.x = 0.5 * (1 - returnProgress)
-                requestAnimationFrame(returnAnimate)
-              } else {
-                playerMesh.scale.y = startScaleY
-                playerMesh.position.y = startY
-                playerMesh.rotation.x = 0
-                isSliding.value = false
-                // Возвращаем анимацию бега (только для кубического фоллбэка)
-                playAnimationState('running')
-              }
-            }
-            returnAnimate()
-          }
+        slideFallbackState = {
+          startTime: performance.now(),
+          startY: playerMesh.position.y,
+          startScaleY: playerMesh.scale.y,
+          phase: 'down',
+          returnStartTime: 0
         }
-        animate()
-      } else if (mixer) {
-        // Для GLTF‑модели просто ждём завершения анимации roll по клипу.
-        // Флаг скольжения сбросится извне, когда игра сочтёт нужным.
-        // Здесь ничего не трогаем, чтобы не мешать скелетной анимации.
       }
     }
-  }
-
-  const animatePosition = (position, axis, target, duration) => {
-    const start = position[axis]
-    const startTime = Date.now()
-
-    const animate = () => {
-      const elapsed = Date.now() - startTime
-      const progress = Math.min(elapsed / (duration * 1000), 1)
-
-      // Easing функция
-      const ease = progress < 0.5
-        ? 2 * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 2) / 2
-
-      position[axis] = start + (target - start) * ease
-
-      if (progress < 1) {
-        requestAnimationFrame(animate)
-      }
-    }
-    animate()
-  }
-
-  const animateJump = (height, duration) => {
-    const startY = playerMesh.position.y
-    const startTime = Date.now()
-
-    const animate = () => {
-      // Прыжок мог быть отменён (например, начался slide) — в этом случае
-      // просто прекращаем дальнейшую анимацию подъёма/спуска.
-      if (!isJumping.value) return
-      const elapsed = Date.now() - startTime
-      const progress = elapsed / duration
-
-      if (progress < 1) {
-        // Параболическая траектория с более реалистичной физикой
-        const jumpCurve = Math.sin(progress * Math.PI)
-        const y = startY + height * jumpCurve
-
-        // Небольшой наклон при прыжке
-        playerMesh.rotation.x = -progress * 0.3
-
-        playerMesh.position.y = y
-
-        requestAnimationFrame(animate)
-      } else {
-        playerMesh.position.y = startY
-        playerMesh.rotation.x = 0
-        isJumping.value = false
-        // После прыжка возвращаемся к бегу
-        playAnimationState('running')
-      }
-    }
-    animate()
   }
 
   const getPlayerY = () => {
@@ -453,14 +328,73 @@ export function useGamePhysics(scene) {
   }
 
   const update = () => {
+    const now = performance.now()
+
     if (mixer) {
       mixer.update(clock.getDelta())
     }
 
     if (playerMesh) {
-      // Смена полосы: один раз в кадр, time-based lerp в том же цикле что и рендер — без микрофризов
+      // Прыжок: всё в update(), без вложенных rAF
+      if (isJumping.value && !isSliding.value) {
+        const elapsed = now - jumpStartTime
+        const progress = elapsed / jumpDuration
+        if (progress >= 1) {
+          playerMesh.position.y = jumpStartY
+          playerMesh.rotation.x = 0
+          isJumping.value = false
+          playAnimationState('running')
+        } else {
+          const jumpCurve = Math.sin(progress * Math.PI)
+          playerMesh.position.y = jumpStartY + jumpHeight * jumpCurve
+          playerMesh.rotation.x = -progress * 0.3
+        }
+      }
+
+      // Приземление при slide из прыжка
+      if (slideLandState) {
+        const t = Math.min((now - slideLandState.startTime) / slideLandState.duration, 1)
+        const k = t * t * (3 - 2 * t)
+        playerMesh.position.y = slideLandState.startY + (0 - slideLandState.startY) * k
+        playerMesh.rotation.x = slideLandState.startRotX + (0 - slideLandState.startRotX) * k
+        if (t >= 1) slideLandState = null
+      }
+
+      // Слайд кубического фоллбэка
+      if (slideFallbackState && !mixer) {
+        const s = slideFallbackState
+        if (s.phase === 'down') {
+          const elapsed = now - s.startTime
+          const progress = Math.min(elapsed / 500, 1)
+          const scaleProgress = progress < 0.3 ? progress / 0.3 : 1
+          playerMesh.scale.y = s.startScaleY - (s.startScaleY - 0.5) * scaleProgress
+          playerMesh.position.y = s.startY - (s.startY - 0.3) * scaleProgress
+          playerMesh.rotation.x = progress * 0.5
+          if (progress >= 1) {
+            s.phase = 'return'
+            s.returnStartTime = now
+          }
+        } else {
+          const returnElapsed = now - s.returnStartTime
+          const returnProgress = Math.min(returnElapsed / 200, 1)
+          if (returnProgress >= 1) {
+            playerMesh.scale.y = s.startScaleY
+            playerMesh.position.y = s.startY
+            playerMesh.rotation.x = 0
+            isSliding.value = false
+            slideFallbackState = null
+            playAnimationState('running')
+          } else {
+            playerMesh.scale.y = 0.5 + (s.startScaleY - 0.5) * returnProgress
+            playerMesh.position.y = 0.3 + (s.startY - 0.3) * returnProgress
+            playerMesh.rotation.x = 0.5 * (1 - returnProgress)
+          }
+        }
+      }
+
+      // Смена полосы
       if (laneTransitionTargetX !== null) {
-        const elapsed = Date.now() - laneTransitionStartTime
+        const elapsed = now - laneTransitionStartTime
         const progress = Math.min(elapsed / LANE_CHANGE_DURATION_MS, 1)
         const ease = progress < 0.5
           ? 2 * progress * progress
@@ -474,7 +408,7 @@ export function useGamePhysics(scene) {
         playerMesh.position.x = playerPosition.value.x
       }
 
-      // Анимация бега (только для кубического фоллбэка); части тела кэшируем — не find() каждый кадр
+      // Анимация бега (только для кубического фоллбэка)
       if (playerMesh.children && playerMesh.children.length > 0 && !mixer) {
         let u = playerMesh.userData
         if (!u._leftArm) {
@@ -489,7 +423,7 @@ export function useGamePhysics(scene) {
         const rightLeg = u._rightLeg
 
         if (!isJumping.value && !isSliding.value) {
-          const time = Date.now() * 0.008
+          const time = now * 0.001
           const runSpeed = 1.5
           playerMesh.rotation.z = Math.sin(time * runSpeed) * 0.05
           if (leftArm && rightArm) {
@@ -517,12 +451,17 @@ export function useGamePhysics(scene) {
     }
   }
 
-  // Один Box3 на кадр — переиспользуем, не аллоцируем каждый вызов
+  // Простой AABB по позиции — без setFromObject (дорого для GLB со скелетом)
+  const _playerBoxSize = new Vector3(0.8, 1.6, 0.6)
   let _playerBoxCache = null
   const getPlayerBox = () => {
     if (!playerMesh) return null
-    if (!_playerBoxCache) _playerBoxCache = new THREE.Box3()
-    _playerBoxCache.setFromObject(playerMesh)
+    if (!_playerBoxCache) _playerBoxCache = new Box3()
+    const y = getPlayerY()
+    _playerBoxCache.setFromCenterAndSize(
+      new Vector3(playerMesh.position.x, y, playerMesh.position.z),
+      _playerBoxSize
+    )
     return _playerBoxCache
   }
 
@@ -535,6 +474,8 @@ export function useGamePhysics(scene) {
   /** Сброс состояния слайда при старте нового забега. */
   const resetSlideState = () => {
     slideStartTime = 0
+    slideLandState = null
+    slideFallbackState = null
     isSliding.value = false
   }
 

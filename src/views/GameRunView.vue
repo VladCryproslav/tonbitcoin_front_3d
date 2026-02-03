@@ -244,12 +244,13 @@ const startThreeLoop = () => {
       if (lastUpdateTime <= 0) lastUpdateTime = now
       let frameTime = Math.min(now - lastUpdateTime, 100)
       lastUpdateTime = now
-      const nowMs = Date.now()
+      const nowMs = performance.now()
       const slideStartTime = gamePhysics.value?.getSlideStartTime?.() ?? 0
       const inRollImmuneWindow = slideStartTime > 0 && nowMs - slideStartTime < ROLL_IMMUNE_MS
       const framePlayerBox = gamePhysics.value?.getPlayerBox?.() ?? null
+      const effectiveMaxSteps = gameSpeed.value > 0.4 ? 2 : MAX_STEPS
       let steps = 0
-      while (frameTime >= FIXED_STEP_MS && steps < MAX_STEPS) {
+      while (frameTime >= FIXED_STEP_MS && steps < effectiveMaxSteps) {
         doOneStep(framePlayerBox, inRollImmuneWindow)
         frameTime -= FIXED_STEP_MS
         steps++
