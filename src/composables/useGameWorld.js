@@ -115,7 +115,7 @@ export function useGameWorld(scene, camera) {
       loader.loadAsync(BARRIER_PATHS[kind]).then((gltf) => {
         const template = gltf.scene
         template.traverse((child) => {
-          if (child.isMesh) child.castShadow = true
+          if (child.isMesh) child.castShadow = false
         })
         barrierTemplates[kind] = template
       }).catch((err) => {
@@ -125,7 +125,7 @@ export function useGameWorld(scene, camera) {
       loader.loadAsync(TOKEN_PATHS[key]).then((gltf) => {
         const tmpl = gltf.scene
         tmpl.traverse((child) => {
-          if (child.isMesh) child.castShadow = true
+          if (child.isMesh) child.castShadow = false
         })
         if (key === 'v1') tokenV1Template = tmpl
         else tokenV2Template = tmpl
@@ -160,7 +160,7 @@ export function useGameWorld(scene, camera) {
         if (template) {
           obstacle = template.clone(true)
           obstacle.traverse((child) => {
-            if (child.isMesh) child.castShadow = true
+            if (child.isMesh) child.castShadow = false
           })
         } else {
           const geo = kind === OBSTACLE_KIND.ROLL ? sharedObstacleGeometry.roll : sharedObstacleGeometry[def.height]
@@ -178,7 +178,7 @@ export function useGameWorld(scene, camera) {
       let mesh
       if (tmpl) {
         mesh = tmpl.clone(true)
-        mesh.traverse((child) => { if (child.isMesh) child.castShadow = true })
+        mesh.traverse((child) => { if (child.isMesh) child.castShadow = false })
       } else {
         mesh = new Mesh(sharedCollectibleGeo, sharedCollectibleMat)
       }
@@ -270,6 +270,7 @@ export function useGameWorld(scene, camera) {
       road.rotation.x = -Math.PI / 2
       road.position.z = -i * roadLength
       road.position.y = 0
+      road.userData.type = 'road'
       scene.add(road)
       roadSegments.push(road)
     }
@@ -343,7 +344,7 @@ export function useGameWorld(scene, camera) {
     } else if (template) {
       obstacle = template.clone(true)
       obstacle.traverse((child) => {
-        if (child.isMesh) child.castShadow = true
+        if (child.isMesh) child.castShadow = false
       })
       obstacle.renderOrder = 1
       obstacle.userData.bounds = bounds
@@ -354,7 +355,7 @@ export function useGameWorld(scene, camera) {
       obstacle = new Mesh(geo, sharedObstacleMaterial[kind])
       obstacle.userData.bounds = bounds
       obstacle.userData.type = 'obstacle'
-      obstacle.castShadow = true
+      obstacle.castShadow = false
       obstacle.renderOrder = 1
       scene.add(obstacle)
     }
@@ -419,7 +420,7 @@ export function useGameWorld(scene, camera) {
       if (template) {
         mesh = template.clone(true)
         mesh.traverse((child) => {
-          if (child.isMesh) child.castShadow = true
+          if (child.isMesh) child.castShadow = false
         })
         mesh.userData.bounds = bounds
         mesh.userData.type = 'collectible'

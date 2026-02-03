@@ -3,6 +3,7 @@
     <!-- Three.js сцена -->
     <GameScene
       ref="gameSceneRef"
+      :graphics-quality="graphicsQuality"
       @scene-ready="onSceneReady"
     />
 
@@ -187,15 +188,20 @@ const WIN_DECEL_RATE = 0.92
 const WIN_SPEED_THRESHOLD = 0.02
 const WIN_ANIMATION_DURATION_MS = 2500
 
-// Настройки графики: normal | low
-const graphicsQuality = ref('normal')
+// Настройки графики: normal | medium | low. Читаем из localStorage синхронно — GameScene нужен при первом рендере.
 const isWeakDevice = ref(false)
+const graphicsQuality = ref('normal')
+if (typeof window !== 'undefined') {
+  try {
+    const saved = window.localStorage?.getItem('game_graphics_quality')
+    if (['normal', 'medium', 'low'].includes(saved)) graphicsQuality.value = saved
+  } catch {}
+}
 const showGraphicsInfoModal = ref(false)
 const pendingGraphicsQuality = ref(null)
 
-const graphicsLabel = computed(() =>
-  graphicsQuality.value === 'normal' ? t('game.graphics_label_normal') : t('game.graphics_label_low')
-)
+const graphicsLabels = { normal: 'game.graphics_label_normal', medium: 'game.graphics_label_medium', low: 'game.graphics_label_low' }
+const graphicsLabel = computed(() => t(graphicsLabels[graphicsQuality.value] || graphicsLabels.normal))
 
 const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: threeRenderer }) => {
   scene = threeScene
@@ -256,7 +262,7 @@ const startThreeLoop = () => {
         steps++
       }
       if (gameWorld.value) gameWorld.value.spawnObjects(playerZ.value, gameRun.getNextEnergyPoint)
-      if (gameEffects.value && graphicsQuality.value === 'normal') {
+      if (gameEffects.value && graphicsQuality.value !== 'low') {
         gameEffects.value.updateEffects()
       }
       if (hitCount.value >= 3) {
@@ -302,26 +308,47 @@ const startThreeLoop = () => {
 const applyGraphicsQuality = () => {
   if (!renderer || !scene) return
 
-  const isLow = graphicsQuality.value === 'low'
+  const q = graphicsQuality.value
+  const isLow = q === 'low'
+  const isMedium = q === 'medium'
 
-  // Тени и качество рендера
+  // Тени: low — выкл, medium — 1024, normal — 2048
   renderer.shadowMap.enabled = !isLow
+  if (!isLow) {
+    renderer.shadowMap.type = 0 // BasicShadowMap
+    scene.traverse?.((obj) => {
+      if (obj.isDirectionalLight && obj.castShadow) {
+        const size = isMedium ? 1024 : 2048
+        obj.shadow.mapSize.width = size
+        obj.shadow.mapSize.height = size
+      }
+    })
+  }
+
+  // DPR: low=1, medium=1.5, normal=2
+  const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
   if (isLow) {
     renderer.setPixelRatio(1)
+  } else if (isMedium) {
+    renderer.setPixelRatio(Math.min(dpr, 1.5))
   } else {
-    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
     renderer.setPixelRatio(Math.min(dpr, 2))
   }
 
-  // Отключаем castShadow/receiveShadow у объектов и источников света на низкой графике
+  // castShadow только у игрока. receiveShadow только у дороги (normal/medium)
   scene.traverse?.((obj) => {
-    if ('castShadow' in obj) {
-      obj.castShadow = !isLow
+    if (obj.isMesh) {
+      obj.castShadow = false
+      obj.receiveShadow = !isLow && obj.userData?.type === 'road'
     }
-    if ('receiveShadow' in obj && isLow) {
-      obj.receiveShadow = false
-    }
+    if (obj.isDirectionalLight) obj.castShadow = !isLow
   })
+  const player = gamePhysics.value?.playerMesh?.()
+  if (player && !isLow) {
+    player.traverse?.((child) => {
+      if (child.isMesh) child.castShadow = true
+    })
+  }
 }
 
 const applyGraphicsQualityAndSave = () => {
@@ -464,10 +491,9 @@ const stopGameLoop = () => {
 
 const toggleGraphicsQuality = () => {
   const current = graphicsQuality.value
-  const next = current === 'normal' ? 'low' : 'normal'
+  const next = current === 'normal' ? 'medium' : current === 'medium' ? 'low' : 'normal'
 
-  // Слабое устройство и попытка включить "Нормально" — показываем рекомендацию.
-  if (isWeakDevice.value && current === 'low' && next === 'normal') {
+  if (isWeakDevice.value && current === 'low' && (next === 'normal' || next === 'medium')) {
     pendingGraphicsQuality.value = next
     showGraphicsInfoModal.value = true
     return
@@ -627,19 +653,18 @@ const handleGraphicsInfoClose = (e) => {
 }
 
 onMounted(() => {
-  // Инициализация при монтировании
   isWeakDevice.value = detectWeakDevice()
-
   if (typeof window !== 'undefined') {
     try {
       const saved = window.localStorage?.getItem('game_graphics_quality')
-      if (saved === 'normal' || saved === 'low') {
-        graphicsQuality.value = saved
-      } else {
-        graphicsQuality.value = isWeakDevice.value ? 'low' : 'normal'
+      if (!['normal', 'medium', 'low'].includes(saved)) {
+        const isMobile = 'ontouchstart' in window
+        graphicsQuality.value = isWeakDevice.value ? 'low' : (isMobile ? 'medium' : 'normal')
+        applyGraphicsQuality()
       }
     } catch {
       graphicsQuality.value = isWeakDevice.value ? 'low' : 'normal'
+      applyGraphicsQuality()
     }
   }
 })

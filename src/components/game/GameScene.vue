@@ -12,6 +12,7 @@ const props = defineProps({
   height: { type: Number, default: window.innerHeight },
   backgroundColor: { type: [String, Number], default: 0x87CEEB }, // Sky blue
   autoRender: { type: Boolean, default: false }, // Отключить автоматический рендеринг для игры
+  graphicsQuality: { type: String, default: 'normal' } // normal | medium | low — для antialias и shadow map
 })
 
 const emit = defineEmits(['scene-ready'])
@@ -41,15 +42,19 @@ const initScene = () => {
   camera.position.set(0, 5, 10)
   camera.lookAt(0, 0, 0)
 
-  // Рендерер
+  // Рендерер: antialias только на normal — на mobile даёт фризы
+  const useAntialias = props.graphicsQuality === 'normal'
   renderer = new WebGLRenderer({
-    antialias: true,
+    antialias: useAntialias,
     alpha: true,
     powerPreference: 'high-performance'
   })
   renderer.setSize(props.width, props.height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-  renderer.shadowMap.enabled = true
+  renderer.shadowMap.enabled = props.graphicsQuality !== 'low'
+  if (props.graphicsQuality !== 'low') {
+    renderer.shadowMap.type = 0 // BasicShadowMap — быстрее PCFSoft
+  }
   container.value.appendChild(renderer.domElement)
 
   // Освещение - яркое как в Subway Surfers
@@ -58,17 +63,11 @@ const initScene = () => {
 
   const directionalLight = new DirectionalLight(0xffffff, 1.0) // Очень яркое
   directionalLight.position.set(5, 10, 5)
-  directionalLight.castShadow = true
-  const cores = typeof navigator !== 'undefined' && navigator.hardwareConcurrency ? navigator.hardwareConcurrency : 4
-  if (cores <= 2) {
-    renderer.shadowMap.enabled = false
-    directionalLight.castShadow = false
-  } else if (cores <= 4) {
-    directionalLight.shadow.mapSize.width = 1024
-    directionalLight.shadow.mapSize.height = 1024
-  } else {
-    directionalLight.shadow.mapSize.width = 2048
-    directionalLight.shadow.mapSize.height = 2048
+  directionalLight.castShadow = props.graphicsQuality !== 'low'
+  const shadowSize = props.graphicsQuality === 'normal' ? 2048 : 1024
+  if (props.graphicsQuality !== 'low') {
+    directionalLight.shadow.mapSize.width = shadowSize
+    directionalLight.shadow.mapSize.height = shadowSize
   }
   scene.add(directionalLight)
 
