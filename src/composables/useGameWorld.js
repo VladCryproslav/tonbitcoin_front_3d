@@ -168,22 +168,18 @@ export function useGameWorld(scene, camera) {
   const createBackground = () => {
     if (backgroundCreated) return
     backgroundCreated = true
-    // Небо - простое, без освещения (MeshBasicMaterial).
-    for (let i = 0; i < 3; i++) {
-      const skyGeometry = new PlaneGeometry(50, 30)
-      const skyColor = new Color()
-      skyColor.setHSL(0.55, 0.5, 0.75 + i * 0.08)
-      const skyMaterial = new MeshBasicMaterial({
-        color: skyColor,
-        side: 2 // DoubleSide
-      })
-      const sky = new Mesh(skyGeometry, skyMaterial)
-      sky.position.set(0, 15 - i * 5, -20 - i * 10)
-      sky.rotation.x = -Math.PI / 3
-      sky.castShadow = false
-      sky.receiveShadow = false
-      scene.add(sky)
-    }
+    // Небо — одна плоскость, один материал, однородный цвет (1 draw call вместо 3)
+    const skyGeometry = new PlaneGeometry(80, 50)
+    const skyMaterial = new MeshBasicMaterial({
+      color: new Color().setHSL(0.55, 0.5, 0.82),
+      side: 2 // DoubleSide
+    })
+    const sky = new Mesh(skyGeometry, skyMaterial)
+    sky.position.set(0, 12, -35)
+    sky.rotation.x = -Math.PI / 3
+    sky.castShadow = false
+    sky.receiveShadow = false
+    scene.add(sky)
 
     // Боковые барьеры - Lambert, без лишней физики материала.
     const barrierGeometry = new BoxGeometry(0.5, 2.5, 200)
