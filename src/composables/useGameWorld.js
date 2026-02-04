@@ -6,7 +6,11 @@ import {
   MeshBasicMaterial,
   Mesh,
   PlaneGeometry,
-  Color
+  Color,
+  InstancedMesh,
+  Matrix4,
+  Quaternion,
+  Vector3
 } from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
@@ -40,7 +44,13 @@ export function useGameWorld(scene, camera) {
   let nextSectionWorldZ = -48
   let lastCollectibleZ = -9999
 
-  const laneMarkings = []
+  // Разметка полос – данные по инстансам + один InstancedMesh
+  const laneMarkings = [] // { laneX, z }
+  let laneMarkingsMesh = null
+  const _laneMatrix = new Matrix4()
+  const _laneQuat = new Quaternion()
+  const _laneScale = new Vector3(1, 1, 1)
+  const _lanePos = new Vector3()
 
   // Общая геометрия и материал для разметки полос (один draw call на тип, меньше памяти).
   // Логику спавна/телепорта не меняем: разметка движется только в updateLaneMarkings с roadSpeed.
@@ -229,6 +239,8 @@ export function useGameWorld(scene, camera) {
     sky.rotation.x = -Math.PI / 3
     sky.castShadow = false
     sky.receiveShadow = false
+    sky.matrixAutoUpdate = false
+    sky.updateMatrix()
     scene.add(sky)
 
     // Боковые барьеры - Lambert, без лишней физики материала.
@@ -242,6 +254,8 @@ export function useGameWorld(scene, camera) {
     leftBarrier.position.set(-3.5, 1.25, 0)
     leftBarrier.castShadow = false
     leftBarrier.receiveShadow = false
+    leftBarrier.matrixAutoUpdate = false
+    leftBarrier.updateMatrix()
     scene.add(leftBarrier)
 
     // Правый барьер
@@ -249,6 +263,8 @@ export function useGameWorld(scene, camera) {
     rightBarrier.position.set(3.5, 1.25, 0)
     rightBarrier.castShadow = false
     rightBarrier.receiveShadow = false
+    rightBarrier.matrixAutoUpdate = false
+    rightBarrier.updateMatrix()
     scene.add(rightBarrier)
 
     // Барьерные маркеры как декоративный шум убраны для снижения нагрузки.
@@ -279,42 +295,80 @@ export function useGameWorld(scene, camera) {
     createLaneMarkings()
   }
 
-  // Разметка полос. Одна геометрия и один материал на все меши — логика спавна по Z и полосам та же.
-  // Обновление только в updateLaneMarkings (вызов из updateRoad), одна скорость roadSpeed — без «двух шаров».
+  // Разметка полос. Одна геометрия/материал и один InstancedMesh — логика спавна по Z и полосам та же.
+  // Обновление только в updateLaneMarkings (вызов из updateRoad), одна скорость roadSpeed.
   const createLaneMarkings = () => {
     const stepZ = MARKING_LENGTH * 2
+    laneMarkings.length = 0
+
+    // Подготовка данных по позициям
     for (let z = -80; z < 15; z += stepZ) {
-      lanes.forEach(laneX => {
-        const marking = new Mesh(sharedMarkingGeometry, sharedMarkingMaterial)
-        marking.position.set(laneX, 0.01, z)
-        marking.userData = { type: 'marking' }
-        scene.add(marking)
-        laneMarkings.push(marking)
+      lanes.forEach((laneX) => {
+        laneMarkings.push({ laneX, z })
       })
     }
+
+    // Пересоздаём InstancedMesh, если уже был
+    if (laneMarkingsMesh) {
+      scene.remove(laneMarkingsMesh)
+      laneMarkingsMesh.geometry.dispose()
+      laneMarkingsMesh = null
+    }
+
+    laneMarkingsMesh = new InstancedMesh(
+      sharedMarkingGeometry,
+      sharedMarkingMaterial,
+      laneMarkings.length
+    )
+
+    for (let i = 0; i < laneMarkings.length; i++) {
+      const { laneX, z } = laneMarkings[i]
+      _lanePos.set(laneX, 0.01, z)
+      _laneQuat.identity()
+      _laneMatrix.compose(_lanePos, _laneQuat, _laneScale)
+      laneMarkingsMesh.setMatrixAt(i, _laneMatrix)
+    }
+
+    laneMarkingsMesh.instanceMatrix.needsUpdate = true
+    scene.add(laneMarkingsMesh)
   }
 
   // Обновление разметки: двигаем с roadSpeed, ушедшие (z>10) телепортируем за хвост полосы.
   const updateLaneMarkings = (speed = roadSpeed.value) => {
+    if (!laneMarkingsMesh || laneMarkings.length === 0) return
+
     const minZByLane = {}
     const stepZ = MARKING_LENGTH * 2
-    laneMarkings.forEach(marking => {
-      marking.position.z += speed
-      if (marking.position.z <= 10) {
-        const laneKey = Math.round(marking.position.x * 10) / 10
-        const z = marking.position.z
+
+    // Шаг 1: обновляем Z и находим минимальный Z по полосам
+    for (let i = 0; i < laneMarkings.length; i++) {
+      const entry = laneMarkings[i]
+      entry.z += speed
+      if (entry.z <= 10) {
+        const laneKey = Math.round(entry.laneX * 10) / 10
+        const z = entry.z
         if (minZByLane[laneKey] === undefined || z < minZByLane[laneKey]) {
           minZByLane[laneKey] = z
         }
       }
-    })
-    laneMarkings.forEach(marking => {
-      if (marking.position.z > 10) {
-        const laneKey = Math.round(marking.position.x * 10) / 10
+    }
+
+    // Шаг 2: телепорт + обновление матриц инстансов
+    for (let i = 0; i < laneMarkings.length; i++) {
+      const entry = laneMarkings[i]
+      if (entry.z > 10) {
+        const laneKey = Math.round(entry.laneX * 10) / 10
         const minZ = minZByLane[laneKey]
-        marking.position.z = minZ !== undefined ? minZ - stepZ + 0.05 : -50
+        entry.z = minZ !== undefined ? minZ - stepZ + 0.05 : -50
       }
-    })
+
+      _lanePos.set(entry.laneX, 0.01, entry.z)
+      _laneQuat.identity()
+      _laneMatrix.compose(_lanePos, _laneQuat, _laneScale)
+      laneMarkingsMesh.setMatrixAt(i, _laneMatrix)
+    }
+
+    laneMarkingsMesh.instanceMatrix.needsUpdate = true
   }
 
   // Создание препятствия по типу: jump (прыжок), roll (кувырок), impassable (непроходимая — кувырок)

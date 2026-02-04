@@ -173,6 +173,7 @@ const launcherOverlayMode = ref('idle')
 let threeLoop = null
 let lastUpdateTime = 0
 let shakeFramesLeft = 0
+let effectsFrameCounter = 0
 const FIXED_STEP_MS = 1000 / 60
 const MAX_STEPS = 3
 const ROLL_IMMUNE_MS = 950
@@ -195,7 +196,9 @@ if (typeof window !== 'undefined') {
   try {
     const saved = window.localStorage?.getItem('game_graphics_quality')
     if (['normal', 'medium', 'low'].includes(saved)) graphicsQuality.value = saved
-  } catch {}
+  } catch {
+    // ignore
+  }
 }
 const showGraphicsInfoModal = ref(false)
 const pendingGraphicsQuality = ref(null)
@@ -203,10 +206,14 @@ const pendingGraphicsQuality = ref(null)
 const graphicsLabels = { normal: 'game.graphics_label_normal', medium: 'game.graphics_label_medium', low: 'game.graphics_label_low' }
 const graphicsLabel = computed(() => t(graphicsLabels[graphicsQuality.value] || graphicsLabels.normal))
 
+let directionalLight = null
+
 const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: threeRenderer }) => {
   scene = threeScene
   camera = threeCamera
   renderer = threeRenderer
+  // Кэшируем directional light один раз — без traverse при каждом applyGraphicsQuality
+  directionalLight = threeScene.children.find((obj) => obj.isDirectionalLight) ?? null
 
   // Камера: чуть ближе (Z), чуть выше (Y), взгляд чуть сверху вниз (lookAt Y ниже)
   camera.position.set(0, 2.5, 4.4)
@@ -263,7 +270,10 @@ const startThreeLoop = () => {
       }
       if (gameWorld.value) gameWorld.value.spawnObjects(playerZ.value, gameRun.getNextEnergyPoint)
       if (gameEffects.value && graphicsQuality.value !== 'low') {
-        gameEffects.value.updateEffects()
+        // На normal/medium обновляем эффекты через кадр — меньше нагрузки
+        if ((effectsFrameCounter++ & 1) === 0) {
+          gameEffects.value.updateEffects()
+        }
       }
       if (hitCount.value >= 3) {
         if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
@@ -316,13 +326,14 @@ const applyGraphicsQuality = () => {
   renderer.shadowMap.enabled = !isLow
   if (!isLow) {
     renderer.shadowMap.type = 0 // BasicShadowMap
-    scene.traverse?.((obj) => {
-      if (obj.isDirectionalLight && obj.castShadow) {
-        const size = isMedium ? 1024 : 2048
-        obj.shadow.mapSize.width = size
-        obj.shadow.mapSize.height = size
-      }
-    })
+    if (directionalLight) {
+      const size = isMedium ? 1024 : 2048
+      directionalLight.castShadow = true
+      directionalLight.shadow.mapSize.width = size
+      directionalLight.shadow.mapSize.height = size
+    }
+  } else if (directionalLight) {
+    directionalLight.castShadow = false
   }
 
   // DPR: low=1, medium=1.5, normal=2
@@ -341,7 +352,6 @@ const applyGraphicsQuality = () => {
       obj.castShadow = false
       obj.receiveShadow = !isLow && obj.userData?.type === 'road'
     }
-    if (obj.isDirectionalLight) obj.castShadow = !isLow
   })
   const player = gamePhysics.value?.playerMesh?.()
   if (player && !isLow) {
