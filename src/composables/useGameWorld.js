@@ -325,12 +325,13 @@ export function useGameWorld(scene, camera) {
 
     // Простой широкий бордюр между дорогой (±3) и забором (±4.0), без эффектов и теней
     // Цвет чуть светлее, чем у забора
-    const curbGeometry = new BoxGeometry(1.0, 0.3, 200)
+    // Делаем чуть шире в сторону забора: внутренняя кромка остаётся у дороги, внешняя уходит под забор.
+    const curbGeometry = new BoxGeometry(1.3, 0.3, 200)
     const curbMaterial = new MeshLambertMaterial({ color: 0x777777 })
 
     const leftCurb = new Mesh(curbGeometry, curbMaterial)
-    // Центр на -3.5: бордюр закрывает от -3.0 (край дороги) до -4.0 (забор)
-    leftCurb.position.set(-4, 0.15, 0)
+    // Центр на -3.65: бордюр закрывает от -3.0 (край дороги) примерно до -4.3 (чуть под забор)
+    leftCurb.position.set(-3.65, 0.15, 0)
     leftCurb.castShadow = false
     leftCurb.receiveShadow = false
     leftCurb.matrixAutoUpdate = false
@@ -338,7 +339,7 @@ export function useGameWorld(scene, camera) {
     scene.add(leftCurb)
 
     const rightCurb = new Mesh(curbGeometry, curbMaterial)
-    rightCurb.position.set(4, 0.15, 0)
+    rightCurb.position.set(3.65, 0.15, 0)
     rightCurb.castShadow = false
     rightCurb.receiveShadow = false
     rightCurb.matrixAutoUpdate = false
