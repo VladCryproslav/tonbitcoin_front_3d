@@ -23,6 +23,7 @@ const TOKEN_PATHS = {
   v1: '/models/token_v1.glb',
   v2: '/models/token_v2.glb'
 }
+const FENCE_MODEL_PATH = '/models/fence_V1.glb'
 
 export function useGameWorld(scene, camera) {
   // Длина одного сегмента дороги и количество сегментов.
@@ -34,6 +35,11 @@ export function useGameWorld(scene, camera) {
   const collectibles = []
   const roadSpeed = ref(0.3)
   const lanes = [-2, 0, 2] // Позиции полос (левая, центр, правая)
+
+  // Боковые барьеры: простые боксы как фолбек + GLB-забор как декор
+  let leftBarrier = null
+  let rightBarrier = null
+  let fenceTemplate = null
 
   // Секции дороги: меньше дистанция — спавн чаще. При разгоне увеличиваем spacing — меньше спавна, меньше clone/GC
   const SECTION_SPACING = 4
@@ -102,6 +108,28 @@ export function useGameWorld(scene, camera) {
     { kind: OBSTACLE_KIND.IMPASSABLE, share: 22 }
   ]
   const OBSTACLE_TOTAL_SHARE = OBSTACLE_SHARES.reduce((s, o) => s + o.share, 0)
+
+  // GLB‑забор: один шаблон клонируем вдоль оси Z по обеим сторонам
+  const FENCE_WORLD_LENGTH = 200
+  const FENCE_SECTION_STEP = 21.5 // длина одного сегмента (~из Blender), с небольшим перекрытием
+  const createFenceInstances = () => {
+    if (!fenceTemplate || !leftBarrier || !rightBarrier) return
+
+    const halfLen = FENCE_WORLD_LENGTH / 2
+    for (let z = -halfLen; z <= halfLen; z += FENCE_SECTION_STEP) {
+      const leftFence = fenceTemplate.clone()
+      leftFence.position.set(leftBarrier.position.x, 0, z)
+      scene.add(leftFence)
+
+      const rightFence = fenceTemplate.clone()
+      rightFence.position.set(rightBarrier.position.x, 0, z)
+      scene.add(rightFence)
+    }
+
+    // Если GLB успешно отрисован — прячем простые боксы, они остаются фолбеком на случай ошибки загрузки.
+    leftBarrier.visible = false
+    rightBarrier.visible = false
+  }
 
   // Общая геометрия и материалы препятствий. ROLL — отдельная геометрия 2.5, чтобы не было артефакта «появление сверху вниз» при shared с IMPASSABLE.
   const sharedObstacleGeometry = {
@@ -269,8 +297,8 @@ export function useGameWorld(scene, camera) {
       color: 0x666666
     })
 
-    // Левый барьер
-    const leftBarrier = new Mesh(barrierGeometry, barrierMaterial)
+    // Левый барьер (фолбек, если GLB-забор не загрузится)
+    leftBarrier = new Mesh(barrierGeometry, barrierMaterial)
     // Ещё чуть дальше от дороги — даём место широкому бордюру
     leftBarrier.position.set(-4.0, 1.25, 0)
     leftBarrier.castShadow = false
@@ -279,8 +307,8 @@ export function useGameWorld(scene, camera) {
     leftBarrier.updateMatrix()
     scene.add(leftBarrier)
 
-    // Правый барьер
-    const rightBarrier = new Mesh(barrierGeometry, barrierMaterial)
+    // Правый барьер (фолбек)
+    rightBarrier = new Mesh(barrierGeometry, barrierMaterial)
     rightBarrier.position.set(4.0, 1.25, 0)
     rightBarrier.castShadow = false
     rightBarrier.receiveShadow = false
@@ -309,6 +337,26 @@ export function useGameWorld(scene, camera) {
     rightCurb.matrixAutoUpdate = false
     rightCurb.updateMatrix()
     scene.add(rightCurb)
+
+    // Пытаемся загрузить детализированный забор из GLB. Если что-то пойдёт не так — остаются боксы выше.
+    const fenceLoader = new GLTFLoader()
+    fenceLoader.load(
+      FENCE_MODEL_PATH,
+      (gltf) => {
+        fenceTemplate = gltf.scene
+        fenceTemplate.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = false
+            child.receiveShadow = false
+          }
+        })
+        createFenceInstances()
+      },
+      undefined,
+      (err) => {
+        console.warn('Fence GLB load failed:', err)
+      }
+    )
 
     // Барьерные маркеры как декоративный шум убраны для снижения нагрузки.
   }
