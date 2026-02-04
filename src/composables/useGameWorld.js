@@ -558,18 +558,14 @@ export function useGameWorld(scene, camera) {
     const speed = roadSpeed.value
     const segments = roadSegments
     const cameraZ = camera ? camera.position.z : 8
-    const cutoffZ = cameraZ + roadLength * 1.5
-    let minZ = segments.length ? segments[0].position.z : 0
-    for (let i = 1; i < segments.length; i++) {
-      const z = segments[i].position.z
-      if (z < minZ) minZ = z
-    }
+    const span = roadLength * segments.length
+
     for (let i = 0; i < segments.length; i++) {
       const segment = segments[i]
       segment.position.z += speed
-      if (segment.position.z > cutoffZ) {
-        segment.position.z = minZ - roadLength + 0.1
-        minZ = segment.position.z
+      // Как только сегмент достаточно уехал вперёд от камеры — переносим его в хвост
+      if (segment.position.z - cameraZ > roadLength) {
+        segment.position.z -= span
       }
     }
     updateLaneMarkings(speed)

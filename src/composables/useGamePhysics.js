@@ -454,15 +454,14 @@ export function useGamePhysics(scene) {
   // Простой AABB: от ног (position.y) вверх на 1.5 — без setFromObject (дорого для GLB).
   // Центр смещён вверх на 0.75, чтобы при прыжке (y=1.7) низ бокса был 1.7 и перепрыгивал барьер 0.9.
   const _playerBoxSize = new Vector3(0.8, 1.5, 0.6)
+  const _playerBoxCenter = new Vector3()
   let _playerBoxCache = null
   const getPlayerBox = () => {
     if (!playerMesh) return null
     if (!_playerBoxCache) _playerBoxCache = new Box3()
     const feetY = getPlayerY()
-    _playerBoxCache.setFromCenterAndSize(
-      new Vector3(playerMesh.position.x, feetY + 0.75, playerMesh.position.z),
-      _playerBoxSize
-    )
+    _playerBoxCenter.set(playerMesh.position.x, feetY + 0.75, playerMesh.position.z)
+    _playerBoxCache.setFromCenterAndSize(_playerBoxCenter, _playerBoxSize)
     return _playerBoxCache
   }
 
