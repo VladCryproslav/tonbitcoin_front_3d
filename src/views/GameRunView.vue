@@ -173,6 +173,9 @@ const launcherOverlayMode = ref('idle')
 let threeLoop = null
 let lastUpdateTime = 0
 let shakeFramesLeft = 0
+let shakeBaseX = 0
+let shakeBaseY = 0
+const SHAKE_DURATION_FRAMES = 10
 let effectsFrameCounter = 0
 const FIXED_STEP_MS = 1000 / 60
 const MAX_STEPS = 3
@@ -255,18 +258,16 @@ const startThreeLoop = () => {
     if (gameRun.isRunning.value && !gameRun.isPaused.value) {
       const now = performance.now()
       if (lastUpdateTime <= 0) lastUpdateTime = now
-      let frameTime = Math.min(now - lastUpdateTime, 100)
+      const frameTime = Math.min(now - lastUpdateTime, 100)
       lastUpdateTime = now
       const nowMs = performance.now()
       const slideStartTime = gamePhysics.value?.getSlideStartTime?.() ?? 0
       const inRollImmuneWindow = slideStartTime > 0 && nowMs - slideStartTime < ROLL_IMMUNE_MS
       const framePlayerBox = gamePhysics.value?.getPlayerBox?.() ?? null
       const effectiveMaxSteps = gameSpeed.value > 0.4 ? 2 : MAX_STEPS
-      let steps = 0
-      while (frameTime >= FIXED_STEP_MS && steps < effectiveMaxSteps) {
+      const stepsCount = Math.min(effectiveMaxSteps, Math.floor(frameTime / FIXED_STEP_MS))
+      for (let i = 0; i < stepsCount; i++) {
         doOneStep(framePlayerBox, inRollImmuneWindow)
-        frameTime -= FIXED_STEP_MS
-        steps++
       }
       if (gameWorld.value) gameWorld.value.spawnObjects(playerZ.value, gameRun.getNextEnergyPoint)
       if (gameEffects.value && graphicsQuality.value !== 'low') {
@@ -302,8 +303,10 @@ const startThreeLoop = () => {
       camera.lookAt(camera.position.x, -0.15, -18)
     }
     if (camera && shakeFramesLeft > 0) {
-      camera.position.x += (Math.random() - 0.5) * 0.3
-      camera.position.y += (Math.random() - 0.5) * 0.3
+      const t = shakeFramesLeft / SHAKE_DURATION_FRAMES
+      const intensity = t * t // плавное затухание
+      camera.position.x += shakeBaseX * intensity
+      camera.position.y += shakeBaseY * intensity
       shakeFramesLeft--
     }
 
@@ -445,7 +448,12 @@ function doOneStep(playerBox, inRollImmuneWindow) {
             gameRun.hitObstacle()
             const newPower = gameRun.currentPower.value - 10
             app.setPower(Math.max(0, newPower))
-            shakeFramesLeft = 10
+            // Мягкая тряска камеры только при ударе
+            shakeFramesLeft = SHAKE_DURATION_FRAMES
+            const angle = Math.random() * Math.PI * 2
+            const amp = 0.3
+            shakeBaseX = Math.cos(angle) * amp
+            shakeBaseY = Math.sin(angle) * amp
           },
           gamePhysics.value.isSliding?.value === true,
           inRollImmuneWindow
