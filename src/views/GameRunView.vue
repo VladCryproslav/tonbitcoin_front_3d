@@ -223,7 +223,7 @@ const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: 
   camera.lookAt(0, -0.15, -18)
 
   // Инициализация игрового мира
-  gameWorld.value = useGameWorld(scene, camera)
+  gameWorld.value = useGameWorld(scene)
   gameWorld.value.createRoad()
   await gameWorld.value.loadBarrierModels()
 
@@ -361,6 +361,11 @@ const applyGraphicsQuality = () => {
     player.traverse?.((child) => {
       if (child.isMesh) child.castShadow = true
     })
+  }
+
+  // На low отключаем забор (GLB + фолбек-боксы), оставляем только бордюр.
+  if (gameWorld.value?.setFenceEnabled) {
+    gameWorld.value.setFenceEnabled(!isLow)
   }
 }
 

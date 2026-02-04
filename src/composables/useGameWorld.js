@@ -25,7 +25,7 @@ const TOKEN_PATHS = {
 }
 const FENCE_MODEL_PATH = '/models/fence_V1.glb'
 
-export function useGameWorld(scene, camera) {
+export function useGameWorld(scene) {
   // Длина одного сегмента дороги и количество сегментов.
   // Чуть увеличены, чтобы дорога рисовалась дальше без разрывов.
   const roadLength = 25
@@ -41,6 +41,7 @@ export function useGameWorld(scene, camera) {
   let rightBarrier = null
   let fenceTemplate = null
   const fences = []
+  let fenceEnabled = true
 
   // Секции дороги: меньше дистанция — спавн чаще. При разгоне увеличиваем spacing — меньше спавна, меньше clone/GC
   const SECTION_SPACING = 4
@@ -122,6 +123,7 @@ export function useGameWorld(scene, camera) {
     for (let z = -halfLen; z <= halfLen; z += FENCE_SECTION_STEP) {
       const leftFence = fenceTemplate.clone()
       leftFence.position.set(leftBarrier.position.x, 0, z)
+      leftFence.visible = fenceEnabled
       scene.add(leftFence)
       fences.push(leftFence)
 
@@ -129,13 +131,10 @@ export function useGameWorld(scene, camera) {
       rightFence.position.set(rightBarrier.position.x, 0, z)
       // Правый забор разворачиваем "лицом" к дороге
       rightFence.rotation.y = Math.PI
+      rightFence.visible = fenceEnabled
       scene.add(rightFence)
       fences.push(rightFence)
     }
-
-    // Если GLB успешно отрисован — прячем простые боксы, они остаются фолбеком на случай ошибки загрузки.
-    leftBarrier.visible = false
-    rightBarrier.visible = false
   }
 
   // Общая геометрия и материалы препятствий. ROLL — отдельная геометрия 2.5, чтобы не было артефакта «появление сверху вниз» при shared с IMPASSABLE.
@@ -489,6 +488,23 @@ export function useGameWorld(scene, camera) {
         obj.position.z -= fullLen
       }
     }
+  }
+
+  // Включение / отключение забора (GLB + фолбек-боксы), например, для low-графики.
+  const setFenceEnabled = (enabled) => {
+    fenceEnabled = !!enabled
+
+    // GLB‑забор
+    if (fences.length) {
+      for (let i = 0; i < fences.length; i++) {
+        fences[i].visible = fenceEnabled
+      }
+    }
+
+    // Фолбек‑боксы: показываем только если нет GLB и не low.
+    const showFallback = fenceEnabled && fences.length === 0
+    if (leftBarrier) leftBarrier.visible = showFallback
+    if (rightBarrier) rightBarrier.visible = showFallback
   }
 
   // Создание препятствия по типу: jump (прыжок), roll (кувырок), impassable (непроходимая — кувырок)
@@ -875,6 +891,7 @@ export function useGameWorld(scene, camera) {
     updateCollectibles,
     clearAll,
     setRoadSpeed,
-    roadSpeed
+    roadSpeed,
+    setFenceEnabled
   }
 }
