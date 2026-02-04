@@ -271,7 +271,8 @@ export function useGameWorld(scene, camera) {
 
     // Левый барьер
     const leftBarrier = new Mesh(barrierGeometry, barrierMaterial)
-    leftBarrier.position.set(-3.5, 1.25, 0)
+    // Поджимаем заборы ближе к дороге, чтобы убрать щели по бокам
+    leftBarrier.position.set(-3.0, 1.25, 0)
     leftBarrier.castShadow = false
     leftBarrier.receiveShadow = false
     leftBarrier.matrixAutoUpdate = false
@@ -280,7 +281,7 @@ export function useGameWorld(scene, camera) {
 
     // Правый барьер
     const rightBarrier = new Mesh(barrierGeometry, barrierMaterial)
-    rightBarrier.position.set(3.5, 1.25, 0)
+    rightBarrier.position.set(3.0, 1.25, 0)
     rightBarrier.castShadow = false
     rightBarrier.receiveShadow = false
     rightBarrier.matrixAutoUpdate = false
