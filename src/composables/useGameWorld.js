@@ -112,8 +112,8 @@ export function useGameWorld(scene, camera) {
 
   // GLB‑забор: один шаблон клонируем вдоль оси Z по обеим сторонам
   // Берём шаг чуть меньше длины сегмента, чтобы не было заметных щелей.
-  const FENCE_SECTION_STEP = 15
-  const FENCE_SEGMENT_COUNT = 4
+  const FENCE_SECTION_STEP = 18
+  const FENCE_SEGMENT_COUNT = 5
   const FENCE_WORLD_LENGTH = FENCE_SECTION_STEP * FENCE_SEGMENT_COUNT
   const createFenceInstances = () => {
     if (!fenceTemplate || !leftBarrier || !rightBarrier) return
