@@ -111,8 +111,10 @@ export function useGameWorld(scene, camera) {
   const OBSTACLE_TOTAL_SHARE = OBSTACLE_SHARES.reduce((s, o) => s + o.share, 0)
 
   // GLB‑забор: один шаблон клонируем вдоль оси Z по обеим сторонам
-  const FENCE_WORLD_LENGTH = 200
-  const FENCE_SECTION_STEP = 21.5 // длина одного сегмента (~из Blender), с небольшим перекрытием
+  // Берём шаг чуть меньше длины сегмента, чтобы не было заметных щелей.
+  const FENCE_SECTION_STEP = 18
+  const FENCE_SEGMENT_COUNT = 10
+  const FENCE_WORLD_LENGTH = FENCE_SECTION_STEP * FENCE_SEGMENT_COUNT
   const createFenceInstances = () => {
     if (!fenceTemplate || !leftBarrier || !rightBarrier) return
 
