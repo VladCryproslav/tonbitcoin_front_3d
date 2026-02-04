@@ -43,6 +43,7 @@ export function useGameWorld(scene, camera) {
   let lastSpawnPlayerZ = -999
   let nextSectionWorldZ = -48
   let lastCollectibleZ = -9999
+  let roadOffsetZ = 0
 
   // Лёгкий RNG-пул, чтобы не дёргать Math.random() в hot-path
   const RNG_SIZE = 2048
@@ -294,6 +295,7 @@ export function useGameWorld(scene, camera) {
     createBackground()
     const roadWidth = 6
 
+    roadOffsetZ = 0
     for (let i = 0; i < segmentCount; i++) {
       const roadGeometry = new PlaneGeometry(roadWidth, roadLength)
       const roadMaterial = new MeshStandardMaterial({
@@ -303,7 +305,7 @@ export function useGameWorld(scene, camera) {
       })
       const road = new Mesh(roadGeometry, roadMaterial)
       road.rotation.x = -Math.PI / 2
-      road.position.z = -i * roadLength
+      road.position.z = -i * roadLength + roadOffsetZ
       road.position.y = 0
       road.userData.type = 'road'
       scene.add(road)
@@ -576,16 +578,19 @@ export function useGameWorld(scene, camera) {
   const updateRoad = () => {
     const speed = roadSpeed.value
     const segments = roadSegments
-    const cameraZ = camera ? camera.position.z : 8
-    const span = roadLength * segments.length
+    if (!segments.length) return
 
+    // Сдвигаем общий оффсет и замыкаем его в пределах длины одного сегмента,
+    // чтобы позиции не уплывали в большие числа.
+    roadOffsetZ += speed
+    if (roadOffsetZ > roadLength) {
+      roadOffsetZ -= roadLength
+    }
+
+    // Каждый сегмент жёстко стоит в сетке: непрерывная полоса без щелей.
     for (let i = 0; i < segments.length; i++) {
       const segment = segments[i]
-      segment.position.z += speed
-      // Как только сегмент достаточно уехал вперёд от камеры — переносим его в хвост
-      if (segment.position.z - cameraZ > roadLength) {
-        segment.position.z -= span
-      }
+      segment.position.z = -i * roadLength + roadOffsetZ
     }
     updateLaneMarkings(speed)
   }
