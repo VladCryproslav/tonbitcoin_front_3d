@@ -44,6 +44,25 @@ export function useGameWorld(scene, camera) {
   let nextSectionWorldZ = -48
   let lastCollectibleZ = -9999
 
+  // Лёгкий RNG-пул, чтобы не дёргать Math.random() в hot-path
+  const RNG_SIZE = 2048
+  const rngValues = new Float32Array(RNG_SIZE)
+  let rngIndex = 0
+  const refillRng = () => {
+    for (let i = 0; i < RNG_SIZE; i++) {
+      rngValues[i] = Math.random()
+    }
+  }
+  refillRng()
+  const nextRand = () => {
+    const v = rngValues[rngIndex++]
+    if (rngIndex >= RNG_SIZE) {
+      rngIndex = 0
+      refillRng()
+    }
+    return v
+  }
+
   // Разметка полос – данные по инстансам + один InstancedMesh
   const laneMarkings = [] // { laneX, z }
   let laneMarkingsMesh = null
@@ -212,7 +231,7 @@ export function useGameWorld(scene, camera) {
       Math.max(0, (speed - 0.15) * 55)
     )
     const noneWeight = Math.max(23, NONE_BASE - nonePenalty)
-    let r = Math.random() * 100
+    let r = nextRand() * 100
     if (r < noneWeight) return OBSTACLE_KIND.NONE
     r = (r - noneWeight) / (100 - noneWeight)
     for (const { kind, share } of OBSTACLE_SHARES) {
@@ -533,17 +552,17 @@ export function useGameWorld(scene, camera) {
     if (typeof getNextEnergyPoint === 'function') {
       const point = getNextEnergyPoint()
       if (point) {
-        const lane = Math.floor(Math.random() * 3)
+        const lane = Math.floor(nextRand() * 3)
         const baseZ = lastCollectibleZ < -9000 ? sectionZ - 5 : lastCollectibleZ - COLLECTIBLE_MIN_Z_DISTANCE
-        const firstCollectibleZ = Math.min(sectionZ - 5, baseZ) - Math.random() * 4
+        const firstCollectibleZ = Math.min(sectionZ - 5, baseZ) - nextRand() * 4
         createCollectible(lane, firstCollectibleZ, point)
         lastCollectibleZ = firstCollectibleZ
       }
-      if (Math.random() < 0.4) {
+      if (nextRand() < 0.4) {
         const point2 = getNextEnergyPoint()
         if (point2) {
-          const lane = Math.floor(Math.random() * 3)
-          const secondZ = lastCollectibleZ - COLLECTIBLE_MIN_Z_DISTANCE - Math.random() * 3
+          const lane = Math.floor(nextRand() * 3)
+          const secondZ = lastCollectibleZ - COLLECTIBLE_MIN_Z_DISTANCE - nextRand() * 3
           if (secondZ < sectionZ + 2) {
             createCollectible(lane, secondZ, point2)
             lastCollectibleZ = secondZ
