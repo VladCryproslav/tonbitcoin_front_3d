@@ -330,7 +330,7 @@ export function useGameWorld(scene, camera) {
 
     const leftCurb = new Mesh(curbGeometry, curbMaterial)
     // Центр на -3.5: бордюр закрывает от -3.0 (край дороги) до -4.0 (забор)
-    leftCurb.position.set(-3.5, 0.15, 0)
+    leftCurb.position.set(-4, 0.15, 0)
     leftCurb.castShadow = false
     leftCurb.receiveShadow = false
     leftCurb.matrixAutoUpdate = false
@@ -338,7 +338,7 @@ export function useGameWorld(scene, camera) {
     scene.add(leftCurb)
 
     const rightCurb = new Mesh(curbGeometry, curbMaterial)
-    rightCurb.position.set(3.5, 0.15, 0)
+    rightCurb.position.set(4, 0.15, 0)
     rightCurb.castShadow = false
     rightCurb.receiveShadow = false
     rightCurb.matrixAutoUpdate = false
