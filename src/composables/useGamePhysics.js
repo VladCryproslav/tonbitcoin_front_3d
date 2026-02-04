@@ -27,6 +27,7 @@ export function useGamePhysics(scene) {
   let jumpDuration = 600
   let jumpStartY = 0
   let slideStartTime = 0
+  let rollDurationMs = 600
   let slideLandState = null // { startY, startRotX, startTime, duration } — приземление при slide из прыжка
   let slideFallbackState = null // { startTime, startY, startScaleY, phase, returnStartTime } — анимация кубика
   let mixer = null // Для анимаций из GLTF
@@ -301,11 +302,7 @@ export function useGamePhysics(scene) {
 
       if (mixer) {
         const rollClip = animations[animationIndexByState.roll]
-        const rollDuration = rollClip ? rollClip.duration * 1000 : 600
-        setTimeout(() => {
-          isSliding.value = false
-          playAnimationState('running')
-        }, rollDuration)
+        rollDurationMs = rollClip ? rollClip.duration * 1000 : 600
       } else if (playerMesh && !mixer) {
         slideFallbackState = {
           startTime: performance.now(),
@@ -358,6 +355,17 @@ export function useGamePhysics(scene) {
         playerMesh.position.y = slideLandState.startY + (0 - slideLandState.startY) * k
         playerMesh.rotation.x = slideLandState.startRotX + (0 - slideLandState.startRotX) * k
         if (t >= 1) slideLandState = null
+      }
+
+      // Завершение слайда для GLTF-анимации по времени, без setTimeout
+      if (mixer && isSliding.value) {
+        const slideElapsed = now - slideStartTime
+        if (slideElapsed >= rollDurationMs) {
+          isSliding.value = false
+          if (!isJumping.value) {
+            playAnimationState('running')
+          }
+        }
       }
 
       // Слайд кубического фоллбэка

@@ -27,9 +27,9 @@ const FENCE_MODEL_PATH = '/models/fence_V1.glb'
 
 export function useGameWorld(scene) {
   // Длина одного сегмента дороги и количество сегментов.
-  // Чуть увеличены, чтобы дорога рисовалась дальше без разрывов.
+  // Немного уменьшили количество сегментов — меньше геометрии в кадре, стабильнее FPS.
   const roadLength = 25
-  const segmentCount = 7
+  const segmentCount = 6
   const roadSegments = []
   const obstacles = []
   const collectibles = []

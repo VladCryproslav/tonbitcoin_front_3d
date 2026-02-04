@@ -5,10 +5,12 @@ import {
   PointsMaterial
 } from 'three'
 
-const ENERGY_PARTICLE_COUNT = 20
-const COLLISION_PARTICLE_COUNT = 15
-
-export function useGameEffects(scene) {
+export function useGameEffects(scene, quality = 'normal') {
+  const isMedium = quality === 'medium'
+  const isLow = quality === 'low'
+  // На low эффекты всё равно не обновляем из GameRunView, но количество частиц держим минимальным на medium.
+  const ENERGY_PARTICLE_COUNT = isLow ? 10 : (isMedium ? 12 : 20)
+  const COLLISION_PARTICLE_COUNT = isLow ? 6 : (isMedium ? 8 : 15)
   // Обычный массив вместо ref — убираем reactivity из hot path (updateEffects вызывается каждый кадр)
   const _particles = []
   const _toRemove = []

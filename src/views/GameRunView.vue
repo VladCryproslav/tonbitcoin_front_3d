@@ -192,6 +192,13 @@ const WIN_DECEL_RATE = 0.92
 const WIN_SPEED_THRESHOLD = 0.02
 const WIN_ANIMATION_DURATION_MS = 2500
 
+// Адаптивный DPR: целевое и текущее значение, регулируем по средней длительности кадра
+let targetPixelRatio = 1
+let minPixelRatio = 1
+let dynamicPixelRatio = 1
+let frameTimeEMA = 16.7
+let dprAdjustCounter = 0
+
 // Настройки графики: normal | medium | low. Читаем из localStorage синхронно — GameScene нужен при первом рендере.
 const isWeakDevice = ref(false)
 const graphicsQuality = ref('normal')
@@ -233,7 +240,7 @@ const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: 
   gamePhysics.value.createPlayer(scene, '/models/main.glb')
 
   // Инициализация эффектов
-  gameEffects.value = useGameEffects(scene)
+  gameEffects.value = useGameEffects(scene, graphicsQuality.value)
 
   // Запуск рендеринга Three.js
   startThreeLoop()
@@ -260,7 +267,10 @@ const startThreeLoop = () => {
       if (lastUpdateTime <= 0) lastUpdateTime = now
       const frameTime = Math.min(now - lastUpdateTime, 100)
       lastUpdateTime = now
-      const nowMs = performance.now()
+      // EMA по времени кадра для адаптивного DPR
+      frameTimeEMA = frameTimeEMA * 0.9 + frameTime * 0.1
+
+      const nowMs = now
       const slideStartTime = gamePhysics.value?.getSlideStartTime?.() ?? 0
       const inRollImmuneWindow = slideStartTime > 0 && nowMs - slideStartTime < ROLL_IMMUNE_MS
       const framePlayerBox = gamePhysics.value?.getPlayerBox?.() ?? null
@@ -270,10 +280,15 @@ const startThreeLoop = () => {
         doOneStep(framePlayerBox, inRollImmuneWindow)
       }
       if (gameWorld.value) gameWorld.value.spawnObjects(playerZ.value, gameRun.getNextEnergyPoint)
-      if (gameEffects.value && graphicsQuality.value !== 'low') {
-        // На normal/medium обновляем эффекты через кадр — меньше нагрузки
-        if ((effectsFrameCounter++ & 1) === 0) {
+      if (gameEffects.value) {
+        const q = graphicsQuality.value
+        if (q === 'normal') {
           gameEffects.value.updateEffects()
+        } else if (q === 'medium') {
+          // На medium эффекты через кадр — меньше нагрузки
+          if ((effectsFrameCounter++ & 1) === 0) {
+            gameEffects.value.updateEffects()
+          }
         }
       }
       if (hitCount.value >= 3) {
@@ -310,7 +325,25 @@ const startThreeLoop = () => {
       shakeFramesLeft--
     }
 
-    // 4) Рендер после обновления позиции и камеры
+    // 4) Адаптивный DPR на основе средней длительности кадра (только для normal/medium)
+    if (renderer) {
+      const q = graphicsQuality.value
+      const isLow = q === 'low'
+      if (!isLow) {
+        if (++dprAdjustCounter >= 30) {
+          dprAdjustCounter = 0
+          if (frameTimeEMA > 18 && dynamicPixelRatio > minPixelRatio) {
+            dynamicPixelRatio = Math.max(minPixelRatio, dynamicPixelRatio - 0.1)
+            renderer.setPixelRatio(dynamicPixelRatio)
+          } else if (frameTimeEMA < 15 && dynamicPixelRatio < targetPixelRatio) {
+            dynamicPixelRatio = Math.min(targetPixelRatio, dynamicPixelRatio + 0.1)
+            renderer.setPixelRatio(dynamicPixelRatio)
+          }
+        }
+      }
+    }
+
+    // 5) Рендер после обновления позиции и камеры
     if (renderer && scene && camera) {
       renderer.render(scene, camera)
     }
@@ -339,15 +372,20 @@ const applyGraphicsQuality = () => {
     directionalLight.castShadow = false
   }
 
-  // DPR: low=1, medium=1.5, normal=2
+  // DPR: low=1 (фикс), medium/normal — целевые значения, дальше адаптируем по frameTimeEMA
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
   if (isLow) {
-    renderer.setPixelRatio(1)
+    targetPixelRatio = 1
+    minPixelRatio = 1
   } else if (isMedium) {
-    renderer.setPixelRatio(Math.min(dpr, 1.5))
+    targetPixelRatio = Math.min(dpr, 1.5)
+    minPixelRatio = 1
   } else {
-    renderer.setPixelRatio(Math.min(dpr, 2))
+    targetPixelRatio = Math.min(dpr, 2)
+    minPixelRatio = 1
   }
+  dynamicPixelRatio = targetPixelRatio
+  renderer.setPixelRatio(dynamicPixelRatio)
 
   // castShadow только у игрока. receiveShadow только у дороги (normal/medium)
   scene.traverse?.((obj) => {

@@ -5,7 +5,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { Scene, PerspectiveCamera, WebGLRenderer, Color, AmbientLight, DirectionalLight, Fog } from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 const props = defineProps({
   width: { type: Number, default: window.innerWidth },
@@ -37,7 +36,7 @@ const initScene = () => {
     75,
     props.width / props.height,
     0.1,
-    1000
+    90
   )
   camera.position.set(0, 5, 10)
   camera.lookAt(0, 0, 0)
