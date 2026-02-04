@@ -271,8 +271,8 @@ export function useGameWorld(scene, camera) {
 
     // Левый барьер
     const leftBarrier = new Mesh(barrierGeometry, barrierMaterial)
-    // Поджимаем заборы ближе к дороге, чтобы убрать щели по бокам
-    leftBarrier.position.set(-3.0, 1.25, 0)
+    // Возвращаем заборы на ±3.5 и закрываем щель бардюром
+    leftBarrier.position.set(-3.5, 1.25, 0)
     leftBarrier.castShadow = false
     leftBarrier.receiveShadow = false
     leftBarrier.matrixAutoUpdate = false
@@ -281,12 +281,32 @@ export function useGameWorld(scene, camera) {
 
     // Правый барьер
     const rightBarrier = new Mesh(barrierGeometry, barrierMaterial)
-    rightBarrier.position.set(3.0, 1.25, 0)
+    rightBarrier.position.set(3.5, 1.25, 0)
     rightBarrier.castShadow = false
     rightBarrier.receiveShadow = false
     rightBarrier.matrixAutoUpdate = false
     rightBarrier.updateMatrix()
     scene.add(rightBarrier)
+
+    // Простой бардюр между дорогой (±3) и забором (±3.5), без эффектов и теней
+    const curbGeometry = new BoxGeometry(0.5, 0.3, 200)
+    const curbMaterial = new MeshLambertMaterial({ color: 0x4b5563 })
+
+    const leftCurb = new Mesh(curbGeometry, curbMaterial)
+    leftCurb.position.set(-3.25, 0.15, 0)
+    leftCurb.castShadow = false
+    leftCurb.receiveShadow = false
+    leftCurb.matrixAutoUpdate = false
+    leftCurb.updateMatrix()
+    scene.add(leftCurb)
+
+    const rightCurb = new Mesh(curbGeometry, curbMaterial)
+    rightCurb.position.set(3.25, 0.15, 0)
+    rightCurb.castShadow = false
+    rightCurb.receiveShadow = false
+    rightCurb.matrixAutoUpdate = false
+    rightCurb.updateMatrix()
+    scene.add(rightCurb)
 
     // Барьерные маркеры как декоративный шум убраны для снижения нагрузки.
   }
