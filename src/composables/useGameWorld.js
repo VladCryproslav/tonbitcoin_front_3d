@@ -40,6 +40,7 @@ export function useGameWorld(scene, camera) {
   let leftBarrier = null
   let rightBarrier = null
   let fenceTemplate = null
+  const fences = []
 
   // Секции дороги: меньше дистанция — спавн чаще. При разгоне увеличиваем spacing — меньше спавна, меньше clone/GC
   const SECTION_SPACING = 4
@@ -120,10 +121,14 @@ export function useGameWorld(scene, camera) {
       const leftFence = fenceTemplate.clone()
       leftFence.position.set(leftBarrier.position.x, 0, z)
       scene.add(leftFence)
+      fences.push(leftFence)
 
       const rightFence = fenceTemplate.clone()
       rightFence.position.set(rightBarrier.position.x, 0, z)
+      // Правый забор разворачиваем "лицом" к дороге
+      rightFence.rotation.y = Math.PI
       scene.add(rightFence)
+      fences.push(rightFence)
     }
 
     // Если GLB успешно отрисован — прячем простые боксы, они остаются фолбеком на случай ошибки загрузки.
@@ -463,6 +468,26 @@ export function useGameWorld(scene, camera) {
     laneMarkingsMesh.instanceMatrix.needsUpdate = true
   }
 
+  // Движение сегментов GLB-забора вместе с дорогой.
+  // Используем тот же speed, что и для дороги/разметки.
+  const updateFences = (speed = roadSpeed.value) => {
+    if (!fences.length) return
+
+    const halfLen = FENCE_WORLD_LENGTH / 2
+    const fullLen = FENCE_WORLD_LENGTH
+
+    for (let i = 0; i < fences.length; i++) {
+      const obj = fences[i]
+      obj.position.z += speed
+
+      // Когда сегмент ушёл слишком далеко вперёд — перекидываем его назад,
+      // сохраняя бесшовный коридор.
+      if (obj.position.z > halfLen) {
+        obj.position.z -= fullLen
+      }
+    }
+  }
+
   // Создание препятствия по типу: jump (прыжок), roll (кувырок), impassable (непроходимая — кувырок)
   const inactiveObstaclesByKind = {
     [OBSTACLE_KIND.IMPASSABLE]: [],
@@ -664,6 +689,7 @@ export function useGameWorld(scene, camera) {
       segment.position.z = -i * roadLength + roadOffsetZ
     }
     updateLaneMarkings(speed)
+    updateFences(speed)
   }
 
   const _obstaclesToRemove = []
