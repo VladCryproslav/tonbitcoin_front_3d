@@ -305,46 +305,59 @@ export function useGamePhysics(scene) {
   const slide = () => {
     if (!playerMesh || isDead) return
     const now = performance.now()
-    const canRestartRoll =
-      mixer &&
-      isSliding.value &&
-      !isDead &&
-      now - slideStartTime >= rollDurationMs
 
-    if (!isSliding.value || canRestartRoll) {
-      if (playerMesh && (isJumping.value || playerMesh.position.y > 0.1)) {
-        slideLandState = {
-          startY: playerMesh.position.y,
-          startRotX: playerMesh.rotation.x,
-          startTime: performance.now(),
-          duration: 150
-        }
-      }
-
-      isSliding.value = true
-      isJumping.value = false
+    // Если уже скользим — просто перезапускаем roll-анимацию и таймер,
+    // чтобы она начиналась сначала. Это позволяет делать повторные кувырки
+    // подряд, не дожидаясь полного окончания предыдущей анимации.
+    if (isSliding.value) {
       slideStartTime = now
-
-      playAnimationState('roll')
-
       if (mixer) {
-        const rollClip = animations[animationIndexByState.roll]
-        if (rollClip) {
-          const clipMs = rollClip.duration * 1000
-          // Окно геймплея: после ~550 мс можно делать новый roll,
-          // при этом сама анимация доигрывает до конца через finished event.
-          rollDurationMs = Math.min(clipMs, 550)
-        } else {
-          rollDurationMs = 550
-        }
-      } else if (playerMesh && !mixer) {
+        playAnimationState('roll')
+      } else {
         slideFallbackState = {
-          startTime: performance.now(),
+          startTime: now,
           startY: playerMesh.position.y,
           startScaleY: playerMesh.scale.y,
           phase: 'down',
           returnStartTime: 0
         }
+      }
+      return
+    }
+
+    // Первый кувырок
+    if (playerMesh && (isJumping.value || playerMesh.position.y > 0.1)) {
+      slideLandState = {
+        startY: playerMesh.position.y,
+        startRotX: playerMesh.rotation.x,
+        startTime: now,
+        duration: 150
+      }
+    }
+
+    isSliding.value = true
+    isJumping.value = false
+    slideStartTime = now
+
+    playAnimationState('roll')
+
+    if (mixer) {
+      const rollClip = animations[animationIndexByState.roll]
+      if (rollClip) {
+        const clipMs = rollClip.duration * 1000
+        // Окно геймплея: после ~550 мс можно делать новый roll,
+        // при этом сама анимация доигрывает до конца через finished event.
+        rollDurationMs = Math.min(clipMs, 550)
+      } else {
+        rollDurationMs = 550
+      }
+    } else if (playerMesh && !mixer) {
+      slideFallbackState = {
+        startTime: now,
+        startY: playerMesh.position.y,
+        startScaleY: playerMesh.scale.y,
+        phase: 'down',
+        returnStartTime: 0
       }
     }
   }
