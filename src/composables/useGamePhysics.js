@@ -79,10 +79,23 @@ export function useGamePhysics(scene) {
       currentAnimation.fadeOut(0.1)
     }
 
-    // Для "fall/death", "roll/slide" и "dodge" играем анимацию один раз.
-    if (state === 'fall' || state === 'death' || state === 'roll' || state === 'slide') {
+    // Для "fall/death" играем анимацию один раз и оставляем в финальной позе.
+    if (state === 'fall' || state === 'death') {
       action.setLoop(THREE.LoopOnce, 1)
       action.clampWhenFinished = true
+    } else if (state === 'roll' || state === 'slide') {
+      // Roll/slide: один раз, по завершению возвращаемся в бег, но только
+      // если это всё ещё активная анимация (не было перезапуска).
+      action.setLoop(THREE.LoopOnce, 1)
+      action.clampWhenFinished = true
+      const onFinishedRoll = (e) => {
+        if (e.action !== action || currentAnimation !== action) return
+        mixer.removeEventListener('finished', onFinishedRoll)
+        if (!isDead) {
+          playAnimationState('running')
+        }
+      }
+      mixer.addEventListener('finished', onFinishedRoll)
     } else if (state === 'dodge' || state === 'sidestep') {
       action.setLoop(THREE.LoopOnce, 1)
       action.clampWhenFinished = true
@@ -291,7 +304,14 @@ export function useGamePhysics(scene) {
 
   const slide = () => {
     if (!playerMesh || isDead) return
-    if (!isSliding.value) {
+    const now = performance.now()
+    const canRestartRoll =
+      mixer &&
+      isSliding.value &&
+      !isDead &&
+      now - slideStartTime >= rollDurationMs
+
+    if (!isSliding.value || canRestartRoll) {
       if (playerMesh && (isJumping.value || playerMesh.position.y > 0.1)) {
         slideLandState = {
           startY: playerMesh.position.y,
@@ -303,7 +323,7 @@ export function useGamePhysics(scene) {
 
       isSliding.value = true
       isJumping.value = false
-      slideStartTime = performance.now()
+      slideStartTime = now
 
       playAnimationState('roll')
 
@@ -311,10 +331,11 @@ export function useGamePhysics(scene) {
         const rollClip = animations[animationIndexByState.roll]
         if (rollClip) {
           const clipMs = rollClip.duration * 1000
-          // Чуть укорачиваем roll: быстрее возвращаем управление для следующего кувырка.
-          rollDurationMs = Math.min(clipMs, 520)
+          // Окно геймплея: после ~550 мс можно делать новый roll,
+          // при этом сама анимация доигрывает до конца через finished event.
+          rollDurationMs = Math.min(clipMs, 550)
         } else {
-          rollDurationMs = 520
+          rollDurationMs = 550
         }
       } else if (playerMesh && !mixer) {
         slideFallbackState = {
@@ -399,14 +420,13 @@ export function useGamePhysics(scene) {
         if (t >= 1) slideLandState = null
       }
 
-      // Завершение слайда для GLTF-анимации по времени, без setTimeout
+      // Завершение слайда для GLTF-анимации по времени: только снимаем флаг isSliding,
+      // чтобы разблокировать следующий кувырок. Сама анимация roll доигрывает до конца
+      // и по finished-событию возвращается в бег.
       if (mixer && isSliding.value && !isDead) {
         const slideElapsed = now - slideStartTime
         if (slideElapsed >= rollDurationMs) {
           isSliding.value = false
-          if (!isJumping.value) {
-            playAnimationState('running')
-          }
         }
       }
 
