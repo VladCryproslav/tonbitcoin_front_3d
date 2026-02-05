@@ -8,7 +8,13 @@
             src="@/assets/kW.png"
             alt="energy"
           />
-          <span class="value energy-value">{{ formatEnergy(energy) }} kW</span>
+          <span class="value energy-value">
+            {{ formatEnergy(energy) }}
+            <span v-if="Number.isFinite(maxEnergy) && maxEnergy > 0">
+              / {{ formatEnergy(maxEnergy) }}
+            </span>
+            kW
+          </span>
         </div>
         <div class="lives-counter">
           <svg
@@ -64,8 +70,9 @@
 <script setup>
 import { computed } from 'vue'
 
-const { energy, power, lives, maxLives } = defineProps({
+const { energy, maxEnergy, power, lives, maxLives } = defineProps({
   energy: { type: Number, default: 0 },
+  maxEnergy: { type: Number, default: NaN },
   power: { type: Number, default: 100 },
   lives: { type: Number, default: 3 },
   maxLives: { type: Number, default: 3 }

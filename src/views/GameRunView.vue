@@ -11,6 +11,7 @@
     <GameUI
       v-if="gameRun.isRunning || gameRun.isPaused"
       :energy="gameRun.energyCollected?.value ?? 0"
+      :max-energy="gameRun.currentStorage?.value ?? 0"
       :power="gameRun.distanceProgress?.value ?? 0"
       :lives="livesLeft"
       :max-lives="MAX_LIVES"
