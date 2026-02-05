@@ -83,10 +83,9 @@ export function useGamePhysics(scene) {
       action.setLoop(THREE.LoopOnce, 1)
       action.clampWhenFinished = true
     } else if (state === 'roll' || state === 'slide') {
-      // Roll/slide: играем один раз, даём доиграть до конца, а возвращение в бег
-      // контролирует физика по таймеру (rollDurationMs).
-      action.setLoop(THREE.LoopOnce, 1)
-      action.clampWhenFinished = true
+      // Roll/slide: крутятся в цикле, возвращение в бег контролирует физика по таймеру (rollDurationMs).
+      action.setLoop(THREE.LoopRepeat, Infinity)
+      action.clampWhenFinished = false
     } else if (state === 'dodge' || state === 'sidestep') {
       action.setLoop(THREE.LoopOnce, 1)
       action.clampWhenFinished = true
@@ -306,10 +305,18 @@ export function useGamePhysics(scene) {
         return
       }
       // После 70% разрешаем новый roll: обновляем стартовое время и
-      // заново запускаем анимацию без T-позы.
+      // перезапускаем анимацию с начала без T‑позы.
       slideStartTime = now
       if (mixer) {
-        playAnimationState('roll')
+        const rollIndex = animationIndexByState.roll
+        const rollClip = animations[rollIndex]
+        if (rollClip) {
+          const rollAction = mixer.clipAction(rollClip)
+          rollAction.reset()
+          rollAction.play()
+        } else {
+          playAnimationState('roll')
+        }
       } else {
         slideFallbackState = {
           startTime: now,
