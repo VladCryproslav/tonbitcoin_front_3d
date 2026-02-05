@@ -343,6 +343,14 @@ const startThreeLoop = () => {
       if (distanceDelta !== 0) {
         gameRun.updateDistance(gameRun.distance.value + distanceDelta)
       }
+      if (!winTriggered && !winDecelerating && winAnimationStartTime === 0) {
+        // Плавный набор: к 40% дистанции выходим на почти макс. скорость (один раз на кадр, не на шаг)
+        const progress = (gameRun.distanceProgress?.value ?? 0) / 100
+        const maxSpeed = 0.48
+        const rampProgress = Math.min(1, progress / 0.4)
+        const targetSpeed = 0.15 + (maxSpeed - 0.15) * rampProgress
+        gameSpeed.value = 0.92 * gameSpeed.value + 0.08 * targetSpeed
+      }
       if (gameWorld.value) gameWorld.value.spawnObjects(playerZ.value, gameRun.getNextEnergyPoint)
       if (gameEffects.value) {
         const q = graphicsQuality.value
@@ -549,7 +557,6 @@ function doOneStep(playerBox, inRollImmuneWindow) {
 
   if (gamePhysics.value) {
       if (gameWorld.value) {
-        gameWorld.value.setRoadSpeed(gameSpeed.value)
         gameWorld.value.updateRoad()
 
         gameWorld.value.updateObstacles(
@@ -616,13 +623,6 @@ function doOneStep(playerBox, inRollImmuneWindow) {
         endGame(true)
         winAnimationStartTime = 0
       }
-    } else if (!winTriggered) {
-      // Плавный набор: к 40% дистанции выходим на почти макс. скорость
-      const progress = (gameRun.distanceProgress?.value ?? 0) / 100
-      const maxSpeed = 0.48
-      const rampProgress = Math.min(1, progress / 0.4)
-      const targetSpeed = 0.15 + (maxSpeed - 0.15) * rampProgress
-      gameSpeed.value = 0.92 * gameSpeed.value + 0.08 * targetSpeed
     }
 }
 
