@@ -509,18 +509,21 @@ function doOneStep(playerBox, inRollImmuneWindow) {
             gameRun.hitObstacle()
             const newPower = gameRun.currentPower.value - 10
             app.setPower(Math.max(0, newPower))
-            // Мягкая тряска камеры только при ударе
+            // Мягкая тряска камеры только при ударе: статичный вертикальный "рывок"
             shakeFramesLeft = SHAKE_DURATION_FRAMES
-            const q = graphicsQuality.value
-            if (q === 'normal') {
-              const angle = Math.random() * Math.PI * 2
-              const amp = 0.25
-              shakeBaseX = Math.cos(angle) * amp
-              shakeBaseY = Math.sin(angle) * amp * 0.6
-            } else {
-              // На medium/low — детерминированная лёгкая тряска, без Math.random
-              shakeBaseX = 0.18
-              shakeBaseY = 0.10
+            const amp = 0.28
+            shakeBaseX = 0
+            shakeBaseY = amp
+
+            // Haptic feedback: Telegram WebApp + fallback через navigator.vibrate
+            try {
+              const tg = window.Telegram?.WebApp
+              tg?.HapticFeedback?.impactOccurred?.('medium')
+            } catch {
+              // ignore
+            }
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+              navigator.vibrate(30)
             }
           },
           gamePhysics.value.isSliding?.value === true,
