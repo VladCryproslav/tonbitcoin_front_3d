@@ -165,6 +165,13 @@
         {{ t('game.graphics_modal_body') }}
       </template>
     </InfoModal>
+
+    <!-- Красная вспышка по краям экрана при ударе (CSS-анимация, без JS-таймеров) -->
+    <div
+      v-if="hitFlashTick"
+      :key="hitFlashTick"
+      class="hit-flash-overlay"
+    />
   </div>
 </template>
 
@@ -208,6 +215,7 @@ let shakeFramesLeft = 0
 let shakeBaseX = 0
 let shakeBaseY = 0
 const SHAKE_DURATION_FRAMES = 10
+const hitFlashTick = ref(0)
 const FIXED_STEP_MS = 1000 / 60
 const MAX_STEPS = 3
 const ROLL_IMMUNE_MS = 950
@@ -339,7 +347,7 @@ const startThreeLoop = () => {
       if (!winTriggered && !winDecelerating && winAnimationStartTime === 0) {
         // Плавный набор: к 55% дистанции выходим на чуть меньшую макс. скорость (один раз на кадр, не на шаг)
         const progress = (gameRun.distanceProgress?.value ?? 0) / 100
-        const maxSpeed = 0.44
+        const maxSpeed = 0.42
         const rampProgress = Math.min(1, progress / 0.55)
         const baseSpeed = 0.15
         const targetSpeed = baseSpeed + (maxSpeed - baseSpeed) * rampProgress
@@ -557,6 +565,7 @@ function doOneStep(playerBox, inRollImmuneWindow) {
           playerBox,
           () => {
             hitCount.value += 1
+            hitFlashTick.value++
             gameRun.hitObstacle()
             const newPower = gameRun.currentPower.value - 10
             app.setPower(Math.max(0, newPower))
@@ -973,5 +982,31 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.hit-flash-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 350; // выше сцены/GUI, но ниже оверлеев
+  background:
+    radial-gradient(circle at center, rgba(0, 0, 0, 0) 45%, rgba(127, 0, 0, 0.08) 75%, rgba(0, 0, 0, 0) 100%),
+    radial-gradient(circle at 10% 10%, rgba(255, 0, 0, 0.22), transparent 65%),
+    radial-gradient(circle at 90% 10%, rgba(255, 0, 0, 0.22), transparent 65%),
+    radial-gradient(circle at 10% 90%, rgba(255, 0, 0, 0.18), transparent 60%),
+    radial-gradient(circle at 90% 90%, rgba(255, 0, 0, 0.18), transparent 60%);
+  animation: hit-flash-pulse 180ms ease-out forwards;
+}
+
+@keyframes hit-flash-pulse {
+  0% {
+    opacity: 0.0;
+  }
+  25% {
+    opacity: 1.0;
+  }
+  100% {
+    opacity: 0.0;
+  }
 }
 </style>
