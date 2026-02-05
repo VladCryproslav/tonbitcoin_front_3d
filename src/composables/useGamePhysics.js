@@ -31,6 +31,7 @@ export function useGamePhysics(scene) {
   let slideLandState = null // { startY, startRotX, startTime, duration } — приземление при slide из прыжка
   let deathLandState = null // { startY, startTime, duration } — плавное опускание перед финальным падением
   let isDead = false
+  let winFaceState = null // { startRotY, targetRotY, startTime, duration }
   let slideFallbackState = null // { startTime, startY, startScaleY, phase, returnStartTime } — анимация кубика
   let mixer = null // Для анимаций из GLTF
   let clock = new Clock()
@@ -372,6 +373,17 @@ export function useGamePhysics(scene) {
         }
       }
 
+      // Поворот лицом к пользователю при победе (win): быстрый, но плавный, только по Y.
+      if (winFaceState) {
+        const t = Math.min((now - winFaceState.startTime) / winFaceState.duration, 1)
+        const k = t * t * (3 - 2 * t)
+        const ry = winFaceState.startRotY + (winFaceState.targetRotY - winFaceState.startRotY) * k
+        playerMesh.rotation.y = ry
+        if (t >= 1) {
+          winFaceState = null
+        }
+      }
+
       // Приземление при slide из прыжка
       if (slideLandState && !deathLandState) {
         const t = Math.min((now - slideLandState.startTime) / slideLandState.duration, 1)
@@ -516,6 +528,7 @@ export function useGamePhysics(scene) {
     slideLandState = null
     slideFallbackState = null
     deathLandState = null
+    winFaceState = null
     isDead = false
     isSliding.value = false
   }
@@ -548,6 +561,19 @@ export function useGamePhysics(scene) {
     }
   }
 
+  /** Победа: быстро, но плавно разворачиваем персонажа лицом к камере (rotation.y = 0). */
+  const onWin = () => {
+    if (!playerMesh) return
+    const now = performance.now()
+    const currentY = playerMesh.rotation.y
+    winFaceState = {
+      startRotY: currentY,
+      targetRotY: 0,
+      startTime: now,
+      duration: 260
+    }
+  }
+
   return {
     playerPosition,
     playerLane,
@@ -566,6 +592,7 @@ export function useGamePhysics(scene) {
     loadPlayerModel,
     setAnimationState: playAnimationState,
     onFinalHit,
+    onWin,
     update,
     playerMesh: () => playerMesh,
     getPlayerBox,

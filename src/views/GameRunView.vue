@@ -656,6 +656,9 @@ function doOneStep(playerBox, inRollImmuneWindow) {
         if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
         winDecelerating = false
         if (gamePhysics.value?.setAnimationState) gamePhysics.value.setAnimationState('win')
+        if (gamePhysics.value?.onWin) {
+          gamePhysics.value.onWin()
+        }
         winAnimationStartTime = performance.now()
       }
     } else if (winAnimationStartTime > 0) {
