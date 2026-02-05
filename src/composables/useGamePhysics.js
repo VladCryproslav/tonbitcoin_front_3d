@@ -370,6 +370,7 @@ export function useGamePhysics(scene) {
             playerMesh.rotation.x = -progress * 0.3
           }
         }
+      }
 
       // Приземление при slide из прыжка
       if (slideLandState && !deathLandState) {
