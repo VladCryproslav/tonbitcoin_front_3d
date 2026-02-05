@@ -108,6 +108,11 @@ export function useGameWorld(scene) {
   ]
   const OBSTACLE_TOTAL_SHARE = OBSTACLE_SHARES.reduce((s, o) => s + o.share, 0)
 
+  // Предрасчёт плана препятствий по секциям: один раз до забега.
+  const MAX_OBSTACLE_PLAN_SECTIONS = 1024
+  const obstaclePlan = []
+  let obstaclePlanIndex = 0
+
   // GLB‑забор: один шаблон клонируем вдоль оси Z по обеим сторонам
   // Берём шаг чуть меньше длины сегмента, чтобы не было заметных щелей.
   const FENCE_SECTION_STEP = 18
@@ -256,8 +261,7 @@ export function useGameWorld(scene) {
   const COLLIDE_Z_MIN = -24
   const COLLIDE_Z_MAX = 5
 
-  function pickObstacleKind() {
-    const speed = roadSpeed.value
+  function pickObstacleKindForSpeed(speed) {
     const nonePenalty = Math.min(
       NONE_SPEED_PENALTY_MAX,
       Math.max(0, (speed - 0.15) * 55)
@@ -273,6 +277,9 @@ export function useGameWorld(scene) {
     }
     return OBSTACLE_KIND.IMPASSABLE
   }
+
+  // pickObstacleKindForSpeed используется только в precomputeObstaclePlan;
+  // отдельный pickObstacleKind больше не нужен в hot-path.
 
   // Фон создаём один раз; при повторном createRoad только дорога и разметка пересоздаются.
   let backgroundCreated = false
@@ -363,6 +370,38 @@ export function useGameWorld(scene) {
     )
 
     // Барьерные маркеры как декоративный шум убраны для снижения нагрузки.
+  }
+
+  // Предрасчёт плана препятствий на весь забег (по секциям), чтобы не дёргать RNG в hot-path.
+  // Мы аппроксимируем профиль скорости так же, как в GameRunView: плавный разгон от 0.15 до 0.52
+  // примерно к 40% дистанции, дальше — плато.
+  const precomputeObstaclePlan = (sectionCount = MAX_OBSTACLE_PLAN_SECTIONS) => {
+    obstaclePlan.length = 0
+    obstaclePlanIndex = 0
+
+    const minSpeed = 0.15
+    const maxSpeed = 0.52
+
+    for (let i = 0; i < sectionCount; i++) {
+      const progress = i / sectionCount
+      const rampProgress = Math.min(1, progress / 0.4)
+      const speed = minSpeed + (maxSpeed - minSpeed) * rampProgress
+
+      const kinds = []
+      for (let lane = 0; lane < 3; lane++) {
+        let kind = pickObstacleKindForSpeed(speed)
+        kinds.push(kind)
+      }
+
+      // Не допускаем три IMPASSABLE в ряд: заменяем один на NONE
+      const impassableCount = kinds.filter(k => k === OBSTACLE_KIND.IMPASSABLE).length
+      if (impassableCount >= 3) {
+        const idx = kinds.findIndex(k => k === OBSTACLE_KIND.IMPASSABLE)
+        kinds[idx] = OBSTACLE_KIND.NONE
+      }
+
+      obstaclePlan.push(kinds)
+    }
   }
 
   // Создание дорожки
@@ -637,6 +676,10 @@ export function useGameWorld(scene) {
   // Между секциями — минимальное расстояние SECTION_SPACING по playerZ.
   // getNextEnergyPoint: () => { value, isGlowing } | null — очередь поинтов из useGameRun
   const spawnObjects = (playerZ, getNextEnergyPoint) => {
+    if (obstaclePlan.length === 0) {
+      precomputeObstaclePlan()
+    }
+
     const speed = roadSpeed.value
     const spacing = speed > 0.4 ? SECTION_SPACING_HIGH_SPEED : SECTION_SPACING
     if (playerZ - lastSpawnPlayerZ < spacing) return
@@ -645,20 +688,11 @@ export function useGameWorld(scene) {
     const sectionZ = nextSectionWorldZ
     nextSectionWorldZ -= SECTION_WORLD_LENGTH
 
-    const kinds = []
-    for (let lane = 0; lane < 3; lane++) {
-      let kind = pickObstacleKind()
-      kinds.push(kind)
-    }
-    // Не допускаем три IMPASSABLE в ряд: заменяем один на NONE
-    const impassableCount = kinds.filter(k => k === OBSTACLE_KIND.IMPASSABLE).length
-    if (impassableCount >= 3) {
-      const idx = kinds.findIndex(k => k === OBSTACLE_KIND.IMPASSABLE)
-      kinds[idx] = OBSTACLE_KIND.NONE
-    }
+    const kindsFromPlan = obstaclePlan[obstaclePlanIndex] || obstaclePlan[obstaclePlanIndex % obstaclePlan.length]
+    obstaclePlanIndex = (obstaclePlanIndex + 1) % obstaclePlan.length
 
     for (let lane = 0; lane < 3; lane++) {
-      const kind = kinds[lane]
+      const kind = kindsFromPlan[lane]
       if (kind !== OBSTACLE_KIND.NONE) {
         createObstacle(lane, sectionZ, kind)
       }
