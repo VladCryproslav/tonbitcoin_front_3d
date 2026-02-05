@@ -9,11 +9,7 @@
             alt="energy"
           />
           <span class="value energy-value">
-            {{ formatEnergy(energy) }}
-            <span v-if="Number.isFinite(maxEnergy) && maxEnergy > 0">
-              / {{ formatEnergy(maxEnergy) }}
-            </span>
-            kW
+            {{ formatEnergy(energy) }} / {{ formatEnergy(maxEnergy) }} kW
           </span>
         </div>
         <div class="lives-counter">
@@ -72,7 +68,7 @@ import { computed } from 'vue'
 
 const { energy, maxEnergy, power, lives, maxLives } = defineProps({
   energy: { type: Number, default: 0 },
-  maxEnergy: { type: Number, default: NaN },
+  maxEnergy: { type: Number, default: 0 },
   power: { type: Number, default: 100 },
   lives: { type: Number, default: 3 },
   maxLives: { type: Number, default: 3 }
