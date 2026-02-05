@@ -713,13 +713,18 @@ export function useGameWorld(scene) {
 
   const _obstaclesToRemove = []
   const _collectiblesToRemove = []
+  const _activeObstacles = []
+  const _activeCollectibles = []
 
-  // Обновление препятствий. Кэшируем speed.
+  // Обновление препятствий. Кэшируем speed и работаем только с активным окном по Z для коллизий.
   const updateObstacles = (playerBox, onCollision, isSliding = false, inRollImmuneWindow = false) => {
     _obstaclesToRemove.length = 0
     const obstaclesToRemove = _obstaclesToRemove
+    const active = _activeObstacles
+    active.length = 0
     const speed = roadSpeed.value
 
+    // Шаг 1: движение и сбор индексов на удаление + сбор активных по Z
     for (let i = 0; i < obstacles.length; i++) {
       const obstacle = obstacles[i]
       obstacle.position.z += speed
@@ -729,10 +734,18 @@ export function useGameWorld(scene) {
         continue
       }
 
-      const inCollideZone = obstacle.position.z >= COLLIDE_Z_MIN && obstacle.position.z <= COLLIDE_Z_MAX
-      if (!inCollideZone) continue
+      if (obstacle.position.z >= COLLIDE_Z_MIN && obstacle.position.z <= COLLIDE_Z_MAX) {
+        active.push(obstacle)
+      }
+    }
 
-      if (playerBox) {
+    // Шаг 2: коллизии только для активного окна
+    if (playerBox && active.length > 0) {
+      const pMin = playerBox.min
+      const pMax = playerBox.max
+
+      for (let i = 0; i < active.length; i++) {
+        const obstacle = active[i]
         const kind = obstacle.userData.kind
 
         // Ручной AABB препятствия: знаем, что это куб 1xH x1, центр в obstacle.position.
@@ -749,31 +762,29 @@ export function useGameWorld(scene) {
         const minZ = cz - halfZ
         const maxZ = cz + halfZ
 
-        const pMin = playerBox.min
-        const pMax = playerBox.max
-
         const intersects =
           pMax.x >= minX && pMin.x <= maxX &&
           pMax.y >= minY && pMin.y <= maxY &&
           pMax.z >= minZ && pMin.z <= maxZ
 
+        if (!intersects) continue
+
         if (kind === OBSTACLE_KIND.ROLL) {
           const barBottom = minY
           const underBar = pMax.y < barBottom
           const safeFromRoll = isSliding || underBar || inRollImmuneWindow
-          if (!safeFromRoll && !obstacle.userData.hit && intersects) {
+          if (!safeFromRoll && !obstacle.userData.hit) {
             obstacle.userData.hit = true
             onCollision(obstacle)
           }
-        } else {
-          if (!obstacle.userData.hit && intersects) {
-            obstacle.userData.hit = true
-            onCollision(obstacle)
-          }
+        } else if (!obstacle.userData.hit) {
+          obstacle.userData.hit = true
+          onCollision(obstacle)
         }
       }
     }
 
+    // Шаг 3: возврат вышедших за экран в пулы
     if (obstaclesToRemove.length > 0) {
       obstaclesToRemove.sort((a, b) => b - a)
       obstaclesToRemove.forEach((idx) => {
@@ -793,20 +804,43 @@ export function useGameWorld(scene) {
   const updateCollectibles = (playerBox, onCollect, onPassed) => {
     _collectiblesToRemove.length = 0
     const collectiblesToRemove = _collectiblesToRemove
+    const active = _activeCollectibles
+    active.length = 0
     const speed = roadSpeed.value
 
-    collectibles.forEach((collectible, index) => {
+    // Шаг 1: движение, отметка на удаление и окно по Z
+    for (let i = 0; i < collectibles.length; i++) {
+      const collectible = collectibles[i]
       if (collectible.userData.collected) {
-        collectiblesToRemove.push(index)
-        return
+        collectiblesToRemove.push(i)
+        continue
       }
 
       collectible.position.z += speed
       collectible.rotation.y += 0.05
 
-      const inCollideZone = collectible.position.z >= COLLIDE_Z_MIN && collectible.position.z <= COLLIDE_Z_MAX
+      if (collectible.position.z > 6) {
+        if (typeof onPassed === 'function') onPassed()
+        collectiblesToRemove.push(i)
+        collectible.visible = false
+        inactiveCollectibles.push(collectible)
+        continue
+      }
 
-      if (playerBox && inCollideZone) {
+      if (collectible.position.z >= COLLIDE_Z_MIN && collectible.position.z <= COLLIDE_Z_MAX) {
+        active.push({ collectible, index: i })
+      }
+    }
+
+    // Шаг 2: коллизии только для активного окна
+    if (playerBox && active.length > 0) {
+      const pMin = playerBox.min
+      const pMax = playerBox.max
+
+      for (let i = 0; i < active.length; i++) {
+        const { collectible, index } = active[i]
+        if (collectible.userData.collected) continue
+
         const half = collectible.userData.bounds?.half ?? COLLECTIBLE_HALF
         const cx = collectible.position.x
         const cy = collectible.position.y
@@ -819,37 +853,27 @@ export function useGameWorld(scene) {
         const minZ = cz - half
         const maxZ = cz + half
 
-        const pMin = playerBox.min
-        const pMax = playerBox.max
-
         const intersects =
           pMax.x >= minX && pMin.x <= maxX &&
           pMax.y >= minY && pMin.y <= maxY &&
           pMax.z >= minZ && pMin.z <= maxZ
 
-        if (intersects) {
-          collectible.userData.collected = true
-          collectible.visible = false
-          collectible.position.y = -9999
-          collectible.position.z = -9999
+        if (!intersects) continue
 
-          const energy = collectible.userData.energyValue ?? 0.5
-          onCollect(energy)
-          if (typeof onPassed === 'function') onPassed()
-          collectiblesToRemove.push(index)
-          inactiveCollectibles.push(collectible)
-          return
-        }
-      }
+        collectible.userData.collected = true
+        collectible.visible = false
+        collectible.position.y = -9999
+        collectible.position.z = -9999
 
-      if (collectible.position.z > 6) {
+        const energy = collectible.userData.energyValue ?? 0.5
+        onCollect(energy)
         if (typeof onPassed === 'function') onPassed()
         collectiblesToRemove.push(index)
-        collectible.visible = false
         inactiveCollectibles.push(collectible)
       }
-    })
+    }
 
+    // Шаг 3: чистка массива активных коллектов
     if (collectiblesToRemove.length > 0) {
       collectiblesToRemove.sort((a, b) => b - a)
       collectiblesToRemove.forEach((i) => collectibles.splice(i, 1))
@@ -882,6 +906,13 @@ export function useGameWorld(scene) {
     roadSpeed.value = speed
   }
 
+  const setRoadReceiveShadow = (enabled) => {
+    for (let i = 0; i < roadSegments.length; i++) {
+      const road = roadSegments[i]
+      road.receiveShadow = !!enabled
+    }
+  }
+
   return {
     createRoad,
     loadBarrierModels,
@@ -892,6 +923,7 @@ export function useGameWorld(scene) {
     clearAll,
     setRoadSpeed,
     roadSpeed,
-    setFenceEnabled
+    setFenceEnabled,
+    setRoadReceiveShadow
   }
 }

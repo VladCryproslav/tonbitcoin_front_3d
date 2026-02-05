@@ -274,7 +274,10 @@ const startThreeLoop = () => {
       const slideStartTime = gamePhysics.value?.getSlideStartTime?.() ?? 0
       const inRollImmuneWindow = slideStartTime > 0 && nowMs - slideStartTime < ROLL_IMMUNE_MS
       const framePlayerBox = gamePhysics.value?.getPlayerBox?.() ?? null
-      const effectiveMaxSteps = gameSpeed.value > 0.4 ? 2 : MAX_STEPS
+      let effectiveMaxSteps = MAX_STEPS
+      if (gameSpeed.value > 0.4) effectiveMaxSteps = 2
+      if (frameTimeEMA > 20) effectiveMaxSteps = Math.min(effectiveMaxSteps, 2)
+      if (frameTimeEMA > 30) effectiveMaxSteps = 1
       const stepsCount = Math.min(effectiveMaxSteps, Math.floor(frameTime / FIXED_STEP_MS))
       for (let i = 0; i < stepsCount; i++) {
         doOneStep(framePlayerBox, inRollImmuneWindow)
@@ -387,13 +390,16 @@ const applyGraphicsQuality = () => {
   dynamicPixelRatio = targetPixelRatio
   renderer.setPixelRatio(dynamicPixelRatio)
 
-  // castShadow только у игрока. receiveShadow только у дороги (normal/medium)
-  scene.traverse?.((obj) => {
-    if (obj.isMesh) {
-      obj.castShadow = false
-      obj.receiveShadow = !isLow && obj.userData?.type === 'road'
-    }
-  })
+  // На смене настроек графики обновляем качество эффектов (количество частиц)
+  if (gameEffects.value) {
+    gameEffects.value.clearAll()
+    gameEffects.value = useGameEffects(scene, graphicsQuality.value)
+  }
+
+  // receiveShadow только у дороги (normal/medium) — без traverse по всей сцене
+  if (gameWorld.value?.setRoadReceiveShadow) {
+    gameWorld.value.setRoadReceiveShadow(!isLow)
+  }
   const player = gamePhysics.value?.playerMesh?.()
   if (player && !isLow) {
     player.traverse?.((child) => {
