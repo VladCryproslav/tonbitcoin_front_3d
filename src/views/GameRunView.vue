@@ -406,6 +406,17 @@ const applyGraphicsQuality = () => {
   if (gameWorld.value?.setRoadReceiveShadow) {
     gameWorld.value.setRoadReceiveShadow(!isLow)
   }
+
+  // Частота обновления анимаций скелета: medium/low — легче
+  if (gamePhysics.value?.setMixerRate) {
+    if (isLow) {
+      gamePhysics.value.setMixerRate(0.5)
+    } else if (isMedium) {
+      gamePhysics.value.setMixerRate(0.5)
+    } else {
+      gamePhysics.value.setMixerRate(1)
+    }
+  }
   const player = gamePhysics.value?.playerMesh?.()
   if (player && !isLow) {
     player.traverse?.((child) => {
@@ -504,10 +515,17 @@ function doOneStep(playerBox, inRollImmuneWindow) {
             app.setPower(Math.max(0, newPower))
             // Мягкая тряска камеры только при ударе
             shakeFramesLeft = SHAKE_DURATION_FRAMES
-            const angle = Math.random() * Math.PI * 2
-            const amp = 0.3
-            shakeBaseX = Math.cos(angle) * amp
-            shakeBaseY = Math.sin(angle) * amp
+            const q = graphicsQuality.value
+            if (q === 'normal') {
+              const angle = Math.random() * Math.PI * 2
+              const amp = 0.25
+              shakeBaseX = Math.cos(angle) * amp
+              shakeBaseY = Math.sin(angle) * amp * 0.6
+            } else {
+              // На medium/low — детерминированная лёгкая тряска, без Math.random
+              shakeBaseX = 0.18
+              shakeBaseY = 0.10
+            }
           },
           gamePhysics.value.isSliding?.value === true,
           inRollImmuneWindow

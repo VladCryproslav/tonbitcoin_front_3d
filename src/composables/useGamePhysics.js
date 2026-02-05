@@ -32,6 +32,8 @@ export function useGamePhysics(scene) {
   let slideFallbackState = null // { startTime, startY, startScaleY, phase, returnStartTime } — анимация кубика
   let mixer = null // Для анимаций из GLTF
   let clock = new Clock()
+  let mixerFrameCounter = 0
+  let mixerRate = 1 // 1 — каждый кадр, 0.5 — через кадр
   // Смена полосы в одном цикле (update), без отдельного rAF — убирает микрофризы
   let laneTransitionStartTime = 0
   let laneTransitionStartX = 0
@@ -328,8 +330,13 @@ export function useGamePhysics(scene) {
     const now = frameContext?.nowMs ?? performance.now()
 
     if (mixer) {
-      const deltaSec = frameContext ? frameContext.deltaMs / 1000 : clock.getDelta()
-      mixer.update(deltaSec)
+      const useThisFrame =
+        mixerRate >= 1 ||
+        (mixerRate >= 0.5 && (mixerFrameCounter++ & 1) === 0)
+      if (useThisFrame) {
+        const deltaSec = frameContext ? frameContext.deltaMs / 1000 : clock.getDelta()
+        mixer.update(deltaSec)
+      }
     }
 
     if (playerMesh) {
@@ -408,7 +415,12 @@ export function useGamePhysics(scene) {
         const ease = progress < 0.5
           ? 2 * progress * progress
           : 1 - Math.pow(-2 * progress + 2, 2) / 2
-        playerMesh.position.x = laneTransitionStartX + (laneTransitionTargetX - laneTransitionStartX) * ease
+        const desiredX = laneTransitionStartX + (laneTransitionTargetX - laneTransitionStartX) * ease
+        const maxStepX = 0.35
+        let deltaX = desiredX - playerMesh.position.x
+        if (deltaX > maxStepX) deltaX = maxStepX
+        if (deltaX < -maxStepX) deltaX = -maxStepX
+        playerMesh.position.x += deltaX
         if (progress >= 1) {
           playerMesh.position.x = laneTransitionTargetX
           laneTransitionTargetX = null
@@ -493,6 +505,10 @@ export function useGamePhysics(scene) {
     laneTransitionTargetX = null
   }
 
+  const setMixerRate = (rate) => {
+    mixerRate = typeof rate === 'number' && rate > 0 ? rate : 1
+  }
+
   return {
     playerPosition,
     playerLane,
@@ -512,6 +528,7 @@ export function useGamePhysics(scene) {
     setAnimationState: playAnimationState,
     update,
     playerMesh: () => playerMesh,
-    getPlayerBox
+    getPlayerBox,
+    setMixerRate
   }
 }

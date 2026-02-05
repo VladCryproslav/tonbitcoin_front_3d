@@ -81,15 +81,12 @@ export function useGameWorld(scene) {
   const _lanePos = new Vector3()
 
   // Общая геометрия и материал для разметки полос (один draw call на тип, меньше памяти).
-  // Логику спавна/телепорта не меняем: разметка движется только в updateLaneMarkings с roadSpeed.
+  // Оставляем только цвет без эмиссии/теней, чтобы не нагружать рендер.
   const MARKING_LENGTH = 2
   const MARKING_WIDTH = 0.1
   const sharedMarkingGeometry = new BoxGeometry(MARKING_WIDTH, 0.01, MARKING_LENGTH)
-  const sharedMarkingMaterial = new MeshStandardMaterial({
-    color: 0xFEFF28,
-    emissive: 0xFEFF28,
-    emissiveIntensity: 0.3,
-    flatShading: true
+  const sharedMarkingMaterial = new MeshBasicMaterial({
+    color: 0xFEFF28
   })
 
   // 4 типа: нет преграды, непроходимая (кувырок), прыжок, кувырок (свайп вниз)
@@ -419,6 +416,8 @@ export function useGameWorld(scene) {
       sharedMarkingMaterial,
       laneMarkings.length
     )
+    laneMarkingsMesh.castShadow = false
+    laneMarkingsMesh.receiveShadow = false
 
     for (let i = 0; i < laneMarkings.length; i++) {
       const { laneX, z } = laneMarkings[i]
