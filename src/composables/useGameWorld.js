@@ -881,6 +881,10 @@ export function useGameWorld(scene) {
 
         const minX = cx - half
         const maxX = cx + half
+
+      // Быстрый X-куллинг до полного AABB — если по X мимо, дальше не считаем Y/Z.
+      if (pMax.x < minX || pMin.x > maxX) continue
+
         const minY = cy - half
         const maxY = cy + half
         const minZ = cz - half

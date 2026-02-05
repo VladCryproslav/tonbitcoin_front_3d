@@ -289,7 +289,7 @@ const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: 
 }
 
 // Очень плавное следование камеры: без рывков, незаметный дрейф от центра при смене полосы
-const CAMERA_SMOOTH_TIME = 0.55 // секунд до ~95% к цели (frame-rate independent)
+const CAMERA_SMOOTH_TIME = 0.42 // немного быстрее реакции без рывков (~95% за 0.42 c)
 let lastFrameDtSec = 0.016
 
 const startThreeLoop = () => {
@@ -325,9 +325,16 @@ const startThreeLoop = () => {
       const stepsCount = Math.min(effectiveMaxSteps, Math.floor(frameTime / FIXED_STEP_MS))
       const frameContext = { nowMs, deltaMs: frameTime, fixedSteps: stepsCount }
       let distanceDelta = 0
+      let accumulatedSpeed = 0
       for (let i = 0; i < stepsCount; i++) {
-        distanceDelta += gameSpeed.value * 10
+        const s = gameSpeed.value
+        accumulatedSpeed += s
+        distanceDelta += s * 10
         doOneStep(framePlayerBox, inRollImmuneWindow)
+      }
+      if (gameWorld.value && accumulatedSpeed !== 0) {
+        const avgSpeed = accumulatedSpeed / stepsCount
+        gameWorld.value.setRoadSpeed(avgSpeed)
       }
       if (distanceDelta !== 0) {
         gameRun.updateDistance(gameRun.distance.value + distanceDelta)

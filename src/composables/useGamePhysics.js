@@ -446,17 +446,19 @@ export function useGamePhysics(scene) {
         if (!isJumping.value && !isSliding.value) {
           const time = now * 0.001
           const runSpeed = 1.5
-          playerMesh.rotation.z = Math.sin(time * runSpeed) * 0.05
+          const s = Math.sin(time * runSpeed)
+          const s2 = Math.sin(time * runSpeed * 2)
+          playerMesh.rotation.z = s * 0.05
           if (leftArm && rightArm) {
-            leftArm.rotation.x = Math.sin(time * runSpeed) * 0.8
-            rightArm.rotation.x = -Math.sin(time * runSpeed) * 0.8
+            leftArm.rotation.x = s * 0.8
+            rightArm.rotation.x = -s * 0.8
           }
           if (leftLeg && rightLeg) {
-            leftLeg.rotation.x = -Math.sin(time * runSpeed) * 0.5
-            rightLeg.rotation.x = Math.sin(time * runSpeed) * 0.5
+            leftLeg.rotation.x = -s * 0.5
+            rightLeg.rotation.x = s * 0.5
           }
           const baseY = isSliding.value ? 0.3 : 0
-          playerMesh.position.y = baseY + Math.abs(Math.sin(time * runSpeed * 2)) * 0.1
+          playerMesh.position.y = baseY + Math.abs(s2) * 0.1
         } else {
           playerMesh.rotation.z = 0
           if (leftArm && rightArm) {
