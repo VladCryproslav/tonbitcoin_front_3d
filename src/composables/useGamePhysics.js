@@ -73,7 +73,15 @@ export function useGamePhysics(scene) {
     if (!clip) return
 
     const action = mixer.clipAction(clip)
-    if (currentAnimation === action) return
+    if (currentAnimation === action) {
+      // Для roll/slide разрешаем форсированный рестарт анимации —
+      // обрываем текущий цикл и запускаем заново.
+      if (state === 'roll' || state === 'slide') {
+        currentAnimation.stop()
+      } else {
+        return
+      }
+    }
 
     if (currentAnimation) {
       currentAnimation.fadeOut(0.1)
