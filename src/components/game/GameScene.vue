@@ -63,6 +63,7 @@ const initScene = () => {
   const directionalLight = new DirectionalLight(0xffffff, 1.0) // Очень яркое
   directionalLight.position.set(0, 12, -6)
   directionalLight.target.position.set(0, 0, 0)
+  directionalLight.target.updateMatrixWorld()
   directionalLight.castShadow = props.graphicsQuality !== 'low'
   const shadowSize = props.graphicsQuality === 'normal' ? 2048 : 1024
   if (props.graphicsQuality !== 'low') {

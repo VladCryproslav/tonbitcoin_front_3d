@@ -230,6 +230,7 @@ const playerZ = ref(0)
 const hitCount = ref(0)
 const MAX_LIVES = 3
 const livesLeft = computed(() => Math.max(0, MAX_LIVES - hitCount.value))
+const isDead = ref(false)
 let winTriggered = false
 let winDecelerating = false
 let winAnimationStartTime = 0
@@ -373,7 +374,6 @@ const startThreeLoop = () => {
       if (hitCount.value >= 3) {
         if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
         gameSpeed.value = 0
-        if (gamePhysics.value?.setAnimationState) gamePhysics.value.setAnimationState('fall')
         setTimeout(() => {
           gameOverType.value = 'lose'
           showGameOver.value = true
@@ -447,6 +447,13 @@ const applyGraphicsQuality = () => {
       directionalLight.castShadow = true
       directionalLight.shadow.mapSize.width = size
       directionalLight.shadow.mapSize.height = size
+      // Жёстко переустанавливаем направление света и таргет,
+      // чтобы тень персонажа не "уплывала" после смены качества.
+      directionalLight.position.set(0, 12, -6)
+      if (directionalLight.target) {
+        directionalLight.target.position.set(0, 0, 0)
+        directionalLight.target.updateMatrixWorld()
+      }
     }
   } else if (directionalLight) {
     directionalLight.castShadow = false
@@ -541,6 +548,7 @@ const startGame = () => {
   }
   gameRun.startRun()
   hitCount.value = 0
+  isDead.value = false
   winTriggered = false
   winDecelerating = false
   winAnimationStartTime = 0
@@ -579,6 +587,15 @@ function doOneStep(playerBox, inRollImmuneWindow) {
             gameRun.hitObstacle()
             const newPower = gameRun.currentPower.value - 10
             app.setPower(Math.max(0, newPower))
+            if (!isDead.value && livesLeft.value <= 0) {
+              isDead.value = true
+              if (gamePhysics.value?.onFinalHit) {
+                gamePhysics.value.onFinalHit()
+              } else if (gamePhysics.value?.setAnimationState) {
+                // Fallback: просто включаем анимацию падения
+                gamePhysics.value.setAnimationState('fall')
+              }
+            }
             // Мягкая тряска камеры только при ударе: статичный вертикальный "рывок"
             shakeFramesLeft = SHAKE_DURATION_FRAMES
             const amp = 0.28
@@ -732,28 +749,28 @@ const closeSettings = () => {
 
 const handleSwipeLeft = () => {
   // Игрок реагирует на свайпы только во время активного забега
-  if (!gameRun.isRunning.value || gameRun.isPaused.value) return
+  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value) return
   if (gamePhysics.value) {
     gamePhysics.value.moveLeft()
   }
 }
 
 const handleSwipeRight = () => {
-  if (!gameRun.isRunning.value || gameRun.isPaused.value) return
+  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value) return
   if (gamePhysics.value) {
     gamePhysics.value.moveRight()
   }
 }
 
 const handleSwipeUp = () => {
-  if (!gameRun.isRunning.value || gameRun.isPaused.value) return
+  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value) return
   if (gamePhysics.value) {
     gamePhysics.value.jump()
   }
 }
 
 const handleSwipeDown = () => {
-  if (!gameRun.isRunning.value || gameRun.isPaused.value) return
+  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value) return
   if (gamePhysics.value) {
     gamePhysics.value.slide()
   }

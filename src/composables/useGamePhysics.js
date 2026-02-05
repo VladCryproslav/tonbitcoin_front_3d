@@ -29,6 +29,8 @@ export function useGamePhysics(scene) {
   let slideStartTime = 0
   let rollDurationMs = 600
   let slideLandState = null // { startY, startRotX, startTime, duration } — приземление при slide из прыжка
+  let deathLandState = null // { startY, startTime, duration } — плавное опускание перед финальным падением
+  let isDead = false
   let slideFallbackState = null // { startTime, startY, startScaleY, phase, returnStartTime } — анимация кубика
   let mixer = null // Для анимаций из GLTF
   let clock = new Clock()
@@ -273,19 +275,21 @@ export function useGamePhysics(scene) {
   }
 
   const jump = () => {
+    if (!playerMesh || isDead) return
     if (!isJumping.value) {
       isJumping.value = true
       isSliding.value = false
       jumpStartTime = performance.now()
       jumpHeight = 1.7
       jumpDuration = 600
-      if (playerMesh) jumpStartY = playerMesh.position.y
+      jumpStartY = playerMesh.position.y
 
       playAnimationState('jump')
     }
   }
 
   const slide = () => {
+    if (!playerMesh || isDead) return
     if (!isSliding.value) {
       if (playerMesh && (isJumping.value || playerMesh.position.y > 0.1)) {
         slideLandState = {
@@ -340,24 +344,35 @@ export function useGamePhysics(scene) {
     }
 
     if (playerMesh) {
-      // Прыжок: всё в update(), без вложенных rAF
-      if (isJumping.value && !isSliding.value) {
-        const elapsed = now - jumpStartTime
-        const progress = elapsed / jumpDuration
-        if (progress >= 1) {
-          playerMesh.position.y = jumpStartY
-          playerMesh.rotation.x = 0
-          isJumping.value = false
-          playAnimationState('running')
-        } else {
-          const jumpCurve = Math.sin(progress * Math.PI)
-          playerMesh.position.y = jumpStartY + jumpHeight * jumpCurve
-          playerMesh.rotation.x = -progress * 0.3
+      // Финальный удар: приоритетно мягко опускаем персонажа на землю
+      if (deathLandState) {
+        const t = Math.min((now - deathLandState.startTime) / deathLandState.duration, 1)
+        const k = t * t * (3 - 2 * t)
+        playerMesh.position.y = deathLandState.startY + (0 - deathLandState.startY) * k
+        playerMesh.rotation.x = 0
+        if (t >= 1) {
+          deathLandState = null
+          playAnimationState('fall')
         }
-      }
+      } else {
+        // Прыжок: всё в update(), без вложенных rAF
+        if (isJumping.value && !isSliding.value && !isDead) {
+          const elapsed = now - jumpStartTime
+          const progress = elapsed / jumpDuration
+          if (progress >= 1) {
+            playerMesh.position.y = jumpStartY
+            playerMesh.rotation.x = 0
+            isJumping.value = false
+            playAnimationState('running')
+          } else {
+            const jumpCurve = Math.sin(progress * Math.PI)
+            playerMesh.position.y = jumpStartY + jumpHeight * jumpCurve
+            playerMesh.rotation.x = -progress * 0.3
+          }
+        }
 
       // Приземление при slide из прыжка
-      if (slideLandState) {
+      if (slideLandState && !deathLandState) {
         const t = Math.min((now - slideLandState.startTime) / slideLandState.duration, 1)
         const k = t * t * (3 - 2 * t)
         playerMesh.position.y = slideLandState.startY + (0 - slideLandState.startY) * k
@@ -366,7 +381,7 @@ export function useGamePhysics(scene) {
       }
 
       // Завершение слайда для GLTF-анимации по времени, без setTimeout
-      if (mixer && isSliding.value) {
+      if (mixer && isSliding.value && !isDead) {
         const slideElapsed = now - slideStartTime
         if (slideElapsed >= rollDurationMs) {
           isSliding.value = false
@@ -377,7 +392,7 @@ export function useGamePhysics(scene) {
       }
 
       // Слайд кубического фоллбэка
-      if (slideFallbackState && !mixer) {
+      if (slideFallbackState && !mixer && !isDead) {
         const s = slideFallbackState
         if (s.phase === 'down') {
           const elapsed = now - s.startTime
@@ -443,7 +458,7 @@ export function useGamePhysics(scene) {
         const leftLeg = u._leftLeg
         const rightLeg = u._rightLeg
 
-        if (!isJumping.value && !isSliding.value) {
+        if (!isJumping.value && !isSliding.value && !isDead) {
           const time = now * 0.001
           const runSpeed = 1.5
           const s = Math.sin(time * runSpeed)
@@ -499,6 +514,8 @@ export function useGamePhysics(scene) {
     slideStartTime = 0
     slideLandState = null
     slideFallbackState = null
+    deathLandState = null
+    isDead = false
     isSliding.value = false
   }
 
@@ -509,6 +526,25 @@ export function useGamePhysics(scene) {
 
   const setMixerRate = (rate) => {
     mixerRate = typeof rate === 'number' && rate > 0 ? rate : 1
+  }
+
+  /** Финальный удар (третья жизнь): блокируем управление и мягко опускаем персонажа перед падением. */
+  const onFinalHit = () => {
+    if (!playerMesh || isDead) return
+    isDead = true
+    // Блокируем текущие прыжки/слайды, но не трогаем горизонтальное положение
+    isSliding.value = false
+    // Если персонаж в воздухе — мягко опускаем, иначе сразу анимация падения
+    const currentY = playerMesh.position.y
+    if (currentY > 0.05) {
+      deathLandState = {
+        startY: currentY,
+        startTime: performance.now(),
+        duration: 220
+      }
+    } else {
+      playAnimationState('fall')
+    }
   }
 
   return {
@@ -528,6 +564,7 @@ export function useGamePhysics(scene) {
     createPlayer,
     loadPlayerModel,
     setAnimationState: playAnimationState,
+    onFinalHit,
     update,
     playerMesh: () => playerMesh,
     getPlayerBox,
