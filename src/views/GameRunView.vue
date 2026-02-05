@@ -324,8 +324,13 @@ const startThreeLoop = () => {
       if (frameTimeEMA > 30) effectiveMaxSteps = 1
       const stepsCount = Math.min(effectiveMaxSteps, Math.floor(frameTime / FIXED_STEP_MS))
       const frameContext = { nowMs, deltaMs: frameTime, fixedSteps: stepsCount }
+      let distanceDelta = 0
       for (let i = 0; i < stepsCount; i++) {
+        distanceDelta += gameSpeed.value * 10
         doOneStep(framePlayerBox, inRollImmuneWindow)
+      }
+      if (distanceDelta !== 0) {
+        gameRun.updateDistance(gameRun.distance.value + distanceDelta)
       }
       if (gameWorld.value) gameWorld.value.spawnObjects(playerZ.value, gameRun.getNextEnergyPoint)
       if (gameEffects.value) {
@@ -535,7 +540,6 @@ const resumeGame = () => {
 
 function doOneStep(playerBox, inRollImmuneWindow) {
   playerZ.value += gameSpeed.value
-  gameRun.updateDistance(gameRun.distance.value + gameSpeed.value * 10)
 
   if (gamePhysics.value) {
       if (gameWorld.value) {
