@@ -127,10 +127,9 @@ const formatEnergy = (value) => {
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  max-width: 140px;
+  min-width: 100px;
   display: inline-flex;
   align-items: center;
-  white-space: nowrap;
 
   .label {
     color: rgba(255, 255, 255, 0.7);
