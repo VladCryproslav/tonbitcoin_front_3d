@@ -86,6 +86,12 @@
           </button>
           <button
             class="btn-primary btn-secondary btn-primary--wide"
+            @click.stop.prevent="toggleHitFlash"
+          >
+            {{ hitFlashLabel }}
+          </button>
+          <button
+            class="btn-primary btn-secondary btn-primary--wide"
             @click.stop.prevent="closeSettings"
           >
             {{ t('game.back') }}
@@ -168,7 +174,7 @@
 
     <!-- Красная вспышка по краям экрана при ударе (CSS-анимация, без JS-таймеров) -->
     <div
-      v-if="hitFlashTick"
+      v-if="hitFlashEnabled && hitFlashTick"
       :key="hitFlashTick"
       class="hit-flash-overlay"
     />
@@ -242,12 +248,15 @@ let dprAdjustCounter = 0
 const isWeakDevice = ref(false)
 const graphicsQuality = ref('normal')
 const vibrationEnabled = ref(true)
+const hitFlashEnabled = ref(true)
 if (typeof window !== 'undefined') {
   try {
     const saved = window.localStorage?.getItem('game_graphics_quality')
     if (['normal', 'medium', 'low'].includes(saved)) graphicsQuality.value = saved
     const vib = window.localStorage?.getItem('game_vibration_enabled')
     if (vib === '0') vibrationEnabled.value = false
+    const flash = window.localStorage?.getItem('game_hit_flash_enabled')
+    if (flash === '0') hitFlashEnabled.value = false
   } catch {
     // ignore
   }
@@ -262,6 +271,7 @@ const graphicsLabels = {
 }
 const graphicsLabel = computed(() => t(graphicsLabels[graphicsQuality.value] || graphicsLabels.normal))
 const vibrationLabel = computed(() => (vibrationEnabled.value ? t('game.vibration_on') : t('game.vibration_off')))
+const hitFlashLabel = computed(() => (hitFlashEnabled.value ? t('game.hit_flash_on') : t('game.hit_flash_off')))
 
 let directionalLight = null
 
@@ -658,6 +668,17 @@ const toggleVibration = () => {
   }
 }
 
+const toggleHitFlash = () => {
+  hitFlashEnabled.value = !hitFlashEnabled.value
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem('game_hit_flash_enabled', hitFlashEnabled.value ? '1' : '0')
+    } catch {
+      // ignore
+    }
+  }
+}
+
 const endGame = async (isWinByState = false) => {
   stopGameLoop()
 
@@ -990,12 +1011,11 @@ onUnmounted(() => {
   pointer-events: none;
   z-index: 350; // выше сцены/GUI, но ниже оверлеев
   background:
-    radial-gradient(circle at center, rgba(0, 0, 0, 0) 45%, rgba(127, 0, 0, 0.08) 75%, rgba(0, 0, 0, 0) 100%),
-    radial-gradient(circle at 10% 10%, rgba(255, 0, 0, 0.22), transparent 65%),
-    radial-gradient(circle at 90% 10%, rgba(255, 0, 0, 0.22), transparent 65%),
-    radial-gradient(circle at 10% 90%, rgba(255, 0, 0, 0.18), transparent 60%),
-    radial-gradient(circle at 90% 90%, rgba(255, 0, 0, 0.18), transparent 60%);
-  animation: hit-flash-pulse 180ms ease-out forwards;
+    linear-gradient(to right, rgba(255, 0, 0, 0.45) 0%, rgba(255, 0, 0, 0.25) 8%, transparent 20%),
+    linear-gradient(to left, rgba(255, 0, 0, 0.45) 0%, rgba(255, 0, 0, 0.25) 8%, transparent 20%),
+    linear-gradient(to bottom, rgba(255, 0, 0, 0.32) 0%, rgba(255, 0, 0, 0.18) 7%, transparent 20%),
+    linear-gradient(to top, rgba(255, 0, 0, 0.32) 0%, rgba(255, 0, 0, 0.18) 7%, transparent 20%);
+  animation: hit-flash-pulse 260ms ease-out forwards;
 }
 
 @keyframes hit-flash-pulse {

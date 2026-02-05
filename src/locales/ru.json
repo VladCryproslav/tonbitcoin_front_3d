@@ -470,6 +470,8 @@
     "settings": "Настройки",
     "vibration_on": "Вибрация: Вкл",
     "vibration_off": "Вибрация: Выкл",
+    "hit_flash_on": "Эффект удара: Вкл",
+    "hit_flash_off": "Эффект удара: Выкл",
     "back": "Назад"
   },
   "common": {

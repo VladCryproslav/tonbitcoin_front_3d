@@ -470,6 +470,8 @@
     "settings": "Settings",
     "vibration_on": "Vibration: On",
     "vibration_off": "Vibration: Off",
+    "hit_flash_on": "Hit flash: On",
+    "hit_flash_off": "Hit flash: Off",
     "back": "Back"
   },
   "common": {
