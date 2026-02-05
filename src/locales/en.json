@@ -462,11 +462,15 @@
     "lose_title": "You lost",
     "lose_subtitle": "Try again to collect more energy.",
     "back_to_main": "Back to main screen",
-    "graphics_label_normal": "Graphics: Normal",
+    "graphics_label_normal": "Graphics: High",
     "graphics_label_medium": "Graphics: Medium",
     "graphics_label_low": "Graphics: Low",
     "graphics_modal_title": "Graphics settings",
-    "graphics_modal_body": "For your device we recommend the \"Low\" graphics mode.\nEnabling the \"Normal\" mode may reduce FPS and increase device temperature."
+    "graphics_modal_body": "For your device we recommend the \"Low\" graphics mode.\nEnabling the \"Normal\" mode may reduce FPS and increase device temperature.",
+    "settings": "Settings",
+    "vibration_on": "Vibration: On",
+    "vibration_off": "Vibration: Off",
+    "back": "Back"
   },
   "common": {
     "lvl": "lvl",

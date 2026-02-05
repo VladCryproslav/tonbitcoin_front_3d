@@ -50,7 +50,7 @@
             class="btn-primary btn-secondary btn-primary--wide"
             @click.stop.prevent="openSettings"
           >
-            Настройки
+            {{ t('game.settings') }}
           </button>
           <button
             class="btn-primary btn-secondary btn-primary--wide"
@@ -69,7 +69,7 @@
     >
       <div class="game-over-card">
         <div class="game-over-title">
-          Настройки
+          {{ t('game.settings') }}
         </div>
         <div class="game-over-actions">
           <button
@@ -88,7 +88,7 @@
             class="btn-primary btn-secondary btn-primary--wide"
             @click.stop.prevent="closeSettings"
           >
-            Назад
+            {{ t('game.back') }}
           </button>
         </div>
       </div>
@@ -248,9 +248,13 @@ if (typeof window !== 'undefined') {
 const showGraphicsInfoModal = ref(false)
 const pendingGraphicsQuality = ref(null)
 
-const graphicsLabels = { normal: 'game.graphics_label_normal', medium: 'game.graphics_label_medium', low: 'game.graphics_label_low' }
+const graphicsLabels = {
+  normal: 'game.graphics_label_normal',
+  medium: 'game.graphics_label_medium',
+  low: 'game.graphics_label_low'
+}
 const graphicsLabel = computed(() => t(graphicsLabels[graphicsQuality.value] || graphicsLabels.normal))
-const vibrationLabel = computed(() => (vibrationEnabled.value ? 'Вибрация: Вкл' : 'Вибрация: Выкл'))
+const vibrationLabel = computed(() => (vibrationEnabled.value ? t('game.vibration_on') : t('game.vibration_off')))
 
 let directionalLight = null
 
