@@ -454,9 +454,22 @@ const applyGraphicsQuality = () => {
         directionalLight.target.position.set(0, 0, 0)
         directionalLight.target.updateMatrixWorld()
       }
+      // Полностью пересоздаём shadow map, чтобы не было артефактов/смещений
+      if (directionalLight.shadow && directionalLight.shadow.map) {
+        directionalLight.shadow.map.dispose()
+        directionalLight.shadow.map = null
+      }
+      directionalLight.shadow.needsUpdate = true
+      if (directionalLight.shadow.camera && directionalLight.shadow.camera.updateProjectionMatrix) {
+        directionalLight.shadow.camera.updateProjectionMatrix()
+      }
     }
   } else if (directionalLight) {
     directionalLight.castShadow = false
+    if (directionalLight.shadow && directionalLight.shadow.map) {
+      directionalLight.shadow.map.dispose()
+      directionalLight.shadow.map = null
+    }
   }
 
   // DPR: low=1 (фикс), medium/normal — целевые значения, дальше адаптируем по frameTimeEMA
