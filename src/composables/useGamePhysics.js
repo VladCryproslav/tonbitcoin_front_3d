@@ -92,18 +92,9 @@ export function useGamePhysics(scene) {
       action.setLoop(THREE.LoopOnce, 1)
       action.clampWhenFinished = true
     } else if (state === 'roll' || state === 'slide') {
-      // Roll/slide: один раз, по завершению возвращаемся в бег, но только
-      // если это всё ещё активная анимация (не было перезапуска).
-      action.setLoop(THREE.LoopOnce, 1)
-      action.clampWhenFinished = true
-      const onFinishedRoll = (e) => {
-        if (e.action !== action || currentAnimation !== action) return
-        mixer.removeEventListener('finished', onFinishedRoll)
-        if (!isDead) {
-          playAnimationState('running')
-        }
-      }
-      mixer.addEventListener('finished', onFinishedRoll)
+      // Roll/slide: крутим в цикле, управление возвращает физика по таймеру.
+      action.setLoop(THREE.LoopRepeat, Infinity)
+      action.clampWhenFinished = false
     } else if (state === 'dodge' || state === 'sidestep') {
       action.setLoop(THREE.LoopOnce, 1)
       action.clampWhenFinished = true
@@ -355,9 +346,9 @@ export function useGamePhysics(scene) {
         const clipMs = rollClip.duration * 1000
         // Окно геймплея: после ~550 мс можно делать новый roll,
         // при этом сама анимация доигрывает до конца через finished event.
-        rollDurationMs = Math.min(clipMs, 550)
+        rollDurationMs = Math.min(clipMs, 580)
       } else {
-        rollDurationMs = 550
+        rollDurationMs = 580
       }
     } else if (playerMesh && !mixer) {
       slideFallbackState = {
@@ -441,13 +432,15 @@ export function useGamePhysics(scene) {
         if (t >= 1) slideLandState = null
       }
 
-      // Завершение слайда для GLTF-анимации по времени: только снимаем флаг isSliding,
-      // чтобы разблокировать следующий кувырок. Сама анимация roll доигрывает до конца
-      // и по finished-событию возвращается в бег.
+      // Завершение слайда для GLTF-анимации по времени: снимаем флаг isSliding,
+      // разблокируем следующий кувырок и возвращаем анимацию бега.
       if (mixer && isSliding.value && !isDead) {
         const slideElapsed = now - slideStartTime
         if (slideElapsed >= rollDurationMs) {
           isSliding.value = false
+          if (!isJumping.value) {
+            playAnimationState('running')
+          }
         }
       }
 
