@@ -234,9 +234,9 @@ const isDead = ref(false)
 let winTriggered = false
 let winDecelerating = false
 let winAnimationStartTime = 0
-const WIN_DECEL_RATE = 0.92
-const WIN_SPEED_THRESHOLD = 0.02
-const WIN_ANIMATION_DURATION_MS = 2500
+const WIN_DECEL_RATE = 0.88
+const WIN_SPEED_THRESHOLD = 0.04
+const WIN_ANIMATION_DURATION_MS = 1700
 
 // Адаптивный DPR: целевое и текущее значение, регулируем по средней длительности кадра
 let targetPixelRatio = 1

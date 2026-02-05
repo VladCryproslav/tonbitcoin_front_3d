@@ -309,7 +309,13 @@ export function useGamePhysics(scene) {
 
       if (mixer) {
         const rollClip = animations[animationIndexByState.roll]
-        rollDurationMs = rollClip ? rollClip.duration * 1000 : 600
+        if (rollClip) {
+          const clipMs = rollClip.duration * 1000
+          // Чуть укорачиваем roll: быстрее возвращаем управление для следующего кувырка.
+          rollDurationMs = Math.min(clipMs, 520)
+        } else {
+          rollDurationMs = 520
+        }
       } else if (playerMesh && !mixer) {
         slideFallbackState = {
           startTime: performance.now(),
