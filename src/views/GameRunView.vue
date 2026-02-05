@@ -208,7 +208,6 @@ let shakeFramesLeft = 0
 let shakeBaseX = 0
 let shakeBaseY = 0
 const SHAKE_DURATION_FRAMES = 10
-let effectsFrameCounter = 0
 const FIXED_STEP_MS = 1000 / 60
 const MAX_STEPS = 3
 const ROLL_IMMUNE_MS = 950
@@ -342,13 +341,8 @@ const startThreeLoop = () => {
       if (gameWorld.value) gameWorld.value.spawnObjects(playerZ.value, gameRun.getNextEnergyPoint)
       if (gameEffects.value) {
         const q = graphicsQuality.value
-        if (q === 'normal') {
+        if (q === 'normal' || q === 'medium') {
           gameEffects.value.updateEffects(frameContext)
-        } else if (q === 'medium') {
-          // На medium эффекты через кадр — меньше нагрузки
-          if ((effectsFrameCounter++ & 1) === 0) {
-            gameEffects.value.updateEffects(frameContext)
-          }
         }
       }
       if (hitCount.value >= 3) {
@@ -620,7 +614,7 @@ function doOneStep(playerBox, inRollImmuneWindow) {
     } else if (!winTriggered) {
       // Плавный набор: к 40% дистанции выходим на почти макс. скорость
       const progress = (gameRun.distanceProgress?.value ?? 0) / 100
-      const maxSpeed = 0.52
+      const maxSpeed = 0.48
       const rampProgress = Math.min(1, progress / 0.4)
       const targetSpeed = 0.15 + (maxSpeed - 0.15) * rampProgress
       gameSpeed.value = 0.92 * gameSpeed.value + 0.08 * targetSpeed
