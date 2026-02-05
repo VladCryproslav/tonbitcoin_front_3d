@@ -409,13 +409,9 @@ const applyGraphicsQuality = () => {
 
   // Частота обновления анимаций скелета: medium/low — легче
   if (gamePhysics.value?.setMixerRate) {
-    if (isLow) {
-      gamePhysics.value.setMixerRate(0.5)
-    } else if (isMedium) {
-      gamePhysics.value.setMixerRate(0.5)
-    } else {
-      gamePhysics.value.setMixerRate(1)
-    }
+    // Возвращаем полную частоту обновления на всех уровнях качества,
+    // чтобы не было ощущения "тормознутости" анимаций.
+    gamePhysics.value.setMixerRate(1)
   }
   const player = gamePhysics.value?.playerMesh?.()
   if (player && !isLow) {
