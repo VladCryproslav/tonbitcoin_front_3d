@@ -256,14 +256,17 @@ const startThreeLoop = () => {
   const animate = () => {
     threeLoop = requestAnimationFrame(animate)
 
+    const nowGlobal = performance.now()
+    const baseFrameContext = { nowMs: nowGlobal, deltaMs: FIXED_STEP_MS, fixedSteps: 1 }
+
     // 1) Сначала физика (позиция персонажа, смена полосы) — потом рендер, без кадра задержки
     if (gamePhysics.value) {
-      gamePhysics.value.update()
+      gamePhysics.value.update(baseFrameContext)
     }
 
     // 2) Игровая логика в том же rAF (фикс. шаг). playerBox один раз за кадр — меньше setFromObject при наборе скорости.
     if (gameRun.isRunning.value && !gameRun.isPaused.value) {
-      const now = performance.now()
+      const now = nowGlobal
       if (lastUpdateTime <= 0) lastUpdateTime = now
       const frameTime = Math.min(now - lastUpdateTime, 100)
       lastUpdateTime = now
@@ -279,6 +282,7 @@ const startThreeLoop = () => {
       if (frameTimeEMA > 20) effectiveMaxSteps = Math.min(effectiveMaxSteps, 2)
       if (frameTimeEMA > 30) effectiveMaxSteps = 1
       const stepsCount = Math.min(effectiveMaxSteps, Math.floor(frameTime / FIXED_STEP_MS))
+      const frameContext = { nowMs, deltaMs: frameTime, fixedSteps: stepsCount }
       for (let i = 0; i < stepsCount; i++) {
         doOneStep(framePlayerBox, inRollImmuneWindow)
       }
@@ -286,11 +290,11 @@ const startThreeLoop = () => {
       if (gameEffects.value) {
         const q = graphicsQuality.value
         if (q === 'normal') {
-          gameEffects.value.updateEffects()
+          gameEffects.value.updateEffects(frameContext)
         } else if (q === 'medium') {
           // На medium эффекты через кадр — меньше нагрузки
           if ((effectsFrameCounter++ & 1) === 0) {
-            gameEffects.value.updateEffects()
+            gameEffects.value.updateEffects(frameContext)
           }
         }
       }

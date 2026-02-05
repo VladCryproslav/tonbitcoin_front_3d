@@ -324,11 +324,12 @@ export function useGamePhysics(scene) {
     return 0
   }
 
-  const update = () => {
-    const now = performance.now()
+  const update = (frameContext) => {
+    const now = frameContext?.nowMs ?? performance.now()
 
     if (mixer) {
-      mixer.update(clock.getDelta())
+      const deltaSec = frameContext ? frameContext.deltaMs / 1000 : clock.getDelta()
+      mixer.update(deltaSec)
     }
 
     if (playerMesh) {

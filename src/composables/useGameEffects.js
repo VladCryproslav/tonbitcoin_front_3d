@@ -98,8 +98,8 @@ export function useGameEffects(scene, quality = 'normal') {
   const createEnergyCollectEffect = (position) => createPooledEffect(position, 'energy')
   const createCollisionEffect = (position) => createPooledEffect(position, 'collision')
 
-  const updateEffects = () => {
-    const now = performance.now()
+  const updateEffects = (frameContext) => {
+    const now = frameContext?.nowMs ?? performance.now()
     _toRemove.length = 0
     const toRemove = _toRemove
 
