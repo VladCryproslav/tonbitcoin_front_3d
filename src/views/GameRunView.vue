@@ -337,11 +337,11 @@ const startThreeLoop = () => {
         gameRun.updateDistance(gameRun.distance.value + distanceDelta)
       }
       if (!winTriggered && !winDecelerating && winAnimationStartTime === 0) {
-        // Плавный набор: к 55% дистанции выходим на почти макс. скорость (один раз на кадр, не на шаг)
+        // Плавный набор: к 55% дистанции выходим на чуть меньшую макс. скорость (один раз на кадр, не на шаг)
         const progress = (gameRun.distanceProgress?.value ?? 0) / 100
-        const maxSpeed = 0.46
+        const maxSpeed = 0.44
         const rampProgress = Math.min(1, progress / 0.55)
-        const baseSpeed = 0.18
+        const baseSpeed = 0.15
         const targetSpeed = baseSpeed + (maxSpeed - baseSpeed) * rampProgress
         gameSpeed.value = 0.92 * gameSpeed.value + 0.08 * targetSpeed
       }
