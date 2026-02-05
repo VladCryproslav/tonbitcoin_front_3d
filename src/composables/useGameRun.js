@@ -41,7 +41,12 @@ export function useGameRun() {
 
   const currentPower = computed(() => app.power || 100)
   const currentEnergy = computed(() => app.score || 0)
-  const currentStorage = computed(() => app.storage || 0)
+  // Максимум энергии за забег: используем ту же логику, что и при генерации поинтов
+  // (fallback к 70 kW, если storage ещё не инициализирован).
+  const currentStorage = computed(() => {
+    const s = app.storage
+    return (s === null || s === undefined) ? 70 : s
+  })
 
   const energyPoints = ref([])
   const energyPointsIndex = ref(0)
