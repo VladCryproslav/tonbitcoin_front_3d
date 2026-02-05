@@ -73,15 +73,6 @@ export function useGamePhysics(scene) {
     if (!clip) return
 
     const action = mixer.clipAction(clip)
-    if (currentAnimation === action) {
-      // Для roll/slide разрешаем форсированный рестарт анимации —
-      // обрываем текущий цикл и запускаем заново.
-      if (state === 'roll' || state === 'slide') {
-        currentAnimation.stop()
-      } else {
-        return
-      }
-    }
 
     if (currentAnimation) {
       currentAnimation.fadeOut(0.1)
@@ -92,9 +83,10 @@ export function useGamePhysics(scene) {
       action.setLoop(THREE.LoopOnce, 1)
       action.clampWhenFinished = true
     } else if (state === 'roll' || state === 'slide') {
-      // Roll/slide: крутим в цикле, управление возвращает физика по таймеру.
-      action.setLoop(THREE.LoopRepeat, Infinity)
-      action.clampWhenFinished = false
+      // Roll/slide: играем один раз, даём доиграть до конца, а возвращение в бег
+      // контролирует физика по таймеру (rollDurationMs).
+      action.setLoop(THREE.LoopOnce, 1)
+      action.clampWhenFinished = true
     } else if (state === 'dodge' || state === 'sidestep') {
       action.setLoop(THREE.LoopOnce, 1)
       action.clampWhenFinished = true
@@ -305,10 +297,16 @@ export function useGamePhysics(scene) {
     if (!playerMesh || isDead) return
     const now = performance.now()
 
-    // Если уже скользим — просто перезапускаем roll-анимацию и таймер,
-    // чтобы она начиналась сначала. Это позволяет делать повторные кувырки
-    // подряд, не дожидаясь полного окончания предыдущей анимации.
+    // Если уже идёт roll, блокируем повторный свайп до 70% длительности клипа,
+    // чтобы избежать спама и визуальных артефактов.
     if (isSliding.value) {
+      const elapsed = now - slideStartTime
+      const restartThreshold = rollDurationMs * 0.7
+      if (elapsed < restartThreshold) {
+        return
+      }
+      // После 70% разрешаем новый roll: обновляем стартовое время и
+      // заново запускаем анимацию без T-позы.
       slideStartTime = now
       if (mixer) {
         playAnimationState('roll')
@@ -344,9 +342,8 @@ export function useGamePhysics(scene) {
       const rollClip = animations[animationIndexByState.roll]
       if (rollClip) {
         const clipMs = rollClip.duration * 1000
-        // Окно геймплея: после ~550 мс можно делать новый roll,
-        // при этом сама анимация доигрывает до конца через finished event.
-        rollDurationMs = Math.min(clipMs, 580)
+        // rollDurationMs — полная длительность, по ней анимация доигрывает до конца.
+        rollDurationMs = clipMs
       } else {
         rollDurationMs = 580
       }
@@ -433,7 +430,7 @@ export function useGamePhysics(scene) {
       }
 
       // Завершение слайда для GLTF-анимации по времени: снимаем флаг isSliding,
-      // разблокируем следующий кувырок и возвращаем анимацию бега.
+      // разблокируем следующий кувырок и возвращаем анимацию бега после полного ролла.
       if (mixer && isSliding.value && !isDead) {
         const slideElapsed = now - slideStartTime
         if (slideElapsed >= rollDurationMs) {
