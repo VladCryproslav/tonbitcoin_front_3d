@@ -250,7 +250,7 @@ const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: 
 
 // Очень плавное следование камеры: без рывков, незаметный дрейф от центра при смене полосы
 const CAMERA_SMOOTH_TIME = 0.55 // секунд до ~95% к цели (frame-rate independent)
-let lastCameraTime = 0
+let lastFrameDtSec = 0.016
 
 const startThreeLoop = () => {
   const animate = () => {
@@ -272,6 +272,7 @@ const startThreeLoop = () => {
       lastUpdateTime = now
       // EMA по времени кадра для адаптивного DPR
       frameTimeEMA = frameTimeEMA * 0.9 + frameTime * 0.1
+      lastFrameDtSec = frameTime / 1000
 
       const nowMs = now
       const slideStartTime = gamePhysics.value?.getSlideStartTime?.() ?? 0
@@ -313,14 +314,15 @@ const startThreeLoop = () => {
 
     // 3) Камера: цель из физики напрямую (не из game loop), плавное следование без качания
     if (camera && gamePhysics.value?.getCameraLaneX) {
-      const now = performance.now() / 1000
-      const dt = lastCameraTime > 0 ? Math.min(now - lastCameraTime, 0.05) : 0.016
-      lastCameraTime = now
+      const dt = lastFrameDtSec > 0 ? Math.min(lastFrameDtSec, 0.05) : 0.016
       const laneX = gamePhysics.value.getCameraLaneX()
       const targetCamX = laneX === 0 ? 0 : laneX * 0.95
       const k = -Math.log(0.05) / CAMERA_SMOOTH_TIME
       const t = 1 - Math.exp(-k * dt)
-      camera.position.x += (targetCamX - camera.position.x) * t
+      const desiredStepX = (targetCamX - camera.position.x) * t
+      const maxStepX = 0.25
+      const clampedStepX = Math.max(-maxStepX, Math.min(maxStepX, desiredStepX))
+      camera.position.x += clampedStepX
       camera.position.y = 2.5
       camera.lookAt(camera.position.x, -0.15, -18)
     }
@@ -458,7 +460,6 @@ const startGame = () => {
     if (laneRef && typeof laneRef === 'object' && 'value' in laneRef) {
       laneRef.value = 1
     }
-    lastCameraTime = 0
   }
   gameRun.startRun()
   hitCount.value = 0
