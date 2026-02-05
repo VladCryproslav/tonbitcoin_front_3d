@@ -317,16 +317,9 @@ const startThreeLoop = () => {
       const slideStartTime = gamePhysics.value?.getSlideStartTime?.() ?? 0
       const inRollImmuneWindow = slideStartTime > 0 && nowMs - slideStartTime < ROLL_IMMUNE_MS
       const framePlayerBox = gamePhysics.value?.getPlayerBox?.() ?? null
-      const isAirborne =
-        gamePhysics.value?.isJumping?.value === true ||
-        gamePhysics.value?.isSliding?.value === true
-      let effectiveMaxSteps = MAX_STEPS
-      if (!isAirborne) {
-        if (gameSpeed.value > 0.4) effectiveMaxSteps = 2
-        if (frameTimeEMA > 20) effectiveMaxSteps = Math.min(effectiveMaxSteps, 2)
-        if (frameTimeEMA > 30) effectiveMaxSteps = 1
-      }
-      const stepsCount = Math.min(effectiveMaxSteps, Math.floor(frameTime / FIXED_STEP_MS))
+      let stepsCount = Math.floor(frameTime / FIXED_STEP_MS)
+      if (stepsCount < 1) stepsCount = 1
+      else if (stepsCount > MAX_STEPS) stepsCount = MAX_STEPS
       const frameContext = { nowMs, deltaMs: frameTime, fixedSteps: stepsCount }
       let distanceDelta = 0
       let accumulatedSpeed = 0
