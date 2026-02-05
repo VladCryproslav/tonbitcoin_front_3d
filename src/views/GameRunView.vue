@@ -48,15 +48,47 @@
           </button>
           <button
             class="btn-primary btn-secondary btn-primary--wide"
-            @click.stop.prevent="toggleGraphicsQuality"
+            @click.stop.prevent="openSettings"
           >
-            {{ graphicsLabel }}
+            Настройки
           </button>
           <button
             class="btn-primary btn-secondary btn-primary--wide"
             @click.stop.prevent="exitToMain"
           >
             {{ t('game.back_to_main') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Оверлей настроек -->
+    <div
+      v-if="launcherOverlayMode === 'settings' && !showGameOver"
+      class="game-over-overlay"
+    >
+      <div class="game-over-card">
+        <div class="game-over-title">
+          Настройки
+        </div>
+        <div class="game-over-actions">
+          <button
+            class="btn-primary btn-secondary btn-primary--wide"
+            @click.stop.prevent="toggleGraphicsQuality"
+          >
+            {{ graphicsLabel }}
+          </button>
+          <button
+            class="btn-primary btn-secondary btn-primary--wide"
+            @click.stop.prevent="toggleVibration"
+          >
+            {{ vibrationLabel }}
+          </button>
+          <button
+            class="btn-primary btn-secondary btn-primary--wide"
+            @click.stop.prevent="closeSettings"
+          >
+            Назад
           </button>
         </div>
       </div>
@@ -202,10 +234,13 @@ let dprAdjustCounter = 0
 // Настройки графики: normal | medium | low. Читаем из localStorage синхронно — GameScene нужен при первом рендере.
 const isWeakDevice = ref(false)
 const graphicsQuality = ref('normal')
+const vibrationEnabled = ref(true)
 if (typeof window !== 'undefined') {
   try {
     const saved = window.localStorage?.getItem('game_graphics_quality')
     if (['normal', 'medium', 'low'].includes(saved)) graphicsQuality.value = saved
+    const vib = window.localStorage?.getItem('game_vibration_enabled')
+    if (vib === '0') vibrationEnabled.value = false
   } catch {
     // ignore
   }
@@ -215,6 +250,7 @@ const pendingGraphicsQuality = ref(null)
 
 const graphicsLabels = { normal: 'game.graphics_label_normal', medium: 'game.graphics_label_medium', low: 'game.graphics_label_low' }
 const graphicsLabel = computed(() => t(graphicsLabels[graphicsQuality.value] || graphicsLabels.normal))
+const vibrationLabel = computed(() => (vibrationEnabled.value ? 'Вибрация: Вкл' : 'Вибрация: Выкл'))
 
 let directionalLight = null
 
@@ -515,15 +551,17 @@ function doOneStep(playerBox, inRollImmuneWindow) {
             shakeBaseX = 0
             shakeBaseY = amp
 
-            // Haptic feedback: Telegram WebApp + fallback через navigator.vibrate
-            try {
-              const tg = window.Telegram?.WebApp
-              tg?.HapticFeedback?.impactOccurred?.('medium')
-            } catch {
-              // ignore
-            }
-            if (typeof navigator !== 'undefined' && navigator.vibrate) {
-              navigator.vibrate(30)
+            if (vibrationEnabled.value) {
+              // Haptic feedback: Telegram WebApp + fallback через navigator.vibrate
+              try {
+                const tg = window.Telegram?.WebApp
+                tg?.HapticFeedback?.impactOccurred?.('medium')
+              } catch {
+                // ignore
+              }
+              if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                navigator.vibrate(30)
+              }
             }
           },
           gamePhysics.value.isSliding?.value === true,
@@ -592,6 +630,17 @@ const toggleGraphicsQuality = () => {
   applyGraphicsQualityAndSave()
 }
 
+const toggleVibration = () => {
+  vibrationEnabled.value = !vibrationEnabled.value
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem('game_vibration_enabled', vibrationEnabled.value ? '1' : '0')
+    } catch {
+      // ignore
+    }
+  }
+}
+
 const endGame = async (isWinByState = false) => {
   stopGameLoop()
 
@@ -633,6 +682,14 @@ const handleResumeClick = () => {
 
 const openPauseOverlay = () => {
   pauseGame()
+}
+
+const openSettings = () => {
+  launcherOverlayMode.value = 'settings'
+}
+
+const closeSettings = () => {
+  launcherOverlayMode.value = 'idle'
 }
 
 const handleSwipeLeft = () => {
