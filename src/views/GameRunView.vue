@@ -249,6 +249,7 @@ import { useGamePhysics } from '@/composables/useGamePhysics'
 import { useGameWorld } from '@/composables/useGameWorld'
 import { useGameEffects } from '@/composables/useGameEffects'
 import { useAppStore } from '@/stores/app'
+import { host } from '@/../axios.config'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -849,8 +850,29 @@ const endGame = async (isWinByState = false) => {
 }
 
 // Обработчики кнопок из оверлеев
-const handleStartClick = () => {
-  startGame(false)
+const handleStartClick = async () => {
+  // Вызываем API для записи времени старта (если не тренировка)
+  try {
+    const response = await host.post('energy-run-start/')
+    if (response.status === 200 && response.data?.user) {
+      // Обновляем данные пользователя
+      app.user = response.data.user
+    }
+    startGame(false)
+  } catch (error) {
+    // Если ошибка cooldown - показываем сообщение и не запускаем игру
+    if (error.response?.status === 400 && error.response?.data?.error === 'energy_run_cooldown') {
+      const nextAvailable = error.response.data.next_available_in_seconds
+      const minutes = Math.floor(nextAvailable / 60)
+      const seconds = nextAvailable % 60
+      const timeStr = `${minutes}:${String(seconds).padStart(2, '0')}`
+      alert(t('energizer.energy_run_cooldown_message', { time: timeStr }))
+      return
+    }
+    // Другие ошибки - запускаем игру всё равно (fallback)
+    console.error('Error starting energy run:', error)
+    startGame(false)
+  }
 }
 
 const handleTrainingClick = () => {

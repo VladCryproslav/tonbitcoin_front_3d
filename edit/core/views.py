@@ -1703,6 +1703,48 @@ class StopMiningView(APIView):
             )
 
 
+class EnergyRunStartView(APIView):
+    """Записывает старт сбора энергии (раннер). Следующий старт разрешён через 60 минут."""
+
+    @require_auth
+    def post(self, request):
+        try:
+            user_profile = request.user_profile
+            now = timezone.now()
+            cooldown_minutes = 60
+            next_allowed = None
+            if user_profile.energy_run_last_started_at:
+                next_allowed = user_profile.energy_run_last_started_at + timedelta(
+                    minutes=cooldown_minutes
+                )
+                if now < next_allowed:
+                    return Response(
+                        {
+                            "error": "energy_run_cooldown",
+                            "next_available_at": next_allowed.isoformat(),
+                            "next_available_in_seconds": max(
+                                0, int((next_allowed - now).total_seconds())
+                            ),
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            UserProfile.objects.filter(user_id=user_profile.user_id).update(
+                energy_run_last_started_at=now
+            )
+            request.user_profile.refresh_from_db()
+            return Response(
+                {
+                    "message": "Energy run started",
+                    "user": UserProfileSerializer(request.user_profile).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except UserProfile.DoesNotExist:
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
 class AddKwToWalletView(APIView):
     @swagger_auto_schema(
         operation_description="Додає кіловати до гаманця користувача",

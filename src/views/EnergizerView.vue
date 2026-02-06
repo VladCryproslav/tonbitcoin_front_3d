@@ -661,25 +661,36 @@ const conditionsToMint = computed(() => {
 
 const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= new Date())
 
-// Режим игры: при нажатии на станцию открывается игра
-const handleStationClick = (event) => {
-  // Предотвращаем стандартное поведение
-  event.preventDefault()
-  event.stopPropagation()
-  
-  // Визуальная обратная связь
-  if (img.value) {
-    img.value.style.transform = 'scale(0.95)'
-    setTimeout(() => {
-      if (img.value) {
-        img.value.style.transform = 'scale(1)'
-      }
-    }, 150)
+// Проверка cooldown для сбора энергии (60 минут)
+const energyRunCooldown = computed(() => {
+  if (!app.user?.energy_run_last_started_at) {
+    return { isActive: false, timeRemaining: null, availableAt: null }
   }
-  
-  // Открываем игру при нажатии на станцию
+  const lastStarted = new Date(app.user.energy_run_last_started_at)
+  const now = new Date()
+  const cooldownMs = 60 * 60 * 1000 // 60 минут
+  const availableAt = new Date(lastStarted.getTime() + cooldownMs)
+  const isActive = now < availableAt
+  return {
+    isActive,
+    timeRemaining: isActive ? availableAt.toISOString() : null,
+    availableAt: availableAt.toISOString()
+  }
+})
+
+// Открытие раннера для сбора энергии
+const handleEnergyRunClick = () => {
+  if (energyRunCooldown.value.isActive) {
+    return // Не открываем если на cooldown
+  }
   tg.HapticFeedback.impactOccurred('medium')
   router.push('/game-run')
+}
+
+// Режим игры: при нажатии на станцию открывается игра (убрано - теперь только кнопка)
+const handleStationClick = (event) => {
+  // Оставляем только для тапа энергии, не открываем раннер
+  // Раннер открывается через кнопку "Собрать энергию"
 }
 
 async function increment(event) {
@@ -1996,6 +2007,20 @@ onUnmounted(() => {
               <span class="time">{{ getTimeRemaining(unlockedWallet.time).time }}</span>
             </div>
           </div>
+          <!-- Cooldown для сбора энергии (60 минут) -->
+          <div
+            v-if="energyRunCooldown.isActive && unlockedWallet.bool && (!app?.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !hydroStation.lock && !orbitalStation.lock"
+            class="building-wrapper">
+            <img src="@/assets/build-station.webp" width="320px" />
+            <div class="building">
+              <div class="building-group">
+                <span>{{ t('energizer.energy_collection_cooldown') }}</span>
+                <div class="building-timer">
+                  {{ getTimeRemaining(energyRunCooldown.timeRemaining).time }}
+                </div>
+              </div>
+            </div>
+          </div>
           <div
             v-if="((app?.user?.building_until && getTimeRemaining(app.user?.building_until).remain > 0) || hydroStation.lock || orbitalStation.lock) && unlockedWallet.bool"
             class="building-wrapper">
@@ -2081,8 +2106,16 @@ onUnmounted(() => {
             </div>
           </div>
           <img :src="imagePath" rel="preload" class="factory lightup"
-            :class="{ heated: app?.user?.overheated_until, onbuild: (app.user?.building_until && getTimeRemaining(app.user?.building_until).remain > 0), locked: (hydroStation.lock || orbitalStation.lock) && !unlockedWallet.bool }"
+            :class="{ heated: app?.user?.overheated_until, onbuild: (app.user?.building_until && getTimeRemaining(app.user?.building_until).remain > 0) || energyRunCooldown.isActive, locked: (hydroStation.lock || orbitalStation.lock) && !unlockedWallet.bool }"
             ref="factory" />
+          <!-- Кнопка "Собрать энергию" по центру станции -->
+          <button
+            v-if="!energyRunCooldown.isActive && unlockedWallet.bool && (!app?.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !hydroStation.lock && !orbitalStation.lock && !isJarvis.active && !app?.user?.overheated_until"
+            class="energy-run-btn"
+            @click.stop="handleEnergyRunClick"
+          >
+            {{ t('energizer.collect_energy') }}
+          </button>
         </div>
         <div class="station-label-group">
           <span class="station-label">{{ (app?.user?.has_orbital_station && !app?.user?.orbital_force_basic) ? t(`stations.${'Orbital power plant'}`) :
@@ -3948,6 +3981,38 @@ onUnmounted(() => {
 .onbuild {
   filter: grayscale(1) contrast(1.75);
   // animation: fadeOutBuild 1.5s ease-in-out infinite;
+}
+
+.energy-run-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 90;
+  color: #fff;
+  font-family: 'Inter';
+  font-weight: 600;
+  font-size: 18px;
+  padding: 1rem 2.5rem;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  background: radial-gradient(ellipse 80% 20% at bottom, #ffffff50, transparent),
+    linear-gradient(to left, #e757ec, #9851ec, #5e7cea);
+  box-shadow: 0px 4px 15px rgba(152, 81, 236, 0.4);
+  transition: all 150ms ease-in-out;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+
+  &:active {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(0.98);
+    box-shadow: 0px 2px 10px rgba(152, 81, 236, 0.3);
+  }
+
+  &:hover {
+    box-shadow: 0px 6px 20px rgba(152, 81, 236, 0.5);
+  }
 }
 
 .locked {

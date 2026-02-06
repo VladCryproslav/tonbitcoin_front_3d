@@ -303,6 +303,9 @@ class UserProfile(models.Model):
     mining_last_stopped = models.DateTimeField(null=True, blank=True)
 
     mining_was_stopped = models.BooleanField(default=False)
+
+    # Сбор энергии (раннер): следующий старт разрешён через 60 минут после energy_run_last_started_at
+    energy_run_last_started_at = models.DateTimeField(null=True, blank=True)
     # ======================
 
     wheel_slot2 = models.BooleanField(default=False)

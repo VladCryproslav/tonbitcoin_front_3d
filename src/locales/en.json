@@ -481,6 +481,11 @@
     "run_result_saved_by_level": "{level} level, saved",
     "run_claim": "Claim"
   },
+  "energizer": {
+    "collect_energy": "Collect Energy",
+    "energy_collection_cooldown": "Energy collection",
+    "energy_run_cooldown_message": "Next energy collection available in {time}"
+  },
   "common": {
     "lvl": "lvl",
     "comming": "Coming Soon",

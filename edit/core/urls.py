@@ -27,6 +27,7 @@ from .views import (
     AddKwToWalletView,
     AddTbtcToWalletView,
     CreateWithdrawalRequestView,
+    EnergyRunStartView,
     EngineerConfigView,
     EngineerStarsView,
     GenPowerStationConfigView,
@@ -86,6 +87,7 @@ urlpatterns = [
     path("referral-info/", ReferralInfoView.as_view(), name="referral_info"),
     path("start-mining/", StartMiningView.as_view(), name="start_mining"),
     path("stop-mining/", StopMiningView.as_view(), name="stop_mining"),
+    path("energy-run-start/", EnergyRunStartView.as_view(), name="energy_run_start"),
     path("add-kw-to-wallet/", AddKwToWalletView.as_view(), name="add_kw_to_wallet"),
     path(
         "add-tbtc-to-wallet/", AddTbtcToWalletView.as_view(), name="add_tbtc_to_wallet"
