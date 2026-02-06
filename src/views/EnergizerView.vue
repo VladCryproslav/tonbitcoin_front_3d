@@ -4052,35 +4052,25 @@ onUnmounted(() => {
   white-space: nowrap;
   letter-spacing: 0.03em;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  /* Красивая пульсация кнопки */
-  animation: energy-run-btn-pulse 2.5s ease-in-out infinite;
+  /* Пульсация кнопки (заметная на мобильных, без hover) */
+  animation: energy-run-btn-pulse 2s ease-in-out infinite;
 
   &:active {
     opacity: 0.92;
     transform: translate(-50%, -50%) scale(0.97);
-    animation: none; /* Отключаем пульсацию при нажатии */
+    animation: none;
     box-shadow:
       0 0 0 2px rgba(94, 124, 234, 0.3),
       0 2px 4px rgba(0, 0, 0, 0.35),
       0 6px 12px rgba(0, 0, 0, 0.3),
       0 10px 20px rgba(152, 81, 236, 0.3);
   }
-
-  &:hover {
-    animation-duration: 1.8s; /* Ускоряем пульсацию при hover */
-    box-shadow:
-      0 0 0 2px rgba(94, 124, 234, 0.3),
-      0 8px 16px rgba(0, 0, 0, 0.42),
-      0 20px 40px rgba(0, 0, 0, 0.52),
-      0 32px 64px rgba(0, 0, 0, 0.38),
-      0 16px 32px rgba(152, 81, 236, 0.55),
-      0 6px 14px rgba(152, 81, 236, 0.4);
-  }
 }
 
-/* Анимация пульсации кнопки "Собрать энергию" */
+/* Пульсация: лёгкое увеличение + усиление тени/свечения (видно на мобильных) */
 @keyframes energy-run-btn-pulse {
   0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
     box-shadow:
       0 0 0 2px rgba(94, 124, 234, 0.25),
       0 6px 12px rgba(0, 0, 0, 0.4),
@@ -4091,15 +4081,15 @@ onUnmounted(() => {
       0 4px 10px rgba(152, 81, 236, 0.35);
   }
   50% {
+    transform: translate(-50%, -50%) scale(1.05);
     box-shadow:
-      0 0 0 2px rgba(94, 124, 234, 0.35),
-      0 8px 16px rgba(0, 0, 0, 0.45),
-      0 20px 40px rgba(0, 0, 0, 0.55),
-      0 32px 64px rgba(0, 0, 0, 0.4),
-      0 44px 88px rgba(0, 0, 0, 0.3),
+      0 0 0 2px rgba(94, 124, 234, 0.3),
+      0 10px 20px rgba(0, 0, 0, 0.45),
+      0 22px 44px rgba(0, 0, 0, 0.55),
+      0 34px 68px rgba(0, 0, 0, 0.38),
+      0 46px 92px rgba(0, 0, 0, 0.28),
       0 16px 36px rgba(152, 81, 236, 0.55),
-      0 6px 14px rgba(152, 81, 236, 0.42),
-      0 0 0 0 rgba(152, 81, 236, 0.2);
+      0 6px 14px rgba(152, 81, 236, 0.42);
   }
 }
 
