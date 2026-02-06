@@ -49,6 +49,12 @@
           </button>
           <button
             class="btn-primary btn-secondary btn-primary--wide"
+            @click.stop.prevent="handleTrainingClick"
+          >
+            {{ t('game.run_training') }}
+          </button>
+          <button
+            class="btn-primary btn-secondary btn-primary--wide"
             @click.stop.prevent="openSettings"
           >
             {{ t('game.settings') }}
@@ -174,10 +180,18 @@
         </div>
         <div class="game-over-actions">
           <button
+            v-if="!isTrainingRun"
             class="btn-primary btn-primary--wide"
             @click.stop.prevent="handleClaim"
           >
             {{ t('game.run_claim') }}
+          </button>
+          <button
+            v-else
+            class="btn-primary btn-primary--wide"
+            @click.stop.prevent="exitToMain"
+          >
+            {{ t('game.back_to_main') }}
           </button>
         </div>
       </div>
@@ -233,6 +247,8 @@ let renderer = null
 // Экран окончания забега (win/lose)
 const showGameOver = ref(false)
 const gameOverType = ref('lose') // 'win' | 'lose'
+// Тренировочный забег: та же логика, в конце не начисляем энергию (только «Вернуться назад»)
+const isTrainingRun = ref(false)
 // Та же логика уровней, что в EnergizerView: 49 белых, остаток — золотые
 const getWorkers = computed(() => {
   const simple = Math.min(app?.user?.engineer_level ?? 0, 49) || 0
@@ -584,10 +600,11 @@ const applyGraphicsQualityAndSave = () => {
   }
 }
 
-const startGame = () => {
+const startGame = (training = false) => {
   // Если забег уже идёт — игнорируем повторный старт
   if (gameRun.isRunning.value && !gameRun.isPaused.value) return
 
+  isTrainingRun.value = training
   playerZ.value = 0
   gameSpeed.value = 0.15
   if (gameWorld.value) {
@@ -800,7 +817,11 @@ const endGame = async (isWinByState = false) => {
 
 // Обработчики кнопок из оверлеев
 const handleStartClick = () => {
-  startGame()
+  startGame(false)
+}
+
+const handleTrainingClick = () => {
+  startGame(true)
 }
 
 const handleResumeClick = () => {

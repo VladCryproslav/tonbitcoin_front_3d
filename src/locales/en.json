@@ -455,6 +455,7 @@
     "run_start_title": "Start a run (beta)",
     "run_start_subtitle": "Dodge obstacles to reach maximum energy.",
     "run_start_button": "Start",
+    "run_training": "Training",
     "pause_title": "Paused",
     "pause_subtitle": "The run is paused. Take a short break or return to the main screen.",
     "win_title": "You win!",
