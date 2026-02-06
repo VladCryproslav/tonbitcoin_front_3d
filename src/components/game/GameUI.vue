@@ -1,18 +1,29 @@
 <template>
   <div class="game-ui">
     <div class="ui-top">
-      <div class="top-left">
-        <div class="energy-counter">
-          <img
-            class="icon energy-icon"
-            src="@/assets/kW.png"
-            alt="energy"
-          />
-          <span class="value energy-value">
-            {{ formatEnergy(energy) }} / {{ formatEnergy(maxEnergy) }} kW
-          </span>
+      <div class="top-left" :class="{ 'top-left--compact': compactDistance }">
+        <div class="energy-counter" :class="{ 'energy-counter--with-distance': compactDistance }">
+          <div class="energy-counter-row">
+            <img
+              class="icon energy-icon"
+              src="@/assets/kW.png"
+              alt="energy"
+            />
+            <span class="value energy-value">
+              {{ formatEnergy(energy) }} / {{ formatEnergy(maxEnergy) }} kW
+            </span>
+          </div>
+          <div v-if="compactDistance" class="energy-counter-distance">
+            <div class="distance-bar">
+              <div
+                class="distance-fill"
+                :style="{ width: `${Math.max(0, Math.min(100, Number.isFinite(power) ? power : 0))}%` }"
+              ></div>
+            </div>
+            <span class="distance-value">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</span>
+          </div>
         </div>
-        <div class="distance-status">
+        <div v-if="!compactDistance" class="distance-status">
           <div class="distance-label">Дистанция</div>
           <div class="distance-bar-wrapper">
             <div class="distance-bar">
@@ -61,12 +72,13 @@
 <script setup>
 import { computed } from 'vue'
 
-const { energy, maxEnergy, power, lives, maxLives } = defineProps({
+const { energy, maxEnergy, power, lives, maxLives, compactDistance } = defineProps({
   energy: { type: Number, default: 0 },
   maxEnergy: { type: Number, default: 0 },
   power: { type: Number, default: 100 },
   lives: { type: Number, default: 3 },
-  maxLives: { type: Number, default: 3 }
+  maxLives: { type: Number, default: 3 },
+  compactDistance: { type: Boolean, default: false }
 })
 
 const isLastLife = computed(() => lives === 1)
@@ -108,10 +120,21 @@ const formatEnergy = (value) => {
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
+
+  &.top-left--compact {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
 }
 
 .top-right {
   display: flex;
+  align-items: center;
+}
+
+.energy-counter-row {
+  display: inline-flex;
   align-items: center;
 }
 
@@ -138,6 +161,46 @@ const formatEnergy = (value) => {
     font-size: 16px;
     font-weight: 700;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  &.energy-counter--with-distance {
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 120px;
+
+    .energy-counter-row {
+      margin-bottom: 6px;
+    }
+  }
+}
+
+.energy-counter-distance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+
+  .distance-bar {
+    flex: 1;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .distance-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00ff00, #ffff00);
+    transition: width 0.3s ease;
+    border-radius: 3px;
+  }
+
+  .distance-value {
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    min-width: 28px;
+    text-align: right;
   }
 }
 

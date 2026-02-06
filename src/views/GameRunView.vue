@@ -15,6 +15,7 @@
       :power="gameRun.distanceProgress?.value ?? 0"
       :lives="livesLeft"
       :max-lives="MAX_LIVES"
+      :compact-distance="controlMode === 'buttons'"
       :show-pause="gameRun.isRunning && !gameRun.isPaused && !showGameOver"
       @pause="openPauseOverlay"
     />
