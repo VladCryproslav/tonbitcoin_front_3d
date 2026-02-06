@@ -108,7 +108,7 @@ const handleDownEnd = () => {
   right: 0;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: stretch;
   padding: 0 var(--control-pad);
   pointer-events: none;
   z-index: 50;
@@ -119,10 +119,11 @@ const handleDownEnd = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  gap: clamp(8px, 2vw, 16px);
   max-width: min(var(--btn-ud-w), 40vw);
   margin: 0 auto;
+  min-height: 0;
 }
 
 .control-btn {
