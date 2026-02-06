@@ -4027,39 +4027,49 @@ onUnmounted(() => {
   z-index: 90;
   color: #fff;
   font-family: 'Inter';
-  font-weight: 600;
-  font-size: 18px;
-  padding: 1rem 2.5rem;
-  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 17px;
+  padding: 1rem 2.25rem;
+  /* Сильно закруглённые края в стиле приложения (claim-btn, upgrade-btn) */
+  border-radius: 2rem;
   border: none;
   cursor: pointer;
-  background: radial-gradient(ellipse 80% 20% at bottom, #ffffff50, transparent),
+  /* В стиле upg-btn.stars-btn: градиент фиолетовый + блик сверху */
+  background:
+    radial-gradient(ellipse 80% 30% at 50% 0%, rgba(255, 255, 255, 0.35), transparent 70%),
     linear-gradient(to left, #e757ec, #9851ec, #5e7cea);
-  /* Тень, чтобы кнопка выделялась и не сливалась со станцией */
+  /* Обводка как у кнопок приложения */
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.15),
-    0 4px 20px rgba(0, 0, 0, 0.4),
-    0 8px 32px rgba(152, 81, 236, 0.45),
-    0 2px 8px rgba(152, 81, 236, 0.35);
-  transition: all 150ms ease-in-out;
+    0 0 0 2px rgba(94, 124, 234, 0.4),
+    /* Объёмная тень под кнопкой — многослойная для глубины */
+    0 4px 8px rgba(0, 0, 0, 0.25),
+    0 12px 24px rgba(0, 0, 0, 0.35),
+    0 20px 40px rgba(0, 0, 0, 0.2),
+    0 8px 20px rgba(152, 81, 236, 0.4),
+    0 2px 6px rgba(152, 81, 236, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.15s ease;
   white-space: nowrap;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 
   &:active {
-    opacity: 0.9;
-    transform: translate(-50%, -50%) scale(0.98);
+    opacity: 0.92;
+    transform: translate(-50%, -50%) scale(0.97);
     box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.1),
-      0 2px 12px rgba(0, 0, 0, 0.35),
-      0 4px 20px rgba(152, 81, 236, 0.35);
+      0 0 0 2px rgba(94, 124, 234, 0.35),
+      0 2px 4px rgba(0, 0, 0, 0.3),
+      0 6px 12px rgba(0, 0, 0, 0.25),
+      0 10px 20px rgba(152, 81, 236, 0.3);
   }
 
   &:hover {
     box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.2),
-      0 6px 24px rgba(0, 0, 0, 0.45),
-      0 12px 40px rgba(152, 81, 236, 0.5),
-      0 4px 12px rgba(152, 81, 236, 0.4);
+      0 0 0 2px rgba(94, 124, 234, 0.5),
+      0 6px 12px rgba(0, 0, 0, 0.28),
+      0 16px 32px rgba(0, 0, 0, 0.38),
+      0 24px 48px rgba(0, 0, 0, 0.22),
+      0 10px 24px rgba(152, 81, 236, 0.5),
+      0 4px 10px rgba(152, 81, 236, 0.35);
   }
 }
 
