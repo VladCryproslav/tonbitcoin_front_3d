@@ -144,7 +144,11 @@
           }}
         </div>
         <div class="game-over-subtitle">
-          {{ t('game.win_subtitle') }}
+          {{
+            gameOverType === 'win'
+              ? t('game.win_subtitle')
+              : t('game.lose_subtitle')
+          }}
         </div>
         <div class="game-over-results">
           <div class="game-over-result-row">
@@ -154,13 +158,13 @@
           </div>
           <div class="game-over-result-row">
             <img src="@/assets/engineer.webp" alt="" class="game-over-result-icon" />
-            <span class="game-over-result-label">{{ t('game.run_result_white_engineers') }}</span>
-            <span class="game-over-result-value">{{ formatEnergy(runResultWhiteEngineerKw) }} kW</span>
+            <span class="game-over-result-label">{{ t('game.run_result_saved_by_level', { level: whiteEngineerLevel }) }}</span>
+            <span class="game-over-result-value">{{ formatPercent(whiteEngineerSavedPercent) }}</span>
           </div>
           <div class="game-over-result-row">
             <img src="@/assets/gold.webp" alt="" class="game-over-result-icon" />
-            <span class="game-over-result-label">{{ t('game.run_result_gold_engineers') }}</span>
-            <span class="game-over-result-value">{{ formatEnergy(runResultGoldEngineerKw) }} kW</span>
+            <span class="game-over-result-label">{{ t('game.run_result_saved_by_level', { level: goldEngineerLevel }) }}</span>
+            <span class="game-over-result-value">{{ formatPercent(goldEngineerSavedPercent) }}</span>
           </div>
           <div class="game-over-result-row">
             <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
@@ -229,13 +233,40 @@ let renderer = null
 // Экран окончания забега (win/lose)
 const showGameOver = ref(false)
 const gameOverType = ref('lose') // 'win' | 'lose'
-// Результат забега: kW от инженеров (расчётная логика — позже)
-const runResultWhiteEngineerKw = ref(0)
-const runResultGoldEngineerKw = ref(0)
+// Та же логика уровней, что в EnergizerView: 49 белых, остаток — золотые
+const getWorkers = computed(() => {
+  const simple = Math.min(app?.user?.engineer_level ?? 0, 49) || 0
+  const gold = (app?.user?.past_engineer_level ?? 0) > 49 ? app.user.past_engineer_level - 49 : 0
+  return { simple, gold, all: simple + gold }
+})
+
+const whiteEngineerLevel = computed(() => getWorkers.value.simple)
+const goldEngineerLevel = computed(() =>
+  getWorkers.value.gold ? getWorkers.value.all : 0
+)
+
+// Процент сохранения из eng_configs по уровню (белый = simple 1–49, золотой = all 50+)
+const whiteEngineerSavedPercent = computed(() => {
+  const level = getWorkers.value.simple
+  if (!level) return 0
+  const cfg = app.stations?.eng_configs?.find((el) => el?.level === level)
+  return cfg?.saved_percent ?? cfg?.save_percent ?? 0
+})
+const goldEngineerSavedPercent = computed(() => {
+  const level = getWorkers.value.all
+  if (level < 50) return 0
+  const cfg = app.stations?.eng_configs?.find((el) => el?.level === level)
+  return cfg?.saved_percent ?? cfg?.save_percent ?? 0
+})
 
 const formatEnergy = (value) => {
   const v = Number(value ?? 0)
   return Number.isFinite(v) ? v.toFixed(1) : '0.0'
+}
+
+const formatPercent = (value) => {
+  const v = Number(value ?? 0)
+  return Number.isFinite(v) ? `${v.toFixed(1)}%` : '0.0%'
 }
 
 // Режим оверлея лаунчера: старт до забега или пауза.
@@ -830,7 +861,7 @@ const handleTap = () => {
 
 // Забрать: позже — вызов эндпоинта начисления собранной энергии на баланс, затем выход.
 const handleClaim = () => {
-  // TODO: POST /api/... — начислить gameRun.energyCollected, runResultWhiteEngineerKw, runResultGoldEngineerKw на баланс
+  // TODO: POST /api/... — начислить gameRun.energyCollected на баланс (бонусы по whiteEngineerSavedPercent/goldEngineerSavedPercent — при необходимости)
   exitToMain()
 }
 

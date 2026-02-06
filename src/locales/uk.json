@@ -475,8 +475,7 @@
     "back": "Назад",
     "run_result_collected": "Зібрано",
     "run_result_for_claim": "Буде зараховано",
-    "run_result_white_engineers": "Від білих інженерів",
-    "run_result_gold_engineers": "Від золотих інженерів",
+    "run_result_saved_by_level": "Завдяки {level} рівню, збережено",
     "run_claim": "Забрати"
   },
   "common": {
