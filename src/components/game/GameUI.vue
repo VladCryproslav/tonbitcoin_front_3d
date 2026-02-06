@@ -23,21 +23,9 @@
             <span class="distance-value">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</span>
           </div>
         </div>
-        <div v-if="!compactDistance" class="distance-status">
-          <div class="distance-label">Дистанция</div>
-          <div class="distance-bar-wrapper">
-            <div class="distance-bar">
-              <div
-                class="distance-fill"
-                :style="{ width: `${Math.max(0, Math.min(100, Number.isFinite(power) ? power : 0))}%` }"
-              ></div>
-            </div>
-            <div class="distance-value">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</div>
-          </div>
-        </div>
-        <div class="lives-counter">
+        <div class="lives-counter" :class="{ 'lives-counter--compact': compactDistance }">
           <img
-            class="icon energy-icon"
+            class="icon energy-icon lives-icon"
             src="@/assets/engineer.webp"
             alt="lives"
           />
@@ -66,6 +54,18 @@
       </div>
     </div>
 
+    <div v-if="!compactDistance" class="ui-bottom">
+      <div class="power-bar-container">
+        <div class="power-label">Дистанция</div>
+        <div class="power-bar">
+          <div
+            class="power-fill power-fill--distance"
+            :style="{ width: `${Math.max(0, Math.min(100, Number.isFinite(power) ? power : 0))}%` }"
+          ></div>
+        </div>
+        <div class="power-value">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -117,14 +117,12 @@ const formatEnergy = (value) => {
 
 .top-left {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
 
   &.top-left--compact {
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
+    align-items: stretch;
   }
 }
 
@@ -174,6 +172,23 @@ const formatEnergy = (value) => {
   }
 }
 
+.lives-counter--compact {
+  padding: 8px 12px;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+
+  .lives-icon {
+    width: 22px;
+    height: 22px;
+    margin-right: 8px;
+  }
+
+  .life-heart {
+    font-size: 20px;
+  }
+}
+
 .energy-counter-distance {
   display: flex;
   align-items: center;
@@ -204,27 +219,52 @@ const formatEnergy = (value) => {
   }
 }
 
-.distance-status {
+.ui-bottom {
+  display: flex;
+  justify-content: center;
+}
+
+.power-bar-container {
   background: rgba(0, 0, 0, 0.7);
-  padding: 8px 12px;
+  padding: 12px 24px;
   border-radius: 12px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  min-width: 140px;
+  min-width: 240px;
 }
 
-.distance-label {
+.power-label {
   color: rgba(255, 255, 255, 0.7);
-  font-size: 11px;
-  margin-bottom: 4px;
-  text-align: left;
+  font-size: 12px;
+  margin-bottom: 6px;
+  text-align: center;
 }
 
-.distance-bar-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.power-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.power-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+
+  &--distance {
+    background: linear-gradient(90deg, #00ff00, #ffff00);
+  }
+}
+
+.power-value {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
 }
 
 .distance-bar {
