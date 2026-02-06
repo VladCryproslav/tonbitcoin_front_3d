@@ -96,17 +96,23 @@ const handleDownEnd = () => {
 
 <style lang="scss" scoped>
 .virtual-controls {
+  --control-pad: 20px;
+  --btn-lr-w: 105px;
+  --btn-lr-h: 115px;
+  --btn-ud-w: 137px;
+  --btn-ud-h: 50px;
+
   position: absolute;
-  bottom: 52px;
+  bottom: var(--control-pad);
   left: 0;
   right: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 20px;
+  padding: 0 var(--control-pad);
   pointer-events: none;
   z-index: 50;
-  gap: 20px;
+  gap: clamp(12px, 3vw, 24px);
 }
 
 .control-center {
@@ -114,8 +120,8 @@ const handleDownEnd = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  max-width: 90px;
+  gap: clamp(8px, 2vw, 16px);
+  max-width: min(var(--btn-ud-w), 40vw);
   margin: 0 auto;
 }
 
@@ -160,36 +166,19 @@ const handleDownEnd = () => {
 .control-btn--left,
 .control-btn--right {
   flex-shrink: 0;
-  width: 48px;
-  height: 80px;
+  width: clamp(60px, 27vw, var(--btn-lr-w));
+  height: clamp(70px, 30vw, var(--btn-lr-h));
 }
 
 .control-btn--up,
 .control-btn--down {
-  width: 72px;
-  height: 40px;
+  width: clamp(80px, 36vw, var(--btn-ud-w));
+  height: clamp(36px, 13vw, var(--btn-ud-h));
 }
 
-@media (max-width: 480px) {
+@media (max-width: 400px) {
   .virtual-controls {
-    bottom: 44px;
-  }
-
-  .control-btn--left,
-  .control-btn--right {
-    width: 42px;
-    height: 70px;
-  }
-
-  .control-btn--up,
-  .control-btn--down {
-    width: 64px;
-    height: 36px;
-  }
-
-  .control-center {
-    max-width: 76px;
-    gap: 8px;
+    --control-pad: 14px;
   }
 }
 </style>
