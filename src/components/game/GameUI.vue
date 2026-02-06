@@ -12,6 +12,18 @@
             {{ formatEnergy(energy) }} / {{ formatEnergy(maxEnergy) }} kW
           </span>
         </div>
+        <div class="distance-status">
+          <div class="distance-label">Дистанция</div>
+          <div class="distance-bar-wrapper">
+            <div class="distance-bar">
+              <div
+                class="distance-fill"
+                :style="{ width: `${Math.max(0, Math.min(100, Number.isFinite(power) ? power : 0))}%` }"
+              ></div>
+            </div>
+            <div class="distance-value">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</div>
+          </div>
+        </div>
         <div class="lives-counter">
           <img
             class="icon energy-icon"
@@ -43,18 +55,6 @@
       </div>
     </div>
 
-    <div class="ui-bottom">
-      <div class="power-bar-container">
-        <div class="power-label">Дистанция</div>
-        <div class="power-bar">
-          <div
-            class="power-fill power-fill--distance"
-            :style="{ width: `${Math.max(0, Math.min(100, Number.isFinite(power) ? power : 0))}%` }"
-          ></div>
-        </div>
-        <div class="power-value">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -105,8 +105,9 @@ const formatEnergy = (value) => {
 
 .top-left {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .top-right {
@@ -138,6 +139,52 @@ const formatEnergy = (value) => {
     font-weight: 700;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   }
+}
+
+.distance-status {
+  background: rgba(0, 0, 0, 0.7);
+  padding: 8px 12px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  min-width: 140px;
+}
+
+.distance-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  margin-bottom: 4px;
+  text-align: left;
+}
+
+.distance-bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.distance-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.distance-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00ff00, #ffff00);
+  transition: width 0.3s ease;
+  border-radius: 3px;
+}
+
+.distance-value {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 32px;
+  text-align: right;
 }
 
 .icon {
@@ -174,10 +221,6 @@ const formatEnergy = (value) => {
   }
 }
 
-.ui-bottom {
-  display: flex;
-  justify-content: center;
-}
 
 .lives-hearts {
   display: inline-flex;
@@ -205,47 +248,6 @@ const formatEnergy = (value) => {
   animation: life-critical-pulse 0.7s ease-in-out infinite;
 }
 
-.power-bar-container {
-  background: rgba(0, 0, 0, 0.7);
-  padding: 12px 20px;
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  min-width: 200px;
-}
-
-.power-label {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 12px;
-  margin-bottom: 6px;
-  text-align: center;
-}
-
-.power-bar {
-  width: 100%;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 6px;
-}
-
-.power-fill {
-  height: 100%;
-  transition: width 0.3s ease;
-  border-radius: 4px;
-
-  &--distance {
-    background: linear-gradient(90deg, #00ff00, #ffff00);
-  }
-}
-
-.power-value {
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  text-align: center;
-}
 
 @keyframes pulse {
   0%, 100% {

@@ -21,11 +21,21 @@
 
     <!-- Управление (свайпы + тап для старта на мобильных) -->
     <GameControls
+      v-if="controlMode === 'swipes'"
       @swipe-left="handleSwipeLeft"
       @swipe-right="handleSwipeRight"
       @swipe-up="handleSwipeUp"
       @swipe-down="handleSwipeDown"
       @tap="handleTap"
+    />
+
+    <!-- Виртуальные кнопки управления -->
+    <VirtualControls
+      v-if="controlMode === 'buttons' && (gameRun.isRunning || gameRun.isPaused)"
+      @swipe-left="handleSwipeLeft"
+      @swipe-right="handleSwipeRight"
+      @swipe-up="handleSwipeUp"
+      @swipe-down="handleSwipeDown"
     />
 
     <!-- Стартовый оверлей лаунчера -->
@@ -96,6 +106,12 @@
             @click.stop.prevent="toggleHitFlash"
           >
             {{ hitFlashLabel }}
+          </button>
+          <button
+            class="btn-primary btn-secondary btn-primary--wide"
+            @click.stop.prevent="toggleControlMode"
+          >
+            {{ controlModeLabel }}
           </button>
           <button
             class="btn-primary btn-secondary btn-primary--wide"
@@ -225,6 +241,7 @@ import { useI18n } from 'vue-i18n'
 import GameScene from '@/components/game/GameScene.vue'
 import GameUI from '@/components/game/GameUI.vue'
 import GameControls from '@/components/game/GameControls.vue'
+import VirtualControls from '@/components/game/VirtualControls.vue'
 import InfoModal from '@/components/InfoModal.vue'
 import { useGameRun } from '@/composables/useGameRun'
 import { useGamePhysics } from '@/composables/useGamePhysics'
@@ -322,6 +339,7 @@ const isWeakDevice = ref(false)
 const graphicsQuality = ref('normal')
 const vibrationEnabled = ref(true)
 const hitFlashEnabled = ref(true)
+const controlMode = ref('swipes') // 'swipes' | 'buttons'
 if (typeof window !== 'undefined') {
   try {
     const saved = window.localStorage?.getItem('game_graphics_quality')
@@ -330,6 +348,8 @@ if (typeof window !== 'undefined') {
     if (vib === '0') vibrationEnabled.value = false
     const flash = window.localStorage?.getItem('game_hit_flash_enabled')
     if (flash === '0') hitFlashEnabled.value = false
+    const control = window.localStorage?.getItem('game_control_mode')
+    if (['swipes', 'buttons'].includes(control)) controlMode.value = control
   } catch {
     // ignore
   }
@@ -345,6 +365,7 @@ const graphicsLabels = {
 const graphicsLabel = computed(() => t(graphicsLabels[graphicsQuality.value] || graphicsLabels.normal))
 const vibrationLabel = computed(() => (vibrationEnabled.value ? t('game.vibration_on') : t('game.vibration_off')))
 const hitFlashLabel = computed(() => (hitFlashEnabled.value ? t('game.hit_flash_on') : t('game.hit_flash_off')))
+const controlModeLabel = computed(() => (controlMode.value === 'swipes' ? t('game.control_swipes') : t('game.control_buttons')))
 
 let directionalLight = null
 
@@ -779,6 +800,17 @@ const toggleHitFlash = () => {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       window.localStorage.setItem('game_hit_flash_enabled', hitFlashEnabled.value ? '1' : '0')
+    } catch {
+      // ignore
+    }
+  }
+}
+
+const toggleControlMode = () => {
+  controlMode.value = controlMode.value === 'swipes' ? 'buttons' : 'swipes'
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem('game_control_mode', controlMode.value)
     } catch {
       // ignore
     }
