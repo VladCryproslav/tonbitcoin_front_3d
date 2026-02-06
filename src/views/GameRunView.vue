@@ -48,7 +48,7 @@
             {{ t('game.run_start_button') }}
           </button>
           <button
-            class="btn-primary btn-secondary btn-primary--wide"
+            class="btn-primary btn-primary--training btn-primary--wide"
             @click.stop.prevent="handleTrainingClick"
           >
             {{ t('game.run_training') }}
@@ -1063,6 +1063,17 @@ onUnmounted(() => {
 
 .btn-primary--wide {
   width: 100%;
+}
+
+.btn-primary--training {
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 50%, #c2410c 100%);
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(234, 88, 12, 0.4);
+  border: 1px solid rgba(251, 146, 60, 0.4);
+
+  &:active {
+    box-shadow: 0 6px 18px rgba(234, 88, 12, 0.35);
+  }
 }
 
 .btn-secondary {
