@@ -475,7 +475,7 @@
     "back": "Назад",
     "run_result_collected": "Зібрано",
     "run_result_for_claim": "Буде зараховано",
-    "run_result_saved_by_level": "Завдяки {level} рівню, збережено",
+    "run_result_saved_by_level": "{level} рівень, зберіг",
     "run_claim": "Забрати"
   },
   "common": {

@@ -475,7 +475,7 @@
     "back": "Назад",
     "run_result_collected": "Собрано",
     "run_result_for_claim": "Будет засчитано",
-    "run_result_saved_by_level": "Благодаря {level} уровню, сохранено",
+    "run_result_saved_by_level": "{level} уровень, сохранил",
     "run_claim": "Забрать"
   },
   "common": {

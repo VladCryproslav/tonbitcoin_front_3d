@@ -241,9 +241,7 @@ const getWorkers = computed(() => {
 })
 
 const whiteEngineerLevel = computed(() => getWorkers.value.simple)
-const goldEngineerLevel = computed(() =>
-  getWorkers.value.gold ? getWorkers.value.all : 0
-)
+const goldEngineerLevel = computed(() => getWorkers.value.gold)
 
 // Процент сохранения из eng_configs по уровню (белый = simple 1–49, золотой = all 50+)
 const whiteEngineerSavedPercent = computed(() => {
