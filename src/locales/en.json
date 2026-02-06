@@ -472,7 +472,10 @@
     "vibration_off": "Vibration: Off",
     "hit_flash_on": "Hit flash: On",
     "hit_flash_off": "Hit flash: Off",
-    "back": "Back"
+    "back": "Back",
+    "run_result_collected": "Collected",
+    "run_result_white_engineers": "From white engineers",
+    "run_result_gold_engineers": "From gold engineers"
   },
   "common": {
     "lvl": "lvl",

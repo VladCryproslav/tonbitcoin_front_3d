@@ -150,6 +150,23 @@
               : t('game.lose_subtitle')
           }}
         </div>
+        <div class="game-over-results">
+          <div class="game-over-result-row">
+            <span class="game-over-result-icon game-over-result-icon--spacer" aria-hidden="true" />
+            <span class="game-over-result-label">{{ t('game.run_result_collected') }}</span>
+            <span class="game-over-result-value">{{ formatEnergy(gameRun.energyCollected?.value ?? 0) }} kW</span>
+          </div>
+          <div class="game-over-result-row">
+            <img src="@/assets/miner/engineer_new.svg" alt="" class="game-over-result-icon" />
+            <span class="game-over-result-label">{{ t('game.run_result_white_engineers') }}</span>
+            <span class="game-over-result-value">{{ formatEnergy(runResultWhiteEngineerKw) }} kW</span>
+          </div>
+          <div class="game-over-result-row">
+            <img src="@/assets/miner/engineer_new.svg" alt="" class="game-over-result-icon game-over-result-icon--gold" />
+            <span class="game-over-result-label">{{ t('game.run_result_gold_engineers') }}</span>
+            <span class="game-over-result-value">{{ formatEnergy(runResultGoldEngineerKw) }} kW</span>
+          </div>
+        </div>
         <div class="game-over-actions">
           <button
             class="btn-primary btn-primary--wide"
@@ -211,6 +228,14 @@ let renderer = null
 // Экран окончания забега (win/lose)
 const showGameOver = ref(false)
 const gameOverType = ref('lose') // 'win' | 'lose'
+// Результат забега: kW от инженеров (расчётная логика — позже)
+const runResultWhiteEngineerKw = ref(0)
+const runResultGoldEngineerKw = ref(0)
+
+const formatEnergy = (value) => {
+  const v = Number(value ?? 0)
+  return Number.isFinite(v) ? v.toFixed(1) : '0.0'
+}
 
 // Режим оверлея лаунчера: старт до забега или пауза.
 // 'idle' — до первого старта, 'pause' — пауза, 'none' — нет оверлея.
@@ -1031,6 +1056,56 @@ onUnmounted(() => {
   font-size: 14px;
   color: #9ca3af;
   margin-bottom: 20px;
+}
+
+.game-over-results {
+  margin-bottom: 20px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game-over-result-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.game-over-result-row .game-over-result-label {
+  flex: 1;
+  text-align: left;
+  color: #9ca3af;
+}
+
+.game-over-result-row:first-child .game-over-result-label {
+  padding-left: 0;
+}
+
+.game-over-result-value {
+  font-weight: 600;
+  color: #e5e7eb;
+  white-space: nowrap;
+}
+
+.game-over-result-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.game-over-result-icon--gold {
+  filter: sepia(1) saturate(1.8) hue-rotate(5deg) brightness(1.1);
+}
+
+.game-over-result-icon--spacer {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .game-over-actions {
