@@ -2008,18 +2008,13 @@ onUnmounted(() => {
               <span class="time">{{ getTimeRemaining(unlockedWallet.time).time }}</span>
             </div>
           </div>
-          <!-- Cooldown для сбора энергии (60 минут): только серая станция и таймер, без кранов -->
+          <!-- Cooldown для сбора энергии (60 минут): серая станция (через .onbuild на img ниже) + таймер по центру, без строительных кранов -->
           <div
             v-if="energyRunCooldown.isActive && unlockedWallet.bool && (!app?.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !hydroStation.lock && !orbitalStation.lock"
-            class="building-wrapper energy-run-cooldown-wrapper">
-            <img src="@/assets/build-station.webp" width="320px" />
-            <div class="building">
-              <div class="building-group">
-                <span>{{ t('energizer.energy_collection_available_at') }}</span>
-                <div class="building-timer">
-                  {{ getTimeRemaining(energyRunCooldown.timeRemaining).time }}
-                </div>
-              </div>
+            class="energy-run-cooldown-overlay">
+            <div class="energy-run-cooldown-timer">
+              <span class="energy-run-cooldown-label">{{ t('energizer.energy_collection_available_at') }}</span>
+              <div class="energy-run-cooldown-time">{{ getTimeRemaining(energyRunCooldown.timeRemaining).time }}</div>
             </div>
           </div>
           <div
@@ -2118,7 +2113,7 @@ onUnmounted(() => {
             {{ t('energizer.collect_energy') }}
           </button>
         </div>
-        <div v-show="!energyRunCooldown.isActive" class="station-label-group">
+        <div class="station-label-group">
           <span class="station-label">{{ (app?.user?.has_orbital_station && !app?.user?.orbital_force_basic) ? t(`stations.${'Orbital power plant'}`) :
             app?.user?.has_hydro_station ? t(`stations.${'Hydroelectric power plant'}`) :
               t(`stations.${app.user?.station_type}`) }} {{ allStations.indexOf(app.user?.station_type)
@@ -2147,7 +2142,7 @@ onUnmounted(() => {
             {{ t('general.main.create_first') }}
           </button>
         </div>
-        <div v-show="!energyRunCooldown.isActive" class="statistic">
+        <div class="statistic">
           <div class="power">
             <Storage :width="22" :height="22" />
             <span v-if="isJarvis.active">{{ +(+app.user?.storage_limit ?? 0) }} kW</span>
@@ -2192,7 +2187,7 @@ onUnmounted(() => {
             <span v-if="isJarvis.active">{{ isJarvis.forever ? t('common.forever') : isJarvis.time }}</span>
           </div>
         </div>
-        <div v-show="!energyRunCooldown.isActive" class="buttons-row">
+        <div class="buttons-row">
           <button class="upgrade-btn" @click="openUpgrade">
             {{ t('general.main.upg_btn') }}
             <UpgradeBtn :width="30" :height="30" />
@@ -3982,6 +3977,46 @@ onUnmounted(() => {
 .onbuild {
   filter: grayscale(1) contrast(1.75);
   // animation: fadeOutBuild 1.5s ease-in-out infinite;
+}
+
+/* Cooldown сбора энергии: только таймер по центру станции, без строительных кранов */
+.energy-run-cooldown-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 85;
+  pointer-events: none;
+}
+
+.energy-run-cooldown-timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1rem 1.5rem;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.energy-run-cooldown-label {
+  color: rgba(255, 255, 255, 0.85);
+  font-family: 'Inter';
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.energy-run-cooldown-time {
+  color: #fff;
+  font-family: 'Inter';
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
 }
 
 .energy-run-btn {
