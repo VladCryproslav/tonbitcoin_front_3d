@@ -97,7 +97,7 @@ const handleDownEnd = () => {
 <style lang="scss" scoped>
 .virtual-controls {
   position: absolute;
-  bottom: 20px;
+  bottom: 52px;
   left: 0;
   right: 0;
   display: flex;
@@ -114,16 +114,14 @@ const handleDownEnd = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  max-width: 80px;
+  gap: 10px;
+  max-width: 90px;
   margin: 0 auto;
 }
 
 .control-btn {
   pointer-events: auto;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
+  border-radius: 6px;
   border: none;
   background: rgba(15, 23, 42, 0.75);
   backdrop-filter: blur(12px);
@@ -162,29 +160,36 @@ const handleDownEnd = () => {
 .control-btn--left,
 .control-btn--right {
   flex-shrink: 0;
+  width: 48px;
+  height: 80px;
 }
 
 .control-btn--up,
 .control-btn--down {
-  width: 56px;
-  height: 56px;
+  width: 72px;
+  height: 40px;
 }
 
 @media (max-width: 480px) {
-  .control-btn {
-    width: 56px;
-    height: 56px;
+  .virtual-controls {
+    bottom: 44px;
+  }
+
+  .control-btn--left,
+  .control-btn--right {
+    width: 42px;
+    height: 70px;
   }
 
   .control-btn--up,
   .control-btn--down {
-    width: 50px;
-    height: 50px;
+    width: 64px;
+    height: 36px;
   }
 
   .control-center {
-    max-width: 70px;
-    gap: 10px;
+    max-width: 76px;
+    gap: 8px;
   }
 }
 </style>
