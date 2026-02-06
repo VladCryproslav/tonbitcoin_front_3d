@@ -484,6 +484,7 @@
   "energizer": {
     "collect_energy": "Collect Energy",
     "energy_collection_cooldown": "Energy collection",
+    "energy_collection_available_at": "Next run in:",
     "energy_run_cooldown_message": "Next energy collection available in {time}"
   },
   "common": {

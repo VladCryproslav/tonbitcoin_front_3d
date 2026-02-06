@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0120_stationrollbacklog_restore_fields'),
+        ('core', '0121_userprofile_repair_kit_expires_and_more'),
     ]
 
     operations = [

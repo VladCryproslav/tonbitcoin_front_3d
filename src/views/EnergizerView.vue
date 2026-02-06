@@ -698,6 +698,7 @@ async function increment(event) {
     showMeModal('warning', t('notification.st_attention'), t('notification.unconnected'))
     return
   }
+  if (energyRunCooldown.value.isActive) return // Во время cooldown сбора энергии тапы отключены
   if (app.user?.building_until && getTimeRemaining(app.user?.building_until).remain > 0) return
   if (!unlockedWallet.value.bool) return
   if (orbitalStation.value.lock) return
@@ -2007,14 +2008,14 @@ onUnmounted(() => {
               <span class="time">{{ getTimeRemaining(unlockedWallet.time).time }}</span>
             </div>
           </div>
-          <!-- Cooldown для сбора энергии (60 минут) -->
+          <!-- Cooldown для сбора энергии (60 минут): только серая станция и таймер, без кранов -->
           <div
             v-if="energyRunCooldown.isActive && unlockedWallet.bool && (!app?.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !hydroStation.lock && !orbitalStation.lock"
-            class="building-wrapper">
+            class="building-wrapper energy-run-cooldown-wrapper">
             <img src="@/assets/build-station.webp" width="320px" />
             <div class="building">
               <div class="building-group">
-                <span>{{ t('energizer.energy_collection_cooldown') }}</span>
+                <span>{{ t('energizer.energy_collection_available_at') }}</span>
                 <div class="building-timer">
                   {{ getTimeRemaining(energyRunCooldown.timeRemaining).time }}
                 </div>
@@ -2117,7 +2118,7 @@ onUnmounted(() => {
             {{ t('energizer.collect_energy') }}
           </button>
         </div>
-        <div class="station-label-group">
+        <div v-show="!energyRunCooldown.isActive" class="station-label-group">
           <span class="station-label">{{ (app?.user?.has_orbital_station && !app?.user?.orbital_force_basic) ? t(`stations.${'Orbital power plant'}`) :
             app?.user?.has_hydro_station ? t(`stations.${'Hydroelectric power plant'}`) :
               t(`stations.${app.user?.station_type}`) }} {{ allStations.indexOf(app.user?.station_type)
@@ -2146,7 +2147,7 @@ onUnmounted(() => {
             {{ t('general.main.create_first') }}
           </button>
         </div>
-        <div class="statistic">
+        <div v-show="!energyRunCooldown.isActive" class="statistic">
           <div class="power">
             <Storage :width="22" :height="22" />
             <span v-if="isJarvis.active">{{ +(+app.user?.storage_limit ?? 0) }} kW</span>
@@ -2191,7 +2192,7 @@ onUnmounted(() => {
             <span v-if="isJarvis.active">{{ isJarvis.forever ? t('common.forever') : isJarvis.time }}</span>
           </div>
         </div>
-        <div class="buttons-row">
+        <div v-show="!energyRunCooldown.isActive" class="buttons-row">
           <button class="upgrade-btn" @click="openUpgrade">
             {{ t('general.main.upg_btn') }}
             <UpgradeBtn :width="30" :height="30" />
@@ -3999,19 +4000,31 @@ onUnmounted(() => {
   cursor: pointer;
   background: radial-gradient(ellipse 80% 20% at bottom, #ffffff50, transparent),
     linear-gradient(to left, #e757ec, #9851ec, #5e7cea);
-  box-shadow: 0px 4px 15px rgba(152, 81, 236, 0.4);
+  /* Тень, чтобы кнопка выделялась и не сливалась со станцией */
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.15),
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    0 8px 32px rgba(152, 81, 236, 0.45),
+    0 2px 8px rgba(152, 81, 236, 0.35);
   transition: all 150ms ease-in-out;
   white-space: nowrap;
   letter-spacing: 0.5px;
 
   &:active {
-    opacity: 0.85;
+    opacity: 0.9;
     transform: translate(-50%, -50%) scale(0.98);
-    box-shadow: 0px 2px 10px rgba(152, 81, 236, 0.3);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      0 2px 12px rgba(0, 0, 0, 0.35),
+      0 4px 20px rgba(152, 81, 236, 0.35);
   }
 
   &:hover {
-    box-shadow: 0px 6px 20px rgba(152, 81, 236, 0.5);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.2),
+      0 6px 24px rgba(0, 0, 0, 0.45),
+      0 12px 40px rgba(152, 81, 236, 0.5),
+      0 4px 12px rgba(152, 81, 236, 0.4);
   }
 }
 

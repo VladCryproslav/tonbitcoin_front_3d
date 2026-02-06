@@ -872,6 +872,7 @@
   "energizer": {
     "collect_energy": "Зібрати енергію",
     "energy_collection_cooldown": "Збір енергії",
+    "energy_collection_available_at": "Наступний забіг через:",
     "energy_run_cooldown_message": "Наступний збір енергії доступний через {time}"
   }
 }
