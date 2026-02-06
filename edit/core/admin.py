@@ -282,7 +282,7 @@ class WithdrawalRequestAdmin(admin.ModelAdmin):
 
 @admin.register(EngineerConfig)
 class EngineerConfigAdmin(admin.ModelAdmin):
-    list_display = ("level", "tap_power", "hire_cost", "hire_cost_stars")
+    list_display = ("level", "tap_power", "hire_cost", "hire_cost_stars", "saved_percent_on_lose")
     ordering = ("level",)
     search_fields = ("level",)
 

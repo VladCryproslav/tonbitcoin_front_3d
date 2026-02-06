@@ -184,7 +184,7 @@
             <span class="game-over-result-label">{{ t('game.run_result_saved_by_level', { level: whiteEngineerLevel }) }}</span>
             <span class="game-over-result-value">{{ formatPercent(whiteEngineerSavedPercent) }}</span>
           </div>
-          <div v-if="gameOverType !== 'win'" class="game-over-result-row">
+          <div v-if="gameOverType !== 'win' && goldEngineerLevel" class="game-over-result-row">
             <img src="@/assets/gold.webp" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_saved_by_level', { level: goldEngineerLevel }) }}</span>
             <span class="game-over-result-value">{{ formatPercent(goldEngineerSavedPercent) }}</span>
@@ -192,7 +192,7 @@
           <div class="game-over-result-row">
             <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_for_claim') }}</span>
-            <span class="game-over-result-value">{{ formatEnergy(gameRun.energyCollected?.value ?? 0) }} kW</span>
+            <span class="game-over-result-value">{{ formatEnergy(claimableEnergy) }} kW</span>
           </div>
         </div>
         <div class="game-over-actions">
@@ -278,18 +278,32 @@ const getWorkers = computed(() => {
 const whiteEngineerLevel = computed(() => getWorkers.value.simple)
 const goldEngineerLevel = computed(() => getWorkers.value.gold)
 
-// Процент сохранения из eng_configs по уровню (белый = simple 1–49, золотой = all 50+)
+// Процент сохранения при проигрыше из eng_configs (saved_percent_on_lose)
 const whiteEngineerSavedPercent = computed(() => {
   const level = getWorkers.value.simple
   if (!level) return 0
   const cfg = app.stations?.eng_configs?.find((el) => el?.level === level)
-  return cfg?.saved_percent ?? cfg?.save_percent ?? 0
+  return Number(cfg?.saved_percent_on_lose ?? 0)
 })
 const goldEngineerSavedPercent = computed(() => {
   const level = getWorkers.value.all
   if (level < 50) return 0
   const cfg = app.stations?.eng_configs?.find((el) => el?.level === level)
-  return cfg?.saved_percent ?? cfg?.save_percent ?? 0
+  return Number(cfg?.saved_percent_on_lose ?? 0)
+})
+// Эффективный процент при проигрыше — по суммарному уровню (all)
+const effectiveSavedPercentOnLose = computed(() => {
+  const level = getWorkers.value.all
+  if (!level) return 0
+  const cfg = app.stations?.eng_configs?.find((el) => el?.level === level)
+  return Number(cfg?.saved_percent_on_lose ?? 0)
+})
+// Сколько энергии можно забрать: при победе — всё собранное, при проигрыше — по проценту уровня
+const claimableEnergy = computed(() => {
+  const collected = Number(gameRun.energyCollected?.value ?? 0)
+  if (gameOverType.value === 'win') return collected
+  const pct = effectiveSavedPercentOnLose.value
+  return (collected * pct) / 100
 })
 
 const formatEnergy = (value) => {

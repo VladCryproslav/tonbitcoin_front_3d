@@ -1148,6 +1148,10 @@ class EngineerConfig(models.Model):
     tap_power = models.FloatField()  # Сила тапа, kW
     hire_cost = models.FloatField()  # Вартість найму, kW
     hire_cost_stars = models.IntegerField(default=0)  # Вартість найму, Stars
+    saved_percent_on_lose = models.FloatField(
+        default=0,
+        help_text="Процент энергии (kW), сохраняемой при проигрыше забега для этого уровня инженера (0–100)",
+    )
 
     def __str__(self):
         return f"Engineer Level {self.level}"
