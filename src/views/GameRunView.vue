@@ -190,6 +190,7 @@
             <span class="game-over-result-value">{{ formatPercent(goldEngineerBonusPercent) }}</span>
           </div>
           <div v-if="gameOverType !== 'win'" class="game-over-result-row">
+            <img src="@/assets/save.webp" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_saved_total') }}</span>
             <span class="game-over-result-value">{{ formatPercent(effectiveSavedPercentOnLose) }}</span>
           </div>

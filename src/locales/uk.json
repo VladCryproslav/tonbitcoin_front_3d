@@ -478,7 +478,7 @@
     "back": "Назад",
     "run_result_collected": "Зібрано",
     "run_result_for_claim": "Буде нараховано",
-    "run_result_saved_total": "Всього збережено енергії",
+    "run_result_saved_total": "Всього збережено kW",
     "run_result_saved_by_level": "{level} рівень, зберіг",
     "run_claim": "Забрати"
   },
