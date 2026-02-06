@@ -190,9 +190,8 @@
             <span class="game-over-result-value">{{ formatPercent(goldEngineerBonusPercent) }}</span>
           </div>
           <div v-if="gameOverType !== 'win'" class="game-over-result-row">
-            <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_saved_total') }}</span>
-            <span class="game-over-result-value">{{ totalSavedFormula }}</span>
+            <span class="game-over-result-value">{{ formatPercent(effectiveSavedPercentOnLose) }}</span>
           </div>
           <div class="game-over-result-row">
             <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
@@ -301,19 +300,6 @@ const goldEngineerBonusPercent = computed(() => {
   const gold = goldEngineerSavedPercent.value
   const white = whiteEngineerSavedPercent.value
   return Math.max(0, gold - white)
-})
-// Строка «всего сохранено: 49+13= 62%» или «49= 49%»
-const totalSavedFormula = computed(() => {
-  const white = whiteEngineerSavedPercent.value
-  const bonus = goldEngineerBonusPercent.value
-  const total = effectiveSavedPercentOnLose.value
-  const w = Number.isFinite(white) ? white.toFixed(1) : '0'
-  const t = Number.isFinite(total) ? total.toFixed(1) : '0'
-  if (bonus > 0) {
-    const b = Number.isFinite(bonus) ? bonus.toFixed(1) : '0'
-    return `${w}+${b}= ${t}%`
-  }
-  return `${w}= ${t}%`
 })
 // Эффективный процент при проигрыше — по суммарному уровню (all)
 const effectiveSavedPercentOnLose = computed(() => {
