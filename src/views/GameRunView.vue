@@ -177,14 +177,14 @@
           <div class="game-over-result-row">
             <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_collected') }}</span>
-            <span class="game-over-result-value">{{ formatEnergy(gameRun.energyCollected?.value ?? 0) }} kW</span>
+            <span class="game-over-result-value">{{ formatEnergy(gameRun.energyCollected?.value ?? 0) }} / {{ formatEnergy(gameRun.currentStorage?.value ?? 0) }} kW</span>
           </div>
-          <div class="game-over-result-row">
+          <div v-if="gameOverType !== 'win'" class="game-over-result-row">
             <img src="@/assets/engineer.webp" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_saved_by_level', { level: whiteEngineerLevel }) }}</span>
             <span class="game-over-result-value">{{ formatPercent(whiteEngineerSavedPercent) }}</span>
           </div>
-          <div class="game-over-result-row">
+          <div v-if="gameOverType !== 'win'" class="game-over-result-row">
             <img src="@/assets/gold.webp" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_saved_by_level', { level: goldEngineerLevel }) }}</span>
             <span class="game-over-result-value">{{ formatPercent(goldEngineerSavedPercent) }}</span>

@@ -459,7 +459,7 @@
     "pause_title": "Paused",
     "pause_subtitle": "The run is paused. Take a short break or return to the main screen.",
     "win_title": "You win!",
-    "win_subtitle": "Great run — energy has been credited.",
+    "win_subtitle": "Great run, you passed the entire distance!",
     "lose_title": "You lost",
     "lose_subtitle": "Try again to collect more energy.",
     "back_to_main": "Back to main screen",
