@@ -144,11 +144,7 @@
           }}
         </div>
         <div class="game-over-subtitle">
-          {{
-            gameOverType === 'win'
-              ? t('game.win_subtitle')
-              : t('game.lose_subtitle')
-          }}
+          {{ t('game.win_subtitle') }}
         </div>
         <div class="game-over-results">
           <div class="game-over-result-row">
@@ -165,6 +161,11 @@
             <img src="@/assets/gold.webp" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_gold_engineers') }}</span>
             <span class="game-over-result-value">{{ formatEnergy(runResultGoldEngineerKw) }} kW</span>
+          </div>
+          <div class="game-over-result-row">
+            <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
+            <span class="game-over-result-label">{{ t('game.run_result_for_claim') }}</span>
+            <span class="game-over-result-value">{{ formatEnergy(gameRun.energyCollected?.value ?? 0) }} kW</span>
           </div>
         </div>
         <div class="game-over-actions">
