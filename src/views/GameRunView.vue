@@ -478,7 +478,7 @@ const startThreeLoop = () => {
       if (!winTriggered && !winDecelerating && winAnimationStartTime === 0) {
         // Плавный набор: к 55% дистанции выходим на чуть меньшую макс. скорость (один раз на кадр, не на шаг)
         const progress = (gameRun.distanceProgress?.value ?? 0) / 100
-        const maxSpeed = 0.38
+        const maxSpeed = 0.36
         const rampProgress = Math.min(1, progress / 0.55)
         const baseSpeed = 0.15
         const targetSpeed = baseSpeed + (maxSpeed - baseSpeed) * rampProgress
