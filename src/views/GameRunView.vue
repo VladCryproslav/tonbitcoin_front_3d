@@ -187,7 +187,12 @@
           <div v-if="gameOverType !== 'win' && goldEngineerLevel" class="game-over-result-row">
             <img src="@/assets/gold.webp" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_saved_by_level', { level: goldEngineerLevel }) }}</span>
-            <span class="game-over-result-value">{{ formatPercentPlus(goldEngineerBonusPercent) }}</span>
+            <span class="game-over-result-value">{{ formatPercent(goldEngineerBonusPercent) }}</span>
+          </div>
+          <div v-if="gameOverType !== 'win'" class="game-over-result-row">
+            <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
+            <span class="game-over-result-label">{{ t('game.run_result_saved_total') }}</span>
+            <span class="game-over-result-value">{{ totalSavedFormula }}</span>
           </div>
           <div class="game-over-result-row">
             <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
@@ -291,11 +296,24 @@ const goldEngineerSavedPercent = computed(() => {
   const cfg = app.stations?.eng_configs?.find((el) => el?.level === level)
   return Number(cfg?.saved_percent_on_lose ?? 0)
 })
-// Бонус золотого над белым: показываем +X% (напр. 62% − 49% = +13%)
+// Бонус золотого над белым: напр. 62% − 49% = 13%
 const goldEngineerBonusPercent = computed(() => {
   const gold = goldEngineerSavedPercent.value
   const white = whiteEngineerSavedPercent.value
   return Math.max(0, gold - white)
+})
+// Строка «всего сохранено: 49+13= 62%» или «49= 49%»
+const totalSavedFormula = computed(() => {
+  const white = whiteEngineerSavedPercent.value
+  const bonus = goldEngineerBonusPercent.value
+  const total = effectiveSavedPercentOnLose.value
+  const w = Number.isFinite(white) ? white.toFixed(1) : '0'
+  const t = Number.isFinite(total) ? total.toFixed(1) : '0'
+  if (bonus > 0) {
+    const b = Number.isFinite(bonus) ? bonus.toFixed(1) : '0'
+    return `${w}+${b}= ${t}%`
+  }
+  return `${w}= ${t}%`
 })
 // Эффективный процент при проигрыше — по суммарному уровню (all)
 const effectiveSavedPercentOnLose = computed(() => {
@@ -320,11 +338,6 @@ const formatEnergy = (value) => {
 const formatPercent = (value) => {
   const v = Number(value ?? 0)
   return Number.isFinite(v) ? `${v.toFixed(1)}%` : '0.0%'
-}
-const formatPercentPlus = (value) => {
-  const v = Number(value ?? 0)
-  if (!Number.isFinite(v)) return '+0.0%'
-  return v > 0 ? `+${v.toFixed(1)}%` : '+0.0%'
 }
 
 // Режим оверлея лаунчера: старт до забега или пауза.

@@ -477,7 +477,8 @@
     "control_buttons": "Controls: Buttons",
     "back": "Back",
     "run_result_collected": "Collected",
-    "run_result_for_claim": "Will be credited",
+    "run_result_for_claim": "Will be added",
+    "run_result_saved_total": "Total energy saved",
     "run_result_saved_by_level": "{level} level, saved",
     "run_claim": "Claim"
   },

@@ -477,7 +477,8 @@
     "control_buttons": "Управление: Кнопки",
     "back": "Назад",
     "run_result_collected": "Собрано",
-    "run_result_for_claim": "Будет засчитано",
+    "run_result_for_claim": "Будет начислено",
+    "run_result_saved_total": "Всего сохранено энергии",
     "run_result_saved_by_level": "{level} уровень, сохранил",
     "run_claim": "Забрать"
   },
