@@ -475,7 +475,8 @@
     "back": "Назад",
     "run_result_collected": "Зібрано",
     "run_result_white_engineers": "Від білих інженерів",
-    "run_result_gold_engineers": "Від золотих інженерів"
+    "run_result_gold_engineers": "Від золотих інженерів",
+    "run_claim": "Забрати"
   },
   "common": {
     "lvl": "рів.",

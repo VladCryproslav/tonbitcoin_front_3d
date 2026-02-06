@@ -152,17 +152,17 @@
         </div>
         <div class="game-over-results">
           <div class="game-over-result-row">
-            <span class="game-over-result-icon game-over-result-icon--spacer" aria-hidden="true" />
+            <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_collected') }}</span>
             <span class="game-over-result-value">{{ formatEnergy(gameRun.energyCollected?.value ?? 0) }} kW</span>
           </div>
           <div class="game-over-result-row">
-            <img src="@/assets/miner/engineer_new.svg" alt="" class="game-over-result-icon" />
+            <img src="@/assets/engineer.webp" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_white_engineers') }}</span>
             <span class="game-over-result-value">{{ formatEnergy(runResultWhiteEngineerKw) }} kW</span>
           </div>
           <div class="game-over-result-row">
-            <img src="@/assets/miner/engineer_new.svg" alt="" class="game-over-result-icon game-over-result-icon--gold" />
+            <img src="@/assets/gold.webp" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_gold_engineers') }}</span>
             <span class="game-over-result-value">{{ formatEnergy(runResultGoldEngineerKw) }} kW</span>
           </div>
@@ -170,9 +170,9 @@
         <div class="game-over-actions">
           <button
             class="btn-primary btn-primary--wide"
-            @click.stop.prevent="exitToMain"
+            @click.stop.prevent="handleClaim"
           >
-            {{ t('game.back_to_main') }}
+            {{ t('game.run_claim') }}
           </button>
         </div>
       </div>
@@ -827,6 +827,12 @@ const handleTap = () => {
   }
 }
 
+// Забрать: позже — вызов эндпоинта начисления собранной энергии на баланс, затем выход.
+const handleClaim = () => {
+  // TODO: POST /api/... — начислить gameRun.energyCollected, runResultWhiteEngineerKw, runResultGoldEngineerKw на баланс
+  exitToMain()
+}
+
 // Выход из лаунчера обратно в основное приложение.
 const exitToMain = () => {
   stopGameLoop()
@@ -1099,14 +1105,6 @@ onUnmounted(() => {
   object-fit: contain;
 }
 
-.game-over-result-icon--gold {
-  filter: sepia(1) saturate(1.8) hue-rotate(5deg) brightness(1.1);
-}
-
-.game-over-result-icon--spacer {
-  visibility: hidden;
-  pointer-events: none;
-}
 
 .game-over-actions {
   display: flex;

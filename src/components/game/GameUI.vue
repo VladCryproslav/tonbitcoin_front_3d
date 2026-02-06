@@ -13,16 +13,11 @@
           </span>
         </div>
         <div class="lives-counter">
-          <svg
-            class="icon lives-icon"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              d="M12.1 21.35 10 19.45C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8 10.95l-1.9 1.9Z"
-              fill="currentColor"
-            />
-          </svg>
+          <img
+            class="icon energy-icon"
+            src="@/assets/engineer.webp"
+            alt="lives"
+          />
           <div class="lives-hearts">
             <span
               v-for="n in maxLives"

@@ -475,7 +475,8 @@
     "back": "Back",
     "run_result_collected": "Collected",
     "run_result_white_engineers": "From white engineers",
-    "run_result_gold_engineers": "From gold engineers"
+    "run_result_gold_engineers": "From gold engineers",
+    "run_claim": "Claim"
   },
   "common": {
     "lvl": "lvl",
