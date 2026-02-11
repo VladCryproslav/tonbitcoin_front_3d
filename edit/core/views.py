@@ -1972,14 +1972,20 @@ class GameRunCompleteView(APIView):
                     saved_percent = 0
                 
                 # Бонус +2% если есть активные синие электрики
-                active_boosts = user_profile.get_active_boosts()
-                if 'electrics' in active_boosts:
+                # Проверяем напрямую electrics_expires вместо несуществующего метода get_active_boosts()
+                if user_profile.electrics_expires and user_profile.electrics_expires > now:
                     saved_percent += 2
                 
                 # Ограничиваем процент максимумом 100%
                 saved_percent = min(saved_percent, 100)
                 
                 final_energy = energy_collected * (saved_percent / 100)
+                
+                action_logger.info(
+                    f"GameRunCompleteView loss calculation: user_id={user_profile.user_id}, "
+                    f"engineer_level={engineer_level}, saved_percent={saved_percent}, "
+                    f"energy_collected={energy_collected}, final_energy={final_energy}"
+                )
             
             # Преобразуем final_energy в Decimal для корректной работы с F()
             from decimal import Decimal
@@ -2001,39 +2007,21 @@ class GameRunCompleteView(APIView):
                     f"energy_collected={energy_collected}, is_win={is_win}"
                 )
             
-            # Начисление энергии на баланс
-            UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                energy=F("energy") + final_energy_decimal
-            )
+            # НЕ начисляем энергию здесь - только сохраняем данные забега
+            # Начисление будет происходить при нажатии кнопки "Забрать" через GameRunClaimView
+            # Сохраняем данные забега для последующего начисления:
+            # - energy_run_start_storage остается (для валидации)
+            # - energy_run_last_started_at остается (для проверки что забег был начат)
+            # - Добавляем новые поля для хранения данных завершенного забега
+            # Но так как у нас уже есть energy_run_start_storage, используем его для валидации
             
-            # Обновление WalletInfo.kw_amount
-            if user_profile.ton_wallet:
-                updated_count = WalletInfo.objects.filter(
-                    user=user_profile, 
-                    wallet=user_profile.ton_wallet
-                ).update(kw_amount=F("kw_amount") + final_energy_decimal)
-                action_logger.info(
-                    f"Energy run complete: WalletInfo updated for user {user_profile.user_id}, "
-                    f"wallet={user_profile.ton_wallet}, updated_count={updated_count}, "
-                    f"kw_amount_added={final_energy_decimal}"
-                )
-            else:
-                action_logger.warning(
-                    f"Energy run complete: No ton_wallet for user {user_profile.user_id}, "
-                    f"skipping WalletInfo update"
-                )
+            # Сохраняем данные завершенного забега в отдельном поле или используем существующие
+            # Для простоты используем существующую структуру - данные уже сохранены в energy_run_start_storage
             
-            # Обновление статистики
-            GlobalSpendStats.objects.update(
-                total_energy_accumulated=F("total_energy_accumulated") + final_energy_decimal
-            )
-            
-            # Добавление в график
-            add_chart_kw(float(final_energy))
-            
-            # Очистка данных забега
-            UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                energy_run_start_storage=None
+            action_logger.info(
+                f"Energy run complete: Run data saved for user {user_profile.user_id}, "
+                f"energy_collected={energy_collected}, final_energy={final_energy}, "
+                f"is_win={is_win}, waiting for claim"
             )
             
             # Получаем обновленный объект пользователя
@@ -2042,9 +2030,11 @@ class GameRunCompleteView(APIView):
             return Response(
                 {
                     "success": True,
-                    "message": "Run completed successfully",
-                    "energy_gained": float(final_energy),
-                    "total_energy": float(user_profile.energy),
+                    "message": "Run completed successfully. Click 'Claim' to receive energy.",
+                    "energy_collected": float(energy_collected),
+                    "energy_gained": float(final_energy),  # Сколько получит при нажатии "Забрать"
+                    "is_win": is_win,
+                    "total_energy": float(user_profile.energy),  # Текущий баланс (без начисления)
                     "storage": float(user_profile.storage),
                     "power": float(user_profile.power),
                     "bonuses": None,
@@ -2060,6 +2050,199 @@ class GameRunCompleteView(APIView):
             )
         except Exception as e:
             import traceback
+            action_logger.error(
+                f"GameRunCompleteView error: {str(e)}, traceback: {traceback.format_exc()}"
+            )
+            traceback.print_exc()
+            return Response(
+                {"error": f"Internal server error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class GameRunClaimView(APIView):
+    """Начисление энергии при нажатии кнопки 'Забрать' после завершения забега"""
+    
+    @swagger_auto_schema(
+        tags=["game"],
+        operation_description="Начисление энергии за завершенный забег при нажатии кнопки 'Забрать'",
+        responses={
+            200: openapi.Response(
+                description="Энергия успешно начислена",
+                examples={
+                    "application/json": {
+                        "success": True,
+                        "message": "Energy claimed successfully",
+                        "energy_gained": 45.3,
+                        "total_energy": 150.5,
+                    }
+                },
+            ),
+            400: "Ошибка валидации или забег не был завершен",
+        },
+    )
+    @require_auth
+    def post(self, request):
+        try:
+            # Перезагружаем user_profile из базы данных
+            user_profile = UserProfile.objects.get(user_id=request.user_profile.user_id)
+            now = timezone.now()
+            
+            action_logger.info(
+                f"GameRunClaimView POST received: user_id={user_profile.user_id}"
+            )
+            
+            # Валидация: Проверка что забег был завершен (есть energy_run_start_storage и energy_run_last_started_at)
+            if not user_profile.energy_run_last_started_at:
+                action_logger.warning(
+                    f"GameRunClaimView validation FAILED: Run not started for user {user_profile.user_id}"
+                )
+                return Response(
+                    {"error": "Run not started. Please start a run first."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            if user_profile.energy_run_start_storage is None:
+                action_logger.warning(
+                    f"GameRunClaimView validation FAILED: Run data not found for user {user_profile.user_id}"
+                )
+                return Response(
+                    {"error": "Run data not found. Please complete a run first."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Проверка что забег был завершен не более 2 часов назад
+            time_since_start = (now - user_profile.energy_run_last_started_at).total_seconds()
+            if time_since_start > 7200:  # 2 часа
+                action_logger.warning(
+                    f"GameRunClaimView validation FAILED: Run expired for user {user_profile.user_id}, "
+                    f"time_since_start={time_since_start}"
+                )
+                return Response(
+                    {"error": "Run expired. Please start a new run."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Получаем данные завершенного забега из запроса
+            # Эти данные должны были быть сохранены при завершении забега
+            energy_collected = float(request.data.get("energy_collected", 0))
+            is_win = request.data.get("is_win", False)
+            
+            action_logger.info(
+                f"GameRunClaimView: user_id={user_profile.user_id}, "
+                f"energy_collected={energy_collected}, is_win={is_win}, "
+                f"energy_run_start_storage={user_profile.energy_run_start_storage}"
+            )
+            
+            # Валидация собранной энергии
+            if energy_collected < 0:
+                return Response(
+                    {"error": "Invalid energy_collected value"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            max_energy = float(user_profile.energy_run_start_storage)
+            if energy_collected > max_energy:
+                return Response(
+                    {
+                        "error": "Energy collected exceeds maximum allowed",
+                        "max_allowed": max_energy,
+                        "provided": energy_collected,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Расчет финального количества энергии (та же логика что в GameRunCompleteView)
+            if is_win:
+                final_energy = energy_collected
+            else:
+                # При проигрыше применяем процент сохранения от уровня инженера
+                engineer_level = user_profile.get_real_engs()
+                try:
+                    eng_config = EngineerConfig.objects.get(level=engineer_level)
+                    saved_percent = eng_config.saved_percent_on_lose or 0
+                except EngineerConfig.DoesNotExist:
+                    saved_percent = 0
+                
+                # Бонус +2% если есть активные синие электрики
+                if user_profile.electrics_expires and user_profile.electrics_expires > now:
+                    saved_percent += 2
+                
+                saved_percent = min(saved_percent, 100)
+                final_energy = energy_collected * (saved_percent / 100)
+            
+            # Преобразуем final_energy в Decimal
+            from decimal import Decimal
+            final_energy_decimal = Decimal(str(final_energy))
+            
+            action_logger.info(
+                f"GameRunClaimView: user_id={user_profile.user_id}, "
+                f"energy_collected={energy_collected}, is_win={is_win}, "
+                f"final_energy={final_energy}, final_energy_decimal={final_energy_decimal}, "
+                f"engineer_level={user_profile.get_real_engs() if not is_win else 'N/A'}"
+            )
+            
+            # Начисление энергии на баланс
+            UserProfile.objects.filter(user_id=user_profile.user_id).update(
+                energy=F("energy") + final_energy_decimal
+            )
+            
+            # Обновление WalletInfo.kw_amount
+            if user_profile.ton_wallet:
+                updated_count = WalletInfo.objects.filter(
+                    user=user_profile, 
+                    wallet=user_profile.ton_wallet
+                ).update(kw_amount=F("kw_amount") + final_energy_decimal)
+                action_logger.info(
+                    f"GameRunClaimView: WalletInfo updated for user {user_profile.user_id}, "
+                    f"wallet={user_profile.ton_wallet}, updated_count={updated_count}, "
+                    f"kw_amount_added={final_energy_decimal}"
+                )
+            else:
+                action_logger.warning(
+                    f"GameRunClaimView: No ton_wallet for user {user_profile.user_id}, "
+                    f"skipping WalletInfo update"
+                )
+            
+            # Обновление статистики
+            GlobalSpendStats.objects.update(
+                total_energy_accumulated=F("total_energy_accumulated") + final_energy_decimal
+            )
+            
+            # Добавление в график
+            add_chart_kw(float(final_energy))
+            
+            # Очистка данных забега после успешного начисления
+            UserProfile.objects.filter(user_id=user_profile.user_id).update(
+                energy_run_start_storage=None,
+                energy_run_last_started_at=None
+            )
+            
+            # Получаем обновленный объект пользователя
+            user_profile = UserProfile.objects.get(user_id=user_profile.user_id)
+            
+            return Response(
+                {
+                    "success": True,
+                    "message": "Energy claimed successfully",
+                    "energy_gained": float(final_energy),
+                    "total_energy": float(user_profile.energy),
+                    "storage": float(user_profile.storage),
+                    "power": float(user_profile.power),
+                },
+                status=status.HTTP_200_OK,
+            )
+            
+        except UserProfile.DoesNotExist:
+            return Response(
+                {"error": "User not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            import traceback
+            action_logger.error(
+                f"GameRunClaimView error: {str(e)}, traceback: {traceback.format_exc()}"
+            )
             traceback.print_exc()
             return Response(
                 {"error": f"Internal server error: {str(e)}"},

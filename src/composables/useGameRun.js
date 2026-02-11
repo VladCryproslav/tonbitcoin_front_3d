@@ -226,8 +226,10 @@ export function useGameRun() {
   }
 
   const collectEnergy = (amount) => {
+    const oldValue = energyCollected.value
     energyCollected.value += amount
     collectedPointsCount.value += 1 // Увеличиваем счетчик собранных токенов
+    console.log('collectEnergy: amount=', amount, 'oldValue=', oldValue, 'newValue=', energyCollected.value, 'startStorage=', startStorage.value)
   }
 
   const hitObstacle = () => {
@@ -279,21 +281,15 @@ export function useGameRun() {
       console.log('game-run-complete response:', response.data)
 
       if (response.status === 200 && response.data) {
-        // Обновляем состояние приложения
-        if (response.data.total_energy !== undefined) {
-          app.setScore(response.data.total_energy)
-        }
-        if (response.data.storage !== undefined) {
-          app.setStorage(response.data.storage)
-        }
-        if (response.data.power !== undefined) {
-          app.setPower(response.data.power)
-        }
-
+        // НЕ обновляем состояние приложения здесь - энергия еще не начислена
+        // Начисление произойдет при нажатии "Забрать" через handleClaim()
+        // Возвращаем данные для сохранения в completedRunData
         return {
           success: true,
-          energyGained: response.data.energy_gained,
-          totalEnergy: response.data.total_energy,
+          energy_collected: response.data.energy_collected ?? limitedEnergyCollected,
+          energy_gained: response.data.energy_gained,
+          is_win: response.data.is_win ?? isWin,
+          total_energy: response.data.total_energy,  // Текущий баланс (без начисления)
           storage: response.data.storage,
           power: response.data.power,
           bonuses: response.data.bonuses,

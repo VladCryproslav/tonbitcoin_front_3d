@@ -273,6 +273,8 @@ const showGameOver = ref(false)
 const gameOverType = ref('lose') // 'win' | 'lose'
 // Тренировочный забег: та же логика, в конце не начисляем энергию (только «Вернуться назад»)
 const isTrainingRun = ref(false)
+// Данные завершенного забега для начисления при нажатии "Забрать"
+const completedRunData = ref(null) // { energy_collected, is_win, energy_gained }
 // Та же логика уровней, что в EnergizerView: 49 белых, остаток — золотые
 const getWorkers = computed(() => {
   const simple = Math.min(app?.user?.engineer_level ?? 0, 49) || 0
@@ -311,6 +313,12 @@ const effectiveSavedPercentOnLose = computed(() => {
 })
 // Сколько энергии можно забрать: при победе — всё собранное (но не больше storage), при проигрыше — по проценту уровня
 const claimableEnergy = computed(() => {
+  // Используем данные из completedRunData если они есть (более точные данные с сервера)
+  if (completedRunData.value?.energy_gained !== undefined) {
+    return completedRunData.value.energy_gained
+  }
+  
+  // Fallback: вычисляем на фронтенде
   const collected = Number(gameRun.energyCollected?.value ?? 0)
   // Используем сохраненное начальное значение storage вместо текущего (которое может быть обнулено на сервере)
   const maxStorage = Number(gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0)
@@ -318,7 +326,9 @@ const claimableEnergy = computed(() => {
   const limitedCollected = Math.min(collected, maxStorage)
   if (gameOverType.value === 'win') return limitedCollected
   const pct = effectiveSavedPercentOnLose.value
-  return (limitedCollected * pct) / 100
+  // Добавляем +2% если есть активные синие электрики
+  const electricsBonus = (app?.user?.electrics_expires && new Date(app.user.electrics_expires) > new Date()) ? 2 : 0
+  return (limitedCollected * (pct + electricsBonus)) / 100
 })
 
 const formatEnergy = (value, compareWithStorage = false) => {
@@ -517,6 +527,10 @@ const startThreeLoop = () => {
       }
       if (hitCount.value >= 3 && !isDead.value) {
         isDead.value = true
+        // Сохраняем energyCollected ДО остановки игрового цикла
+        const savedEnergyBeforeStop = gameRun.energyCollected?.value ?? 0
+        console.log('Player died: hitCount=', hitCount.value, 'energyCollected BEFORE stop=', savedEnergyBeforeStop, 'startStorage=', gameRun.startStorage?.value)
+        
         // НЕ вызываем stopRun() здесь, чтобы не сбросить startStorage и energyCollected
         // Останавливаем только игровой цикл и физику
         stopGameLoop()
@@ -532,8 +546,13 @@ const startThreeLoop = () => {
         // Модалка появится после завершения анимации падения в endGame
         gameOverType.value = 'lose'
         launcherOverlayMode.value = 'none'
+        
+        // Проверяем energyCollected после остановки игрового цикла
+        console.log('Player died: energyCollected AFTER stop=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value)
+        
         // Вызываем endGame после задержки для завершения анимации падения
         setTimeout(() => {
+          console.log('Calling endGame after delay: energyCollected=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value)
           if (!endGame._isProcessing) {
             endGame(false)
           }
@@ -771,6 +790,10 @@ function doOneStep(playerBox, inRollImmuneWindow) {
             app.setPower(Math.max(0, newPower))
             if (!isDead.value && livesLeft.value <= 0) {
               isDead.value = true
+              // Сохраняем energyCollected ДО остановки игрового цикла
+              const savedEnergyBeforeStop = gameRun.energyCollected?.value ?? 0
+              console.log('Player died (livesLeft=0): energyCollected BEFORE stop=', savedEnergyBeforeStop, 'startStorage=', gameRun.startStorage?.value)
+              
               // НЕ вызываем stopRun() здесь, чтобы не сбросить startStorage и energyCollected
               // Останавливаем только игровой цикл и физику
               stopGameLoop()
@@ -787,8 +810,13 @@ function doOneStep(playerBox, inRollImmuneWindow) {
               // Модалка появится после завершения анимации падения в endGame
               gameOverType.value = 'lose'
               launcherOverlayMode.value = 'none'
+              
+              // Проверяем energyCollected после остановки игрового цикла
+              console.log('Player died (livesLeft=0): energyCollected AFTER stop=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value)
+              
               // Вызываем endGame после задержки для завершения анимации падения
               setTimeout(() => {
+                console.log('Calling endGame after delay (livesLeft=0): energyCollected=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value)
                 if (!endGame._isProcessing) {
                   endGame(false)
                 }
@@ -937,7 +965,7 @@ const endGame = async (isWinByState = false) => {
     }
 
     // Вызываем completeRun для начисления энергии на сервере
-    console.log('endGame called, isWinByState:', isWinByState, 'energyCollected:', gameRun.energyCollected?.value)
+    console.log('endGame called, isWinByState:', isWinByState, 'energyCollected:', gameRun.energyCollected?.value, 'startStorage:', gameRun.startStorage?.value, 'isRunning:', gameRun.isRunning.value, 'runStartTime:', gameRun.runStartTime?.value)
     const result = await gameRun.completeRun(isWinByState).catch((e) => {
       console.error('Ошибка завершения забега:', e)
       console.error('Error details:', e.response?.data, e.message)
@@ -945,18 +973,18 @@ const endGame = async (isWinByState = false) => {
     })
     console.log('endGame completeRun result:', result)
 
-    // Обновляем состояние приложения из ответа сервера
+    // Сохраняем данные завершенного забега для последующего начисления при нажатии "Забрать"
     if (result && result.success) {
-      if (result.totalEnergy !== undefined) {
-        app.setScore(result.totalEnergy)
+      completedRunData.value = {
+        energy_collected: result.energy_collected ?? gameRun.energyCollected?.value ?? 0,
+        is_win: result.is_win ?? isWinByState,
+        energy_gained: result.energy_gained ?? 0
       }
-      if (result.power !== undefined) {
-        app.setPower(result.power)
-      }
-      if (result.storage !== undefined) {
-        app.setStorage(result.storage)
-      }
+      console.log('endGame: saved completedRunData:', completedRunData.value)
     }
+
+    // НЕ обновляем состояние приложения здесь - энергия еще не начислена
+    // Обновление произойдет после нажатия "Забрать" в handleClaim()
 
     const isSuccess = isWinByState || (result && result.success)
 
@@ -1084,10 +1112,47 @@ const handleTap = () => {
   }
 }
 
-// Забрать: просто выход, так как completeRun уже был вызван в endGame()
-const handleClaim = () => {
-  // completeRun уже был вызван в endGame() при завершении забега
-  // Здесь просто выходим из игры
+// Забрать: начисление энергии через отдельный эндпоинт
+const handleClaim = async () => {
+  if (!completedRunData.value) {
+    console.error('handleClaim: completedRunData is null')
+    exitToMain()
+    return
+  }
+
+  try {
+    console.log('handleClaim: calling game-run-claim with data:', completedRunData.value)
+    
+    const response = await host.post('game-run-claim/', {
+      energy_collected: completedRunData.value.energy_collected,
+      is_win: completedRunData.value.is_win
+    })
+    
+    console.log('handleClaim: response:', response.data)
+    
+    if (response.status === 200 && response.data.success) {
+      // Обновляем состояние приложения после успешного начисления
+      if (response.data.total_energy !== undefined) {
+        app.setScore(response.data.total_energy)
+      }
+      if (response.data.storage !== undefined) {
+        app.setStorage(response.data.storage)
+      }
+      if (response.data.power !== undefined) {
+        app.setPower(response.data.power)
+      }
+      
+      // Очищаем данные забега
+      completedRunData.value = null
+    }
+  } catch (error) {
+    console.error('Ошибка при начислении энергии:', error)
+    console.error('Error response:', error.response?.data)
+    // Показываем сообщение об ошибке пользователю
+    alert(error.response?.data?.error || 'Ошибка при начислении энергии')
+  }
+  
+  // Выходим из игры после начисления (или ошибки)
   exitToMain()
 }
 
