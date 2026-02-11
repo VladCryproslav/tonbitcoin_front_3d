@@ -909,7 +909,8 @@ export function useGameWorld(scene) {
 
         const energy = collectible.userData.energyValue ?? 0.5
         onCollect(energy)
-        if (typeof onPassed === 'function') onPassed()
+        // НЕ вызываем onPassed() при сборе - токен уже обработан через onCollect
+        // onPassed() вызывается только когда токен проходит мимо без сбора (строка 861)
         collectiblesToRemove.push(index)
         inactiveCollectibles.push(collectible)
       }
