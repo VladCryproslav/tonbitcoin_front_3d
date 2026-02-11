@@ -252,8 +252,11 @@ export function useGameRun() {
       
       // Ограничиваем собранную энергию максимумом начального storage (нельзя собрать больше чем было при старте)
       // Используем сохраненное значение, чтобы не зависеть от обнуления storage на сервере
-      const maxCollectibleEnergy = startStorage.value || currentStorage.value
+      // Если startStorage не установлен (0 или null), используем текущее значение из app (до обнуления) или fallback
+      const maxCollectibleEnergy = startStorage.value > 0 ? startStorage.value : (app.storage > 0 ? app.storage : 70)
       const limitedEnergyCollected = Math.min(energyCollected.value, maxCollectibleEnergy)
+      
+      console.log('completeRun: energyCollected=', energyCollected.value, 'maxCollectibleEnergy=', maxCollectibleEnergy, 'startStorage=', startStorage.value, 'app.storage=', app.storage, 'limitedEnergyCollected=', limitedEnergyCollected)
 
       const runData = {
         distance: distance.value,
@@ -317,6 +320,7 @@ export function useGameRun() {
     currentPower,
     currentEnergy,
     currentStorage,
+    startStorage: computed(() => startStorage.value), // Экспортируем сохраненное начальное значение storage
     energyPoints,
     totalPoints,
     passedPointsCount,

@@ -10,8 +10,8 @@
     <!-- UI поверх игры: только после старта забега -->
     <GameUI
       v-if="gameRun.isRunning || gameRun.isPaused"
-      :energy="Math.min(gameRun.energyCollected?.value ?? 0, gameRun.currentStorage?.value ?? 0)"
-      :max-energy="gameRun.currentStorage?.value ?? 0"
+      :energy="Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0)"
+      :max-energy="gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0"
       :power="gameRun.distanceProgress?.value ?? 0"
       :lives="livesLeft"
       :max-lives="MAX_LIVES"
@@ -177,7 +177,7 @@
           <div class="game-over-result-row">
             <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_collected') }}</span>
-            <span class="game-over-result-value">{{ formatEnergy(Math.min(gameRun.energyCollected?.value ?? 0, gameRun.currentStorage?.value ?? 0), true) }} / {{ formatEnergy(gameRun.currentStorage?.value ?? 0) }} kW</span>
+            <span class="game-over-result-value">{{ formatEnergy(Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0), true) }} / {{ formatEnergy(gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0) }} kW</span>
           </div>
           <div v-if="gameOverType !== 'win'" class="game-over-result-row">
             <img src="@/assets/engineer.webp" alt="" class="game-over-result-icon" />
@@ -312,8 +312,9 @@ const effectiveSavedPercentOnLose = computed(() => {
 // Сколько энергии можно забрать: при победе — всё собранное (но не больше storage), при проигрыше — по проценту уровня
 const claimableEnergy = computed(() => {
   const collected = Number(gameRun.energyCollected?.value ?? 0)
-  const maxStorage = Number(gameRun.currentStorage?.value ?? 0)
-  // Ограничиваем собранную энергию максимумом storage
+  // Используем сохраненное начальное значение storage вместо текущего (которое может быть обнулено на сервере)
+  const maxStorage = Number(gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0)
+  // Ограничиваем собранную энергию максимумом начального storage
   const limitedCollected = Math.min(collected, maxStorage)
   if (gameOverType.value === 'win') return limitedCollected
   const pct = effectiveSavedPercentOnLose.value
@@ -521,20 +522,22 @@ const startThreeLoop = () => {
         stopGameLoop()
         if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
         gameSpeed.value = 0
-        // Останавливаем физику персонажа
-        if (gamePhysics.value?.setAnimationState) {
+        // Останавливаем физику персонажа - запускаем анимацию падения
+        if (gamePhysics.value?.onFinalHit) {
+          gamePhysics.value.onFinalHit()
+        } else if (gamePhysics.value?.setAnimationState) {
           gamePhysics.value.setAnimationState('lose')
         }
-        // Устанавливаем модалку проигрыша сразу
+        // Устанавливаем тип проигрыша, но НЕ показываем модалку сразу
+        // Модалка появится после завершения анимации падения в endGame
         gameOverType.value = 'lose'
-        showGameOver.value = true
         launcherOverlayMode.value = 'none'
-        // Вызываем endGame после небольшой задержки для завершения анимации
+        // Вызываем endGame после задержки для завершения анимации падения
         setTimeout(() => {
           if (!endGame._isProcessing) {
             endGame(false)
           }
-        }, 1000)
+        }, 2000) // Увеличиваем задержку до 2 секунд для завершения анимации падения
       }
     }
 
@@ -773,23 +776,23 @@ function doOneStep(playerBox, inRollImmuneWindow) {
               stopGameLoop()
               if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
               gameSpeed.value = 0
-              // Останавливаем физику персонажа
+              // Останавливаем физику персонажа - запускаем анимацию падения
               if (gamePhysics.value?.onFinalHit) {
                 gamePhysics.value.onFinalHit()
               } else if (gamePhysics.value?.setAnimationState) {
                 // Fallback: просто включаем анимацию падения
                 gamePhysics.value.setAnimationState('lose')
               }
-              // Устанавливаем модалку проигрыша сразу
+              // Устанавливаем тип проигрыша, но НЕ показываем модалку сразу
+              // Модалка появится после завершения анимации падения в endGame
               gameOverType.value = 'lose'
-              showGameOver.value = true
               launcherOverlayMode.value = 'none'
-              // Вызываем endGame после небольшой задержки для завершения анимации
+              // Вызываем endGame после задержки для завершения анимации падения
               setTimeout(() => {
                 if (!endGame._isProcessing) {
                   endGame(false)
                 }
-              }, 1000)
+              }, 2000) // Увеличиваем задержку до 2 секунд для завершения анимации падения
             }
             // Мягкая тряска камеры только при ударе: статичный вертикальный "рывок"
             shakeFramesLeft = SHAKE_DURATION_FRAMES
@@ -958,7 +961,7 @@ const endGame = async (isWinByState = false) => {
     const isSuccess = isWinByState || (result && result.success)
 
     // Устанавливаем модалку только если она еще не установлена
-    // (при проигрыше она уже установлена в игровом цикле)
+    // (при проигрыше она НЕ устанавливается в игровом цикле - только тип, модалка показывается здесь после анимации)
     if (!showGameOver.value) {
       if (isSuccess) {
         // Успешное завершение забега — проигрываем победную анимацию
@@ -969,8 +972,8 @@ const endGame = async (isWinByState = false) => {
         showGameOver.value = true
         launcherOverlayMode.value = 'none'
       } else {
-        // При проигрыше тоже показываем экран завершения
-        gameOverType.value = 'lose'
+        // При проигрыше показываем экран завершения после анимации падения
+        // gameOverType уже установлен в игровом цикле, здесь только показываем модалку
         showGameOver.value = true
         launcherOverlayMode.value = 'none'
       }
