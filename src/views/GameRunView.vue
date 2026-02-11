@@ -177,7 +177,7 @@
           <div class="game-over-result-row">
             <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_collected') }}</span>
-            <span class="game-over-result-value">{{ formatEnergy(Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0), true) }} / {{ formatEnergy(gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0) }} kW</span>
+            <span class="game-over-result-value">{{ formatEnergy(savedEnergyCollectedForModal || Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0), true) }} / {{ formatEnergy(gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0) }} kW</span>
           </div>
           <div v-if="gameOverType !== 'win'" class="game-over-result-row">
             <img src="@/assets/engineer.webp" alt="" class="game-over-result-icon" />
@@ -975,8 +975,9 @@ const endGame = async (isWinByState = false) => {
     const savedStartStorageBeforeComplete = gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0
     
     // Сохраняем для отображения в модалке (не будет обнулено до нажатия "Забрать")
-    // Используем уже сохраненное значение если оно есть (при смерти оно уже сохранено), иначе сохраняем текущее
-    if (savedEnergyCollectedForModal.value === 0 || savedEnergyCollectedForModal.value < savedEnergyBeforeComplete) {
+    // ВАЖНО: Всегда обновляем значение, если текущее больше сохраненного или если сохраненное равно 0
+    // Это гарантирует, что при выигрыше (когда нет смерти) значение тоже сохранится
+    if (savedEnergyCollectedForModal.value === 0 || savedEnergyBeforeComplete > savedEnergyCollectedForModal.value) {
       savedEnergyCollectedForModal.value = savedEnergyBeforeComplete
     }
     
@@ -999,7 +1000,8 @@ const endGame = async (isWinByState = false) => {
         energy_gained: result.energy_gained ?? 0
       }
       // Обновляем сохраненное значение для модалки из ответа сервера
-      if (result.energy_collected !== undefined) {
+      // Используем значение с сервера, если оно больше текущего сохраненного
+      if (result.energy_collected !== undefined && result.energy_collected > savedEnergyCollectedForModal.value) {
         savedEnergyCollectedForModal.value = result.energy_collected
       }
       console.log('endGame: saved completedRunData:', completedRunData.value, 'savedEnergyBeforeComplete=', savedEnergyBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
@@ -1009,6 +1011,10 @@ const endGame = async (isWinByState = false) => {
         energy_collected: savedEnergyBeforeComplete,
         is_win: isWinByState ?? false,
         energy_gained: 0
+      }
+      // Убеждаемся что savedEnergyCollectedForModal содержит правильное значение
+      if (savedEnergyCollectedForModal.value === 0 || savedEnergyBeforeComplete > savedEnergyCollectedForModal.value) {
+        savedEnergyCollectedForModal.value = savedEnergyBeforeComplete
       }
       console.log('endGame: saved completedRunData (fallback):', completedRunData.value, 'savedEnergyBeforeComplete=', savedEnergyBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
     }
