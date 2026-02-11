@@ -177,7 +177,7 @@
           <div class="game-over-result-row">
             <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_collected') }}</span>
-            <span class="game-over-result-value">{{ formatEnergy(Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0), true) }} / {{ formatEnergy(gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0) }} kW</span>
+            <span class="game-over-result-value">{{ formatEnergy(completedRunData?.energy_collected ?? Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0), true) }} / {{ formatEnergy(gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0) }} kW</span>
           </div>
           <div v-if="gameOverType !== 'win'" class="game-over-result-row">
             <img src="@/assets/engineer.webp" alt="" class="game-over-result-icon" />
@@ -964,8 +964,13 @@ const endGame = async (isWinByState = false) => {
       gameEffects.value.clearAll()
     }
 
-    // Вызываем completeRun для начисления энергии на сервере
-    console.log('endGame called, isWinByState:', isWinByState, 'energyCollected:', gameRun.energyCollected?.value, 'startStorage:', gameRun.startStorage?.value, 'isRunning:', gameRun.isRunning.value, 'runStartTime:', gameRun.runStartTime?.value)
+    // Сохраняем данные ДО вызова completeRun, так как они могут быть изменены
+    const savedEnergyBeforeComplete = gameRun.energyCollected?.value ?? 0
+    const savedStartStorageBeforeComplete = gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0
+    
+    console.log('endGame called, isWinByState:', isWinByState, 'energyCollected BEFORE completeRun:', savedEnergyBeforeComplete, 'startStorage BEFORE completeRun:', savedStartStorageBeforeComplete, 'isRunning:', gameRun.isRunning.value, 'runStartTime:', gameRun.runStartTime?.value)
+    
+    // Вызываем completeRun для сохранения данных забега на сервере (без начисления энергии)
     const result = await gameRun.completeRun(isWinByState).catch((e) => {
       console.error('Ошибка завершения забега:', e)
       console.error('Error details:', e.response?.data, e.message)
@@ -974,24 +979,46 @@ const endGame = async (isWinByState = false) => {
     console.log('endGame completeRun result:', result)
 
     // Сохраняем данные завершенного забега для последующего начисления при нажатии "Забрать"
+    
     if (result && result.success) {
       completedRunData.value = {
-        energy_collected: result.energy_collected ?? gameRun.energyCollected?.value ?? 0,
+        energy_collected: result.energy_collected ?? savedEnergyBeforeComplete,
         is_win: result.is_win ?? isWinByState,
         energy_gained: result.energy_gained ?? 0
       }
-      console.log('endGame: saved completedRunData:', completedRunData.value)
+      console.log('endGame: saved completedRunData:', completedRunData.value, 'savedEnergyBeforeComplete=', savedEnergyBeforeComplete)
+    } else {
+      // Если result не получен, используем данные из gameRun
+      completedRunData.value = {
+        energy_collected: savedEnergyBeforeComplete,
+        is_win: isWinByState ?? false,
+        energy_gained: 0
+      }
+      console.log('endGame: saved completedRunData (fallback):', completedRunData.value, 'savedEnergyBeforeComplete=', savedEnergyBeforeComplete)
     }
 
     // НЕ обновляем состояние приложения здесь - энергия еще не начислена
     // Обновление произойдет после нажатия "Забрать" в handleClaim()
 
-    const isSuccess = isWinByState || (result && result.success)
+    // Определяем результат забега: приоритет у isWinByState (переданного параметра)
+    // Если isWinByState явно передан (true или false), используем его
+    // Иначе используем данные из result
+    let isWin = false
+    if (isWinByState !== undefined && isWinByState !== null) {
+      // Явно передан параметр - используем его
+      isWin = isWinByState === true
+    } else if (result && result.is_win !== undefined) {
+      // Используем данные с сервера
+      isWin = result.is_win === true
+    }
+    console.log('endGame: isWinByState=', isWinByState, 'result.is_win=', result?.is_win, 'final isWin=', isWin, 'gameOverType.value=', gameOverType.value)
 
     // Устанавливаем модалку только если она еще не установлена
     // (при проигрыше она НЕ устанавливается в игровом цикле - только тип, модалка показывается здесь после анимации)
+    console.log('endGame: showGameOver.value=', showGameOver.value, 'isWin=', isWin, 'gameOverType.value=', gameOverType.value)
+    
     if (!showGameOver.value) {
-      if (isSuccess) {
+      if (isWin) {
         // Успешное завершение забега — проигрываем победную анимацию
         if (gamePhysics.value?.setAnimationState) {
           gamePhysics.value.setAnimationState('win')
@@ -999,11 +1026,24 @@ const endGame = async (isWinByState = false) => {
         gameOverType.value = 'win'
         showGameOver.value = true
         launcherOverlayMode.value = 'none'
+        console.log('endGame: Set gameOverType to WIN')
       } else {
         // При проигрыше показываем экран завершения после анимации падения
-        // gameOverType уже установлен в игровом цикле, здесь только показываем модалку
+        // Убеждаемся что gameOverType установлен как 'lose'
+        gameOverType.value = 'lose'
         showGameOver.value = true
         launcherOverlayMode.value = 'none'
+        console.log('endGame: Set gameOverType to LOSE')
+      }
+    } else {
+      // Если модалка уже показана, убеждаемся что gameOverType правильный
+      // НО не перезаписываем если он уже установлен правильно
+      if (isWin && gameOverType.value !== 'win') {
+        gameOverType.value = 'win'
+        console.log('endGame: Updated gameOverType to WIN (modal already shown)')
+      } else if (!isWin && gameOverType.value !== 'lose') {
+        gameOverType.value = 'lose'
+        console.log('endGame: Updated gameOverType to LOSE (modal already shown)')
       }
     }
   } finally {
