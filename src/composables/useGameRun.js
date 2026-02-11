@@ -307,10 +307,11 @@ export function useGameRun() {
       }
     } finally {
       completeRun._isProcessing = false
-      // Останавливаем забег и сбрасываем startStorage только после завершения completeRun
+      // Останавливаем забег, но НЕ сбрасываем startStorage и energyCollected здесь
+      // Они нужны для отображения в модалке и будут сброшены только после нажатия "Забрать"
       isRunning.value = false
       isPaused.value = false
-      startStorage.value = 0
+      // startStorage и energyCollected остаются для отображения в модалке
     }
   }
 
@@ -324,7 +325,7 @@ export function useGameRun() {
     currentPower,
     currentEnergy,
     currentStorage,
-    startStorage: computed(() => startStorage.value), // Экспортируем сохраненное начальное значение storage
+    startStorage, // Экспортируем ref напрямую для возможности изменения
     energyPoints,
     totalPoints,
     passedPointsCount,

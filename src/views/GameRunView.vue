@@ -1182,8 +1182,16 @@ const handleClaim = async () => {
         app.setPower(response.data.power)
       }
       
-      // Очищаем данные забега
+      // Очищаем данные забега только после успешного начисления
       completedRunData.value = null
+      // Очищаем startStorage и energyCollected только после успешного начисления
+      if (gameRun.startStorage) {
+        gameRun.startStorage.value = 0
+      }
+      if (gameRun.energyCollected) {
+        gameRun.energyCollected.value = 0
+      }
+      console.log('handleClaim: Cleared run data after successful claim', 'startStorage=', gameRun.startStorage?.value, 'energyCollected=', gameRun.energyCollected?.value)
     }
   } catch (error) {
     console.error('Ошибка при начислении энергии:', error)
