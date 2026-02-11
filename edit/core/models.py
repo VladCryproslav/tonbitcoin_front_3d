@@ -339,6 +339,15 @@ class UserProfile(models.Model):
     storage_limit = models.DecimalField(max_digits=36, decimal_places=16, default=10)
     generation_rate = models.DecimalField(max_digits=36, decimal_places=16, default=5)
     
+    # Energy Run (Раннер)
+    energy_run_start_storage = models.DecimalField(
+        max_digits=36, 
+        decimal_places=16, 
+        default=0,
+        null=True,
+        blank=True,
+        help_text="Storage при старте забега (для валидации)"
+    )
     
     power = models.DecimalField(max_digits=36, decimal_places=16, default=100)
     referrer = models.ForeignKey(

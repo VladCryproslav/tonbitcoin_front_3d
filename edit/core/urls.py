@@ -30,6 +30,7 @@ from .views import (
     EnergyRunStartView,
     EngineerConfigView,
     EngineerStarsView,
+    GameRunCompleteView,
     GenPowerStationConfigView,
     GetTbtcReferralBonusesView,
     ReferralInfoView,
@@ -88,6 +89,7 @@ urlpatterns = [
     path("start-mining/", StartMiningView.as_view(), name="start_mining"),
     path("stop-mining/", StopMiningView.as_view(), name="stop_mining"),
     path("energy-run-start/", EnergyRunStartView.as_view(), name="energy_run_start"),
+    path("game-run-complete/", GameRunCompleteView.as_view(), name="game_run_complete"),
     path("add-kw-to-wallet/", AddKwToWalletView.as_view(), name="add_kw_to_wallet"),
     path(
         "add-tbtc-to-wallet/", AddTbtcToWalletView.as_view(), name="add_tbtc_to_wallet"

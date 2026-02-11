@@ -1728,8 +1728,12 @@ class EnergyRunStartView(APIView):
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
+            # Сохраняем текущее значение storage и обнуляем его
+            current_storage = user_profile.storage
             UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                energy_run_last_started_at=now
+                energy_run_last_started_at=now,
+                energy_run_start_storage=current_storage,
+                storage=0
             )
             request.user_profile.refresh_from_db()
             return Response(
@@ -1742,6 +1746,192 @@ class EnergyRunStartView(APIView):
         except UserProfile.DoesNotExist:
             return Response(
                 {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class GameRunCompleteView(APIView):
+    """Завершение забега и начисление энергии"""
+    
+    @swagger_auto_schema(
+        tags=["game"],
+        operation_description="Завершение 3D забега и начисление энергии",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["distance", "energy_collected", "run_duration", "is_win"],
+            properties={
+                "distance": openapi.Schema(type=openapi.TYPE_NUMBER, description="Пройденное расстояние"),
+                "energy_collected": openapi.Schema(type=openapi.TYPE_NUMBER, description="Собранная энергия"),
+                "run_duration": openapi.Schema(type=openapi.TYPE_NUMBER, description="Длительность забега в секундах"),
+                "obstacles_hit": openapi.Schema(type=openapi.TYPE_INTEGER, description="Количество препятствий"),
+                "power_used": openapi.Schema(type=openapi.TYPE_NUMBER, description="Использованная мощность"),
+                "is_win": openapi.Schema(type=openapi.TYPE_BOOLEAN, description="Победа (True) или проигрыш (False)"),
+            },
+        ),
+        responses={
+            200: openapi.Response(
+                description="Забег успешно завершен",
+                examples={
+                    "application/json": {
+                        "success": True,
+                        "message": "Run completed successfully",
+                        "energy_gained": 45.3,
+                        "total_energy": 150.5,
+                        "storage": 0,
+                        "power": 95.0,
+                    }
+                },
+            ),
+            400: "Ошибка валидации или забег не был начат",
+        },
+    )
+    @require_auth
+    def post(self, request):
+        try:
+            user_profile = request.user_profile
+            now = timezone.now()
+            
+            # Получаем данные из запроса
+            distance = request.data.get("distance", 0)
+            energy_collected = request.data.get("energy_collected", 0)
+            run_duration = request.data.get("run_duration", 0)
+            obstacles_hit = request.data.get("obstacles_hit", 0)
+            power_used = request.data.get("power_used", 0)
+            is_win = request.data.get("is_win", False)
+            
+            # Валидация 1: Проверка что забег был начат
+            if not user_profile.energy_run_last_started_at:
+                return Response(
+                    {"error": "Run not started. Please start a run first."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Валидация 2: Проверка что забег был начат не более 2 часов назад
+            time_since_start = (now - user_profile.energy_run_last_started_at).total_seconds()
+            if time_since_start > 7200:  # 2 часа
+                return Response(
+                    {"error": "Run expired. Please start a new run."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Валидация 3: Проверка что energy_run_start_storage существует
+            if user_profile.energy_run_start_storage is None:
+                return Response(
+                    {"error": "Run data not found. Please start a new run."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Валидация 4: Проверка собранной энергии
+            energy_collected = float(energy_collected)
+            if energy_collected < 0:
+                return Response(
+                    {"error": "Invalid energy_collected value"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            max_energy = float(user_profile.energy_run_start_storage)
+            if energy_collected > max_energy:
+                return Response(
+                    {
+                        "error": "Energy collected exceeds maximum allowed",
+                        "max_allowed": max_energy,
+                        "provided": energy_collected,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Валидация 5: Проверка времени забега (5 секунд - 2 часа)
+            run_duration = float(run_duration)
+            if run_duration < 5 or run_duration > 7200:
+                return Response(
+                    {"error": "Invalid run_duration. Must be between 5 and 7200 seconds."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Валидация 6: Проверка дистанции
+            distance = float(distance)
+            if distance <= 0:
+                return Response(
+                    {"error": "Invalid distance value"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Расчет финального количества энергии
+            if is_win:
+                # При победе начисляем всю собранную энергию
+                final_energy = energy_collected
+            else:
+                # При проигрыше применяем процент сохранения от уровня инженера
+                # Используем get_real_engs() который правильно учитывает все уровни (включая gold и electrics)
+                engineer_level = user_profile.get_real_engs()
+                try:
+                    eng_config = EngineerConfig.objects.get(level=engineer_level)
+                    saved_percent = eng_config.saved_percent_on_lose or 0
+                except EngineerConfig.DoesNotExist:
+                    saved_percent = 0
+                
+                # Бонус +2% если есть активные синие электрики
+                active_boosts = user_profile.get_active_boosts()
+                if 'electrics' in active_boosts:
+                    saved_percent += 2
+                
+                # Ограничиваем процент максимумом 100%
+                saved_percent = min(saved_percent, 100)
+                
+                final_energy = energy_collected * (saved_percent / 100)
+            
+            # Начисление энергии на баланс
+            UserProfile.objects.filter(user_id=user_profile.user_id).update(
+                energy=F("energy") + final_energy
+            )
+            
+            # Обновление WalletInfo.kw_amount
+            if user_profile.ton_wallet:
+                WalletInfo.objects.filter(
+                    user=user_profile, 
+                    wallet=user_profile.ton_wallet
+                ).update(kw_amount=F("kw_amount") + final_energy)
+            
+            # Обновление статистики
+            GlobalSpendStats.objects.update(
+                total_energy_accumulated=F("total_energy_accumulated") + final_energy
+            )
+            
+            # Добавление в график
+            add_chart_kw(final_energy)
+            
+            # Очистка данных забега
+            UserProfile.objects.filter(user_id=user_profile.user_id).update(
+                energy_run_start_storage=None
+            )
+            
+            # Обновляем объект пользователя
+            user_profile.refresh_from_db()
+            
+            return Response(
+                {
+                    "success": True,
+                    "message": "Run completed successfully",
+                    "energy_gained": float(final_energy),
+                    "total_energy": float(user_profile.energy),
+                    "storage": float(user_profile.storage),
+                    "power": float(user_profile.power),
+                    "bonuses": None,
+                    "penalties": None,
+                },
+                status=status.HTTP_200_OK,
+            )
+            
+        except UserProfile.DoesNotExist:
+            return Response(
+                {"error": "User not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"error": f"Internal server error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 

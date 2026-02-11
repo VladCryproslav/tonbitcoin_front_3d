@@ -219,7 +219,7 @@ export function useGameRun() {
     obstaclesHit.value++
   }
 
-  const completeRun = async () => {
+  const completeRun = async (isWin = false) => {
     if (!isRunning.value) return null
 
     const finalDuration = runDuration.value || ((Date.now() - runStartTime.value) / 1000)
@@ -234,6 +234,7 @@ export function useGameRun() {
       run_duration: finalDuration,
       obstacles_hit: obstaclesHit.value,
       power_used: Math.max(0, 100 - currentPower.value),
+      is_win: isWin,
       bonus_multiplier: 1.0 // Можно добавить логику бустеров
     }
 

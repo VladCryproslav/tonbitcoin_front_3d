@@ -889,7 +889,7 @@ const endGame = async (isWinByState = false) => {
     gameEffects.value.clearAll()
   }
 
-  const result = await gameRun.completeRun().catch((e) => {
+  const result = await gameRun.completeRun(isWinByState).catch((e) => {
     console.error('Ошибка завершения забега:', e)
     return null
   })
