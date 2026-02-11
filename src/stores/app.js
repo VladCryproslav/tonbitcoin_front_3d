@@ -37,6 +37,7 @@ export const useAppStore = defineStore('app', {
     isMining: false,
     power: 0,
     storage: 0,
+    energy_run_start_storage: null, // Storage при старте забега (для генерации поинтов)
     hashrate: [],
     miningTime: new Date(),
     pauseUpdate: false,
@@ -248,6 +249,9 @@ export const useAppStore = defineStore('app', {
     },
     setStorage(storage) {
       this.storage = storage
+    },
+    setEnergyRunStartStorage(storage) {
+      this.energy_run_start_storage = storage
     },
     setDashboard(charts) {
       this.dashboard = charts

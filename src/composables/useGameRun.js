@@ -76,9 +76,14 @@ export function useGameRun() {
 
   const currentPower = computed(() => app.power || 100)
   const currentEnergy = computed(() => app.score || 0)
-  // Максимум энергии за забег: используем ту же логику, что и при генерации поинтов
-  // (fallback к 70 kW, если storage ещё не инициализирован).
+  // Максимум энергии за забег: используем energy_run_start_storage если забег запущен,
+  // иначе текущий storage (fallback к 70 kW, если storage ещё не инициализирован).
   const currentStorage = computed(() => {
+    // Если есть сохраненное значение storage при старте забега - используем его
+    if (app.energy_run_start_storage !== null && app.energy_run_start_storage !== undefined) {
+      return app.energy_run_start_storage
+    }
+    // Иначе используем текущий storage
     const s = app.storage
     return (s === null || s === undefined) ? 70 : s
   })
@@ -113,7 +118,8 @@ export function useGameRun() {
     obstaclesHit.value = 0
     runStartTime.value = Date.now()
 
-    const storageKw = app.storage ?? 70
+    // Используем energy_run_start_storage если забег запущен, иначе текущий storage
+    const storageKw = app.energy_run_start_storage ?? app.storage ?? 70
     energyPoints.value = generateEnergyPoints(storageKw)
     energyPointsIndex.value = 0
     passedPointsCount.value = 0
@@ -137,7 +143,8 @@ export function useGameRun() {
       // Дистанция еще не достигла 100%, но поинты закончились
       // Это может произойти если поинты не спавнились из-за вероятности спавна (90% и 40%)
       // Генерируем дополнительные поинты порциями до достижения 100% дистанции
-      const storageKw = currentStorage.value
+      // Используем energy_run_start_storage если забег запущен, иначе текущий storage
+      const storageKw = app.energy_run_start_storage ?? currentStorage.value
       const remainingPoints = pointsFor100Percent.value - passedPointsCount.value
       
       // Генерируем порцию дополнительных поинтов (небольшую, чтобы не генерировать слишком много)
@@ -148,7 +155,9 @@ export function useGameRun() {
       )
       
       // Генерируем полный набор поинтов и берем только нужное количество
-      const fullBatch = generateEnergyPoints(storageKw)
+      // Используем energy_run_start_storage если забег запущен, иначе текущий storage
+      const storageForBatch = app.energy_run_start_storage ?? storageKw
+      const fullBatch = generateEnergyPoints(storageForBatch)
       const additionalPoints = fullBatch.slice(0, additionalBatchSize)
       
       // Добавляем их в очередь
@@ -182,8 +191,9 @@ export function useGameRun() {
     if (passedPointsCount.value >= for100Percent) return true
     
     // 2. ИЛИ если собрал весь Storage (собранная энергия >= максимального количества которое можно собрать)
-    // Максимальное количество = storage (сумма всех поинтов)
-    const maxCollectibleEnergy = currentStorage.value
+    // Максимальное количество = energy_run_start_storage (сумма всех поинтов)
+    // Используем energy_run_start_storage если забег запущен, иначе текущий storage
+    const maxCollectibleEnergy = app.energy_run_start_storage ?? currentStorage.value
     if (energyCollected.value >= maxCollectibleEnergy) return true
     
     return false
@@ -235,8 +245,9 @@ export function useGameRun() {
     try {
       const finalDuration = runDuration.value || ((Date.now() - runStartTime.value) / 1000)
       
-      // Ограничиваем собранную энергию максимумом storage (нельзя собрать больше чем storage)
-      const maxCollectibleEnergy = currentStorage.value
+      // Ограничиваем собранную энергию максимумом energy_run_start_storage (нельзя собрать больше чем было при старте)
+      // Используем energy_run_start_storage если забег запущен, иначе текущий storage
+      const maxCollectibleEnergy = app.energy_run_start_storage ?? currentStorage.value
       const limitedEnergyCollected = Math.min(energyCollected.value, maxCollectibleEnergy)
 
       const runData = {
@@ -288,6 +299,8 @@ export function useGameRun() {
     } finally {
       completeRun._isProcessing = false
       stopRun()
+      // Очищаем сохраненное значение storage после завершения забега
+      app.setEnergyRunStartStorage(null)
     }
   }
 

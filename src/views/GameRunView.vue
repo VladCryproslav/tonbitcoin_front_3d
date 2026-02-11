@@ -691,6 +691,11 @@ const startGame = (training = false) => {
   // Если забег уже идёт — игнорируем повторный старт
   if (gameRun.isRunning.value && !gameRun.isPaused.value) return
 
+  // Очищаем сохраненное значение storage при старте новой игры (если это тренировка)
+  if (training) {
+    app.setEnergyRunStartStorage(null)
+  }
+
   isTrainingRun.value = training
   playerZ.value = 0
   gameSpeed.value = 0.15
@@ -983,6 +988,11 @@ const handleStartClick = async () => {
       if (response.data.user.energy_run_last_started_at !== undefined) {
         app.user.energy_run_last_started_at = response.data.user.energy_run_last_started_at
         console.log('energy_run_last_started_at updated to:', response.data.user.energy_run_last_started_at)
+      }
+      // Сохраняем начальное значение storage для генерации поинтов
+      if (response.data.user.energy_run_start_storage !== undefined && response.data.user.energy_run_start_storage !== null) {
+        app.setEnergyRunStartStorage(response.data.user.energy_run_start_storage)
+        console.log('energy_run_start_storage saved:', response.data.user.energy_run_start_storage)
       }
     }
     startGame(false)
