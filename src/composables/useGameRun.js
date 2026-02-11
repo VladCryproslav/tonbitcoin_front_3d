@@ -2,21 +2,56 @@ import { ref, computed } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { host } from '../../axios.config'
 
-// Количество энергетических поинтов за забег (редактируемо)
-const ENERGY_POINTS_COUNT = 100
+/**
+ * НАСТРОЙКИ ГЕНЕРАЦИИ ПОИНТОВ И ЗАВЕРШЕНИЯ ЗАБЕГА
+ * 
+ * ENERGY_POINTS_BASE_COUNT - базовое количество поинтов за забег
+ *   Можно менять: например, 100, 120, 150 и т.д.
+ * 
+ * ENERGY_POINTS_RESERVE_PERCENT - процент запаса поинтов сверх базового количества (редактируемо: 5-15%)
+ *   Запас нужен чтобы поинты продолжали спавниться даже если некоторые пропущены
+ *   Например: 100 базовых + 10% запаса = 110 поинтов всего будет сгенерировано
+ *   Рекомендуется: 10% (можно менять от 5% до 15%)
+ * 
+ * ВАЖНО: 100% дистанции = базовое количество + запас
+ *   Например: 100 + 10% = 110 токенов = 100% дистанции
+ * 
+ * УСЛОВИЯ ЗАВЕРШЕНИЯ ЗАБЕГА:
+ *   1. Пробежал все 100% дистанции (прошло базовое количество + запас поинтов)
+ *   2. Собрал весь Storage (все поинты собраны, даже если не все прошли)
+ *   3. Потерял все жизни (hitCount >= 3, обрабатывается в GameRunView.vue)
+ */
+const ENERGY_POINTS_BASE_COUNT = 100
+const ENERGY_POINTS_RESERVE_PERCENT = 10
 
 /**
  * Генерирует массив поинтов энергии: 0.5%, 1%, 2% от storage.
  * Сумма = storage. 2% поинты — светящиеся (isGlowing).
  * Распределение: 40×1%, 40×0.5%, 20×2% = 100%
+ * 
+ * Генерируется больше поинтов чем базовое количество (с запасом),
+ * чтобы поинты продолжали спавниться даже если некоторые пропущены.
  */
 function generateEnergyPoints(storageKw) {
   const storage = Math.max(1, Number(storageKw) || 70)
+  
+  // Рассчитываем общее количество поинтов с учетом запаса
+  const totalPointsCount = Math.ceil(ENERGY_POINTS_BASE_COUNT * (1 + ENERGY_POINTS_RESERVE_PERCENT / 100))
+  
+  // Распределяем проценты пропорционально базовому количеству
+  // Базовое распределение: 40×1%, 40×0.5%, 20×2% = 100 поинтов
+  // Масштабируем пропорционально для общего количества
+  const scale = totalPointsCount / ENERGY_POINTS_BASE_COUNT
+  const count1pct = Math.round(40 * scale)
+  const count05pct = Math.round(40 * scale)
+  const count2pct = Math.round(20 * scale)
+  
   const points = []
-  for (let i = 0; i < 40; i++) points.push({ pct: 1, isGlowing: false })
-  for (let i = 0; i < 40; i++) points.push({ pct: 0.5, isGlowing: false })
-  for (let i = 0; i < 20; i++) points.push({ pct: 2, isGlowing: true })
+  for (let i = 0; i < count1pct; i++) points.push({ pct: 1, isGlowing: false })
+  for (let i = 0; i < count05pct; i++) points.push({ pct: 0.5, isGlowing: false })
+  for (let i = 0; i < count2pct; i++) points.push({ pct: 2, isGlowing: true })
 
+  // Перемешиваем поинты
   for (let i = points.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[points[i], points[j]] = [points[j], points[i]]
@@ -53,9 +88,19 @@ export function useGameRun() {
   const passedPointsCount = ref(0)
   const collectedPointsCount = ref(0) // Счетчик собранных токенов
 
+  // Общее количество сгенерированных поинтов (базовое количество + запас)
   const totalPoints = computed(() => energyPoints.value.length)
+  
+  // Количество поинтов для 100% дистанции (базовое количество + запас)
+  // Например: 100 + 10% = 110 токенов = 100% дистанции
+  const pointsFor100Percent = computed(() => {
+    return Math.ceil(ENERGY_POINTS_BASE_COUNT * (1 + ENERGY_POINTS_RESERVE_PERCENT / 100))
+  })
+  
+  // Прогресс дистанции: считается от общего количества поинтов (базовое + запас = 100%)
+  // Например: если 110 токенов = 100%, то 55 токенов = 50%
   const distanceProgress = computed(() => {
-    const total = totalPoints.value
+    const total = pointsFor100Percent.value
     if (total <= 0) return 0
     return Math.min(100, (passedPointsCount.value / total) * 100)
   })
@@ -87,15 +132,20 @@ export function useGameRun() {
   }
 
   // Забег завершается когда:
-  // 1. Все поинты прошли (собраны или пропущены) - 100% дистанции
-  // 2. ИЛИ все поинты собраны (даже если не все прошли)
+  // 1. Пробежал все 100% дистанции (прошло базовое количество + запас поинтов)
+  // 2. ИЛИ собрал весь Storage (все поинты собраны, даже если не все прошли)
+  // 3. ИЛИ потерял все жизни (обрабатывается в GameRunView.vue через hitCount >= 3)
   const isRunComplete = () => {
     const total = totalPoints.value
-    if (total <= 0) return false
-    // Завершаем если все поинты прошли (100% дистанции)
-    if (passedPointsCount.value >= total) return true
-    // ИЛИ если все поинты собраны (пользователь собрал все токены)
+    const for100Percent = pointsFor100Percent.value
+    if (total <= 0 || for100Percent <= 0) return false
+    
+    // 1. Завершаем если пробежал все 100% дистанции (прошло базовое количество + запас поинтов)
+    if (passedPointsCount.value >= for100Percent) return true
+    
+    // 2. ИЛИ если собрал весь Storage (все поинты собраны)
     if (collectedPointsCount.value >= total) return true
+    
     return false
   }
 
