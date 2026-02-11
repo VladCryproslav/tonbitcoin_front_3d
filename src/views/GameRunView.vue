@@ -889,10 +889,27 @@ const endGame = async (isWinByState = false) => {
     gameEffects.value.clearAll()
   }
 
+  // Вызываем completeRun для начисления энергии на сервере
+  console.log('endGame called, isWinByState:', isWinByState, 'energyCollected:', gameRun.energyCollected?.value)
   const result = await gameRun.completeRun(isWinByState).catch((e) => {
     console.error('Ошибка завершения забега:', e)
+    console.error('Error details:', e.response?.data, e.message)
     return null
   })
+  console.log('endGame completeRun result:', result)
+
+  // Обновляем состояние приложения из ответа сервера
+  if (result && result.success) {
+    if (result.totalEnergy !== undefined) {
+      app.setScore(result.totalEnergy)
+    }
+    if (result.power !== undefined) {
+      app.setPower(result.power)
+    }
+    if (result.storage !== undefined) {
+      app.setStorage(result.storage)
+    }
+  }
 
   const isSuccess = isWinByState || (result && result.success)
 
@@ -904,6 +921,11 @@ const endGame = async (isWinByState = false) => {
     gameOverType.value = 'win'
     showGameOver.value = true
     launcherOverlayMode.value = 'none'
+  } else {
+    // При проигрыше тоже показываем экран завершения
+    gameOverType.value = 'lose'
+    showGameOver.value = true
+    launcherOverlayMode.value = 'none'
   }
 }
 
@@ -911,10 +933,24 @@ const endGame = async (isWinByState = false) => {
 const handleStartClick = async () => {
   // Вызываем API для записи времени старта (если не тренировка)
   try {
+    console.log('Starting energy run, current storage:', app.storage)
     const response = await host.post('energy-run-start/')
+    console.log('energy-run-start response:', response.data)
     if (response.status === 200 && response.data?.user) {
       // Обновляем данные пользователя
       app.user = response.data.user
+      // Обновляем storage и другие поля из ответа сервера
+      if (response.data.user.storage !== undefined) {
+        app.setStorage(response.data.user.storage)
+        console.log('Storage updated to:', response.data.user.storage)
+      }
+      if (response.data.user.power !== undefined) {
+        app.setPower(response.data.user.power)
+      }
+      if (response.data.user.energy_run_last_started_at !== undefined) {
+        app.user.energy_run_last_started_at = response.data.user.energy_run_last_started_at
+        console.log('energy_run_last_started_at updated to:', response.data.user.energy_run_last_started_at)
+      }
     }
     startGame(false)
   } catch (error) {
@@ -991,9 +1027,10 @@ const handleTap = () => {
   }
 }
 
-// Забрать: позже — вызов эндпоинта начисления собранной энергии на баланс, затем выход.
+// Забрать: просто выход, так как completeRun уже был вызван в endGame()
 const handleClaim = () => {
-  // TODO: POST /api/... — начислить gameRun.energyCollected на баланс (бонусы по whiteEngineerSavedPercent/goldEngineerSavedPercent — при необходимости)
+  // completeRun уже был вызван в endGame() при завершении забега
+  // Здесь просто выходим из игры
   exitToMain()
 }
 

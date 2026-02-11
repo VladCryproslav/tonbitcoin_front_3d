@@ -1729,17 +1729,23 @@ class EnergyRunStartView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
             # Сохраняем текущее значение storage и обнуляем его
+            from decimal import Decimal
             current_storage = user_profile.storage
+            action_logger.info(
+                f"Energy run start: user_id={user_profile.user_id}, "
+                f"current_storage={current_storage}, energy_run_last_started_at={now}"
+            )
             UserProfile.objects.filter(user_id=user_profile.user_id).update(
                 energy_run_last_started_at=now,
-                energy_run_start_storage=current_storage,
-                storage=0
+                energy_run_start_storage=Decimal(str(current_storage)),
+                storage=Decimal('0')
             )
-            request.user_profile.refresh_from_db()
+            # Получаем обновленный объект пользователя
+            user_profile = UserProfile.objects.get(user_id=user_profile.user_id)
             return Response(
                 {
                     "message": "Energy run started",
-                    "user": UserProfileSerializer(request.user_profile).data,
+                    "user": UserProfileSerializer(user_profile).data,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -1790,6 +1796,12 @@ class GameRunCompleteView(APIView):
             user_profile = request.user_profile
             now = timezone.now()
             
+            # Логирование входа в метод
+            action_logger.info(
+                f"GameRunCompleteView POST received: user_id={user_profile.user_id}, "
+                f"request.data={request.data}"
+            )
+            
             # Получаем данные из запроса
             distance = request.data.get("distance", 0)
             energy_collected = request.data.get("energy_collected", 0)
@@ -1815,6 +1827,7 @@ class GameRunCompleteView(APIView):
             
             # Валидация 3: Проверка что energy_run_start_storage существует
             if user_profile.energy_run_start_storage is None:
+                action_logger.info(f"Energy run complete error: Run data not found for user {user_profile.user_id}")
                 return Response(
                     {"error": "Run data not found. Please start a new run."},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -1823,6 +1836,7 @@ class GameRunCompleteView(APIView):
             # Валидация 4: Проверка собранной энергии
             energy_collected = float(energy_collected)
             if energy_collected < 0:
+                action_logger.info(f"Energy run complete error: Invalid energy_collected {energy_collected} for user {user_profile.user_id}")
                 return Response(
                     {"error": "Invalid energy_collected value"},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -1830,6 +1844,7 @@ class GameRunCompleteView(APIView):
             
             max_energy = float(user_profile.energy_run_start_storage)
             if energy_collected > max_energy:
+                action_logger.info(f"Energy run complete error: Energy collected {energy_collected} exceeds max {max_energy} for user {user_profile.user_id}")
                 return Response(
                     {
                         "error": "Energy collected exceeds maximum allowed",
@@ -1879,33 +1894,63 @@ class GameRunCompleteView(APIView):
                 
                 final_energy = energy_collected * (saved_percent / 100)
             
+            # Преобразуем final_energy в Decimal для корректной работы с F()
+            from decimal import Decimal
+            final_energy_decimal = Decimal(str(final_energy))
+            
+            # Логирование для отладки
+            action_logger.info(
+                f"Energy run complete: user_id={user_profile.user_id}, "
+                f"energy_collected={energy_collected}, is_win={is_win}, "
+                f"final_energy={final_energy}, final_energy_decimal={final_energy_decimal}, "
+                f"engineer_level={user_profile.get_real_engs() if not is_win else 'N/A'}, "
+                f"ton_wallet={user_profile.ton_wallet}"
+            )
+            
+            # Проверка что final_energy больше 0
+            if final_energy_decimal <= 0:
+                action_logger.warning(
+                    f"Energy run complete: final_energy is 0 or negative for user {user_profile.user_id}, "
+                    f"energy_collected={energy_collected}, is_win={is_win}"
+                )
+            
             # Начисление энергии на баланс
             UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                energy=F("energy") + final_energy
+                energy=F("energy") + final_energy_decimal
             )
             
             # Обновление WalletInfo.kw_amount
             if user_profile.ton_wallet:
-                WalletInfo.objects.filter(
+                updated_count = WalletInfo.objects.filter(
                     user=user_profile, 
                     wallet=user_profile.ton_wallet
-                ).update(kw_amount=F("kw_amount") + final_energy)
+                ).update(kw_amount=F("kw_amount") + final_energy_decimal)
+                action_logger.info(
+                    f"Energy run complete: WalletInfo updated for user {user_profile.user_id}, "
+                    f"wallet={user_profile.ton_wallet}, updated_count={updated_count}, "
+                    f"kw_amount_added={final_energy_decimal}"
+                )
+            else:
+                action_logger.warning(
+                    f"Energy run complete: No ton_wallet for user {user_profile.user_id}, "
+                    f"skipping WalletInfo update"
+                )
             
             # Обновление статистики
             GlobalSpendStats.objects.update(
-                total_energy_accumulated=F("total_energy_accumulated") + final_energy
+                total_energy_accumulated=F("total_energy_accumulated") + final_energy_decimal
             )
             
             # Добавление в график
-            add_chart_kw(final_energy)
+            add_chart_kw(float(final_energy))
             
             # Очистка данных забега
             UserProfile.objects.filter(user_id=user_profile.user_id).update(
                 energy_run_start_storage=None
             )
             
-            # Обновляем объект пользователя
-            user_profile.refresh_from_db()
+            # Получаем обновленный объект пользователя
+            user_profile = UserProfile.objects.get(user_id=user_profile.user_id)
             
             return Response(
                 {

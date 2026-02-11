@@ -220,7 +220,10 @@ export function useGameRun() {
   }
 
   const completeRun = async (isWin = false) => {
-    if (!isRunning.value) return null
+    if (!isRunning.value) {
+      console.warn('completeRun called but game is not running')
+      return null
+    }
 
     const finalDuration = runDuration.value || ((Date.now() - runStartTime.value) / 1000)
     
@@ -238,19 +241,29 @@ export function useGameRun() {
       bonus_multiplier: 1.0 // Можно добавить логику бустеров
     }
 
+    console.log('Sending game-run-complete request:', runData)
+
     try {
       const response = await host.post('game-run-complete/', runData)
+      console.log('game-run-complete response:', response.data)
 
-      if (response.status === 200) {
+      if (response.status === 200 && response.data) {
         // Обновляем состояние приложения
-        app.setScore(response.data.total_energy)
-        app.setStorage(response.data.storage)
-        app.setPower(response.data.power)
+        if (response.data.total_energy !== undefined) {
+          app.setScore(response.data.total_energy)
+        }
+        if (response.data.storage !== undefined) {
+          app.setStorage(response.data.storage)
+        }
+        if (response.data.power !== undefined) {
+          app.setPower(response.data.power)
+        }
 
         return {
           success: true,
           energyGained: response.data.energy_gained,
           totalEnergy: response.data.total_energy,
+          storage: response.data.storage,
           power: response.data.power,
           bonuses: response.data.bonuses,
           penalties: response.data.penalties
