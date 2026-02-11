@@ -403,9 +403,17 @@ const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: 
   // Кэшируем directional light один раз — без traverse при каждом applyGraphicsQuality
   directionalLight = threeScene.children.find((obj) => obj.isDirectionalLight) ?? null
 
-  // Камера: чуть ближе (Z), чуть выше (Y), взгляд чуть сверху вниз (lookAt Y ниже)
-  camera.position.set(0, 2.6, 4.4)
-  camera.lookAt(0, -0.2, -18)
+  // Настройка камеры:
+  // camera.position.set(X, Y, Z)
+  //   X: горизонтальная позиция (0 = центр, меняется при смене полосы)
+  //   Y: высота камеры (больше = выше) - текущее значение: 2.7
+  //   Z: расстояние от персонажа (меньше = ближе к персонажу) - текущее значение: 4.2
+  // camera.lookAt(X, Y, Z)
+  //   X: горизонтальная точка взгляда (0 = центр, меняется при смене полосы)
+  //   Y: вертикальная точка взгляда (меньше = больше вниз на дорогу) - текущее значение: -0.25
+  //   Z: дальность взгляда по оси Z - текущее значение: -18
+  camera.position.set(0, 2.7, 4.2)
+  camera.lookAt(0, -0.25, -18)
 
   // Инициализация игрового мира
   gameWorld.value = useGameWorld(scene)
@@ -514,8 +522,12 @@ const startThreeLoop = () => {
       const maxStepX = 0.25
       const clampedStepX = Math.max(-maxStepX, Math.min(maxStepX, desiredStepX))
       camera.position.x += clampedStepX
-      camera.position.y = 2.6
-      camera.lookAt(camera.position.x, -0.2, -18)
+      // Высота камеры (больше = выше) - текущее значение: 2.7
+      camera.position.y = 2.7
+      // Точка взгляда: (X, Y, Z)
+      //   Y: вертикальная точка взгляда (меньше = больше вниз на дорогу) - текущее значение: -0.25
+      //   Z: дальность взгляда по оси Z - текущее значение: -18
+      camera.lookAt(camera.position.x, -0.25, -18)
     }
     if (camera && shakeFramesLeft > 0) {
       const t = shakeFramesLeft / SHAKE_DURATION_FRAMES
