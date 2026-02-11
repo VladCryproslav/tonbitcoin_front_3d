@@ -177,7 +177,7 @@
           <div class="game-over-result-row">
             <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_collected') }}</span>
-            <span class="game-over-result-value">{{ formatEnergy(savedEnergyCollectedForModal ?? completedRunData?.energy_collected ?? 0, true) }} / {{ formatEnergy(gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0) }} kW</span>
+            <span class="game-over-result-value">{{ formatEnergy(savedEnergyCollectedForModal || completedRunData?.energy_collected || 0, true) }} / {{ formatEnergy(gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0) }} kW</span>
           </div>
           <div v-if="gameOverType !== 'win'" class="game-over-result-row">
             <img src="@/assets/engineer.webp" alt="" class="game-over-result-icon" />
@@ -531,7 +531,9 @@ const startThreeLoop = () => {
         isDead.value = true
         // Сохраняем energyCollected ДО остановки игрового цикла
         const savedEnergyBeforeStop = gameRun.energyCollected?.value ?? 0
-        console.log('Player died: hitCount=', hitCount.value, 'energyCollected BEFORE stop=', savedEnergyBeforeStop, 'startStorage=', gameRun.startStorage?.value)
+        // Сохраняем значение для модалки сразу при смерти
+        savedEnergyCollectedForModal.value = savedEnergyBeforeStop
+        console.log('Player died: hitCount=', hitCount.value, 'energyCollected BEFORE stop=', savedEnergyBeforeStop, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
         
         // НЕ вызываем stopRun() здесь, чтобы не сбросить startStorage и energyCollected
         // Останавливаем только игровой цикл и физику
@@ -550,11 +552,11 @@ const startThreeLoop = () => {
         launcherOverlayMode.value = 'none'
         
         // Проверяем energyCollected после остановки игрового цикла
-        console.log('Player died: energyCollected AFTER stop=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value)
+        console.log('Player died: energyCollected AFTER stop=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
         
         // Вызываем endGame после задержки для завершения анимации падения
         setTimeout(() => {
-          console.log('Calling endGame after delay: energyCollected=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value)
+          console.log('Calling endGame after delay: energyCollected=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
           if (!endGame._isProcessing) {
             endGame(false)
           }
@@ -794,7 +796,9 @@ function doOneStep(playerBox, inRollImmuneWindow) {
               isDead.value = true
               // Сохраняем energyCollected ДО остановки игрового цикла
               const savedEnergyBeforeStop = gameRun.energyCollected?.value ?? 0
-              console.log('Player died (livesLeft=0): energyCollected BEFORE stop=', savedEnergyBeforeStop, 'startStorage=', gameRun.startStorage?.value)
+              // Сохраняем значение для модалки сразу при смерти
+              savedEnergyCollectedForModal.value = savedEnergyBeforeStop
+              console.log('Player died (livesLeft=0): energyCollected BEFORE stop=', savedEnergyBeforeStop, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
               
               // НЕ вызываем stopRun() здесь, чтобы не сбросить startStorage и energyCollected
               // Останавливаем только игровой цикл и физику
@@ -814,11 +818,11 @@ function doOneStep(playerBox, inRollImmuneWindow) {
               launcherOverlayMode.value = 'none'
               
               // Проверяем energyCollected после остановки игрового цикла
-              console.log('Player died (livesLeft=0): energyCollected AFTER stop=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value)
+              console.log('Player died (livesLeft=0): energyCollected AFTER stop=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
               
               // Вызываем endGame после задержки для завершения анимации падения
               setTimeout(() => {
-                console.log('Calling endGame after delay (livesLeft=0): energyCollected=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value)
+                console.log('Calling endGame after delay (livesLeft=0): energyCollected=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
                 if (!endGame._isProcessing) {
                   endGame(false)
                 }
@@ -971,7 +975,10 @@ const endGame = async (isWinByState = false) => {
     const savedStartStorageBeforeComplete = gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0
     
     // Сохраняем для отображения в модалке (не будет обнулено до нажатия "Забрать")
-    savedEnergyCollectedForModal.value = savedEnergyBeforeComplete
+    // Используем уже сохраненное значение если оно есть (при смерти оно уже сохранено), иначе сохраняем текущее
+    if (savedEnergyCollectedForModal.value === 0 || savedEnergyCollectedForModal.value < savedEnergyBeforeComplete) {
+      savedEnergyCollectedForModal.value = savedEnergyBeforeComplete
+    }
     
     console.log('endGame called, isWinByState:', isWinByState, 'energyCollected BEFORE completeRun:', savedEnergyBeforeComplete, 'startStorage BEFORE completeRun:', savedStartStorageBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'isRunning:', gameRun.isRunning.value, 'runStartTime:', gameRun.runStartTime?.value)
     
