@@ -10,7 +10,7 @@
               alt="energy"
             />
             <span class="value energy-value">
-              {{ formatEnergy(energy) }} / {{ formatEnergy(maxEnergy) }} kW
+              {{ formatEnergy(Math.min(energy, maxEnergy)) }} / {{ formatEnergy(maxEnergy) }} kW
             </span>
           </div>
           <div v-if="compactDistance" class="energy-counter-distance">

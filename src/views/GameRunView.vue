@@ -10,7 +10,7 @@
     <!-- UI поверх игры: только после старта забега -->
     <GameUI
       v-if="gameRun.isRunning || gameRun.isPaused"
-      :energy="gameRun.energyCollected?.value ?? 0"
+      :energy="Math.min(gameRun.energyCollected?.value ?? 0, gameRun.currentStorage?.value ?? 0)"
       :max-energy="gameRun.currentStorage?.value ?? 0"
       :power="gameRun.distanceProgress?.value ?? 0"
       :lives="livesLeft"
@@ -177,7 +177,7 @@
           <div class="game-over-result-row">
             <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_collected') }}</span>
-            <span class="game-over-result-value">{{ formatEnergy(gameRun.energyCollected?.value ?? 0, true) }} / {{ formatEnergy(gameRun.currentStorage?.value ?? 0) }} kW</span>
+            <span class="game-over-result-value">{{ formatEnergy(Math.min(gameRun.energyCollected?.value ?? 0, gameRun.currentStorage?.value ?? 0), true) }} / {{ formatEnergy(gameRun.currentStorage?.value ?? 0) }} kW</span>
           </div>
           <div v-if="gameOverType !== 'win'" class="game-over-result-row">
             <img src="@/assets/engineer.webp" alt="" class="game-over-result-icon" />
@@ -309,12 +309,15 @@ const effectiveSavedPercentOnLose = computed(() => {
   const cfg = app.stations?.eng_configs?.find((el) => el?.level === level)
   return Number(cfg?.saved_percent_on_lose ?? 0)
 })
-// Сколько энергии можно забрать: при победе — всё собранное, при проигрыше — по проценту уровня
+// Сколько энергии можно забрать: при победе — всё собранное (но не больше storage), при проигрыше — по проценту уровня
 const claimableEnergy = computed(() => {
   const collected = Number(gameRun.energyCollected?.value ?? 0)
-  if (gameOverType.value === 'win') return collected
+  const maxStorage = Number(gameRun.currentStorage?.value ?? 0)
+  // Ограничиваем собранную энергию максимумом storage
+  const limitedCollected = Math.min(collected, maxStorage)
+  if (gameOverType.value === 'win') return limitedCollected
   const pct = effectiveSavedPercentOnLose.value
-  return (collected * pct) / 100
+  return (limitedCollected * pct) / 100
 })
 
 const formatEnergy = (value, compareWithStorage = false) => {

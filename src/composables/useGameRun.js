@@ -185,10 +185,14 @@ export function useGameRun() {
     if (!isRunning.value) return null
 
     const finalDuration = runDuration.value || ((Date.now() - runStartTime.value) / 1000)
+    
+    // Ограничиваем собранную энергию максимумом storage (нельзя собрать больше чем storage)
+    const maxCollectibleEnergy = currentStorage.value
+    const limitedEnergyCollected = Math.min(energyCollected.value, maxCollectibleEnergy)
 
     const runData = {
       distance: distance.value,
-      energy_collected: energyCollected.value,
+      energy_collected: limitedEnergyCollected,
       run_duration: finalDuration,
       obstacles_hit: obstaclesHit.value,
       power_used: Math.max(0, 100 - currentPower.value),
