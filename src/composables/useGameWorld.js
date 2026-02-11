@@ -698,17 +698,22 @@ export function useGameWorld(scene) {
       }
     }
 
-    // Собираемые предметы: из очереди поинтов (1–2 за секцию), мин. расстояние между ними
+    // Собираемые предметы: из очереди поинтов (0–2 за секцию), мин. расстояние между ними
+    // Спавн сделан реже: первый поинт с вероятностью 75%, второй с вероятностью 25%
     if (typeof getNextEnergyPoint === 'function') {
-      const point = getNextEnergyPoint()
-      if (point) {
-        const lane = Math.floor(nextRand() * 3)
-        const baseZ = lastCollectibleZ < -9000 ? sectionZ - 5 : lastCollectibleZ - COLLECTIBLE_MIN_Z_DISTANCE
-        const firstCollectibleZ = Math.min(sectionZ - 5, baseZ) - nextRand() * 4
-        createCollectible(lane, firstCollectibleZ, point)
-        lastCollectibleZ = firstCollectibleZ
+      // Первый поинт: спавнится с вероятностью 75% (было 100%)
+      if (nextRand() < 0.75) {
+        const point = getNextEnergyPoint()
+        if (point) {
+          const lane = Math.floor(nextRand() * 3)
+          const baseZ = lastCollectibleZ < -9000 ? sectionZ - 5 : lastCollectibleZ - COLLECTIBLE_MIN_Z_DISTANCE
+          const firstCollectibleZ = Math.min(sectionZ - 5, baseZ) - nextRand() * 4
+          createCollectible(lane, firstCollectibleZ, point)
+          lastCollectibleZ = firstCollectibleZ
+        }
       }
-      if (nextRand() < 0.4) {
+      // Второй поинт: спавнится с вероятностью 25% (было 40%)
+      if (nextRand() < 0.25) {
         const point2 = getNextEnergyPoint()
         if (point2) {
           const lane = Math.floor(nextRand() * 3)

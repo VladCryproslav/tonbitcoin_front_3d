@@ -303,9 +303,6 @@ class UserProfile(models.Model):
     mining_last_stopped = models.DateTimeField(null=True, blank=True)
 
     mining_was_stopped = models.BooleanField(default=False)
-
-    # Сбор энергии (раннер): следующий старт разрешён через 60 минут после energy_run_last_started_at
-    energy_run_last_started_at = models.DateTimeField(null=True, blank=True)
     # ======================
 
     wheel_slot2 = models.BooleanField(default=False)
@@ -1148,10 +1145,6 @@ class EngineerConfig(models.Model):
     tap_power = models.FloatField()  # Сила тапа, kW
     hire_cost = models.FloatField()  # Вартість найму, kW
     hire_cost_stars = models.IntegerField(default=0)  # Вартість найму, Stars
-    saved_percent_on_lose = models.FloatField(
-        default=0,
-        help_text="Процент энергии (kW), сохраняемой при проигрыше забега для этого уровня инженера (0–100)",
-    )
 
     def __str__(self):
         return f"Engineer Level {self.level}"

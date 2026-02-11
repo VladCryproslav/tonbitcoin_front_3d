@@ -309,6 +309,27 @@ from tasks.models import Booster
 from tasks.services import get_booster_price_hashrate
 
 
+async def get_nft_owner_by_address(nft_address: str):
+    """
+    Получить текущего владельца NFT по адресу через прямой запрос к TON API.
+    Используется для проверки перед отключением hydro/orbital — отключаем только
+    если владелец действительно сменился (не полагаемся только на список по коллекции).
+
+    Returns:
+        str: адрес владельца (owner.address.root) или None при ошибке/ненайденном NFT.
+    """
+    if not nft_address or not nft_address.strip():
+        return None
+    try:
+        item = await tonapi.nft.get_item_by_address(nft_address.strip())
+        if item and getattr(item, "owner", None) and getattr(item.owner, "address", None):
+            return getattr(item.owner.address, "root", None) or str(item.owner.address)
+        return None
+    except Exception as e:
+        logger.warning(f"get_nft_owner_by_address({nft_address[:20]}...): {e}")
+        return None
+
+
 def get_nfts_with_retry(addr, page, max_retries=3, delay=1):
     """
     Получить NFT с повторными попытками при ошибке.
@@ -325,7 +346,7 @@ def get_nfts_with_retry(addr, page, max_retries=3, delay=1):
     for attempt in range(max_retries):
         try:
             if attempt > 0:  # Не задерживаем первую попытку
-                time.sleep(0.01)  # 10ms задержка между запросами
+                time.sleep(0.5)  # 500ms задержка между повторными запросами для rate limiting
             result = async_to_sync(get_nfts)(addr, page)
             return result
         except (TONAPIError, Exception) as e:
@@ -427,9 +448,9 @@ def main_mint():
                 else:
                     results.append(result)
                 
-                # Rate limiting: минимум 10ms между запросами
+                # Rate limiting: минимум 1 секунда между запросами для снижения нагрузки на API
                 if page != pages[-1]:  # Не задерживаем после последнего запроса
-                    time.sleep(0.01)
+                    time.sleep(1)
             
             # Если все страницы не удалось получить, прерываем
             if not results:
@@ -454,13 +475,13 @@ def main_mint():
 
     logging.info(f"FINAL {len(all_nfts)}")
 
-    # Сохранить ожидаемое количество для следующей проверки
-    if len(all_nfts) > 0:
-        save_expected_nft_count(collection_addr, len(all_nfts))
-
     # Флаг полноты данных - используется для принятия решения об откате
     # Данные полные ТОЛЬКО если: is_data_complete вернул True И не было failed_pages
     data_is_complete = is_data_complete(all_nfts, collection_addr, failed_pages) and len(failed_pages) == 0
+
+    # Сохранять ожидаемое количество ТОЛЬКО при полных данных (иначе занижаем порог и возможны ложные откаты)
+    if len(all_nfts) > 0 and data_is_complete:
+        save_expected_nft_count(collection_addr, len(all_nfts))
 
     # Флаг: использовали ли кэш (для правильной обработки hydro/orbital owners)
     used_cache = False
@@ -621,6 +642,23 @@ def main_mint():
                     # Обновляем объект для получения актуальных значений
                     u.refresh_from_db()
 
+                    # КРИТИЧНО: проверяем владельца NFT прямым запросом — отключаем только при реальной смене владельца
+                    if u.current_station_nft and u.ton_wallet:
+                        current_owner = async_to_sync(get_nft_owner_by_address)(u.current_station_nft)
+                        time.sleep(0.5)  # пауза между прямыми запросами к API для rate limiting
+                        if current_owner is None:
+                            logger.warning(
+                                f"Skipping hydro disconnect for user_id={u.user_id}: "
+                                "direct NFT owner check failed (API error?), keeping station"
+                            )
+                            continue
+                        if (current_owner or "").strip() == (u.ton_wallet or "").strip():
+                            logger.warning(
+                                f"Skipping hydro disconnect for user_id={u.user_id}: "
+                                "NFT still owned by user (API list was incomplete?), keeping station"
+                            )
+                            continue
+
                     with transaction.atomic():
                         # Логируем баланс энергии на момент отката hydro станции
                         StationRollbackLog.objects.create(
@@ -716,6 +754,23 @@ def main_mint():
                 try:
                     # Обновляем объект для получения актуальных значений
                     u.refresh_from_db()
+
+                    # КРИТИЧНО: проверяем владельца NFT прямым запросом — отключаем только при реальной смене владельца
+                    if u.current_station_nft and u.ton_wallet:
+                        current_owner = async_to_sync(get_nft_owner_by_address)(u.current_station_nft)
+                        time.sleep(0.5)  # пауза между прямыми запросами к API для rate limiting
+                        if current_owner is None:
+                            logger.warning(
+                                f"Skipping orbital disconnect for user_id={u.user_id}: "
+                                "direct NFT owner check failed (API error?), keeping station"
+                            )
+                            continue
+                        if (current_owner or "").strip() == (u.ton_wallet or "").strip():
+                            logger.warning(
+                                f"Skipping orbital disconnect for user_id={u.user_id}: "
+                                "NFT still owned by user (API list was incomplete?), keeping station"
+                            )
+                            continue
 
                     with transaction.atomic():
                         # Логируем баланс энергии на момент отката orbital станции
@@ -945,7 +1000,12 @@ def main_boosters():
         i = 0
         while True:
             pages = list(range(i, i + pages))
-            results = [async_to_sync(get_nfts)(collection_addr, page) for page in pages]
+            # Последовательные запросы с задержками для rate limiting
+            results = []
+            for page in pages:
+                results.append(async_to_sync(get_nfts)(collection_addr, page))
+                if page != pages[-1]:  # Задержка между запросами, кроме последнего
+                    time.sleep(0.5)
 
             has_short_page = False
             for data in results:
@@ -1004,7 +1064,7 @@ def main_boosters():
     magnit_owners = dict()
     repair_kit_owners = dict()
     
-    infinite_date = datetime(2100, 1, 1, 0, 0, 0)
+    infinite_date = timezone.make_aware(datetime(2100, 1, 1, 0, 0, 0))
 
     for nft in all_nfts:
         address = nft.owner.address.root
@@ -1122,11 +1182,19 @@ def main_boosters():
 
     # if 1 <= UserProfile.objects.get(user_id=678886913).get_station_level() + 1 <= 3:
     #     jarvis_owners[678886913] = True
+    # Сбрасываем jarvis_expires для пользователей, у которых больше нет NFT Jarvis Bot
     UserProfile.objects.filter(
         jarvis_expires__year=2100,
     ).exclude(user_id__in=list(jarvis_owners.keys())).update(
         jarvis_expires=None,
     )
+    # Также сбрасываем для пользователей с jarvis_expires = 2099 (старая запись)
+    UserProfile.objects.filter(
+        jarvis_expires__year=2099,
+    ).exclude(user_id__in=list(jarvis_owners.keys())).update(
+        jarvis_expires=None,
+    )
+    # Устанавливаем бесконечный jarvis_expires для пользователей с NFT Jarvis Bot
     UserProfile.objects.filter(
         user_id__in=list(jarvis_owners.keys())
     ).exclude(jarvis_expires__year=2100).update(
@@ -1199,7 +1267,12 @@ def main2():
         i = 0
         while True:
             pages = list(range(i, i + pages))
-            results = [async_to_sync(get_nfts)(collection_addr, page) for page in pages]
+            # Последовательные запросы с задержками для rate limiting
+            results = []
+            for page in pages:
+                results.append(async_to_sync(get_nfts)(collection_addr, page))
+                if page != pages[-1]:  # Задержка между запросами, кроме последнего
+                    time.sleep(0.5)
 
             has_short_page = False
             for data in results:
@@ -1258,7 +1331,7 @@ def main2():
     magnit_owners = dict()
     repair_kit_owners = dict()
     
-    infinite_date = datetime(2100, 1, 1, 0, 0, 0)
+    infinite_date = timezone.make_aware(datetime(2100, 1, 1, 0, 0, 0))
 
     for nft in all_nfts:
         address = nft.owner.address.root
@@ -1641,7 +1714,12 @@ def main_timed():
         i = 0
         while True:
             pages = list(range(i, i + pages))
-            results = [async_to_sync(get_nfts)(collection_addr, page) for page in pages]
+            # Последовательные запросы с задержками для rate limiting
+            results = []
+            for page in pages:
+                results.append(async_to_sync(get_nfts)(collection_addr, page))
+                if page != pages[-1]:  # Задержка между запросами, кроме последнего
+                    time.sleep(0.5)
 
             has_short_page = False
             for data in results:
@@ -1751,42 +1829,46 @@ if __name__ == "__main__":
         while True:
             try:
                 main()
-                # time.sleep(1)
-                pass
+                time.sleep(5)  # Задержка между итерациями для снижения нагрузки
             except Exception:
                 logger.exception("Error in main transaction processing")
+                time.sleep(10)  # Большая задержка при ошибке
 
     def run_main_mint():
         while True:
             try:
                 main_mint()
-                # time.sleep(1)
+                time.sleep(15)  # Задержка между проверками NFT станций (есть кэш на 10 минут)
             except Exception:
                 logger.exception("Error in main mint processing")
+                time.sleep(30)  # Большая задержка при ошибке
 
     def run_main2():
         while True:
             try:
                 main2()
-                # time.sleep(1)
+                time.sleep(15)  # Задержка между обновлениями ASIC NFT профилей
             except Exception:
                 logger.exception("Error in main2 processing")
+                time.sleep(30)  # Большая задержка при ошибке
 
     def run_main_boosters():
         while True:
             try:
                 main_boosters()
-                # time.sleep(1)
+                time.sleep(20)  # Задержка между проверками бустеров (не критично)
             except Exception:
                 logger.exception("Error in main boosters processing")
+                time.sleep(40)  # Большая задержка при ошибке
     
     def run_main_timed():
         while True:
             try:
                 main_timed()
-                # time.sleep(1)
+                time.sleep(20)  # Задержка между проверками timed NFT (не критично)
             except Exception:
                 logger.exception("Error in main timed processing")
+                time.sleep(40)  # Большая задержка при ошибке
 
     # Start threads
     t1 = threading.Thread(target=run_main, daemon=True)
