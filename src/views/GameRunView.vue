@@ -323,7 +323,7 @@ const claimableEnergy = computed(() => {
 const formatEnergy = (value, compareWithStorage = false) => {
   const v = Number(value ?? 0)
   if (!Number.isFinite(v)) return '0'
-  
+
   // Если нужно сравнить со storage и значение >= storage, показываем storage (точное значение)
   if (compareWithStorage && gameRun.currentStorage?.value) {
     const storage = Number(gameRun.currentStorage.value)
@@ -332,7 +332,7 @@ const formatEnergy = (value, compareWithStorage = false) => {
       return storage % 1 === 0 ? storage.toString() : storage.toFixed(1)
     }
   }
-  
+
   // Иначе показываем точное значение с одним знаком после запятой (если есть дробная часть)
   return v % 1 === 0 ? v.toString() : v.toFixed(1)
 }
@@ -691,11 +691,6 @@ const startGame = (training = false) => {
   // Если забег уже идёт — игнорируем повторный старт
   if (gameRun.isRunning.value && !gameRun.isPaused.value) return
 
-  // Очищаем сохраненное значение storage при старте новой игры (если это тренировка)
-  if (training) {
-    app.setEnergyRunStartStorage(null)
-  }
-
   isTrainingRun.value = training
   playerZ.value = 0
   gameSpeed.value = 0.15
@@ -771,12 +766,28 @@ function doOneStep(playerBox, inRollImmuneWindow) {
             app.setPower(Math.max(0, newPower))
             if (!isDead.value && livesLeft.value <= 0) {
               isDead.value = true
+              // Останавливаем игровой цикл сразу
+              gameRun.stopRun()
+              stopGameLoop()
+              if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
+              gameSpeed.value = 0
+              // Останавливаем физику персонажа
               if (gamePhysics.value?.onFinalHit) {
                 gamePhysics.value.onFinalHit()
               } else if (gamePhysics.value?.setAnimationState) {
                 // Fallback: просто включаем анимацию падения
-                gamePhysics.value.setAnimationState('fall')
+                gamePhysics.value.setAnimationState('lose')
               }
+              // Устанавливаем модалку проигрыша сразу
+              gameOverType.value = 'lose'
+              showGameOver.value = true
+              launcherOverlayMode.value = 'none'
+              // Вызываем endGame после небольшой задержки для завершения анимации
+              setTimeout(() => {
+                if (!endGame._isProcessing) {
+                  endGame(false)
+                }
+              }, 1000)
             }
             // Мягкая тряска камеры только при ударе: статичный вертикальный "рывок"
             shakeFramesLeft = SHAKE_DURATION_FRAMES
@@ -988,11 +999,6 @@ const handleStartClick = async () => {
       if (response.data.user.energy_run_last_started_at !== undefined) {
         app.user.energy_run_last_started_at = response.data.user.energy_run_last_started_at
         console.log('energy_run_last_started_at updated to:', response.data.user.energy_run_last_started_at)
-      }
-      // Сохраняем начальное значение storage для генерации поинтов
-      if (response.data.user.energy_run_start_storage !== undefined && response.data.user.energy_run_start_storage !== null) {
-        app.setEnergyRunStartStorage(response.data.user.energy_run_start_storage)
-        console.log('energy_run_start_storage saved:', response.data.user.energy_run_start_storage)
       }
     }
     startGame(false)

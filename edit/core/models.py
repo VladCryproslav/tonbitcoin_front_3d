@@ -317,6 +317,21 @@ class UserProfile(models.Model):
         default=None
     )
 
+    # Energy Run (Раннер)
+    energy_run_last_started_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Время последнего старта забега (для cooldown 60 минут)"
+    )
+    energy_run_start_storage = models.DecimalField(
+        max_digits=36,
+        decimal_places=16,
+        default=0,
+        null=True,
+        blank=True,
+        help_text="Storage при старте забега (для валидации)"
+    )
+
     stop_mining_at1 = models.DateTimeField(null=True, blank=True)
     stop_mining_at2 = models.DateTimeField(null=True, blank=True)
     stop_mining_at3 = models.DateTimeField(null=True, blank=True)
@@ -348,21 +363,6 @@ class UserProfile(models.Model):
     has_silver_sbt = models.BooleanField(default=False)
     has_gold_sbt_nft = models.BooleanField(default=False)
     has_silver_sbt_nft = models.BooleanField(default=False)
-    
-    # Energy Run (Раннер)
-    energy_run_last_started_at = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Время последнего старта забега (для cooldown 60 минут)"
-    )
-    energy_run_start_storage = models.DecimalField(
-        max_digits=36,
-        decimal_places=16,
-        default=0,
-        null=True,
-        blank=True,
-        help_text="Storage при старте забега (для валидации)"
-    )
     
     def get_real_engs(self):
         engs = self.engineer_level
