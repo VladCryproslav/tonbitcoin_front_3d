@@ -177,7 +177,7 @@
           <div class="game-over-result-row">
             <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_collected') }}</span>
-            <span class="game-over-result-value">{{ formatEnergy(savedEnergyCollectedForModal || Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0), true) }} / {{ formatEnergy(gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0) }} kW</span>
+            <span class="game-over-result-value">{{ formatEnergy(displayedEnergyCollected, true) }} / {{ formatEnergy(gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0) }} kW</span>
           </div>
           <div v-if="gameOverType !== 'win'" class="game-over-result-row">
             <img src="@/assets/engineer.webp" alt="" class="game-over-result-icon" />
@@ -313,6 +313,16 @@ const effectiveSavedPercentOnLose = computed(() => {
   const cfg = app.stations?.eng_configs?.find((el) => el?.level === level)
   return Number(cfg?.saved_percent_on_lose ?? 0)
 })
+// Вычисляем собранную энергию для отображения в модалке - используем ту же логику, что и в счетчике энергии
+const displayedEnergyCollected = computed(() => {
+  // Используем сохраненное значение если оно есть и больше 0
+  if (savedEnergyCollectedForModal.value > 0) {
+    return savedEnergyCollectedForModal.value
+  }
+  // Иначе используем значение из счетчика энергии (та же логика, что в GameUI)
+  return Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0)
+})
+
 // Сколько энергии можно забрать: при победе — всё собранное (но не больше storage), при проигрыше — по проценту уровня
 const claimableEnergy = computed(() => {
   // Используем данные из completedRunData если они есть (более точные данные с сервера)
@@ -321,16 +331,12 @@ const claimableEnergy = computed(() => {
   }
   
   // Fallback: вычисляем на фронтенде
-  const collected = Number(gameRun.energyCollected?.value ?? 0)
-  // Используем сохраненное начальное значение storage вместо текущего (которое может быть обнулено на сервере)
-  const maxStorage = Number(gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0)
-  // Ограничиваем собранную энергию максимумом начального storage
-  const limitedCollected = Math.min(collected, maxStorage)
-  if (gameOverType.value === 'win') return limitedCollected
+  const collected = displayedEnergyCollected.value
+  if (gameOverType.value === 'win') return collected
   const pct = effectiveSavedPercentOnLose.value
   // Добавляем +2% если есть активные синие электрики
   const electricsBonus = (app?.user?.electrics_expires && new Date(app.user.electrics_expires) > new Date()) ? 2 : 0
-  return (limitedCollected * (pct + electricsBonus)) / 100
+  return (collected * (pct + electricsBonus)) / 100
 })
 
 const formatEnergy = (value, compareWithStorage = false) => {
@@ -889,6 +895,11 @@ function doOneStep(playerBox, inRollImmuneWindow) {
     } else if (winAnimationStartTime > 0) {
       if (performance.now() - winAnimationStartTime >= WIN_ANIMATION_DURATION_MS) {
         if (!endGame._isProcessing) {
+          // Сохраняем значение энергии перед показом модалки выигрыша
+          const winEnergy = Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0)
+          if (winEnergy > savedEnergyCollectedForModal.value) {
+            savedEnergyCollectedForModal.value = winEnergy
+          }
           gameOverType.value = 'win'
           showGameOver.value = true
           launcherOverlayMode.value = 'none'
@@ -1042,6 +1053,12 @@ const endGame = async (isWinByState = false) => {
     if (!showGameOver.value) {
       if (isWin) {
         // Успешное завершение забега — проигрываем победную анимацию
+        // Убеждаемся что savedEnergyCollectedForModal содержит правильное значение перед показом модалки
+        const winEnergy = Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0)
+        if (winEnergy > savedEnergyCollectedForModal.value) {
+          savedEnergyCollectedForModal.value = winEnergy
+        }
+        console.log('endGame: Before showing WIN modal, savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'winEnergy=', winEnergy, 'gameRun.energyCollected?.value=', gameRun.energyCollected?.value)
         if (gamePhysics.value?.setAnimationState) {
           gamePhysics.value.setAnimationState('win')
         }
@@ -1052,6 +1069,12 @@ const endGame = async (isWinByState = false) => {
       } else {
         // При проигрыше показываем экран завершения после анимации падения
         // Убеждаемся что gameOverType установлен как 'lose'
+        // Убеждаемся что savedEnergyCollectedForModal содержит правильное значение перед показом модалки
+        const loseEnergy = Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0)
+        if (loseEnergy > savedEnergyCollectedForModal.value) {
+          savedEnergyCollectedForModal.value = loseEnergy
+        }
+        console.log('endGame: Before showing LOSE modal, savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'loseEnergy=', loseEnergy, 'gameRun.energyCollected?.value=', gameRun.energyCollected?.value)
         gameOverType.value = 'lose'
         showGameOver.value = true
         launcherOverlayMode.value = 'none'
