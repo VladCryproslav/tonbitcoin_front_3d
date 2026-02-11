@@ -412,7 +412,7 @@ const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: 
   //   X: горизонтальная точка взгляда (0 = центр, меняется при смене полосы)
   //   Y: вертикальная точка взгляда (меньше = больше вниз на дорогу) - текущее значение: -0.25
   //   Z: дальность взгляда по оси Z - текущее значение: -18
-  camera.position.set(0, 2.6, 4)
+  camera.position.set(0, 2.6, 3.8)
   camera.lookAt(0, -0.25, -18)
 
   // Инициализация игрового мира
@@ -768,9 +768,15 @@ function doOneStep(playerBox, inRollImmuneWindow) {
         gameWorld.value.updateCollectibles(
           playerBox,
           (energy) => {
+            // При сборе токена: увеличиваем собранную энергию и счетчик собранных токенов
+            // Также помечаем токен как пройденный (для прогресса дистанции)
             gameRun.collectEnergy(energy)
+            gameRun.markPointPassed()
           },
-          () => gameRun.markPointPassed()
+          () => {
+            // Когда токен проходит мимо без сбора: только помечаем как пройденный
+            gameRun.markPointPassed()
+          }
         )
       }
 

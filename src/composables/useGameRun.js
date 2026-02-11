@@ -51,6 +51,7 @@ export function useGameRun() {
   const energyPoints = ref([])
   const energyPointsIndex = ref(0)
   const passedPointsCount = ref(0)
+  const collectedPointsCount = ref(0) // Счетчик собранных токенов
 
   const totalPoints = computed(() => energyPoints.value.length)
   const distanceProgress = computed(() => {
@@ -71,6 +72,7 @@ export function useGameRun() {
     energyPoints.value = generateEnergyPoints(storageKw)
     energyPointsIndex.value = 0
     passedPointsCount.value = 0
+    collectedPointsCount.value = 0 // Сбрасываем счетчик собранных токенов
   }
 
   const getNextEnergyPoint = () => {
@@ -84,8 +86,18 @@ export function useGameRun() {
     passedPointsCount.value += 1
   }
 
-  const isRunComplete = () =>
-    totalPoints.value > 0 && passedPointsCount.value >= totalPoints.value
+  // Забег завершается когда:
+  // 1. Все поинты прошли (собраны или пропущены) - 100% дистанции
+  // 2. ИЛИ все поинты собраны (даже если не все прошли)
+  const isRunComplete = () => {
+    const total = totalPoints.value
+    if (total <= 0) return false
+    // Завершаем если все поинты прошли (100% дистанции)
+    if (passedPointsCount.value >= total) return true
+    // ИЛИ если все поинты собраны (пользователь собрал все токены)
+    if (collectedPointsCount.value >= total) return true
+    return false
+  }
 
   const pauseRun = () => {
     isPaused.value = true
@@ -110,6 +122,7 @@ export function useGameRun() {
 
   const collectEnergy = (amount) => {
     energyCollected.value += amount
+    collectedPointsCount.value += 1 // Увеличиваем счетчик собранных токенов
   }
 
   const hitObstacle = () => {
@@ -174,6 +187,7 @@ export function useGameRun() {
     energyPoints,
     totalPoints,
     passedPointsCount,
+    collectedPointsCount,
     distanceProgress,
     getNextEnergyPoint,
     markPointPassed,
