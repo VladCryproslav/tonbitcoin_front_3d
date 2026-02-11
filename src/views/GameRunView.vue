@@ -177,7 +177,7 @@
           <div class="game-over-result-row">
             <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_collected') }}</span>
-            <span class="game-over-result-value">{{ formatEnergy(completedRunData?.energy_collected ?? Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0), true) }} / {{ formatEnergy(gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0) }} kW</span>
+            <span class="game-over-result-value">{{ formatEnergy(savedEnergyCollectedForModal ?? completedRunData?.energy_collected ?? 0, true) }} / {{ formatEnergy(gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0) }} kW</span>
           </div>
           <div v-if="gameOverType !== 'win'" class="game-over-result-row">
             <img src="@/assets/engineer.webp" alt="" class="game-over-result-icon" />
@@ -275,6 +275,8 @@ const gameOverType = ref('lose') // 'win' | 'lose'
 const isTrainingRun = ref(false)
 // Данные завершенного забега для начисления при нажатии "Забрать"
 const completedRunData = ref(null) // { energy_collected, is_win, energy_gained }
+// Сохраненное значение собранной энергии для отображения в модалке (не обнуляется до нажатия "Забрать")
+const savedEnergyCollectedForModal = ref(0)
 // Та же логика уровней, что в EnergizerView: 49 белых, остаток — золотые
 const getWorkers = computed(() => {
   const simple = Math.min(app?.user?.engineer_level ?? 0, 49) || 0
@@ -968,7 +970,10 @@ const endGame = async (isWinByState = false) => {
     const savedEnergyBeforeComplete = gameRun.energyCollected?.value ?? 0
     const savedStartStorageBeforeComplete = gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0
     
-    console.log('endGame called, isWinByState:', isWinByState, 'energyCollected BEFORE completeRun:', savedEnergyBeforeComplete, 'startStorage BEFORE completeRun:', savedStartStorageBeforeComplete, 'isRunning:', gameRun.isRunning.value, 'runStartTime:', gameRun.runStartTime?.value)
+    // Сохраняем для отображения в модалке (не будет обнулено до нажатия "Забрать")
+    savedEnergyCollectedForModal.value = savedEnergyBeforeComplete
+    
+    console.log('endGame called, isWinByState:', isWinByState, 'energyCollected BEFORE completeRun:', savedEnergyBeforeComplete, 'startStorage BEFORE completeRun:', savedStartStorageBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'isRunning:', gameRun.isRunning.value, 'runStartTime:', gameRun.runStartTime?.value)
     
     // Вызываем completeRun для сохранения данных забега на сервере (без начисления энергии)
     const result = await gameRun.completeRun(isWinByState).catch((e) => {
@@ -986,7 +991,11 @@ const endGame = async (isWinByState = false) => {
         is_win: result.is_win ?? isWinByState,
         energy_gained: result.energy_gained ?? 0
       }
-      console.log('endGame: saved completedRunData:', completedRunData.value, 'savedEnergyBeforeComplete=', savedEnergyBeforeComplete)
+      // Обновляем сохраненное значение для модалки из ответа сервера
+      if (result.energy_collected !== undefined) {
+        savedEnergyCollectedForModal.value = result.energy_collected
+      }
+      console.log('endGame: saved completedRunData:', completedRunData.value, 'savedEnergyBeforeComplete=', savedEnergyBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
     } else {
       // Если result не получен, используем данные из gameRun
       completedRunData.value = {
@@ -994,7 +1003,7 @@ const endGame = async (isWinByState = false) => {
         is_win: isWinByState ?? false,
         energy_gained: 0
       }
-      console.log('endGame: saved completedRunData (fallback):', completedRunData.value, 'savedEnergyBeforeComplete=', savedEnergyBeforeComplete)
+      console.log('endGame: saved completedRunData (fallback):', completedRunData.value, 'savedEnergyBeforeComplete=', savedEnergyBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
     }
 
     // НЕ обновляем состояние приложения здесь - энергия еще не начислена
@@ -1184,6 +1193,7 @@ const handleClaim = async () => {
       
       // Очищаем данные забега только после успешного начисления
       completedRunData.value = null
+      savedEnergyCollectedForModal.value = 0
       // Очищаем startStorage и energyCollected только после успешного начисления
       if (gameRun.startStorage) {
         gameRun.startStorage.value = 0
@@ -1191,7 +1201,7 @@ const handleClaim = async () => {
       if (gameRun.energyCollected) {
         gameRun.energyCollected.value = 0
       }
-      console.log('handleClaim: Cleared run data after successful claim', 'startStorage=', gameRun.startStorage?.value, 'energyCollected=', gameRun.energyCollected?.value)
+      console.log('handleClaim: Cleared run data after successful claim', 'startStorage=', gameRun.startStorage?.value, 'energyCollected=', gameRun.energyCollected?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
     }
   } catch (error) {
     console.error('Ошибка при начислении энергии:', error)

@@ -2213,9 +2213,11 @@ class GameRunClaimView(APIView):
             add_chart_kw(float(final_energy))
             
             # Очистка данных забега после успешного начисления
+            # НЕ обнуляем energy_run_last_started_at - он нужен для cooldown таймера
+            # Обнуляем только energy_run_start_storage, так как забег завершен и энергия начислена
             UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                energy_run_start_storage=None,
-                energy_run_last_started_at=None
+                energy_run_start_storage=None
+                # energy_run_last_started_at остается для cooldown таймера (60 минут)
             )
             
             # Получаем обновленный объект пользователя
