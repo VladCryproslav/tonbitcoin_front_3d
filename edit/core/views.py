@@ -1735,13 +1735,27 @@ class EnergyRunStartView(APIView):
                 f"Energy run start: user_id={user_profile.user_id}, "
                 f"current_storage={current_storage}, energy_run_last_started_at={now}"
             )
-            UserProfile.objects.filter(user_id=user_profile.user_id).update(
+            
+            # Сохраняем данные в БД
+            updated_count = UserProfile.objects.filter(user_id=user_profile.user_id).update(
                 energy_run_last_started_at=now,
                 energy_run_start_storage=Decimal(str(current_storage)),
                 storage=Decimal('0')
             )
+            action_logger.info(
+                f"Energy run start DB update: user_id={user_profile.user_id}, "
+                f"updated_count={updated_count}"
+            )
+            
             # Получаем обновленный объект пользователя
             user_profile = UserProfile.objects.get(user_id=user_profile.user_id)
+            action_logger.info(
+                f"Energy run start after DB get: user_id={user_profile.user_id}, "
+                f"energy_run_last_started_at={user_profile.energy_run_last_started_at}, "
+                f"storage={user_profile.storage}, "
+                f"energy_run_start_storage={user_profile.energy_run_start_storage}"
+            )
+            
             serializer_data = UserProfileSerializer(user_profile).data
             action_logger.info(
                 f"Energy run start response: user_id={user_profile.user_id}, "
@@ -1757,8 +1771,20 @@ class EnergyRunStartView(APIView):
                 status=status.HTTP_200_OK,
             )
         except UserProfile.DoesNotExist:
+            action_logger.error(
+                f"Energy run start error: UserProfile.DoesNotExist for user_id={request.user_profile.user_id if hasattr(request, 'user_profile') else 'unknown'}"
+            )
             return Response(
                 {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            import traceback
+            action_logger.error(
+                f"Energy run start error: {str(e)}, traceback: {traceback.format_exc()}"
+            )
+            return Response(
+                {"error": f"Internal server error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 

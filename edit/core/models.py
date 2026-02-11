@@ -340,6 +340,11 @@ class UserProfile(models.Model):
     generation_rate = models.DecimalField(max_digits=36, decimal_places=16, default=5)
     
     # Energy Run (Раннер)
+    energy_run_last_started_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Время последнего старта забега (для cooldown 60 минут)"
+    )
     energy_run_start_storage = models.DecimalField(
         max_digits=36, 
         decimal_places=16, 

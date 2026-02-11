@@ -466,7 +466,7 @@ const startThreeLoop = () => {
     }
 
     // 2) Игровая логика в том же rAF (фикс. шаг). playerBox один раз за кадр — меньше setFromObject при наборе скорости.
-    if (gameRun.isRunning.value && !gameRun.isPaused.value) {
+    if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value) {
       const now = nowGlobal
       if (lastUpdateTime <= 0) lastUpdateTime = now
       const frameTime = Math.min(now - lastUpdateTime, 100)
@@ -516,13 +516,22 @@ const startThreeLoop = () => {
       }
       if (hitCount.value >= 3 && !isDead.value) {
         isDead.value = true
+        // Останавливаем игровой цикл сразу
+        gameRun.stopRun()
+        stopGameLoop()
         if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
         gameSpeed.value = 0
+        // Останавливаем физику персонажа
+        if (gamePhysics.value?.setAnimationState) {
+          gamePhysics.value.setAnimationState('lose')
+        }
+        // Устанавливаем модалку проигрыша сразу
+        gameOverType.value = 'lose'
+        showGameOver.value = true
+        launcherOverlayMode.value = 'none'
+        // Вызываем endGame после небольшой задержки для завершения анимации
         setTimeout(() => {
           if (!endGame._isProcessing) {
-            gameOverType.value = 'lose'
-            showGameOver.value = true
-            launcherOverlayMode.value = 'none'
             endGame(false)
           }
         }, 1000)
@@ -930,19 +939,23 @@ const endGame = async (isWinByState = false) => {
 
     const isSuccess = isWinByState || (result && result.success)
 
-    if (isSuccess) {
-      // Успешное завершение забега — проигрываем победную анимацию
-      if (gamePhysics.value?.setAnimationState) {
-        gamePhysics.value.setAnimationState('win')
+    // Устанавливаем модалку только если она еще не установлена
+    // (при проигрыше она уже установлена в игровом цикле)
+    if (!showGameOver.value) {
+      if (isSuccess) {
+        // Успешное завершение забега — проигрываем победную анимацию
+        if (gamePhysics.value?.setAnimationState) {
+          gamePhysics.value.setAnimationState('win')
+        }
+        gameOverType.value = 'win'
+        showGameOver.value = true
+        launcherOverlayMode.value = 'none'
+      } else {
+        // При проигрыше тоже показываем экран завершения
+        gameOverType.value = 'lose'
+        showGameOver.value = true
+        launcherOverlayMode.value = 'none'
       }
-      gameOverType.value = 'win'
-      showGameOver.value = true
-      launcherOverlayMode.value = 'none'
-    } else {
-      // При проигрыше тоже показываем экран завершения
-      gameOverType.value = 'lose'
-      showGameOver.value = true
-      launcherOverlayMode.value = 'none'
     }
   } finally {
     endGame._isProcessing = false
