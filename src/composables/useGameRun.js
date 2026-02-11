@@ -122,7 +122,45 @@ export function useGameRun() {
 
   const getNextEnergyPoint = () => {
     const idx = energyPointsIndex.value
-    if (idx >= energyPoints.value.length) return null
+    
+    // Если все поинты из очереди выданы
+    if (idx >= energyPoints.value.length) {
+      // Проверяем, достигнута ли 100% дистанции
+      // Логика: 100 поинтов + х% = 100% дистанции
+      // Например: 100 + 10% = 110 поинтов = 100% дистанции
+      // Когда passedPointsCount достигает pointsFor100Percent (110), дистанция = 100%
+      if (passedPointsCount.value >= pointsFor100Percent.value) {
+        // Дистанция достигла 100%, больше поинтов не нужно
+        return null
+      }
+      
+      // Дистанция еще не достигла 100%, но поинты закончились
+      // Это может произойти если поинты не спавнились из-за вероятности спавна (90% и 40%)
+      // Генерируем дополнительные поинты порциями до достижения 100% дистанции
+      const storageKw = currentStorage.value
+      const remainingPoints = pointsFor100Percent.value - passedPointsCount.value
+      
+      // Генерируем порцию дополнительных поинтов (небольшую, чтобы не генерировать слишком много)
+      // Используем минимум из: 20% от базового количества или оставшееся количество + небольшой запас
+      const additionalBatchSize = Math.min(
+        Math.ceil(ENERGY_POINTS_BASE_COUNT * 0.2),
+        remainingPoints + 5 // +5 для небольшого запаса
+      )
+      
+      // Генерируем полный набор поинтов и берем только нужное количество
+      const fullBatch = generateEnergyPoints(storageKw)
+      const additionalPoints = fullBatch.slice(0, additionalBatchSize)
+      
+      // Добавляем их в очередь
+      energyPoints.value.push(...additionalPoints)
+    }
+    
+    // Проверяем еще раз после возможного добавления поинтов
+    if (idx >= energyPoints.value.length) {
+      return null
+    }
+    
+    // Возвращаем следующий поинт из очереди
     energyPointsIndex.value = idx + 1
     return energyPoints.value[idx]
   }
