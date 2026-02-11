@@ -76,17 +76,24 @@ export function useGameRun() {
 
   const currentPower = computed(() => app.power || 100)
   const currentEnergy = computed(() => app.score || 0)
-  // Максимум энергии за забег: используем ту же логику, что и при генерации поинтов
-  // (fallback к 70 kW, если storage ещё не инициализирован).
+  // Максимум энергии за забег: используем сохраненное начальное значение storage
+  // (fallback к текущему app.storage или 70 kW, если storage ещё не инициализирован).
   const currentStorage = computed(() => {
+    // Если забег запущен, используем сохраненное начальное значение
+    if (isRunning.value && startStorage.value > 0) {
+      return startStorage.value
+    }
+    // Иначе используем текущее значение из app (для UI до старта забега)
     const s = app.storage
-    return (s === null || s === undefined) ? 70 : s
+    return (s === null || s === undefined || s === 0) ? 70 : s
   })
 
   const energyPoints = ref([])
   const energyPointsIndex = ref(0)
   const passedPointsCount = ref(0)
   const collectedPointsCount = ref(0) // Счетчик собранных токенов
+  // Сохраняем начальное значение storage при старте забега (до обнуления на сервере)
+  const startStorage = ref(0)
 
   // Общее количество сгенерированных поинтов (базовое количество + запас)
   const totalPoints = computed(() => energyPoints.value.length)
@@ -105,7 +112,7 @@ export function useGameRun() {
     return Math.min(100, (passedPointsCount.value / total) * 100)
   })
 
-  const startRun = () => {
+  const startRun = (initialStorage = null) => {
     isRunning.value = true
     isPaused.value = false
     distance.value = 0
@@ -113,7 +120,11 @@ export function useGameRun() {
     obstaclesHit.value = 0
     runStartTime.value = Date.now()
 
-    const storageKw = app.storage ?? 70
+    // Используем переданное начальное значение storage или текущее значение из app
+    // Если storage уже обнулен на сервере, используем сохраненное значение или fallback
+    const storageKw = initialStorage ?? app.storage ?? startStorage.value || 70
+    // Сохраняем начальное значение для использования в течение забега
+    startStorage.value = storageKw
     energyPoints.value = generateEnergyPoints(storageKw)
     energyPointsIndex.value = 0
     passedPointsCount.value = 0
@@ -137,7 +148,8 @@ export function useGameRun() {
       // Дистанция еще не достигла 100%, но поинты закончились
       // Это может произойти если поинты не спавнились из-за вероятности спавна (90% и 40%)
       // Генерируем дополнительные поинты порциями до достижения 100% дистанции
-      const storageKw = currentStorage.value
+      // Используем сохраненное начальное значение storage
+      const storageKw = startStorage.value || currentStorage.value
       const remainingPoints = pointsFor100Percent.value - passedPointsCount.value
       
       // Генерируем порцию дополнительных поинтов (небольшую, чтобы не генерировать слишком много)
@@ -182,9 +194,10 @@ export function useGameRun() {
     if (passedPointsCount.value >= for100Percent) return true
     
     // 2. ИЛИ если собрал весь Storage (собранная энергия >= максимального количества которое можно собрать)
-    // Максимальное количество = storage (сумма всех поинтов)
-    const maxCollectibleEnergy = currentStorage.value
-    if (energyCollected.value >= maxCollectibleEnergy) return true
+    // Максимальное количество = начальное значение storage (сохраненное при старте забега)
+    // Используем сохраненное значение, чтобы не зависеть от обнуления storage на сервере
+    const maxCollectibleEnergy = startStorage.value || currentStorage.value
+    if (maxCollectibleEnergy > 0 && energyCollected.value >= maxCollectibleEnergy) return true
     
     return false
   }
@@ -201,6 +214,8 @@ export function useGameRun() {
   const stopRun = () => {
     isRunning.value = false
     isPaused.value = false
+    // Сбрасываем сохраненное значение storage при остановке забега
+    startStorage.value = 0
   }
 
   const updateDistance = (newDistance) => {
@@ -235,8 +250,9 @@ export function useGameRun() {
     try {
       const finalDuration = runDuration.value || ((Date.now() - runStartTime.value) / 1000)
       
-      // Ограничиваем собранную энергию максимумом storage (нельзя собрать больше чем storage)
-      const maxCollectibleEnergy = currentStorage.value
+      // Ограничиваем собранную энергию максимумом начального storage (нельзя собрать больше чем было при старте)
+      // Используем сохраненное значение, чтобы не зависеть от обнуления storage на сервере
+      const maxCollectibleEnergy = startStorage.value || currentStorage.value
       const limitedEnergyCollected = Math.min(energyCollected.value, maxCollectibleEnergy)
 
       const runData = {

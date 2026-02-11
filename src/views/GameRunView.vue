@@ -687,7 +687,7 @@ const applyGraphicsQualityAndSave = () => {
   }
 }
 
-const startGame = (training = false) => {
+const startGame = (training = false, initialStorage = null) => {
   // Если забег уже идёт — игнорируем повторный старт
   if (gameRun.isRunning.value && !gameRun.isPaused.value) return
 
@@ -719,7 +719,9 @@ const startGame = (training = false) => {
       laneRef.value = 1
     }
   }
-  gameRun.startRun()
+  // Передаем начальное значение storage в startRun, чтобы использовать его для генерации поинтов
+  // даже если сервер уже обнулил storage
+  gameRun.startRun(initialStorage)
   hitCount.value = 0
   isDead.value = false
   winTriggered = false
@@ -982,7 +984,9 @@ const endGame = async (isWinByState = false) => {
 const handleStartClick = async () => {
   // Вызываем API для записи времени старта (если не тренировка)
   try {
-    console.log('Starting energy run, current storage:', app.storage)
+    // Сохраняем начальное значение storage ДО обнуления на сервере
+    const initialStorage = app.storage ?? 70
+    console.log('Starting energy run, current storage:', initialStorage)
     const response = await host.post('energy-run-start/')
     console.log('energy-run-start response:', response.data)
     if (response.status === 200 && response.data?.user) {
@@ -1001,7 +1005,8 @@ const handleStartClick = async () => {
         console.log('energy_run_last_started_at updated to:', response.data.user.energy_run_last_started_at)
       }
     }
-    startGame(false)
+    // Передаем начальное значение storage в startGame, чтобы использовать его для генерации поинтов
+    startGame(false, initialStorage)
   } catch (error) {
     // Если ошибка cooldown - показываем сообщение и не запускаем игру
     if (error.response?.status === 400 && error.response?.data?.error === 'energy_run_cooldown') {
