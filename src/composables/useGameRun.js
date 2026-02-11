@@ -214,8 +214,8 @@ export function useGameRun() {
   const stopRun = () => {
     isRunning.value = false
     isPaused.value = false
-    // Сбрасываем сохраненное значение storage при остановке забега
-    startStorage.value = 0
+    // НЕ сбрасываем startStorage здесь, так как он нужен для completeRun
+    // startStorage будет сброшен после успешного завершения забега в completeRun
   }
 
   const updateDistance = (newDistance) => {
@@ -235,8 +235,10 @@ export function useGameRun() {
   }
 
   const completeRun = async (isWin = false) => {
-    if (!isRunning.value) {
-      console.warn('completeRun called but game is not running')
+    // Проверяем что забег был запущен (даже если уже остановлен через stopGameLoop)
+    // Не проверяем isRunning.value, так как при проигрыше забег может быть остановлен до вызова completeRun
+    if (!runStartTime.value || runStartTime.value === 0) {
+      console.warn('completeRun called but run was not started')
       return null
     }
 
@@ -250,13 +252,14 @@ export function useGameRun() {
     try {
       const finalDuration = runDuration.value || ((Date.now() - runStartTime.value) / 1000)
       
-      // Ограничиваем собранную энергию максимумом начального storage (нельзя собрать больше чем было при старте)
-      // Используем сохраненное значение, чтобы не зависеть от обнуления storage на сервере
-      // Если startStorage не установлен (0 или null), используем текущее значение из app (до обнуления) или fallback
-      const maxCollectibleEnergy = startStorage.value > 0 ? startStorage.value : (app.storage > 0 ? app.storage : 70)
-      const limitedEnergyCollected = Math.min(energyCollected.value, maxCollectibleEnergy)
+      // Сохраняем значения ДО любых изменений состояния
+      const savedEnergyCollected = energyCollected.value
+      const savedStartStorage = startStorage.value > 0 ? startStorage.value : (app.storage > 0 ? app.storage : 70)
       
-      console.log('completeRun: energyCollected=', energyCollected.value, 'maxCollectibleEnergy=', maxCollectibleEnergy, 'startStorage=', startStorage.value, 'app.storage=', app.storage, 'limitedEnergyCollected=', limitedEnergyCollected)
+      // Ограничиваем собранную энергию максимумом начального storage (нельзя собрать больше чем было при старте)
+      const limitedEnergyCollected = Math.min(savedEnergyCollected, savedStartStorage)
+      
+      console.log('completeRun: savedEnergyCollected=', savedEnergyCollected, 'savedStartStorage=', savedStartStorage, 'startStorage.value=', startStorage.value, 'app.storage=', app.storage, 'limitedEnergyCollected=', limitedEnergyCollected, 'isWin=', isWin)
 
       const runData = {
         distance: distance.value,
@@ -267,6 +270,8 @@ export function useGameRun() {
         is_win: isWin,
         bonus_multiplier: 1.0 // Можно добавить логику бустеров
       }
+      
+      console.log('completeRun: Sending runData with energy_collected=', runData.energy_collected, 'from savedEnergyCollected=', savedEnergyCollected)
 
       console.log('Sending game-run-complete request:', runData)
 
@@ -306,7 +311,10 @@ export function useGameRun() {
       }
     } finally {
       completeRun._isProcessing = false
-      stopRun()
+      // Останавливаем забег и сбрасываем startStorage только после завершения completeRun
+      isRunning.value = false
+      isPaused.value = false
+      startStorage.value = 0
     }
   }
 

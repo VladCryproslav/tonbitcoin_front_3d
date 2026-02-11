@@ -517,8 +517,8 @@ const startThreeLoop = () => {
       }
       if (hitCount.value >= 3 && !isDead.value) {
         isDead.value = true
-        // Останавливаем игровой цикл сразу
-        gameRun.stopRun()
+        // НЕ вызываем stopRun() здесь, чтобы не сбросить startStorage и energyCollected
+        // Останавливаем только игровой цикл и физику
         stopGameLoop()
         if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
         gameSpeed.value = 0
@@ -771,8 +771,8 @@ function doOneStep(playerBox, inRollImmuneWindow) {
             app.setPower(Math.max(0, newPower))
             if (!isDead.value && livesLeft.value <= 0) {
               isDead.value = true
-              // Останавливаем игровой цикл сразу
-              gameRun.stopRun()
+              // НЕ вызываем stopRun() здесь, чтобы не сбросить startStorage и energyCollected
+              // Останавливаем только игровой цикл и физику
               stopGameLoop()
               if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
               gameSpeed.value = 0
