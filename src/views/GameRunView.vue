@@ -404,8 +404,8 @@ const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: 
   directionalLight = threeScene.children.find((obj) => obj.isDirectionalLight) ?? null
 
   // Камера: чуть ближе (Z), чуть выше (Y), взгляд чуть сверху вниз (lookAt Y ниже)
-  camera.position.set(0, 2.5, 4.4)
-  camera.lookAt(0, -0.15, -18)
+  camera.position.set(0, 2.6, 4.4)
+  camera.lookAt(0, -0.2, -18)
 
   // Инициализация игрового мира
   gameWorld.value = useGameWorld(scene)
@@ -514,8 +514,8 @@ const startThreeLoop = () => {
       const maxStepX = 0.25
       const clampedStepX = Math.max(-maxStepX, Math.min(maxStepX, desiredStepX))
       camera.position.x += clampedStepX
-      camera.position.y = 2.5
-      camera.lookAt(camera.position.x, -0.15, -18)
+      camera.position.y = 2.6
+      camera.lookAt(camera.position.x, -0.2, -18)
     }
     if (camera && shakeFramesLeft > 0) {
       const t = shakeFramesLeft / SHAKE_DURATION_FRAMES
