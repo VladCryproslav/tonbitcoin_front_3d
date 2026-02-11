@@ -680,8 +680,15 @@ const energyRunCooldown = computed(() => {
 
 // Открытие раннера для сбора энергии
 const handleEnergyRunClick = () => {
+  if (!ton_address.value) {
+    showMeModal('warning', t('notification.st_attention'), t('notification.unconnected'))
+    return
+  }
   if (energyRunCooldown.value.isActive) {
     return // Не открываем если на cooldown
+  }
+  if (!unlockedWallet.value.bool) {
+    return // Не открываем если кошелек заблокирован
   }
   tg.HapticFeedback.impactOccurred('medium')
   router.push('/game-run')
@@ -2106,7 +2113,7 @@ onUnmounted(() => {
             ref="factory" />
           <!-- Кнопка "Собрать энергию" по центру станции -->
           <button
-            v-if="!energyRunCooldown.isActive && unlockedWallet.bool && (!app?.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !hydroStation.lock && !orbitalStation.lock && !isJarvis.active && !app?.user?.overheated_until"
+            v-if="ton_address && !energyRunCooldown.isActive && unlockedWallet.bool && (!app?.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !hydroStation.lock && !orbitalStation.lock && !isJarvis.active && !app?.user?.overheated_until"
             class="energy-run-btn"
             @click.stop="handleEnergyRunClick"
           >
