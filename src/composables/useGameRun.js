@@ -225,25 +225,32 @@ export function useGameRun() {
       return null
     }
 
-    const finalDuration = runDuration.value || ((Date.now() - runStartTime.value) / 1000)
-    
-    // Ограничиваем собранную энергию максимумом storage (нельзя собрать больше чем storage)
-    const maxCollectibleEnergy = currentStorage.value
-    const limitedEnergyCollected = Math.min(energyCollected.value, maxCollectibleEnergy)
-
-    const runData = {
-      distance: distance.value,
-      energy_collected: limitedEnergyCollected,
-      run_duration: finalDuration,
-      obstacles_hit: obstaclesHit.value,
-      power_used: Math.max(0, 100 - currentPower.value),
-      is_win: isWin,
-      bonus_multiplier: 1.0 // Можно добавить логику бустеров
+    // Защита от повторных вызовов
+    if (completeRun._isProcessing) {
+      console.warn('completeRun already processing, ignoring duplicate call')
+      return null
     }
-
-    console.log('Sending game-run-complete request:', runData)
+    completeRun._isProcessing = true
 
     try {
+      const finalDuration = runDuration.value || ((Date.now() - runStartTime.value) / 1000)
+      
+      // Ограничиваем собранную энергию максимумом storage (нельзя собрать больше чем storage)
+      const maxCollectibleEnergy = currentStorage.value
+      const limitedEnergyCollected = Math.min(energyCollected.value, maxCollectibleEnergy)
+
+      const runData = {
+        distance: distance.value,
+        energy_collected: limitedEnergyCollected,
+        run_duration: finalDuration,
+        obstacles_hit: obstaclesHit.value,
+        power_used: Math.max(0, 100 - currentPower.value),
+        is_win: isWin,
+        bonus_multiplier: 1.0 // Можно добавить логику бустеров
+      }
+
+      console.log('Sending game-run-complete request:', runData)
+
       const response = await host.post('game-run-complete/', runData)
       console.log('game-run-complete response:', response.data)
 
@@ -269,17 +276,19 @@ export function useGameRun() {
           penalties: response.data.penalties
         }
       }
+      
+      return null
     } catch (error) {
       console.error('Ошибка завершения забега:', error)
+      console.error('Error response:', error.response?.data)
       return {
         success: false,
         error: error.response?.data?.error || 'Неизвестная ошибка'
       }
     } finally {
+      completeRun._isProcessing = false
       stopRun()
     }
-
-    return null
   }
 
   return {

@@ -878,54 +878,65 @@ const toggleControlMode = () => {
 }
 
 const endGame = async (isWinByState = false) => {
-  stopGameLoop()
-
-  // Полная очистка объектов мира и эффектов, чтобы собранные кубы/препятствия
-  // не "зависали" возле персонажа после удара/завершения забега.
-  if (gameWorld.value) {
-    gameWorld.value.clearAll()
+  // Защита от повторных вызовов
+  if (endGame._isProcessing) {
+    console.warn('endGame already processing, ignoring duplicate call')
+    return
   }
-  if (gameEffects.value) {
-    gameEffects.value.clearAll()
-  }
+  endGame._isProcessing = true
 
-  // Вызываем completeRun для начисления энергии на сервере
-  console.log('endGame called, isWinByState:', isWinByState, 'energyCollected:', gameRun.energyCollected?.value)
-  const result = await gameRun.completeRun(isWinByState).catch((e) => {
-    console.error('Ошибка завершения забега:', e)
-    console.error('Error details:', e.response?.data, e.message)
-    return null
-  })
-  console.log('endGame completeRun result:', result)
+  try {
+    stopGameLoop()
 
-  // Обновляем состояние приложения из ответа сервера
-  if (result && result.success) {
-    if (result.totalEnergy !== undefined) {
-      app.setScore(result.totalEnergy)
+    // Полная очистка объектов мира и эффектов, чтобы собранные кубы/препятствия
+    // не "зависали" возле персонажа после удара/завершения забега.
+    if (gameWorld.value) {
+      gameWorld.value.clearAll()
     }
-    if (result.power !== undefined) {
-      app.setPower(result.power)
+    if (gameEffects.value) {
+      gameEffects.value.clearAll()
     }
-    if (result.storage !== undefined) {
-      app.setStorage(result.storage)
-    }
-  }
 
-  const isSuccess = isWinByState || (result && result.success)
+    // Вызываем completeRun для начисления энергии на сервере
+    console.log('endGame called, isWinByState:', isWinByState, 'energyCollected:', gameRun.energyCollected?.value)
+    const result = await gameRun.completeRun(isWinByState).catch((e) => {
+      console.error('Ошибка завершения забега:', e)
+      console.error('Error details:', e.response?.data, e.message)
+      return null
+    })
+    console.log('endGame completeRun result:', result)
 
-  if (isSuccess) {
-    // Успешное завершение забега — проигрываем победную анимацию
-    if (gamePhysics.value?.setAnimationState) {
-      gamePhysics.value.setAnimationState('win')
+    // Обновляем состояние приложения из ответа сервера
+    if (result && result.success) {
+      if (result.totalEnergy !== undefined) {
+        app.setScore(result.totalEnergy)
+      }
+      if (result.power !== undefined) {
+        app.setPower(result.power)
+      }
+      if (result.storage !== undefined) {
+        app.setStorage(result.storage)
+      }
     }
-    gameOverType.value = 'win'
-    showGameOver.value = true
-    launcherOverlayMode.value = 'none'
-  } else {
-    // При проигрыше тоже показываем экран завершения
-    gameOverType.value = 'lose'
-    showGameOver.value = true
-    launcherOverlayMode.value = 'none'
+
+    const isSuccess = isWinByState || (result && result.success)
+
+    if (isSuccess) {
+      // Успешное завершение забега — проигрываем победную анимацию
+      if (gamePhysics.value?.setAnimationState) {
+        gamePhysics.value.setAnimationState('win')
+      }
+      gameOverType.value = 'win'
+      showGameOver.value = true
+      launcherOverlayMode.value = 'none'
+    } else {
+      // При проигрыше тоже показываем экран завершения
+      gameOverType.value = 'lose'
+      showGameOver.value = true
+      launcherOverlayMode.value = 'none'
+    }
+  } finally {
+    endGame._isProcessing = false
   }
 }
 

@@ -1742,10 +1742,17 @@ class EnergyRunStartView(APIView):
             )
             # Получаем обновленный объект пользователя
             user_profile = UserProfile.objects.get(user_id=user_profile.user_id)
+            serializer_data = UserProfileSerializer(user_profile).data
+            action_logger.info(
+                f"Energy run start response: user_id={user_profile.user_id}, "
+                f"energy_run_last_started_at={user_profile.energy_run_last_started_at}, "
+                f"storage={user_profile.storage}, "
+                f"serializer_energy_run_last_started_at={serializer_data.get('energy_run_last_started_at')}"
+            )
             return Response(
                 {
                     "message": "Energy run started",
-                    "user": UserProfileSerializer(user_profile).data,
+                    "user": serializer_data,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -1811,7 +1818,14 @@ class GameRunCompleteView(APIView):
             is_win = request.data.get("is_win", False)
             
             # Валидация 1: Проверка что забег был начат
+            action_logger.info(
+                f"GameRunCompleteView validation 1: user_id={user_profile.user_id}, "
+                f"energy_run_last_started_at={user_profile.energy_run_last_started_at}"
+            )
             if not user_profile.energy_run_last_started_at:
+                action_logger.warning(
+                    f"GameRunCompleteView validation 1 FAILED: Run not started for user {user_profile.user_id}"
+                )
                 return Response(
                     {"error": "Run not started. Please start a run first."},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -1819,15 +1833,29 @@ class GameRunCompleteView(APIView):
             
             # Валидация 2: Проверка что забег был начат не более 2 часов назад
             time_since_start = (now - user_profile.energy_run_last_started_at).total_seconds()
+            action_logger.info(
+                f"GameRunCompleteView validation 2: user_id={user_profile.user_id}, "
+                f"time_since_start={time_since_start} seconds"
+            )
             if time_since_start > 7200:  # 2 часа
+                action_logger.warning(
+                    f"GameRunCompleteView validation 2 FAILED: Run expired for user {user_profile.user_id}, "
+                    f"time_since_start={time_since_start}"
+                )
                 return Response(
                     {"error": "Run expired. Please start a new run."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             
             # Валидация 3: Проверка что energy_run_start_storage существует
+            action_logger.info(
+                f"GameRunCompleteView validation 3: user_id={user_profile.user_id}, "
+                f"energy_run_start_storage={user_profile.energy_run_start_storage}"
+            )
             if user_profile.energy_run_start_storage is None:
-                action_logger.info(f"Energy run complete error: Run data not found for user {user_profile.user_id}")
+                action_logger.warning(
+                    f"GameRunCompleteView validation 3 FAILED: Run data not found for user {user_profile.user_id}"
+                )
                 return Response(
                     {"error": "Run data not found. Please start a new run."},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -1835,16 +1863,30 @@ class GameRunCompleteView(APIView):
             
             # Валидация 4: Проверка собранной энергии
             energy_collected = float(energy_collected)
+            action_logger.info(
+                f"GameRunCompleteView validation 4: user_id={user_profile.user_id}, "
+                f"energy_collected={energy_collected}"
+            )
             if energy_collected < 0:
-                action_logger.info(f"Energy run complete error: Invalid energy_collected {energy_collected} for user {user_profile.user_id}")
+                action_logger.warning(
+                    f"GameRunCompleteView validation 4 FAILED: Invalid energy_collected {energy_collected} "
+                    f"for user {user_profile.user_id}"
+                )
                 return Response(
                     {"error": "Invalid energy_collected value"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             
             max_energy = float(user_profile.energy_run_start_storage)
+            action_logger.info(
+                f"GameRunCompleteView validation 4b: user_id={user_profile.user_id}, "
+                f"max_energy={max_energy}, energy_collected={energy_collected}"
+            )
             if energy_collected > max_energy:
-                action_logger.info(f"Energy run complete error: Energy collected {energy_collected} exceeds max {max_energy} for user {user_profile.user_id}")
+                action_logger.warning(
+                    f"GameRunCompleteView validation 4b FAILED: Energy collected {energy_collected} "
+                    f"exceeds max {max_energy} for user {user_profile.user_id}"
+                )
                 return Response(
                     {
                         "error": "Energy collected exceeds maximum allowed",
@@ -1856,7 +1898,15 @@ class GameRunCompleteView(APIView):
             
             # Валидация 5: Проверка времени забега (5 секунд - 2 часа)
             run_duration = float(run_duration)
+            action_logger.info(
+                f"GameRunCompleteView validation 5: user_id={user_profile.user_id}, "
+                f"run_duration={run_duration}"
+            )
             if run_duration < 5 or run_duration > 7200:
+                action_logger.warning(
+                    f"GameRunCompleteView validation 5 FAILED: Invalid run_duration {run_duration} "
+                    f"for user {user_profile.user_id}"
+                )
                 return Response(
                     {"error": "Invalid run_duration. Must be between 5 and 7200 seconds."},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -1864,7 +1914,15 @@ class GameRunCompleteView(APIView):
             
             # Валидация 6: Проверка дистанции
             distance = float(distance)
+            action_logger.info(
+                f"GameRunCompleteView validation 6: user_id={user_profile.user_id}, "
+                f"distance={distance}"
+            )
             if distance <= 0:
+                action_logger.warning(
+                    f"GameRunCompleteView validation 6 FAILED: Invalid distance {distance} "
+                    f"for user {user_profile.user_id}"
+                )
                 return Response(
                     {"error": "Invalid distance value"},
                     status=status.HTTP_400_BAD_REQUEST,
