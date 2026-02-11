@@ -133,7 +133,7 @@ export function useGameRun() {
 
   // Забег завершается когда:
   // 1. Пробежал все 100% дистанции (прошло базовое количество + запас поинтов)
-  // 2. ИЛИ собрал весь Storage (все поинты собраны, даже если не все прошли)
+  // 2. ИЛИ собрал весь Storage (собранная энергия >= максимального количества которое можно собрать)
   // 3. ИЛИ потерял все жизни (обрабатывается в GameRunView.vue через hitCount >= 3)
   const isRunComplete = () => {
     const total = totalPoints.value
@@ -143,8 +143,10 @@ export function useGameRun() {
     // 1. Завершаем если пробежал все 100% дистанции (прошло базовое количество + запас поинтов)
     if (passedPointsCount.value >= for100Percent) return true
     
-    // 2. ИЛИ если собрал весь Storage (все поинты собраны)
-    if (collectedPointsCount.value >= total) return true
+    // 2. ИЛИ если собрал весь Storage (собранная энергия >= максимального количества которое можно собрать)
+    // Максимальное количество = storage (сумма всех поинтов)
+    const maxCollectibleEnergy = currentStorage.value
+    if (energyCollected.value >= maxCollectibleEnergy) return true
     
     return false
   }

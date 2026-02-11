@@ -177,7 +177,7 @@
           <div class="game-over-result-row">
             <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_collected') }}</span>
-            <span class="game-over-result-value">{{ formatEnergy(gameRun.energyCollected?.value ?? 0) }} / {{ formatEnergy(gameRun.currentStorage?.value ?? 0) }} kW</span>
+            <span class="game-over-result-value">{{ formatEnergy(gameRun.energyCollected?.value ?? 0, true) }} / {{ formatEnergy(gameRun.currentStorage?.value ?? 0) }} kW</span>
           </div>
           <div v-if="gameOverType !== 'win'" class="game-over-result-row">
             <img src="@/assets/engineer.webp" alt="" class="game-over-result-icon" />
@@ -317,9 +317,21 @@ const claimableEnergy = computed(() => {
   return (collected * pct) / 100
 })
 
-const formatEnergy = (value) => {
+const formatEnergy = (value, compareWithStorage = false) => {
   const v = Number(value ?? 0)
-  return Number.isFinite(v) ? v.toFixed(1) : '0.0'
+  if (!Number.isFinite(v)) return '0'
+  
+  // Если нужно сравнить со storage и значение >= storage, показываем storage (точное значение)
+  if (compareWithStorage && gameRun.currentStorage?.value) {
+    const storage = Number(gameRun.currentStorage.value)
+    if (v >= storage) {
+      // Показываем storage с точностью до 1 знака после запятой (если есть дробная часть)
+      return storage % 1 === 0 ? storage.toString() : storage.toFixed(1)
+    }
+  }
+  
+  // Иначе показываем точное значение с одним знаком после запятой (если есть дробная часть)
+  return v % 1 === 0 ? v.toString() : v.toFixed(1)
 }
 
 const formatPercent = (value) => {

@@ -13,7 +13,7 @@
         
         <div class="stat-row">
           <span class="stat-label">{{ t('game.energy_collected') }}:</span>
-          <span class="stat-value energy">{{ formatEnergy(results.energyCollected) }} kW</span>
+          <span class="stat-value energy">{{ formatEnergy(results.energyCollected, true) }} kW</span>
         </div>
         
         <div class="stat-row" v-if="results.energyGained">
@@ -57,7 +57,8 @@ const props = defineProps({
       distance: 0,
       energyCollected: 0,
       energyGained: 0,
-      bonuses: null
+      bonuses: null,
+      storage: 0 // Максимальное количество энергии которое можно собрать (storage)
     })
   }
 })
@@ -68,8 +69,21 @@ const handleClose = () => {
   emit('close')
 }
 
-const formatEnergy = (value) => {
-  return value.toFixed(1)
+const formatEnergy = (value, isCollected = false) => {
+  const v = Number(value ?? 0)
+  if (!Number.isFinite(v)) return '0'
+  
+  // Если это собранная энергия и она >= storage, показываем storage (точное значение)
+  if (isCollected && props.results.storage) {
+    const storage = Number(props.results.storage)
+    if (v >= storage) {
+      // Показываем storage с точностью до 1 знака после запятой (если есть дробная часть)
+      return storage % 1 === 0 ? storage.toString() : storage.toFixed(1)
+    }
+  }
+  
+  // Иначе показываем точное значение с одним знаком после запятой
+  return v % 1 === 0 ? v.toString() : v.toFixed(1)
 }
 
 const formatDistance = (value) => {

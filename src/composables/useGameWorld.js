@@ -699,10 +699,10 @@ export function useGameWorld(scene) {
     }
 
     // Собираемые предметы: из очереди поинтов (0–2 за секцию), мин. расстояние между ними
-    // Спавн сделан реже: первый поинт с вероятностью 75%, второй с вероятностью 25%
+    // Увеличена вероятность спавна чтобы токены успевали создаваться до конца забега
     if (typeof getNextEnergyPoint === 'function') {
-      // Первый поинт: спавнится с вероятностью 75% (было 100%)
-      if (nextRand() < 0.75) {
+      // Первый поинт: спавнится с вероятностью 90% (увеличено с 75% чтобы токены успевали создаваться)
+      if (nextRand() < 0.9) {
         const point = getNextEnergyPoint()
         if (point) {
           const lane = Math.floor(nextRand() * 3)
@@ -712,8 +712,8 @@ export function useGameWorld(scene) {
           lastCollectibleZ = firstCollectibleZ
         }
       }
-      // Второй поинт: спавнится с вероятностью 25% (было 40%)
-      if (nextRand() < 0.25) {
+      // Второй поинт: спавнится с вероятностью 40% (увеличено с 25% чтобы токены успевали создаваться)
+      if (nextRand() < 0.4) {
         const point2 = getNextEnergyPoint()
         if (point2) {
           const lane = Math.floor(nextRand() * 3)
