@@ -122,7 +122,7 @@ export function useGameRun() {
 
     // Используем переданное начальное значение storage или текущее значение из app
     // Если storage уже обнулен на сервере, используем сохраненное значение или fallback
-    const storageKw = initialStorage ?? app.storage ?? startStorage.value || 70
+    const storageKw = initialStorage ?? app.storage ?? (startStorage.value || 70)
     // Сохраняем начальное значение для использования в течение забега
     startStorage.value = storageKw
     energyPoints.value = generateEnergyPoints(storageKw)
