@@ -514,14 +514,17 @@ const startThreeLoop = () => {
           gameEffects.value.updateEffects(frameContext)
         }
       }
-      if (hitCount.value >= 3) {
+      if (hitCount.value >= 3 && !isDead.value) {
+        isDead.value = true
         if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
         gameSpeed.value = 0
         setTimeout(() => {
-          gameOverType.value = 'lose'
-          showGameOver.value = true
-          launcherOverlayMode.value = 'none'
-          endGame(false)
+          if (!endGame._isProcessing) {
+            gameOverType.value = 'lose'
+            showGameOver.value = true
+            launcherOverlayMode.value = 'none'
+            endGame(false)
+          }
         }, 1000)
       }
     }
@@ -715,6 +718,10 @@ const startGame = (training = false) => {
   winAnimationStartTime = 0
   showGameOver.value = false
   launcherOverlayMode.value = 'none'
+  // Сбрасываем флаг обработки завершения игры
+  if (endGame._isProcessing) {
+    endGame._isProcessing = false
+  }
   if (gamePhysics.value?.setAnimationState) {
     gamePhysics.value.setAnimationState('running')
   }
@@ -817,10 +824,12 @@ function doOneStep(playerBox, inRollImmuneWindow) {
       }
     } else if (winAnimationStartTime > 0) {
       if (performance.now() - winAnimationStartTime >= WIN_ANIMATION_DURATION_MS) {
-        gameOverType.value = 'win'
-        showGameOver.value = true
-        launcherOverlayMode.value = 'none'
-        endGame(true)
+        if (!endGame._isProcessing) {
+          gameOverType.value = 'win'
+          showGameOver.value = true
+          launcherOverlayMode.value = 'none'
+          endGame(true)
+        }
         winAnimationStartTime = 0
       }
     }

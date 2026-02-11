@@ -1800,7 +1800,9 @@ class GameRunCompleteView(APIView):
     @require_auth
     def post(self, request):
         try:
-            user_profile = request.user_profile
+            # Перезагружаем user_profile из базы данных, чтобы получить актуальные данные
+            # (request.user_profile может быть кэшированным)
+            user_profile = UserProfile.objects.get(user_id=request.user_profile.user_id)
             now = timezone.now()
             
             # Логирование входа в метод
@@ -1820,7 +1822,8 @@ class GameRunCompleteView(APIView):
             # Валидация 1: Проверка что забег был начат
             action_logger.info(
                 f"GameRunCompleteView validation 1: user_id={user_profile.user_id}, "
-                f"energy_run_last_started_at={user_profile.energy_run_last_started_at}"
+                f"energy_run_last_started_at={user_profile.energy_run_last_started_at}, "
+                f"energy_run_start_storage={user_profile.energy_run_start_storage}"
             )
             if not user_profile.energy_run_last_started_at:
                 action_logger.warning(
