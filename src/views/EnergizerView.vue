@@ -2113,7 +2113,7 @@ onUnmounted(() => {
             ref="factory" />
           <!-- Кнопка "Собрать энергию" по центру станции -->
           <button
-            v-if="ton_address && !energyRunCooldown.isActive && unlockedWallet.bool && (!app?.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !hydroStation.lock && !orbitalStation.lock && !isJarvis.active && !app?.user?.overheated_until"
+            v-if="!energyRunCooldown.isActive && unlockedWallet.bool && (!app?.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !hydroStation.lock && !orbitalStation.lock && !isJarvis.active && !app?.user?.overheated_until"
             class="energy-run-btn"
             @click.stop="handleEnergyRunClick"
           >
