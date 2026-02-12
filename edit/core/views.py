@@ -1731,10 +1731,11 @@ class EnergyRunStartView(APIView):
             # Сохраняем текущее значение storage и обнуляем его
             from decimal import Decimal
             current_storage = user_profile.storage
-            action_logger.info(
-                f"Energy run start: user_id={user_profile.user_id}, "
-                f"current_storage={current_storage}, energy_run_last_started_at={now}"
-            )
+            # Логирование убрано для оптимизации - логируем только ошибки
+            # action_logger.info(
+            #     f"Energy run start: user_id={user_profile.user_id}, "
+            #     f"current_storage={current_storage}, energy_run_last_started_at={now}"
+            # )
             
             # Сохраняем данные в БД
             updated_count = UserProfile.objects.filter(user_id=user_profile.user_id).update(
@@ -1742,19 +1743,22 @@ class EnergyRunStartView(APIView):
                 energy_run_start_storage=Decimal(str(current_storage)),
                 storage=Decimal('0')
             )
-            action_logger.info(
-                f"Energy run start DB update: user_id={user_profile.user_id}, "
-                f"updated_count={updated_count}"
-            )
+            # Логирование убрано для оптимизации - логируем только ошибки
+            # action_logger.info(
+            #     f"Energy run start DB update: user_id={user_profile.user_id}, "
+            #     f"updated_count={updated_count}"
+            # )
             
-            # Получаем обновленный объект пользователя
+            # ОПТИМИЗАЦИЯ: Убираем лишний запрос к БД - данные уже обновлены через update()
+            # Получаем обновленный объект только если нужны данные для ответа
             user_profile = UserProfile.objects.get(user_id=user_profile.user_id)
-            action_logger.info(
-                f"Energy run start after DB get: user_id={user_profile.user_id}, "
-                f"energy_run_last_started_at={user_profile.energy_run_last_started_at}, "
-                f"storage={user_profile.storage}, "
-                f"energy_run_start_storage={user_profile.energy_run_start_storage}"
-            )
+            # Логирование убрано для оптимизации - логируем только ошибки
+            # action_logger.info(
+            #     f"Energy run start after DB get: user_id={user_profile.user_id}, "
+            #     f"energy_run_last_started_at={user_profile.energy_run_last_started_at}, "
+            #     f"storage={user_profile.storage}, "
+            #     f"energy_run_start_storage={user_profile.energy_run_start_storage}"
+            # )
             
             serializer_data = UserProfileSerializer(user_profile).data
             action_logger.info(
@@ -1842,11 +1846,11 @@ class GameRunCompleteView(APIView):
             user_profile = UserProfile.objects.get(user_id=request.user_profile.user_id)
             now = timezone.now()
             
-            # Логирование входа в метод
-            action_logger.info(
-                f"GameRunCompleteView POST received: user_id={user_profile.user_id}, "
-                f"request.data={request.data}"
-            )
+            # Логирование входа в метод (только для отладки, можно убрать в продакшене)
+            # action_logger.info(
+            #     f"GameRunCompleteView POST received: user_id={user_profile.user_id}, "
+            #     f"request.data={request.data}"
+            # )
             
             # Получаем данные из запроса
             distance = request.data.get("distance", 0)
@@ -1858,11 +1862,7 @@ class GameRunCompleteView(APIView):
             collected_points = request.data.get("collected_points", [])  # Массив собранных поинтов для проверки
             
             # Валидация 1: Проверка что забег был начат
-            action_logger.info(
-                f"GameRunCompleteView validation 1: user_id={user_profile.user_id}, "
-                f"energy_run_last_started_at={user_profile.energy_run_last_started_at}, "
-                f"energy_run_start_storage={user_profile.energy_run_start_storage}"
-            )
+            # Логирование убрано для оптимизации - логируем только ошибки
             if not user_profile.energy_run_last_started_at:
                 action_logger.warning(
                     f"GameRunCompleteView validation 1 FAILED: Run not started for user {user_profile.user_id}"
@@ -1874,10 +1874,7 @@ class GameRunCompleteView(APIView):
             
             # Валидация 2: Проверка что забег был начат не более 2 часов назад
             time_since_start = (now - user_profile.energy_run_last_started_at).total_seconds()
-            action_logger.info(
-                f"GameRunCompleteView validation 2: user_id={user_profile.user_id}, "
-                f"time_since_start={time_since_start} seconds"
-            )
+            # Логирование убрано для оптимизации - логируем только ошибки
             if time_since_start > 7200:  # 2 часа
                 action_logger.warning(
                     f"GameRunCompleteView validation 2 FAILED: Run expired for user {user_profile.user_id}, "
@@ -1889,10 +1886,7 @@ class GameRunCompleteView(APIView):
                 )
             
             # Валидация 3: Проверка что energy_run_start_storage существует
-            action_logger.info(
-                f"GameRunCompleteView validation 3: user_id={user_profile.user_id}, "
-                f"energy_run_start_storage={user_profile.energy_run_start_storage}"
-            )
+            # Логирование убрано для оптимизации - логируем только ошибки
             if user_profile.energy_run_start_storage is None:
                 action_logger.warning(
                     f"GameRunCompleteView validation 3 FAILED: Run data not found for user {user_profile.user_id}"
@@ -1904,10 +1898,7 @@ class GameRunCompleteView(APIView):
             
             # Валидация 4: Проверка собранной энергии
             energy_collected = float(energy_collected)
-            action_logger.info(
-                f"GameRunCompleteView validation 4: user_id={user_profile.user_id}, "
-                f"energy_collected={energy_collected}"
-            )
+            # Логирование убрано для оптимизации - логируем только ошибки
             if energy_collected < 0:
                 action_logger.warning(
                     f"GameRunCompleteView validation 4 FAILED: Invalid energy_collected {energy_collected} "
@@ -1919,10 +1910,7 @@ class GameRunCompleteView(APIView):
                 )
             
             max_energy = float(user_profile.energy_run_start_storage)
-            action_logger.info(
-                f"GameRunCompleteView validation 4b: user_id={user_profile.user_id}, "
-                f"max_energy={max_energy}, energy_collected={energy_collected}"
-            )
+            # Логирование убрано для оптимизации - логируем только ошибки
             if energy_collected > max_energy:
                 action_logger.warning(
                     f"GameRunCompleteView validation 4b FAILED: Energy collected {energy_collected} "
@@ -1940,10 +1928,19 @@ class GameRunCompleteView(APIView):
             # Валидация 4c: Проверка соответствия energy_collected и суммы собранных поинтов (защита от подмены)
             if collected_points and isinstance(collected_points, list):
                 from decimal import Decimal
+                # ОПТИМИЗАЦИЯ: Ограничиваем обработку до 200 поинтов (разумный максимум)
+                points_to_check = collected_points[:200] if len(collected_points) > 200 else collected_points
+                
                 # Проверка 4c1: Валидация структуры поинтов
                 valid_points = []
-                for i, point in enumerate(collected_points):
-                    if not isinstance(point, dict):
+                for i, point in enumerate(points_to_check):
+                    # Поддерживаем как новый формат (только value), так и старый (value + timestamp_ms)
+                    if isinstance(point, dict):
+                        point_value = float(point.get("value", 0))
+                    elif isinstance(point, (int, float)):
+                        # Поддержка упрощенного формата - просто число
+                        point_value = float(point)
+                    else:
                         action_logger.warning(
                             f"GameRunCompleteView validation 4c1 FAILED: Invalid point format at index {i} "
                             f"for user {user_profile.user_id}"
@@ -1952,8 +1949,9 @@ class GameRunCompleteView(APIView):
                             {"error": f"Invalid point format at index {i}"},
                             status=status.HTTP_400_BAD_REQUEST,
                         )
-                    point_value = float(point.get("value", 0))
+                    
                     if point_value <= 0 or point_value > max_energy:
+                        # Логируем только критичные ошибки валидации
                         action_logger.warning(
                             f"GameRunCompleteView validation 4c1 FAILED: Invalid point value {point_value} "
                             f"at index {i} (max={max_energy}) for user {user_profile.user_id}"
@@ -1974,13 +1972,7 @@ class GameRunCompleteView(APIView):
                 tolerance = 0.01
                 difference = abs(points_sum_rounded - energy_collected_rounded)
                 
-                action_logger.info(
-                    f"GameRunCompleteView validation 4c2: user_id={user_profile.user_id}, "
-                    f"energy_collected={energy_collected}, energy_collected_rounded={energy_collected_rounded}, "
-                    f"points_sum={points_sum}, points_sum_rounded={points_sum_rounded}, "
-                    f"difference={difference}, tolerance={tolerance}, collected_points_count={len(collected_points)}"
-                )
-                
+                # Логирование убрано для оптимизации - логируем только ошибки
                 if difference > tolerance:
                     action_logger.warning(
                         f"GameRunCompleteView validation 4c2 FAILED: Energy collected {energy_collected_rounded} "
@@ -2012,19 +2004,19 @@ class GameRunCompleteView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
             else:
-                # Если массив поинтов не передан, логируем предупреждение (для старых клиентов)
+                # Если массив поинтов не передан, логируем предупреждение только периодически (для старых клиентов)
                 # Но не блокируем запрос, чтобы не сломать старые версии клиента
-                action_logger.warning(
-                    f"GameRunCompleteView validation 4c WARNING: collected_points not provided or invalid "
-                    f"for user {user_profile.user_id}, skipping validation (consider updating client)"
-                )
+                # ОПТИМИЗАЦИЯ: Логируем только каждое 10-е предупреждение чтобы не засорять логи
+                import random
+                if random.randint(1, 10) == 1:  # 10% вероятность логирования
+                    action_logger.warning(
+                        f"GameRunCompleteView validation 4c WARNING: collected_points not provided or invalid "
+                        f"for user {user_profile.user_id}, skipping validation (consider updating client)"
+                    )
             
             # Валидация 5: Проверка времени забега (5 секунд - 2 часа)
             run_duration = float(run_duration)
-            action_logger.info(
-                f"GameRunCompleteView validation 5: user_id={user_profile.user_id}, "
-                f"run_duration={run_duration}"
-            )
+            # Логирование убрано для оптимизации - логируем только ошибки
             if run_duration < 5 or run_duration > 7200:
                 action_logger.warning(
                     f"GameRunCompleteView validation 5 FAILED: Invalid run_duration {run_duration} "
@@ -2037,10 +2029,7 @@ class GameRunCompleteView(APIView):
             
             # Валидация 6: Проверка дистанции
             distance = float(distance)
-            action_logger.info(
-                f"GameRunCompleteView validation 6: user_id={user_profile.user_id}, "
-                f"distance={distance}"
-            )
+            # Логирование убрано для оптимизации - логируем только ошибки
             if distance <= 0:
                 action_logger.warning(
                     f"GameRunCompleteView validation 6 FAILED: Invalid distance {distance} "
@@ -2075,26 +2064,19 @@ class GameRunCompleteView(APIView):
                 
                 final_energy = energy_collected * (saved_percent / 100)
                 
-                action_logger.info(
-                    f"GameRunCompleteView loss calculation: user_id={user_profile.user_id}, "
-                    f"engineer_level={engineer_level}, saved_percent={saved_percent}, "
-                    f"energy_collected={energy_collected}, final_energy={final_energy}"
-                )
+                # Логирование убрано для оптимизации - логируем только финальный результат
+                # action_logger.info(
+                #     f"GameRunCompleteView loss calculation: user_id={user_profile.user_id}, "
+                #     f"engineer_level={engineer_level}, saved_percent={saved_percent}, "
+                #     f"energy_collected={energy_collected}, final_energy={final_energy}"
+                # )
             
             # Преобразуем final_energy в Decimal для корректной работы с F()
             from decimal import Decimal
             final_energy_decimal = Decimal(str(final_energy))
             
-            # Логирование для отладки
-            action_logger.info(
-                f"Energy run complete: user_id={user_profile.user_id}, "
-                f"energy_collected={energy_collected}, is_win={is_win}, "
-                f"final_energy={final_energy}, final_energy_decimal={final_energy_decimal}, "
-                f"engineer_level={user_profile.get_real_engs() if not is_win else 'N/A'}, "
-                f"ton_wallet={user_profile.ton_wallet}"
-            )
-            
-            # Проверка что final_energy больше 0
+            # Логирование только финального результата (минимизировано для оптимизации)
+            # Логируем только важные события и ошибки
             if final_energy_decimal <= 0:
                 action_logger.warning(
                     f"Energy run complete: final_energy is 0 or negative for user {user_profile.user_id}, "
@@ -2106,20 +2088,10 @@ class GameRunCompleteView(APIView):
             # Сохраняем данные забега для последующего начисления:
             # - energy_run_start_storage остается (для валидации)
             # - energy_run_last_started_at остается (для проверки что забег был начат)
-            # - Добавляем новые поля для хранения данных завершенного забега
-            # Но так как у нас уже есть energy_run_start_storage, используем его для валидации
             
-            # Сохраняем данные завершенного забега в отдельном поле или используем существующие
-            # Для простоты используем существующую структуру - данные уже сохранены в energy_run_start_storage
-            
-            action_logger.info(
-                f"Energy run complete: Run data saved for user {user_profile.user_id}, "
-                f"energy_collected={energy_collected}, final_energy={final_energy}, "
-                f"is_win={is_win}, waiting for claim"
-            )
-            
-            # Получаем обновленный объект пользователя
-            user_profile = UserProfile.objects.get(user_id=user_profile.user_id)
+            # ОПТИМИЗАЦИЯ: Убираем лишний запрос к БД - данные не изменились
+            # user_profile уже загружен в начале метода и не изменялся
+            # user_profile = UserProfile.objects.get(user_id=user_profile.user_id)
             
             return Response(
                 {
@@ -2222,11 +2194,12 @@ class GameRunClaimView(APIView):
             energy_collected = float(request.data.get("energy_collected", 0))
             is_win = request.data.get("is_win", False)
             
-            action_logger.info(
-                f"GameRunClaimView: user_id={user_profile.user_id}, "
-                f"energy_collected={energy_collected}, is_win={is_win}, "
-                f"energy_run_start_storage={user_profile.energy_run_start_storage}"
-            )
+            # Логирование убрано для оптимизации - логируем только финальный результат
+            # action_logger.info(
+            #     f"GameRunClaimView: user_id={user_profile.user_id}, "
+            #     f"energy_collected={energy_collected}, is_win={is_win}, "
+            #     f"energy_run_start_storage={user_profile.energy_run_start_storage}"
+            # )
             
             # Валидация собранной энергии
             if energy_collected < 0:
@@ -2269,12 +2242,13 @@ class GameRunClaimView(APIView):
             from decimal import Decimal
             final_energy_decimal = Decimal(str(final_energy))
             
-            action_logger.info(
-                f"GameRunClaimView: user_id={user_profile.user_id}, "
-                f"energy_collected={energy_collected}, is_win={is_win}, "
-                f"final_energy={final_energy}, final_energy_decimal={final_energy_decimal}, "
-                f"engineer_level={user_profile.get_real_engs() if not is_win else 'N/A'}"
-            )
+            # Логирование убрано для оптимизации - логируем только финальный результат начисления
+            # action_logger.info(
+            #     f"GameRunClaimView: user_id={user_profile.user_id}, "
+            #     f"energy_collected={energy_collected}, is_win={is_win}, "
+            #     f"final_energy={final_energy}, final_energy_decimal={final_energy_decimal}, "
+            #     f"engineer_level={user_profile.get_real_engs() if not is_win else 'N/A'}"
+            # )
             
             # Начисление энергии на баланс
             UserProfile.objects.filter(user_id=user_profile.user_id).update(
@@ -2287,16 +2261,18 @@ class GameRunClaimView(APIView):
                     user=user_profile, 
                     wallet=user_profile.ton_wallet
                 ).update(kw_amount=F("kw_amount") + final_energy_decimal)
-                action_logger.info(
-                    f"GameRunClaimView: WalletInfo updated for user {user_profile.user_id}, "
-                    f"wallet={user_profile.ton_wallet}, updated_count={updated_count}, "
-                    f"kw_amount_added={final_energy_decimal}"
-                )
-            else:
-                action_logger.warning(
-                    f"GameRunClaimView: No ton_wallet for user {user_profile.user_id}, "
-                    f"skipping WalletInfo update"
-                )
+                # Логирование убрано для оптимизации - логируем только ошибки
+                # action_logger.info(
+                #     f"GameRunClaimView: WalletInfo updated for user {user_profile.user_id}, "
+                #     f"wallet={user_profile.ton_wallet}, updated_count={updated_count}, "
+                #     f"kw_amount_added={final_energy_decimal}"
+                # )
+            # else:
+            #     # Логирование убрано для оптимизации - логируем только ошибки
+            #     # action_logger.warning(
+            #     #     f"GameRunClaimView: No ton_wallet for user {user_profile.user_id}, "
+            #     #     f"skipping WalletInfo update"
+            #     # )
             
             # Обновление статистики
             GlobalSpendStats.objects.update(

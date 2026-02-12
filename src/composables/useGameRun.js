@@ -275,6 +275,14 @@ export function useGameRun() {
       const collectedPointsSum = collectedEnergyPoints.value.reduce((sum, point) => sum + point.value, 0)
       console.log('completeRun: collectedPointsSum=', collectedPointsSum, 'limitedEnergyCollected=', limitedEnergyCollected, 'collectedPointsCount=', collectedPointsCount.value, 'collectedEnergyPoints.length=', collectedEnergyPoints.value.length)
       
+      // ОПТИМИЗАЦИЯ: Ограничиваем количество поинтов до разумного максимума (200)
+      // и отправляем только значения (без timestamp) для уменьшения размера данных
+      // Timestamp нужен только для дополнительной проверки, основная проверка - сумма значений
+      const pointsToSend = collectedEnergyPoints.value.slice(0, 200).map(point => ({
+        value: Number(point.value.toFixed(2)) // Округляем до 2 знаков для точности
+        // timestamp_ms убран для оптимизации размера данных - основная проверка по сумме значений
+      }))
+      
       const runData = {
         distance: distance.value,
         energy_collected: limitedEnergyCollected,
@@ -284,10 +292,7 @@ export function useGameRun() {
         is_win: isWin,
         bonus_multiplier: 1.0, // Можно добавить логику бустеров
         // Отправляем массив собранных поинтов для проверки на сервере (защита от подмены)
-        collected_points: collectedEnergyPoints.value.map(point => ({
-          value: Number(point.value.toFixed(2)), // Округляем до 2 знаков для точности
-          timestamp_ms: Math.round(point.timestamp) // Время в миллисекундах от начала забега
-        }))
+        collected_points: pointsToSend
       }
       
       console.log('completeRun: Sending runData with energy_collected=', runData.energy_collected, 'from savedEnergyCollected=', savedEnergyCollected, 'collected_points_count=', runData.collected_points.length, 'collected_points_sum=', collectedPointsSum)
