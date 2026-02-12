@@ -4,18 +4,18 @@ import { host } from '../../axios.config'
 
 /**
  * НАСТРОЙКИ ГЕНЕРАЦИИ ПОИНТОВ И ЗАВЕРШЕНИЯ ЗАБЕГА
- * 
+ *
  * ENERGY_POINTS_BASE_COUNT - базовое количество поинтов за забег
  *   Можно менять: например, 100, 120, 150 и т.д.
- * 
+ *
  * ENERGY_POINTS_RESERVE_PERCENT - процент запаса поинтов сверх базового количества (редактируемо: 5-15%)
  *   Запас нужен чтобы поинты продолжали спавниться даже если некоторые пропущены
  *   Например: 100 базовых + 10% запаса = 110 поинтов всего будет сгенерировано
  *   Рекомендуется: 10% (можно менять от 5% до 15%)
- * 
+ *
  * ВАЖНО: 100% дистанции = базовое количество + запас
  *   Например: 100 + 10% = 110 токенов = 100% дистанции
- * 
+ *
  * УСЛОВИЯ ЗАВЕРШЕНИЯ ЗАБЕГА:
  *   1. Пробежал все 100% дистанции (прошло базовое количество + запас поинтов)
  *   2. Собрал весь Storage (все поинты собраны, даже если не все прошли)
@@ -28,16 +28,16 @@ const ENERGY_POINTS_RESERVE_PERCENT = 10
  * Генерирует массив поинтов энергии: 0.5%, 1%, 2% от storage.
  * Сумма = storage. 2% поинты — светящиеся (isGlowing).
  * Распределение: 40×1%, 40×0.5%, 20×2% = 100%
- * 
+ *
  * Генерируется больше поинтов чем базовое количество (с запасом),
  * чтобы поинты продолжали спавниться даже если некоторые пропущены.
  */
 function generateEnergyPoints(storageKw) {
   const storage = Math.max(1, Number(storageKw) || 70)
-  
+
   // Рассчитываем общее количество поинтов с учетом запаса
   const totalPointsCount = Math.ceil(ENERGY_POINTS_BASE_COUNT * (1 + ENERGY_POINTS_RESERVE_PERCENT / 100))
-  
+
   // Распределяем проценты пропорционально базовому количеству
   // Базовое распределение: 40×1%, 40×0.5%, 20×2% = 100 поинтов
   // Масштабируем пропорционально для общего количества
@@ -45,7 +45,7 @@ function generateEnergyPoints(storageKw) {
   const count1pct = Math.round(40 * scale)
   const count05pct = Math.round(40 * scale)
   const count2pct = Math.round(20 * scale)
-  
+
   const points = []
   for (let i = 0; i < count1pct; i++) points.push({ pct: 1, isGlowing: false })
   for (let i = 0; i < count05pct; i++) points.push({ pct: 0.5, isGlowing: false })
@@ -99,13 +99,13 @@ export function useGameRun() {
 
   // Общее количество сгенерированных поинтов (базовое количество + запас)
   const totalPoints = computed(() => energyPoints.value.length)
-  
+
   // Количество поинтов для 100% дистанции (базовое количество + запас)
   // Например: 100 + 10% = 110 токенов = 100% дистанции
   const pointsFor100Percent = computed(() => {
     return Math.ceil(ENERGY_POINTS_BASE_COUNT * (1 + ENERGY_POINTS_RESERVE_PERCENT / 100))
   })
-  
+
   // Прогресс дистанции: считается от общего количества поинтов (базовое + запас = 100%)
   // Например: если 110 токенов = 100%, то 55 токенов = 50%
   const distanceProgress = computed(() => {
@@ -136,7 +136,7 @@ export function useGameRun() {
 
   const getNextEnergyPoint = () => {
     const idx = energyPointsIndex.value
-    
+
     // Если все поинты из очереди выданы
     if (idx >= energyPoints.value.length) {
       // Проверяем, достигнута ли 100% дистанции
@@ -147,34 +147,34 @@ export function useGameRun() {
         // Дистанция достигла 100%, больше поинтов не нужно
         return null
       }
-      
+
       // Дистанция еще не достигла 100%, но поинты закончились
       // Это может произойти если поинты не спавнились из-за вероятности спавна (90% и 40%)
       // Генерируем дополнительные поинты порциями до достижения 100% дистанции
       // Используем сохраненное начальное значение storage
       const storageKw = startStorage.value || currentStorage.value
       const remainingPoints = pointsFor100Percent.value - passedPointsCount.value
-      
+
       // Генерируем порцию дополнительных поинтов (небольшую, чтобы не генерировать слишком много)
       // Используем минимум из: 20% от базового количества или оставшееся количество + небольшой запас
       const additionalBatchSize = Math.min(
         Math.ceil(ENERGY_POINTS_BASE_COUNT * 0.2),
         remainingPoints + 5 // +5 для небольшого запаса
       )
-      
+
       // Генерируем полный набор поинтов и берем только нужное количество
       const fullBatch = generateEnergyPoints(storageKw)
       const additionalPoints = fullBatch.slice(0, additionalBatchSize)
-      
+
       // Добавляем их в очередь
       energyPoints.value.push(...additionalPoints)
     }
-    
+
     // Проверяем еще раз после возможного добавления поинтов
     if (idx >= energyPoints.value.length) {
       return null
     }
-    
+
     // Возвращаем следующий поинт из очереди
     energyPointsIndex.value = idx + 1
     return energyPoints.value[idx]
@@ -192,16 +192,16 @@ export function useGameRun() {
     const total = totalPoints.value
     const for100Percent = pointsFor100Percent.value
     if (total <= 0 || for100Percent <= 0) return false
-    
+
     // 1. Завершаем если пробежал все 100% дистанции (прошло базовое количество + запас поинтов)
     if (passedPointsCount.value >= for100Percent) return true
-    
+
     // 2. ИЛИ если собрал весь Storage (собранная энергия >= максимального количества которое можно собрать)
     // Максимальное количество = начальное значение storage (сохраненное при старте забега)
     // Используем сохраненное значение, чтобы не зависеть от обнуления storage на сервере
     const maxCollectibleEnergy = startStorage.value || currentStorage.value
     if (maxCollectibleEnergy > 0 && energyCollected.value >= maxCollectibleEnergy) return true
-    
+
     return false
   }
 
@@ -261,20 +261,20 @@ export function useGameRun() {
 
     try {
       const finalDuration = runDuration.value || ((Date.now() - runStartTime.value) / 1000)
-      
+
       // Сохраняем значения ДО любых изменений состояния
       const savedEnergyCollected = energyCollected.value
       const savedStartStorage = startStorage.value > 0 ? startStorage.value : (app.storage > 0 ? app.storage : 70)
-      
+
       // Ограничиваем собранную энергию максимумом начального storage (нельзя собрать больше чем было при старте)
       const limitedEnergyCollected = Math.min(savedEnergyCollected, savedStartStorage)
-      
+
       console.log('completeRun: savedEnergyCollected=', savedEnergyCollected, 'savedStartStorage=', savedStartStorage, 'startStorage.value=', startStorage.value, 'app.storage=', app.storage, 'limitedEnergyCollected=', limitedEnergyCollected, 'isWin=', isWin)
 
       // Вычисляем сумму собранных поинтов для проверки на сервере
       const collectedPointsSum = collectedEnergyPoints.value.reduce((sum, point) => sum + point.value, 0)
       console.log('completeRun: collectedPointsSum=', collectedPointsSum, 'limitedEnergyCollected=', limitedEnergyCollected, 'collectedPointsCount=', collectedPointsCount.value, 'collectedEnergyPoints.length=', collectedEnergyPoints.value.length)
-      
+
       // ОПТИМИЗАЦИЯ: Ограничиваем количество поинтов до разумного максимума (200)
       // и отправляем только значения (без timestamp) для уменьшения размера данных
       // Timestamp нужен только для дополнительной проверки, основная проверка - сумма значений
@@ -282,7 +282,7 @@ export function useGameRun() {
         value: Number(point.value.toFixed(2)) // Округляем до 2 знаков для точности
         // timestamp_ms убран для оптимизации размера данных - основная проверка по сумме значений
       }))
-      
+
       const runData = {
         distance: distance.value,
         energy_collected: limitedEnergyCollected,
@@ -294,7 +294,7 @@ export function useGameRun() {
         // Отправляем массив собранных поинтов для проверки на сервере (защита от подмены)
         collected_points: pointsToSend
       }
-      
+
       console.log('completeRun: Sending runData with energy_collected=', runData.energy_collected, 'from savedEnergyCollected=', savedEnergyCollected, 'collected_points_count=', runData.collected_points.length, 'collected_points_sum=', collectedPointsSum)
 
       console.log('Sending game-run-complete request:', runData)
@@ -318,7 +318,7 @@ export function useGameRun() {
           penalties: response.data.penalties
         }
       }
-      
+
       return null
     } catch (error) {
       console.error('Ошибка завершения забега:', error)

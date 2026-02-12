@@ -237,6 +237,20 @@
       :key="hitFlashTick"
       class="hit-flash-overlay"
     />
+    
+    <!-- Модальное окно перегрева -->
+    <OverheatGameRunModal
+      v-if="showOverheatModal && overheatedUntil"
+      :overheated-until="overheatedUntil"
+      @continue="handleOverheatContinue"
+      @close="handleOverheatModalClose"
+    />
+    
+    <!-- Пульсация экрана красным цветом во время перегрева -->
+    <div
+      v-if="isOverheated && showOverheatModal"
+      class="overheat-screen-pulse"
+    />
   </div>
 </template>
 
@@ -249,6 +263,7 @@ import GameUI from '@/components/game/GameUI.vue'
 import GameControls from '@/components/game/GameControls.vue'
 import VirtualControls from '@/components/game/VirtualControls.vue'
 import InfoModal from '@/components/InfoModal.vue'
+import OverheatGameRunModal from '@/components/OverheatGameRunModal.vue'
 import { useGameRun } from '@/composables/useGameRun'
 import { useGamePhysics } from '@/composables/useGamePhysics'
 import { useGameWorld } from '@/composables/useGameWorld'
@@ -418,6 +433,23 @@ const formatPercent = (value) => {
 // Режим оверлея лаунчера: старт до забега или пауза.
 // 'idle' — до первого старта, 'pause' — пауза, 'none' — нет оверлея.
 const launcherOverlayMode = ref('idle')
+
+// Состояние перегрева
+const showOverheatModal = ref(false)
+const overheatedUntil = ref(null)
+const isOverheated = ref(false)
+const overheatEnergyCollected = ref(0)
+const overheatGoal = ref(null)
+const wasOverheated = ref(false)
+
+// Конфигурация перегревов по типам станций
+const OVERHEAT_HOURS_BY_TYPE = {
+  "Thermal power plant": 4,        // station #3 - 6 перегревов в сутки
+  "Geothermal power plant": 2,     // station #4 - 12 перегревов в сутки
+  "Nuclear power plant": 2,       // station #5 - 12 перегревов в сутки
+  "Thermonuclear power plant": 1,  // station #6 - 24 перегрева в сутки
+  "Dyson Sphere": 1,               // station #7 - 24 перегрева в сутки
+}
 
 let threeLoop = null
 let lastUpdateTime = 0
@@ -826,19 +858,198 @@ const startGame = (training = false, initialStorage = null) => {
   if (endGame._isProcessing) {
     endGame._isProcessing = false
   }
+  
+  // Инициализируем перегрев при старте забега
+  initializeOverheat()
+  
   if (gamePhysics.value?.setAnimationState) {
     gamePhysics.value.setAnimationState('running')
   }
   lastUpdateTime = 0
 }
 
+// Инициализация перегрева при старте забега
+const initializeOverheat = () => {
+  const stationType = app.user?.station_type
+  const neededHours = OVERHEAT_HOURS_BY_TYPE[stationType]
+  const isCryoActive = app.user?.cryo_expires && new Date(app.user.cryo_expires) > new Date()
+  
+  // Перегрев возможен только для определенных типов станций и если Cryo не активен
+  if (!neededHours || isCryoActive) {
+    isOverheated.value = false
+    overheatEnergyCollected.value = 0
+    overheatGoal.value = null
+    wasOverheated.value = false
+    overheatedUntil.value = null
+    showOverheatModal.value = false
+    return
+  }
+  
+  // Инициализируем состояние перегрева из app.user (данные с сервера)
+  overheatEnergyCollected.value = app.user?.overheat_energy_collected || 0
+  wasOverheated.value = app.user?.was_overheated || false
+  overheatGoal.value = app.user?.overheat_goal || null
+  
+  // Проверяем активный перегрев
+  if (app.user?.overheated_until) {
+    const overheatedUntilDate = new Date(app.user.overheated_until)
+    if (overheatedUntilDate > new Date()) {
+      // Перегрев уже активен
+      isOverheated.value = true
+      overheatedUntil.value = overheatedUntilDate
+      // Показываем модальное окно сразу при старте забега
+      showOverheatModal.value = true
+      pauseGame()
+    } else {
+      // Перегрев закончился
+      isOverheated.value = false
+      overheatedUntil.value = null
+    }
+  } else {
+    isOverheated.value = false
+    overheatedUntil.value = null
+  }
+}
+
+// Проверка триггера перегрева через API
+const checkOverheatTrigger = async (amount) => {
+  const stationType = app.user?.station_type
+  const neededHours = OVERHEAT_HOURS_BY_TYPE[stationType]
+  const isCryoActive = app.user?.cryo_expires && new Date(app.user.cryo_expires) > new Date()
+  
+  // Проверяем условия для перегрева
+  if (!neededHours || isCryoActive) {
+    return false
+  }
+  
+  try {
+    // Отправляем количество собранной энергии на сервер
+    // Сервер обновит overheat_energy_collected и проверит активацию перегрева
+    const response = await host.post('game-run-update-overheat/', {
+      amount: amount
+    })
+    
+    if (response.data.overheated) {
+      // Перегрев активирован на сервере
+      activateOverheat(response.data)
+      return true
+    }
+    
+    // Обновляем локальное состояние из ответа сервера
+    overheatEnergyCollected.value = response.data.overheat_energy_collected || 0
+    overheatGoal.value = response.data.overheat_goal
+    wasOverheated.value = response.data.was_overheated || false
+    
+    return false
+  } catch (error) {
+    console.error('Error checking overheat:', error)
+    return false
+  }
+}
+
+// Активация перегрева
+const activateOverheat = (serverData) => {
+  // Останавливаем забег (как при паузе)
+  pauseGame()
+  
+  // Устанавливаем состояние перегрева из ответа сервера
+  isOverheated.value = true
+  
+  if (serverData.overheated_until) {
+    overheatedUntil.value = new Date(serverData.overheated_until)
+  }
+  
+  wasOverheated.value = serverData.was_overheated || false
+  overheatEnergyCollected.value = serverData.overheat_energy_collected || 0
+  overheatGoal.value = serverData.overheat_goal
+  
+  // Вибрация при перегреве
+  if (vibrationEnabled.value) {
+    try {
+      const tg = window.Telegram?.WebApp
+      tg?.HapticFeedback?.impactOccurred?.('heavy')
+    } catch {
+      // ignore
+    }
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate([100, 50, 100]) // Двойная вибрация для перегрева
+    }
+  }
+  
+  // Показываем модальное окно перегрева
+  showOverheatModal.value = true
+}
+
+// Обработчик кнопки "Продолжить" в модалке перегрева
+const handleOverheatContinue = async () => {
+  // Обновляем данные пользователя с сервера (на случай если азот был использован)
+  await app.initUser()
+  
+  // Проверяем состояние перегрева после обновления данных
+  if (app.user?.overheated_until) {
+    const overheatedUntilDate = new Date(app.user.overheated_until)
+    if (overheatedUntilDate > new Date()) {
+      // Перегрев еще активен (не был снят азотом)
+      const now = new Date()
+      const until = new Date(overheatedUntil.value)
+      
+      // Проверяем что перегрев закончился по времени
+      if (until > now) {
+        // Перегрев еще активен, кнопка должна быть неактивна
+        return
+      }
+    }
+  }
+  
+  // Перегрев закончился или был снят азотом, продолжаем забег
+  isOverheated.value = false
+  showOverheatModal.value = false
+  overheatedUntil.value = app.user?.overheated_until ? new Date(app.user.overheated_until) : null
+  
+  // Возобновляем забег
+  resumeGame()
+}
+
+// Обработчик закрытия модалки перегрева
+const handleOverheatModalClose = () => {
+  // Закрываем модалку только если перегрев закончился
+  if (!isOverheated.value || (overheatedUntil.value && new Date(overheatedUntil.value) <= new Date())) {
+    showOverheatModal.value = false
+  }
+}
+
 const pauseGame = () => {
   gameRun.pauseRun()
   stopGameLoop()
-  launcherOverlayMode.value = 'pause'
+  
+  // Если перегрев активен, показываем модалку перегрева, иначе обычную паузу
+  if (isOverheated.value) {
+    launcherOverlayMode.value = 'none' // Не показываем обычную паузу
+    showOverheatModal.value = true
+  } else {
+    launcherOverlayMode.value = 'pause'
+  }
 }
 
-const resumeGame = () => {
+const resumeGame = async () => {
+  // Проверяем что перегрев закончился (или был снят азотом)
+  if (isOverheated.value && overheatedUntil.value) {
+    const now = new Date()
+    const until = new Date(overheatedUntil.value)
+    
+    if (until > now) {
+      // Перегрев еще активен, не возобновляем
+      return
+    }
+    
+    // Перегрев закончился
+    isOverheated.value = false
+    showOverheatModal.value = false
+  }
+  
+  // Обновляем данные пользователя с сервера (на случай если азот был использован)
+  await app.initUser()
+  
   gameRun.resumeRun()
   lastUpdateTime = 0
   launcherOverlayMode.value = 'none'
@@ -924,11 +1135,20 @@ function doOneStep(playerBox, inRollImmuneWindow) {
 
         gameWorld.value.updateCollectibles(
           playerBox,
-          (energy) => {
+          async (energy) => {
             // При сборе токена: увеличиваем собранную энергию и счетчик собранных токенов
             // Также помечаем токен как пройденный (для прогресса дистанции)
             gameRun.collectEnergy(energy)
             gameRun.markPointPassed()
+            
+            // Проверяем перегрев через API (только если перегрев еще не активен)
+            if (!isOverheated.value) {
+              const overheated = await checkOverheatTrigger(energy)
+              if (overheated) {
+                // Перегрев активирован, забег уже остановлен в activateOverheat()
+                return
+              }
+            }
           },
           () => {
             // Когда токен проходит мимо без сбора: только помечаем как пройденный
@@ -1673,6 +1893,27 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.overheat-screen-pulse {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9998;
+  background: rgba(255, 59, 89, 0.1);
+  animation: screenPulse 1s ease-in-out infinite;
+}
+
+@keyframes screenPulse {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .hit-flash-overlay {

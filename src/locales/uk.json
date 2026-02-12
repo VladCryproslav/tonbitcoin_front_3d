@@ -480,7 +480,12 @@
     "run_result_for_claim": "Буде нараховано",
     "run_result_saved_total": "Всього збережено kW",
     "run_result_saved_by_level": "{level} рівень, зберіг",
-    "run_claim": "Забрати"
+    "run_claim": "Забрати",
+    "overheat_title": "Перегрів станції",
+    "overheat_desc": "Дочекайтеся завершення процесу охолодження, це займе деякий час. Використання електростанції під час перегріву призведе до її <b>поломки</b>.",
+    "overheat_cooling_down": "Охолодження",
+    "continue": "Продовжити",
+    "use_nitrogen": "Використати азот"
   },
   "common": {
     "lvl": "рів.",

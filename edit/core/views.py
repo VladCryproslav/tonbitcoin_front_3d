@@ -506,6 +506,115 @@ class TapEnergyView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class GameRunUpdateOverheatView(APIView):
+    """Обновляет состояние перегрева во время забега (только логика перегрева, без обновления energy/storage/power)"""
+    
+    @require_auth
+    def post(self, request):
+        user_profile = request.user_profile
+        now = timezone.now()
+        
+        # Получаем количество собранной энергии из забега
+        collected_amount = float(request.data.get('amount', 0))
+        
+        if collected_amount <= 0:
+            return Response(
+                {"error": "Invalid amount"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Проверяем активность Cryo (перегрев невозможен если Cryo активен)
+        is_cryo_active = (
+            user_profile.cryo_expires and
+            timezone.now() < user_profile.cryo_expires
+        )
+        
+        # Получаем конфигурацию перегрева
+        overheat_config = OverheatConfig.objects.first() or OverheatConfig(
+            taps_before_power_reduction=5,
+            power_reduction_percentage=1,
+            min_duration=15,
+            max_duration=300,
+        )
+        
+        # Проверяем активный перегрев
+        if user_profile.overheated_until and user_profile.overheated_until > now:
+            # Перегрев уже активен, возвращаем состояние
+            user_profile.refresh_from_db()
+            return Response({
+                "overheated": True,
+                "overheated_until": user_profile.overheated_until.isoformat(),
+                "overheat_energy_collected": user_profile.overheat_energy_collected,
+                "overheat_goal": user_profile.overheat_goal,
+                "was_overheated": user_profile.was_overheated,
+            })
+        
+        # ВАЖНО: Power больше не участвует в системе перегрева
+        # Не обновляем power при перегреве (в отличие от старой системы тапов)
+        
+        # Обновляем накопленную энергию для перегрева
+        needed_hours = overheat_hours_by_type.get(user_profile.station_type, None)
+        
+        # ВАЖНО: Если криокамера активна, перегрев не может активироваться
+        if needed_hours and not is_cryo_active:
+            # Обновляем overheat_energy_collected
+            UserProfile.objects.filter(user_id=user_profile.user_id).update(
+                overheat_energy_collected=F("overheat_energy_collected") + collected_amount
+            )
+            user_profile.refresh_from_db()
+            
+            # Используем существующую логику перегрева из TapEnergyView (строки 448-491)
+            if user_profile.was_overheated:
+                if (
+                    user_profile.overheat_energy_collected
+                    >= float(user_profile.generation_rate) * needed_hours
+                ):
+                    UserProfile.objects.filter(
+                        user_id=user_profile.user_id
+                    ).update(
+                        was_overheated=False,
+                        overheat_energy_collected=0,
+                        overheat_goal=None,
+                    )
+            else:
+                if user_profile.overheat_goal is None:
+                    UserProfile.objects.filter(
+                        user_id=user_profile.user_id
+                    ).update(
+                        overheat_goal=random.uniform(
+                            0,
+                            float(user_profile.generation_rate)
+                            * needed_hours
+                            * float(user_profile.power / 100),
+                        )
+                    )
+                user_profile.refresh_from_db()
+                if (
+                    user_profile.overheat_energy_collected
+                    >= user_profile.overheat_goal
+                ):
+                    duration = random.randint(
+                        overheat_config.min_duration, overheat_config.max_duration
+                    )
+                    UserProfile.objects.filter(
+                        user_id=user_profile.user_id
+                    ).update(
+                        overheated_until=timezone.now()
+                        + timedelta(minutes=duration),
+                        was_overheated=True,
+                    )
+        
+        user_profile.refresh_from_db()
+        
+        return Response({
+            "overheated": bool(user_profile.overheated_until and user_profile.overheated_until > now),
+            "overheated_until": user_profile.overheated_until.isoformat() if user_profile.overheated_until else None,
+            "overheat_energy_collected": user_profile.overheat_energy_collected,
+            "overheat_goal": user_profile.overheat_goal,
+            "was_overheated": user_profile.was_overheated,
+        })
+
+
 # class UpgradeStationView(APIView):
 #     @swagger_auto_schema(
 #         operation_description="Покращення станції користувача",
