@@ -318,20 +318,37 @@ const displayedEnergyCollected = computed(() => {
   // Если модалка показана, всегда используем сохраненное значение
   // Это гарантирует, что значение не изменится после показа модалки
   if (showGameOver.value) {
-    // Приоритет 1: Используем значение из completedRunData если оно есть (более точное значение с сервера)
-    // Проверяем как undefined, так и null, чтобы не использовать неправильное значение
-    if (completedRunData.value?.energy_collected !== undefined && completedRunData.value?.energy_collected !== null) {
+    // КРИТИЧЕСКИ ВАЖНО: При проигрыше приоритет у сохраненного значения при смерти
+    // Это значение было сохранено до любых изменений состояния и является самым надежным
+    const savedValue = savedEnergyCollectedForModal.value
+    if (savedValue > 0) {
+      console.log('displayedEnergyCollected: Using savedEnergyCollectedForModal =', savedValue, '(saved at death)')
+      return savedValue
+    }
+    
+    // Приоритет 2: Используем значение из completedRunData если оно есть и больше 0
+    // Если сервер вернул 0, это может быть ошибка, поэтому мы уже проверили сохраненное значение выше
+    if (completedRunData.value?.energy_collected !== undefined && 
+        completedRunData.value?.energy_collected !== null &&
+        completedRunData.value.energy_collected > 0) {
       const value = completedRunData.value.energy_collected
-      // Используем значение даже если оно 0 (игрок мог не собрать энергию)
       console.log('displayedEnergyCollected: Using completedRunData.energy_collected =', value)
       return value
     }
-    // Приоритет 2: Используем сохраненное значение для модалки
-    // Используем его даже если оно 0 (игрок мог не собрать энергию)
-    // Но только если completedRunData не установлен
-    const savedValue = savedEnergyCollectedForModal.value
-    console.log('displayedEnergyCollected: Using savedEnergyCollectedForModal =', savedValue, 'completedRunData is null/undefined')
-    return savedValue
+    
+    // Приоритет 3: Fallback - используем значение из completedRunData даже если оно 0
+    // (может быть валидным случаем, если игрок действительно не собрал энергию)
+    if (completedRunData.value?.energy_collected !== undefined && 
+        completedRunData.value?.energy_collected !== null) {
+      const value = completedRunData.value.energy_collected
+      console.log('displayedEnergyCollected: Using completedRunData.energy_collected (fallback, value=', value, ')')
+      return value
+    }
+    
+    // Приоритет 4: Последний fallback - текущее значение из счетчика (может быть 0, если уже обнулено)
+    const currentValue = Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0)
+    console.log('displayedEnergyCollected: Using current value from gameRun =', currentValue, '(fallback, savedValue=', savedValue, ')')
+    return currentValue
   }
   // Во время забега используем значение из счетчика энергии (та же логика, что в GameUI)
   return Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0)
@@ -1045,30 +1062,39 @@ const endGame = async (isWinByState = false) => {
     // Сохраняем данные завершенного забега для последующего начисления при нажатии "Забрать"
     
     if (result && result.success) {
-      // Используем значение из ответа сервера, если оно есть, иначе используем сохраненное значение
-      const finalEnergyCollected = result.energy_collected ?? savedEnergyCollectedForModal.value ?? savedEnergyBeforeComplete
+      // Определяем финальное значение собранной энергии
+      // Приоритет: сохраненное значение при смерти > значение с сервера > значение до completeRun
+      // НО: если сервер вернул 0, это может быть ошибка, поэтому используем сохраненное значение
+      let finalEnergyCollected
+      if (savedEnergyCollectedForModal.value > 0) {
+        // Если значение было сохранено при смерти, используем его (самый надежный источник)
+        finalEnergyCollected = savedEnergyCollectedForModal.value
+        // Обновляем только если сервер вернул значение больше сохраненного (например, при выигрыше)
+        if (result.energy_collected !== undefined && result.energy_collected > savedEnergyCollectedForModal.value) {
+          finalEnergyCollected = result.energy_collected
+          savedEnergyCollectedForModal.value = result.energy_collected
+        }
+      } else if (result.energy_collected !== undefined && result.energy_collected > 0) {
+        // Если значение не было сохранено при смерти, но сервер вернул валидное значение
+        finalEnergyCollected = result.energy_collected
+        savedEnergyCollectedForModal.value = result.energy_collected
+      } else {
+        // Fallback: используем значение до completeRun
+        finalEnergyCollected = savedEnergyBeforeComplete
+        if (savedEnergyCollectedForModal.value === 0) {
+          savedEnergyCollectedForModal.value = savedEnergyBeforeComplete
+        }
+      }
       
       completedRunData.value = {
         energy_collected: finalEnergyCollected,
         is_win: result.is_win ?? isWinByState,
         energy_gained: result.energy_gained ?? 0
       }
-      // Обновляем сохраненное значение для модалки из ответа сервера
-      // НЕ перезаписываем если значение уже было установлено при смерти и новое значение меньше или равно
-      if (result.energy_collected !== undefined) {
-        // Если сервер вернул значение, используем его (но не перезаписываем если сохраненное больше)
-        if (savedEnergyCollectedForModal.value === 0 || result.energy_collected > savedEnergyCollectedForModal.value) {
-          savedEnergyCollectedForModal.value = result.energy_collected
-        }
-      } else {
-        // Если сервер не вернул значение, используем сохраненное (не перезаписываем если уже установлено)
-        if (savedEnergyCollectedForModal.value === 0) {
-          savedEnergyCollectedForModal.value = savedEnergyBeforeComplete
-        }
-      }
       console.log('endGame: saved completedRunData:', completedRunData.value, 'savedEnergyBeforeComplete=', savedEnergyBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'result.energy_collected=', result.energy_collected)
     } else {
-      // Если result не получен, используем данные из gameRun или сохраненное значение
+      // Если result не получен, используем сохраненное значение при смерти или значение до completeRun
+      // Приоритет: сохраненное значение при смерти > значение до completeRun
       const finalEnergyCollected = savedEnergyCollectedForModal.value > 0 ? savedEnergyCollectedForModal.value : savedEnergyBeforeComplete
       
       completedRunData.value = {
@@ -1078,7 +1104,7 @@ const endGame = async (isWinByState = false) => {
       }
       // Убеждаемся что savedEnergyCollectedForModal содержит правильное значение
       // НЕ перезаписываем если значение уже было установлено при смерти
-      if (savedEnergyCollectedForModal.value === 0) {
+      if (savedEnergyCollectedForModal.value === 0 && savedEnergyBeforeComplete > 0) {
         savedEnergyCollectedForModal.value = savedEnergyBeforeComplete
       }
       console.log('endGame: saved completedRunData (fallback):', completedRunData.value, 'savedEnergyBeforeComplete=', savedEnergyBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
