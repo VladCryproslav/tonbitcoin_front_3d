@@ -1804,6 +1804,17 @@ class GameRunCompleteView(APIView):
                 "obstacles_hit": openapi.Schema(type=openapi.TYPE_INTEGER, description="Количество препятствий"),
                 "power_used": openapi.Schema(type=openapi.TYPE_NUMBER, description="Использованная мощность"),
                 "is_win": openapi.Schema(type=openapi.TYPE_BOOLEAN, description="Победа (True) или проигрыш (False)"),
+                "collected_points": openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    description="Массив собранных поинтов энергии для проверки (защита от подмены данных)",
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "value": openapi.Schema(type=openapi.TYPE_NUMBER, description="Значение поинта в kW"),
+                            "timestamp_ms": openapi.Schema(type=openapi.TYPE_INTEGER, description="Время сбора поинта в миллисекундах от начала забега"),
+                        }
+                    )
+                ),
             },
         ),
         responses={
@@ -1844,6 +1855,7 @@ class GameRunCompleteView(APIView):
             obstacles_hit = request.data.get("obstacles_hit", 0)
             power_used = request.data.get("power_used", 0)
             is_win = request.data.get("is_win", False)
+            collected_points = request.data.get("collected_points", [])  # Массив собранных поинтов для проверки
             
             # Валидация 1: Проверка что забег был начат
             action_logger.info(
@@ -1923,6 +1935,88 @@ class GameRunCompleteView(APIView):
                         "provided": energy_collected,
                     },
                     status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Валидация 4c: Проверка соответствия energy_collected и суммы собранных поинтов (защита от подмены)
+            if collected_points and isinstance(collected_points, list):
+                from decimal import Decimal
+                # Проверка 4c1: Валидация структуры поинтов
+                valid_points = []
+                for i, point in enumerate(collected_points):
+                    if not isinstance(point, dict):
+                        action_logger.warning(
+                            f"GameRunCompleteView validation 4c1 FAILED: Invalid point format at index {i} "
+                            f"for user {user_profile.user_id}"
+                        )
+                        return Response(
+                            {"error": f"Invalid point format at index {i}"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    point_value = float(point.get("value", 0))
+                    if point_value <= 0 or point_value > max_energy:
+                        action_logger.warning(
+                            f"GameRunCompleteView validation 4c1 FAILED: Invalid point value {point_value} "
+                            f"at index {i} (max={max_energy}) for user {user_profile.user_id}"
+                        )
+                        return Response(
+                            {"error": f"Invalid point value {point_value} at index {i}"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    valid_points.append(point_value)
+                
+                # Проверка 4c2: Вычисляем сумму собранных поинтов
+                points_sum = sum(valid_points)
+                # Округляем до 2 знаков для сравнения (как на клиенте)
+                points_sum_rounded = round(points_sum, 2)
+                energy_collected_rounded = round(float(energy_collected), 2)
+                
+                # Допускаем небольшую погрешность из-за округления (0.01 kW)
+                tolerance = 0.01
+                difference = abs(points_sum_rounded - energy_collected_rounded)
+                
+                action_logger.info(
+                    f"GameRunCompleteView validation 4c2: user_id={user_profile.user_id}, "
+                    f"energy_collected={energy_collected}, energy_collected_rounded={energy_collected_rounded}, "
+                    f"points_sum={points_sum}, points_sum_rounded={points_sum_rounded}, "
+                    f"difference={difference}, tolerance={tolerance}, collected_points_count={len(collected_points)}"
+                )
+                
+                if difference > tolerance:
+                    action_logger.warning(
+                        f"GameRunCompleteView validation 4c2 FAILED: Energy collected {energy_collected_rounded} "
+                        f"does not match sum of collected points {points_sum_rounded} "
+                        f"(difference={difference}) for user {user_profile.user_id}"
+                    )
+                    return Response(
+                        {
+                            "error": "Energy collected does not match collected points",
+                            "energy_collected": energy_collected_rounded,
+                            "points_sum": points_sum_rounded,
+                            "difference": difference,
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                
+                # Проверка 4c3: Проверка что сумма поинтов не превышает максимум
+                if points_sum_rounded > max_energy + tolerance:
+                    action_logger.warning(
+                        f"GameRunCompleteView validation 4c3 FAILED: Points sum {points_sum_rounded} "
+                        f"exceeds max {max_energy} for user {user_profile.user_id}"
+                    )
+                    return Response(
+                        {
+                            "error": "Sum of collected points exceeds maximum allowed",
+                            "points_sum": points_sum_rounded,
+                            "max_allowed": max_energy,
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            else:
+                # Если массив поинтов не передан, логируем предупреждение (для старых клиентов)
+                # Но не блокируем запрос, чтобы не сломать старые версии клиента
+                action_logger.warning(
+                    f"GameRunCompleteView validation 4c WARNING: collected_points not provided or invalid "
+                    f"for user {user_profile.user_id}, skipping validation (consider updating client)"
                 )
             
             # Валидация 5: Проверка времени забега (5 секунд - 2 часа)

@@ -92,6 +92,8 @@ export function useGameRun() {
   const energyPointsIndex = ref(0)
   const passedPointsCount = ref(0)
   const collectedPointsCount = ref(0) // Счетчик собранных токенов
+  // Массив собранных поинтов для проверки на сервере (защита от подмены данных)
+  const collectedEnergyPoints = ref([]) // [{value: 0.5, timestamp: 1234567890}, ...]
   // Сохраняем начальное значение storage при старте забега (до обнуления на сервере)
   const startStorage = ref(0)
 
@@ -129,6 +131,7 @@ export function useGameRun() {
     energyPointsIndex.value = 0
     passedPointsCount.value = 0
     collectedPointsCount.value = 0 // Сбрасываем счетчик собранных токенов
+    collectedEnergyPoints.value = [] // Сбрасываем массив собранных поинтов
   }
 
   const getNextEnergyPoint = () => {
@@ -229,6 +232,11 @@ export function useGameRun() {
     const oldValue = energyCollected.value
     energyCollected.value += amount
     collectedPointsCount.value += 1 // Увеличиваем счетчик собранных токенов
+    // Сохраняем информацию о собранном поинте для проверки на сервере (защита от подмены)
+    collectedEnergyPoints.value.push({
+      value: amount,
+      timestamp: Date.now() - runStartTime.value // Время относительно начала забега в миллисекундах
+    })
     console.log('collectEnergy: amount=', amount, 'oldValue=', oldValue, 'newValue=', energyCollected.value, 'startStorage=', startStorage.value)
   }
 
@@ -263,6 +271,10 @@ export function useGameRun() {
       
       console.log('completeRun: savedEnergyCollected=', savedEnergyCollected, 'savedStartStorage=', savedStartStorage, 'startStorage.value=', startStorage.value, 'app.storage=', app.storage, 'limitedEnergyCollected=', limitedEnergyCollected, 'isWin=', isWin)
 
+      // Вычисляем сумму собранных поинтов для проверки на сервере
+      const collectedPointsSum = collectedEnergyPoints.value.reduce((sum, point) => sum + point.value, 0)
+      console.log('completeRun: collectedPointsSum=', collectedPointsSum, 'limitedEnergyCollected=', limitedEnergyCollected, 'collectedPointsCount=', collectedPointsCount.value, 'collectedEnergyPoints.length=', collectedEnergyPoints.value.length)
+      
       const runData = {
         distance: distance.value,
         energy_collected: limitedEnergyCollected,
@@ -270,10 +282,15 @@ export function useGameRun() {
         obstacles_hit: obstaclesHit.value,
         power_used: Math.max(0, 100 - currentPower.value),
         is_win: isWin,
-        bonus_multiplier: 1.0 // Можно добавить логику бустеров
+        bonus_multiplier: 1.0, // Можно добавить логику бустеров
+        // Отправляем массив собранных поинтов для проверки на сервере (защита от подмены)
+        collected_points: collectedEnergyPoints.value.map(point => ({
+          value: Number(point.value.toFixed(2)), // Округляем до 2 знаков для точности
+          timestamp_ms: Math.round(point.timestamp) // Время в миллисекундах от начала забега
+        }))
       }
       
-      console.log('completeRun: Sending runData with energy_collected=', runData.energy_collected, 'from savedEnergyCollected=', savedEnergyCollected)
+      console.log('completeRun: Sending runData with energy_collected=', runData.energy_collected, 'from savedEnergyCollected=', savedEnergyCollected, 'collected_points_count=', runData.collected_points.length, 'collected_points_sum=', collectedPointsSum)
 
       console.log('Sending game-run-complete request:', runData)
 
