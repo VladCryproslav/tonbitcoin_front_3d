@@ -113,8 +113,8 @@ while True:
             
             # Применяем снижение power
             if should_reduce_power:
-                # Снижение power аналогично Jarvis: 1/60 * sbt_get_power() за минуту
-                power_reduction = 1 / 60 * u.sbt_get_power()
+                # Снижение power аналогично Jarvis: 1/120 * sbt_get_power() за минуту (0.5% в час)
+                power_reduction = 1 / 120 * u.sbt_get_power()
                 UserProfile.objects.filter(id=u.id).update(
                     power=F("power") - power_reduction
                 )
