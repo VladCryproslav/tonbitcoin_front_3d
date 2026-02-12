@@ -358,14 +358,24 @@ const displayedEnergyCollected = computed(() => {
 
 // Сколько энергии можно забрать: при победе — всё собранное (но не больше storage), при проигрыше — по проценту уровня
 const claimableEnergy = computed(() => {
-  // Используем данные из completedRunData если они есть (более точные данные с сервера)
-  if (completedRunData.value?.energy_gained !== undefined) {
+  const collected = displayedEnergyCollected.value
+  
+  // При выигрыше всегда начисляется вся собранная энергия
+  if (gameOverType.value === 'win') {
+    // Используем данные с сервера если они есть и больше 0, иначе используем собранное значение
+    if (completedRunData.value?.energy_gained !== undefined && completedRunData.value.energy_gained > 0) {
+      return completedRunData.value.energy_gained
+    }
+    // Fallback: при выигрыше начисляется всё собранное
+    return collected
+  }
+  
+  // При проигрыше используем данные с сервера или вычисляем на фронтенде
+  if (completedRunData.value?.energy_gained !== undefined && completedRunData.value.energy_gained > 0) {
     return completedRunData.value.energy_gained
   }
   
-  // Fallback: вычисляем на фронтенде
-  const collected = displayedEnergyCollected.value
-  if (gameOverType.value === 'win') return collected
+  // Fallback: вычисляем на фронтенде для проигрыша
   const pct = effectiveSavedPercentOnLose.value
   // Добавляем +2% если есть активные синие электрики
   const electricsBonus = (app?.user?.electrics_expires && new Date(app.user.electrics_expires) > new Date()) ? 2 : 0
@@ -1099,10 +1109,19 @@ const endGame = async (isWinByState = false) => {
         }
       }
       
+      // При выигрыше energy_gained должно быть равно energy_collected (вся собранная энергия)
+      // Если сервер вернул 0 или undefined, используем собранное значение
+      let energyGained = result.energy_gained
+      if ((result.is_win ?? isWinByState) && (!energyGained || energyGained === 0)) {
+        energyGained = finalEnergyCollected
+      } else if (!energyGained) {
+        energyGained = 0
+      }
+      
       completedRunData.value = {
         energy_collected: finalEnergyCollected,
         is_win: result.is_win ?? isWinByState,
-        energy_gained: result.energy_gained ?? 0
+        energy_gained: energyGained
       }
       console.log('endGame: saved completedRunData:', completedRunData.value, 'savedEnergyBeforeComplete=', savedEnergyBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'result.energy_collected=', result.energy_collected)
       // Принудительно обновляем реактивность перед показом модалки
@@ -1113,10 +1132,13 @@ const endGame = async (isWinByState = false) => {
       // Приоритет: сохраненное значение при смерти > значение до completeRun
       const finalEnergyCollected = savedEnergyCollectedForModal.value > 0 ? savedEnergyCollectedForModal.value : savedEnergyBeforeComplete
       
+      // При выигрыше energy_gained должно быть равно energy_collected (вся собранная энергия)
+      const energyGainedFallback = (isWinByState && finalEnergyCollected > 0) ? finalEnergyCollected : 0
+      
       completedRunData.value = {
         energy_collected: finalEnergyCollected,
         is_win: isWinByState ?? false,
-        energy_gained: 0
+        energy_gained: energyGainedFallback
       }
       // Убеждаемся что savedEnergyCollectedForModal содержит правильное значение
       // НЕ перезаписываем если значение уже было установлено при смерти
