@@ -241,7 +241,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import GameScene from '@/components/game/GameScene.vue'
@@ -321,6 +321,8 @@ const displayedEnergyCollected = computed(() => {
     // КРИТИЧЕСКИ ВАЖНО: При проигрыше приоритет у сохраненного значения при смерти
     // Это значение было сохранено до любых изменений состояния и является самым надежным
     const savedValue = savedEnergyCollectedForModal.value
+    console.log('displayedEnergyCollected COMPUTED: showGameOver=true, savedValue=', savedValue, 'completedRunData.value=', completedRunData.value, 'completedRunData.value?.energy_collected=', completedRunData.value?.energy_collected)
+    
     if (savedValue > 0) {
       console.log('displayedEnergyCollected: Using savedEnergyCollectedForModal =', savedValue, '(saved at death)')
       return savedValue
@@ -372,19 +374,30 @@ const claimableEnergy = computed(() => {
 
 const formatEnergy = (value, compareWithStorage = false) => {
   const v = Number(value ?? 0)
-  if (!Number.isFinite(v)) return '0'
+  if (!Number.isFinite(v)) {
+    console.log('formatEnergy: value is not finite, value=', value, 'returning "0"')
+    return '0'
+  }
 
   // Если нужно сравнить со storage и значение >= storage, показываем storage (точное значение)
-  if (compareWithStorage && gameRun.currentStorage?.value) {
-    const storage = Number(gameRun.currentStorage.value)
+  // Используем startStorage если currentStorage обнулен (при показе модалки)
+  const storageValue = gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0
+  if (compareWithStorage && storageValue > 0) {
+    const storage = Number(storageValue)
     if (v >= storage) {
       // Показываем storage с точностью до 1 знака после запятой (если есть дробная часть)
-      return storage % 1 === 0 ? storage.toString() : storage.toFixed(1)
+      const result = storage % 1 === 0 ? storage.toString() : storage.toFixed(1)
+      console.log('formatEnergy: compareWithStorage=true, v >= storage, v=', v, 'storage=', storage, 'returning', result)
+      return result
     }
   }
 
   // Иначе показываем точное значение с одним знаком после запятой (если есть дробная часть)
-  return v % 1 === 0 ? v.toString() : v.toFixed(1)
+  const result = v % 1 === 0 ? v.toString() : v.toFixed(1)
+  if (showGameOver.value) {
+    console.log('formatEnergy: showGameOver=true, value=', value, 'v=', v, 'compareWithStorage=', compareWithStorage, 'storageValue=', storageValue, 'returning', result)
+  }
+  return result
 }
 
 const formatPercent = (value) => {
@@ -1092,6 +1105,9 @@ const endGame = async (isWinByState = false) => {
         energy_gained: result.energy_gained ?? 0
       }
       console.log('endGame: saved completedRunData:', completedRunData.value, 'savedEnergyBeforeComplete=', savedEnergyBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'result.energy_collected=', result.energy_collected)
+      // Принудительно обновляем реактивность перед показом модалки
+      await nextTick()
+      console.log('endGame: After nextTick, completedRunData.value.energy_collected=', completedRunData.value?.energy_collected, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
     } else {
       // Если result не получен, используем сохраненное значение при смерти или значение до completeRun
       // Приоритет: сохраненное значение при смерти > значение до completeRun
@@ -1108,6 +1124,9 @@ const endGame = async (isWinByState = false) => {
         savedEnergyCollectedForModal.value = savedEnergyBeforeComplete
       }
       console.log('endGame: saved completedRunData (fallback):', completedRunData.value, 'savedEnergyBeforeComplete=', savedEnergyBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
+      // Принудительно обновляем реактивность перед показом модалки
+      await nextTick()
+      console.log('endGame: After nextTick (fallback), completedRunData.value.energy_collected=', completedRunData.value?.energy_collected, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
     }
 
     // НЕ обновляем состояние приложения здесь - энергия еще не начислена
@@ -1166,10 +1185,13 @@ const endGame = async (isWinByState = false) => {
           console.log('endGame: Restored savedEnergyCollectedForModal from current state:', loseEnergy)
         }
         console.log('endGame: Before showing LOSE modal, savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'completedRunData.energy_collected=', completedRunData.value?.energy_collected, 'gameRun.energyCollected?.value=', gameRun.energyCollected?.value)
+        // Убеждаемся что данные установлены перед показом модалки
+        await nextTick()
+        console.log('endGame: After nextTick before showing modal, displayedEnergyCollected computed value would be:', savedEnergyCollectedForModal.value > 0 ? savedEnergyCollectedForModal.value : (completedRunData.value?.energy_collected ?? 0))
         gameOverType.value = 'lose'
         showGameOver.value = true
         launcherOverlayMode.value = 'none'
-        console.log('endGame: Set gameOverType to LOSE')
+        console.log('endGame: Set gameOverType to LOSE, showGameOver=', showGameOver.value)
       }
     } else {
       // Если модалка уже показана, убеждаемся что gameOverType правильный
