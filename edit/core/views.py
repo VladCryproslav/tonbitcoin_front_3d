@@ -600,7 +600,7 @@ class GameRunUpdateOverheatView(APIView):
                         user_id=user_profile.user_id
                     ).update(
                         overheated_until=timezone.now()
-                        + timedelta(minutes=duration),
+                        + timedelta(seconds=duration),
                         was_overheated=True,
                     )
         

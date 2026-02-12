@@ -1203,8 +1203,8 @@ class AsicsCoefs(models.Model):
 
 
 class OverheatConfig(models.Model):
-    min_duration = models.PositiveIntegerField(default=15)  # in minutes
-    max_duration = models.PositiveIntegerField(default=300)
+    min_duration = models.PositiveIntegerField(default=15)  # in seconds
+    max_duration = models.PositiveIntegerField(default=300)  # in seconds
     taps_before_power_reduction = models.PositiveIntegerField(default=5)  # New field
     power_reduction_percentage = models.FloatField(default=1.0)  # New field
 

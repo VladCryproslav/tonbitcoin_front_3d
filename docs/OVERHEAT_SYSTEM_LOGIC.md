@@ -16,8 +16,8 @@
 - `was_overheated` (BooleanField) - флаг, что станция уже была перегрета
 
 **Модель `OverheatConfig`:**
-- `min_duration` (PositiveIntegerField, default=15) - минимальная длительность перегрева в минутах
-- `max_duration` (PositiveIntegerField, default=300) - максимальная длительность перегрева в минутах
+- `min_duration` (PositiveIntegerField, default=15) - минимальная длительность перегрева в секундах
+- `max_duration` (PositiveIntegerField, default=300) - максимальная длительность перегрева в секундах (5 минут)
 - `taps_before_power_reduction` (PositiveIntegerField, default=5) - количество тапов до начала снижения power
 - `power_reduction_percentage` (FloatField, default=1.0) - процент снижения power за каждый тап после лимита
 
@@ -99,16 +99,16 @@ overheat_energy_collected = overheat_energy_collected + tapped_kw
 
 Когда `overheat_energy_collected >= overheat_goal`:
 ```python
-duration = random.randint(min_duration, max_duration)  # в минутах
-overheated_until = now + timedelta(minutes=duration)
+duration = random.randint(min_duration, max_duration)  # в секундах
+overheated_until = now + timedelta(seconds=duration)
 was_overheated = True
 ```
 
 **Пример:**
-- `min_duration = 15` минут
-- `max_duration = 300` минут (5 часов)
-- `duration = random.randint(15, 300)` = например, 120 минут (2 часа)
-- `overheated_until = now + 2 часа`
+- `min_duration = 15` секунд (0.25 минуты)
+- `max_duration = 300` секунд (5 минут)
+- `duration = random.randint(15, 300)` = например, 120 секунд (2 минуты)
+- `overheated_until = now + 2 минуты`
 
 ### Логика после первого перегрева
 
@@ -369,8 +369,8 @@ if user_profile.jarvis_expires and user_profile.jarvis_expires > timezone.now():
 
 3. **Активация перегрева:**
    ```
-   duration = random.randint(15, 300) = 120 минут (2 часа)
-   overheated_until = now + 2 часа
+   duration = random.randint(15, 300) = 120 секунд (2 минуты)
+   overheated_until = now + 2 минуты
    was_overheated = True
    ```
 
@@ -475,7 +475,7 @@ if user_profile.jarvis_expires and user_profile.jarvis_expires > timezone.now():
 
 1. **Блокировка генерации** - станция не генерирует энергию во время перегрева
 2. **Наказание за тапы** - использование станции во время перегрева снижает power
-3. **Случайность** - длительность перегрева случайная (15-300 минут)
+3. **Случайность** - длительность перегрева случайная (15-300 секунд, т.е. от 0.25 до 5 минут)
 
 ### Стратегии защиты
 
@@ -517,7 +517,7 @@ overheat_goal = generation_rate * needed_hours
 
 **Длительность перегрева:**
 ```
-duration = random.randint(min_duration, max_duration) минут
+duration = random.randint(min_duration, max_duration) секунд
 overheated_until = now + duration
 ```
 

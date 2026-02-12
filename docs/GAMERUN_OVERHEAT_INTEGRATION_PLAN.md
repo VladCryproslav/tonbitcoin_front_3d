@@ -720,7 +720,7 @@ class GameRunUpdateOverheatView(APIView):
                         user_id=user_profile.user_id
                     ).update(
                         overheated_until=timezone.now()
-                        + timedelta(minutes=duration),
+                        + timedelta(seconds=duration),
                         was_overheated=True,
                     )
         
@@ -834,7 +834,7 @@ const resumeGame = async () => {
 3. **Активация перегрева:**
    - Вызывается `activateOverheatInRun()`
    - Забег останавливается (`pauseGame()`)
-   - Генерируется `overheatedUntil` (случайная длительность 15-300 минут)
+   - Генерируется `overheatedUntil` (случайная длительность 15-300 секунд, т.е. от 0.25 до 5 минут)
    - Показывается модальное окно перегрева
    - Экран начинает пульсировать красным
 

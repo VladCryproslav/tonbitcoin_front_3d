@@ -8,9 +8,6 @@
         </div>
         <div class="overheat-modal-body">
           <div class="overheat-message" v-html="t('game.overheat_desc')"></div>
-          <div v-if="isOverheatActive" class="overheat-timer">
-            {{ t('game.overheat_cooling_down') }}: {{ timeRemaining }}
-          </div>
         </div>
         <div class="overheat-modal-actions">
           <!-- Кнопка использования азота (если доступен) -->
@@ -36,7 +33,7 @@
           <!-- Кнопка "Назад" (только когда перегрев закончился) -->
           <button
             v-if="!isOverheatActive"
-            class="btn-primary btn-secondary btn-primary--wide"
+            class="btn-primary btn-primary--secondary btn-primary--wide"
             @click.stop.prevent="$emit('close')"
           >
             {{ t('game.back_to_main') }}
@@ -48,7 +45,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { host } from '@/../axios.config'
@@ -86,37 +83,6 @@ const nitrogenUsesLeft = computed(() => {
 })
 
 const isUsingNitrogen = ref(false)
-
-const timeRemaining = computed(() => {
-  if (!isOverheatActive.value) return ''
-  const now = new Date()
-  const until = new Date(props.overheatedUntil)
-  const diff = until - now
-  
-  if (diff <= 0) return ''
-  
-  const minutes = Math.floor(diff / 60000)
-  const seconds = Math.floor((diff % 60000) / 1000)
-  return `${minutes}:${String(seconds).padStart(2, '0')}`
-})
-
-let timerInterval = null
-
-onMounted(() => {
-  // Обновляем таймер каждую секунду
-  timerInterval = setInterval(() => {
-    // Проверяем окончание перегрева
-    if (!isOverheatActive.value) {
-      clearInterval(timerInterval)
-    }
-  }, 1000)
-})
-
-onUnmounted(() => {
-  if (timerInterval) {
-    clearInterval(timerInterval)
-  }
-})
 
 const handleContinue = () => {
   if (!isOverheatActive.value) {
@@ -228,13 +194,6 @@ const handleBackdropClick = () => {
     color: #fff;
     font-size: 14px;
     line-height: 1.5;
-    margin-bottom: 1rem;
-  }
-  
-  .overheat-timer {
-    color: #ff3b59;
-    font-size: 16px;
-    font-weight: 600;
   }
 }
 
@@ -243,19 +202,69 @@ const handleBackdropClick = () => {
   flex-direction: column;
   gap: 0.75rem;
   align-items: center;
+  width: 100%;
+}
+
+.btn-primary {
+  min-width: 220px;
+  padding: 14px 32px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #7c3aed, #22d3ee);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(56, 189, 248, 0.45);
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+
+  &:active:not(:disabled) {
+    transform: scale(0.96);
+    box-shadow: 0 6px 18px rgba(56, 189, 248, 0.35);
+    opacity: 0.9;
+  }
+}
+
+.btn-primary--wide {
+  width: 100%;
+}
+
+.btn-primary--secondary {
+  background: rgba(15, 23, 42, 0.8);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  
+  &:active:not(:disabled) {
+    transform: scale(0.9);
+    opacity: 0.85;
+  }
 }
 
 .btn-disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  
+  &:active {
+    transform: none;
+  }
 }
 
 .btn-nitrogen {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
+  box-shadow: 0 12px 30px rgba(102, 126, 234, 0.45);
   
   &:hover:not(:disabled) {
     opacity: 0.9;
+  }
+  
+  &:active:not(:disabled) {
+    transform: scale(0.96);
+    box-shadow: 0 6px 18px rgba(102, 126, 234, 0.35);
   }
 }
 </style>

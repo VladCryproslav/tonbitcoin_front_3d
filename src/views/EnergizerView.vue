@@ -19,7 +19,6 @@ import { halloweenActive } from '@/services/data'
 import ModalNew from '@/components/ModalNew.vue'
 import MintModal from '@/components/MintModal.vue'
 import UpgradeModal from '@/components/UpgradeModal.vue'
-import AfterHeatModal from '@/components/AfterHeatModal.vue'
 import HeatSwitch from '@/components/HeatSwitch.vue'
 import CraftStationModal from '@/components/CraftStationModal.vue'
 import { useI18n } from 'vue-i18n'
@@ -110,7 +109,6 @@ const showMeModal = (status, title, body) => {
   openModal.value = true
 }
 
-const openAfterHeat = ref(false)
 const openHeatSwitch = ref(false)
 
 const openHeatCheck = ref(false)
@@ -353,12 +351,6 @@ function showModal(val) {
   }
 }
 
-const responseAfterHeat = (res) => {
-  openAfterHeat.value = false
-  if (res?.showSwitch) {
-    openHeatSwitch.value = true
-  }
-}
 
 const responseHeatSwitch = async () => {
   openHeatSwitch.value = false
@@ -712,7 +704,6 @@ async function increment(event) {
   if (hydroStation.value.lock) return
   if (isJarvis.value.active) return
   // if (isProcessing.value) return
-  const isOverheated = app.user?.overheated_until && new Date(app.user.overheated_until) > new Date();
   const timeToClick = allStations.indexOf(app.user?.station_type) >= 1 ? 500 : 250;
 
   const currentTime = Date.now()
@@ -737,19 +728,17 @@ async function increment(event) {
   tg.HapticFeedback.impactOccurred('heavy')
 
   // Оптимістичний UI - одразу показуємо зміни
-  if (!isOverheated) {
-    clickCount.value++
-    // app.addScore(tapValue)
-    const plusOne = document.createElement('div')
-    plusOne.classList.add('plus-one')
-    plusOne.style.position = 'absolute'
-    plusOne.textContent = `+${tapValue}`
-    plusOne.style.zIndex = 1000
-    plusOne.style.left = `${touch.clientX}px`
-    plusOne.style.top = `${touch.clientY - rect.top * 1.1}px`
-    img.value.parentElement.appendChild(plusOne)
-    setTimeout(() => plusOne.remove(), 1500)
-  }
+  clickCount.value++
+  // app.addScore(tapValue)
+  const plusOne = document.createElement('div')
+  plusOne.classList.add('plus-one')
+  plusOne.style.position = 'absolute'
+  plusOne.textContent = `+${tapValue}`
+  plusOne.style.zIndex = 1000
+  plusOne.style.left = `${touch.clientX}px`
+  plusOne.style.top = `${touch.clientY - rect.top * 1.1}px`
+  img.value.parentElement.appendChild(plusOne)
+  setTimeout(() => plusOne.remove(), 1500)
 
   // Асинхронна синхронізація з сервером
   try {
@@ -761,15 +750,8 @@ async function increment(event) {
     }
   } catch (err) {
     console.error("Помилка тапу:", err)
-    if (err?.response?.status == 400 && err.response?.data?.overheated_until) {
-      let overheatDate = new Date(err.response?.data?.overheated_until)
-      let currDate = new Date()
-
-      if (overheatDate > currDate) {
-        app.setOverheatedUntil(err.response?.data?.overheated_until)
-      } else {
-        openAfterHeat.value = true
-      }
+    // Обработка ошибок без показа перегрева
+    if (err?.response?.status == 400) {
       app.setScore(err?.response?.data?.total_energy)
       app.setStorage(err?.response?.data?.storage)
       app.setPower(err?.response?.data?.power)
@@ -965,16 +947,7 @@ watch(
     if (openHeatCheck.value) {
       return
     }
-    if (app?.user?.overheated_until) {
-      let curr_date = new Date()
-      let overheat_date = new Date(app?.user?.overheated_until)
-      if (overheat_date <= curr_date) {
-        openHeatCheck.value = true
-        setTimeout(() => {
-          openAfterHeat.value = true
-        }, 1000)
-      }
-    }
+    // Убрана логика показа перегрева
     if (isJarvis.value.active && !animationStarted) {
       animationStarted = true
       startAnimation()
@@ -1048,7 +1021,6 @@ onUnmounted(() => {
       }
     }
   " />
-  <AfterHeatModal v-if="openAfterHeat" @close="responseAfterHeat" />
   <HeatSwitch v-if="openHeatSwitch" @close="responseHeatSwitch" />
   <CraftStationModal v-if="openCraftStation" v-bind="craftParams" @close="craftResponse" />
 
@@ -2001,11 +1973,6 @@ onUnmounted(() => {
               <span>{{ t('general.main.jarvis_desc') }}</span>
             </div>
           </div>
-          <div v-if="app?.user?.overheated_until" class="overheat">
-            <img src="@/assets/warning.png" width="74px" />
-            <span>{{ t('general.main.overheat_title') }}</span>
-            <div class="overheat-message" v-html="t('general.main.overheat_desc')"></div>
-          </div>
           <div v-if="!unlockedWallet.bool" class="wallet-lock">
             <img src="@/assets/maintenance.webp" ref="jarvisImg" width="190px" />
             <div class="wallet-lock-message">
@@ -2109,11 +2076,11 @@ onUnmounted(() => {
             </div>
           </div>
           <img :src="imagePath" rel="preload" class="factory lightup"
-            :class="{ heated: app?.user?.overheated_until, onbuild: (app.user?.building_until && getTimeRemaining(app.user?.building_until).remain > 0) || energyRunCooldown.isActive, locked: (hydroStation.lock || orbitalStation.lock) && !unlockedWallet.bool }"
+            :class="{ onbuild: (app.user?.building_until && getTimeRemaining(app.user?.building_until).remain > 0) || energyRunCooldown.isActive, locked: (hydroStation.lock || orbitalStation.lock) && !unlockedWallet.bool }"
             ref="factory" />
           <!-- Кнопка "Собрать энергию" по центру станции -->
           <button
-            v-if="!energyRunCooldown.isActive && unlockedWallet.bool && (!app?.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !hydroStation.lock && !orbitalStation.lock && !isJarvis.active && !app?.user?.overheated_until"
+            v-if="!energyRunCooldown.isActive && unlockedWallet.bool && (!app?.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !hydroStation.lock && !orbitalStation.lock && !isJarvis.active"
             class="energy-run-btn"
             @click.stop="handleEnergyRunClick"
           >
@@ -2465,31 +2432,6 @@ onUnmounted(() => {
   }
 }
 
-.overheat {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  background: #ff3b5999;
-  border-radius: 1rem;
-  transform: translate(-50%, -50%);
-  width: 70vw;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem 0 0.5rem 0;
-  z-index: 100;
-
-  span {
-    text-align: center;
-    font-family: 'Inter' !important;
-    font-size: 20px;
-    font-weight: 600;
-    color: #fff;
-  }
-
-  .overheat-message {
-    width: 95%;
     text-align: center;
     font-family: 'Inter' !important;
     font-size: 9px;
@@ -3976,10 +3918,6 @@ onUnmounted(() => {
   // animation: fadeOut 1.5s ease-in-out infinite;
 }
 
-.heated {
-  filter: drop-shadow(0 5px 30px #ff3b5980) grayscale(0) contrast(1);
-  // animation: fadeOutHeated 1.5s ease-in-out infinite;
-}
 
 .onbuild {
   filter: grayscale(1) contrast(1.75);
@@ -4118,19 +4056,6 @@ onUnmounted(() => {
   }
 }
 
-@keyframes fadeOutHeated {
-  0% {
-    filter: drop-shadow(0 0px 10px #ff3b59) grayscale(0) contrast(1);
-  }
-
-  50% {
-    filter: drop-shadow(0 5px 30px #ff3b5980) grayscale(0) contrast(1);
-  }
-
-  100% {
-    filter: drop-shadow(0 0px 10px #ff3b59) grayscale(0) contrast(1);
-  }
-}
 
 @keyframes fadeOutBuild {
   0% {
