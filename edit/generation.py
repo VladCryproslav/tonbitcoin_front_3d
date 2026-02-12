@@ -51,13 +51,20 @@ logger = setup_logging("logs/gen.log")
 
 from django.db import transaction
 from django.db.models import F, Q
+from django.db.models.functions import Greatest
 from django.utils import timezone
 
+# ОПЦИОНАЛЬНО: Переключение логики снижения power
+# False (по умолчанию): power снижается ВСЕГДА, даже когда storage = storage_limit
+# True: power снижается ТОЛЬКО пока storage < storage_limit
+POWER_REDUCTION_ONLY_WHEN_STORAGE_NOT_FULL = False
 
 while True:
     start_time = time.time()
     with transaction.atomic():
         now = timezone.now()
+        
+        # ОРИГИНАЛЬНАЯ ЛОГИКА ГЕНЕРАЦИИ ЭНЕРГИИ (не изменена)
         logger.info(
             UserProfile.objects.filter(
                 ~Q(storage=F("storage_limit"))
@@ -73,6 +80,55 @@ while True:
                 storage=F("storage_limit")
             )
         )
+        
+        # НОВАЯ ЛОГИКА: Снижение power при генерации
+        # Получаем пользователей для снижения power (те же условия что и для генерации)
+        users_for_power_reduction = UserProfile.objects.filter(
+            Q(overheated_until=None)
+            & (Q(jarvis_expires__lt=now) | Q(jarvis_expires__isnull=True))
+            & (Q(building_until__lt=now) | Q(building_until__isnull=True))
+            & Q(power__gt=0)  # Защита: не снижаем если power = 0
+        )
+        
+        # Обрабатываем каждого пользователя для снижения power
+        for u in users_for_power_reduction.all():
+            # Проверяем активность Repair Kit
+            is_repair_kit_active = (
+                u.repair_kit_expires and
+                now < u.repair_kit_expires
+            )
+            
+            # Определяем нужно ли снижать power
+            should_reduce_power = False
+            
+            if POWER_REDUCTION_ONLY_WHEN_STORAGE_NOT_FULL:
+                # Опциональная логика: снижение только пока storage < storage_limit
+                should_reduce_power = (
+                    float(u.storage) < float(u.storage_limit) and
+                    not is_repair_kit_active
+                )
+            else:
+                # По умолчанию: снижение всегда (кроме случаев с Repair Kit)
+                should_reduce_power = not is_repair_kit_active
+            
+            # Применяем снижение power
+            if should_reduce_power:
+                # Снижение power аналогично Jarvis: 1/60 * sbt_get_power() за минуту
+                power_reduction = 1 / 60 * u.sbt_get_power()
+                UserProfile.objects.filter(id=u.id).update(
+                    power=F("power") - power_reduction
+                )
+            elif is_repair_kit_active and u.repair_kit_power_level is not None:
+                # Repair Kit активен: power не снижается, но может быть поднят
+                UserProfile.objects.filter(id=u.id).update(
+                    power=Greatest(
+                        F("power"),
+                        u.repair_kit_power_level,
+                    )
+                )
+        
+        # Ограничение power до минимума 0 (на всякий случай)
+        UserProfile.objects.filter(power__lt=0).update(power=0)
 
         # Burn referral bonuses if not claimed within 7 days
         seven_days_ago = timezone.now() - timezone.timedelta(hours=168)
