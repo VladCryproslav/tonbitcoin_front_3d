@@ -240,7 +240,7 @@
     
     <!-- Модальное окно перегрева -->
     <OverheatGameRunModal
-      v-if="showOverheatModal && overheatedUntil"
+      v-if="showOverheatModal"
       :overheated-until="overheatedUntil"
       @continue="handleOverheatContinue"
       @close="handleOverheatModalClose"
@@ -1026,9 +1026,16 @@ const handleOverheatContinue = async () => {
 // Обработчик закрытия модалки перегрева
 const handleOverheatModalClose = () => {
   // Закрываем модалку только если перегрев закончился
-  if (!isOverheated.value || (overheatedUntil.value && new Date(overheatedUntil.value) <= new Date())) {
+  const now = new Date()
+  const until = overheatedUntil.value ? new Date(overheatedUntil.value) : null
+  
+  if (!until || until <= now) {
+    // Перегрев закончился, можно закрыть модалку
     showOverheatModal.value = false
+    isOverheated.value = false
+    launcherOverlayMode.value = 'none'
   }
+  // Если перегрев еще активен, не закрываем модалку
 }
 
 const pauseGame = () => {
@@ -1752,16 +1759,21 @@ onMounted(() => {
               // На сервере перегрев закончился
               overheatedUntil.value = null
               isOverheated.value = false
+              // Обновляем модалку, но НЕ закрываем её и НЕ переключаем на паузу
+              launcherOverlayMode.value = 'none'
             }
           } else {
             // На сервере нет перегрева
             overheatedUntil.value = null
             isOverheated.value = false
+            // Обновляем модалку, но НЕ закрываем её и НЕ переключаем на паузу
+            launcherOverlayMode.value = 'none'
           }
         } catch (error) {
           console.error('[GameRunView] Ошибка при обновлении состояния перегрева:', error)
         }
         // НЕ закрываем модалку автоматически - она остается открытой с зеленой подсветкой
+        // НЕ переключаем на паузу - модалка перегрева остается активной
         // Пользователь должен нажать кнопку "Продолжить"
       } else {
         const secondsLeft = Math.max(0, Math.floor((until - now) / 1000))

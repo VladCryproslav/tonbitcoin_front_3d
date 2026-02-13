@@ -54,7 +54,7 @@ import { host } from '@/../axios.config'
 const props = defineProps({
   overheatedUntil: {
     type: Date,
-    required: true
+    default: null
   }
 })
 
@@ -91,7 +91,7 @@ watch(() => props.overheatedUntil, (newValue) => {
 
 const isOverheatActive = computed(() => {
   if (!props.overheatedUntil) {
-    console.log('[OverheatModal] overheatedUntil отсутствует')
+    // Если нет данных о перегреве, считаем что перегрев не активен
     return false
   }
   const overheatedUntilDate = new Date(props.overheatedUntil)
@@ -103,7 +103,7 @@ const isOverheatActive = computed(() => {
   if (isActive && secondsLeft > 0 && secondsLeft % 5 === 0) {
     // Логируем каждые 5 секунд когда перегрев активен
     console.log(`[OverheatModal] Перегрев активен, осталось: ${secondsLeft} секунд (until: ${overheatedUntilDate.toISOString()}, now: ${now.toISOString()})`)
-  } else if (!isActive && secondsLeft <= 0) {
+  } else if (!isActive && secondsLeft <= 0 && props.overheatedUntil) {
     // Логируем когда перегрев закончился
     console.log(`[OverheatModal] Перегрев закончился! (until: ${overheatedUntilDate.toISOString()}, now: ${now.toISOString()})`)
   }
@@ -111,20 +111,47 @@ const isOverheatActive = computed(() => {
   return isActive
 })
 
-// Проверка доступности азота
+// Проверка доступности азота (логика из Boost.vue)
 const canUseNitrogen = computed(() => {
   const user = app.user
   if (!user) return false
   
-  // Проверяем наличие азота (azot_uses_left или azot_reward_balance)
-  const totalNitrogen = (user.azot_uses_left || 0) + (user.azot_reward_balance || 0)
+  // Проверяем время с последней активации азота
+  const hourDiff = user.azot_activated 
+    ? Math.max(0, Math.floor((new Date() - new Date(user.azot_activated)) / (1000 * 60 * 60)))
+    : 24 // Если никогда не активировался, считаем что прошло 24 часа
+  
+  // Проверяем наличие азота с учетом времени активации и SBT/premium статуса
+  const hasSilverSBT = user.has_silver_sbt && user.has_silver_sbt_nft
+  const hasGoldSBT = user.has_gold_sbt && user.has_gold_sbt_nft
+  const premiumActive = user.premium_sub_expires && new Date(user.premium_sub_expires) > new Date()
+  
+  // Если прошло 24 часа с последней активации, добавляем бесплатные использования
+  const freeUses = hourDiff >= 24 ? (hasGoldSBT || premiumActive ? 2 : hasSilverSBT ? 1 : 0) : 0
+  
+  // Общее количество доступного азота
+  const totalNitrogen = (user.azot_uses_left || 0) + (user.azot_reward_balance || 0) + freeUses
+  
   return totalNitrogen > 0
 })
 
 const nitrogenUsesLeft = computed(() => {
   const user = app.user
   if (!user) return 0
-  return (user.azot_uses_left || 0) + (user.azot_reward_balance || 0)
+  
+  // Проверяем время с последней активации азота
+  const hourDiff = user.azot_activated 
+    ? Math.max(0, Math.floor((new Date() - new Date(user.azot_activated)) / (1000 * 60 * 60)))
+    : 24
+  
+  const hasSilverSBT = user.has_silver_sbt && user.has_silver_sbt_nft
+  const hasGoldSBT = user.has_gold_sbt && user.has_gold_sbt_nft
+  const premiumActive = user.premium_sub_expires && new Date(user.premium_sub_expires) > new Date()
+  
+  // Если прошло 24 часа с последней активации, добавляем бесплатные использования
+  const freeUses = hourDiff >= 24 ? (hasGoldSBT || premiumActive ? 2 : hasSilverSBT ? 1 : 0) : 0
+  
+  return (user.azot_uses_left || 0) + (user.azot_reward_balance || 0) + freeUses
 })
 
 const isUsingNitrogen = ref(false)
