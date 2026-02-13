@@ -1,7 +1,7 @@
 <template>
   <div class="overheat-modal-mask" @click.self="handleBackdropClick">
     <div class="overheat-modal-wrapper">
-      <div class="overheat-modal-container" :class="{ 'pulsing-red': isOverheatActive }">
+      <div class="overheat-modal-container" :class="{ 'pulsing-red': isOverheatActive, 'cooled-down': !isOverheatActive }">
         <div class="overheat-modal-header">
           <img src="@/assets/warning.png" width="74px" alt="Warning" />
           <h1>{{ t('game.overheat_title') }}</h1>
@@ -10,16 +10,6 @@
           <div class="overheat-message" v-html="t('game.overheat_desc')"></div>
         </div>
         <div class="overheat-modal-actions">
-          <!-- Кнопка использования азота (если доступен) -->
-          <button
-            v-if="isOverheatActive && canUseNitrogen"
-            class="btn-primary btn-primary--wide btn-nitrogen"
-            @click.stop.prevent="handleUseNitrogen"
-            :disabled="isUsingNitrogen"
-          >
-            {{ t('game.use_nitrogen') }} ({{ nitrogenUsesLeft }})
-          </button>
-          
           <!-- Кнопка "Продолжить" -->
           <button
             class="btn-primary btn-primary--wide"
@@ -28,6 +18,17 @@
             @click.stop.prevent="handleContinue"
           >
             {{ t('game.continue') }}
+          </button>
+          
+          <!-- Кнопка активации азота (под кнопкой продолжить) -->
+          <button
+            v-if="canUseNitrogen"
+            class="btn-primary btn-primary--secondary btn-primary--wide btn-activate-nitrogen"
+            @click.stop.prevent="handleUseNitrogen"
+            :disabled="isUsingNitrogen"
+          >
+            <span class="btn-activate-nitrogen__text">{{ t('game.activate_nitrogen') }}</span>
+            <span class="btn-activate-nitrogen__available">{{ t('game.available') }}: {{ nitrogenUsesLeft }}</span>
           </button>
           
           <!-- Кнопка "Назад" (только когда перегрев закончился) -->
@@ -204,6 +205,14 @@ const handleBackdropClick = () => {
   &.pulsing-red {
     animation: pulseRed 1s ease-in-out infinite;
   }
+  
+  &.cooled-down {
+    box-shadow: inset 0 0 0 1px #31cfff;
+    
+    .overheat-modal-header h1 {
+      color: #31cfff;
+    }
+  }
 }
 
 @keyframes pulseRed {
@@ -309,6 +318,23 @@ const handleBackdropClick = () => {
   &:active:not(:disabled) {
     transform: scale(0.96);
     box-shadow: 0 6px 18px rgba(102, 126, 234, 0.35);
+  }
+}
+
+.btn-activate-nitrogen {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  
+  &__text {
+    font-size: 17px;
+    font-weight: 600;
+  }
+  
+  &__available {
+    font-size: 11px;
+    opacity: 0.6;
+    font-weight: 400;
   }
 }
 </style>

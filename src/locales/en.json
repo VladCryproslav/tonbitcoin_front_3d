@@ -485,7 +485,9 @@
     "overheat_desc": "Wait for the cooling process to complete, which will take some time. Using the power station when overheated will lead to its <b>breakdown</b>.",
     "overheat_cooling_down": "Cooling down",
     "continue": "Continue",
-    "use_nitrogen": "Use Nitrogen"
+    "use_nitrogen": "Use Nitrogen",
+    "activate_nitrogen": "Activate Nitrogen",
+    "available": "available"
   },
   "energizer": {
     "collect_energy": "Collect Energy",

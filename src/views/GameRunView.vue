@@ -1035,7 +1035,13 @@ const pauseGame = () => {
   gameRun.pauseRun()
   stopGameLoop()
   
-  // Если перегрев активен, показываем модалку перегрева, иначе обычную паузу
+  // Если модалка перегрева открыта (активна или только что закончилась), не показываем модалку паузы
+  if (showOverheatModal.value) {
+    launcherOverlayMode.value = 'none' // Не показываем обычную паузу
+    return
+  }
+  
+  // Если перегрев активен, показываем модалку перегрева
   if (isOverheated.value) {
     launcherOverlayMode.value = 'none' // Не показываем обычную паузу
     showOverheatModal.value = true
@@ -1045,23 +1051,41 @@ const pauseGame = () => {
 }
 
 const resumeGame = async () => {
-  // Проверяем что перегрев закончился (или был снят азотом)
-  if (isOverheated.value && overheatedUntil.value) {
-    const now = new Date()
-    const until = new Date(overheatedUntil.value)
-    
-    if (until > now) {
-      // Перегрев еще активен, не возобновляем
-      return
-    }
-    
-    // Перегрев закончился
-    isOverheated.value = false
-    showOverheatModal.value = false
-  }
-  
   // Обновляем данные пользователя с сервера (на случай если азот был использован)
   await app.initUser()
+  
+  // Проверяем состояние перегрева после обновления данных
+  const now = new Date()
+  
+  // Проверяем локальное состояние перегрева
+  if (overheatedUntil.value) {
+    const until = new Date(overheatedUntil.value)
+    if (until > now) {
+      // Перегрев еще активен по локальному времени, не возобновляем
+      // Но если пользователь нажал кнопку, значит она стала активной, проверяем серверные данные
+      if (app.user?.overheated_until) {
+        const serverUntil = new Date(app.user.overheated_until)
+        if (serverUntil > now) {
+          // Перегрев еще активен на сервере
+          return
+        }
+      }
+    }
+  }
+  
+  // Проверяем серверные данные перегрева
+  if (app.user?.overheated_until) {
+    const serverUntil = new Date(app.user.overheated_until)
+    if (serverUntil > now) {
+      // Перегрев еще активен на сервере
+      return
+    }
+  }
+  
+  // Перегрев закончился или был снят азотом, продолжаем забег
+  isOverheated.value = false
+  showOverheatModal.value = false
+  overheatedUntil.value = app.user?.overheated_until ? new Date(app.user.overheated_until) : null
   
   gameRun.resumeRun()
   lastUpdateTime = 0
@@ -1708,7 +1732,7 @@ onMounted(() => {
       const now = new Date()
       const until = new Date(overheatedUntil.value)
       
-      // Если перегрев закончился, обновляем состояние
+      // Если перегрев закончился, обновляем состояние (но не закрываем модалку)
       if (until <= now) {
         console.log('[GameRunView] Перегрев закончился по локальному времени, обновляем состояние')
         isOverheated.value = false
@@ -1737,7 +1761,8 @@ onMounted(() => {
         } catch (error) {
           console.error('[GameRunView] Ошибка при обновлении состояния перегрева:', error)
         }
-        // Не закрываем модалку автоматически - пользователь должен нажать кнопку
+        // НЕ закрываем модалку автоматически - она остается открытой с зеленой подсветкой
+        // Пользователь должен нажать кнопку "Продолжить"
       } else {
         const secondsLeft = Math.max(0, Math.floor((until - now) / 1000))
         if (secondsLeft % 5 === 0 && secondsLeft > 0) { // Логируем каждые 5 секунд
