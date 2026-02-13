@@ -73,12 +73,7 @@ onUnmounted(() => {
   }
 })
 
-// Отслеживаем изменения пропса overheatedUntil
-watch(() => props.overheatedUntil, (newValue) => {
-  if (newValue) {
-    console.log('[OverheatModal] overheatedUntil обновлен:', new Date(newValue).toISOString())
-  }
-}, { immediate: true })
+// Отслеживаем изменения пропса overheatedUntil (без логирования)
 
 const isOverheatActive = computed(() => {
   if (!props.overheatedUntil) {
@@ -89,15 +84,7 @@ const isOverheatActive = computed(() => {
   const now = currentTime.value
   const isActive = overheatedUntilDate > now
   
-  // Отладочная информация
-  const secondsLeft = Math.max(0, Math.floor((overheatedUntilDate - now) / 1000))
-  if (isActive && secondsLeft > 0 && secondsLeft % 5 === 0) {
-    // Логируем каждые 5 секунд когда перегрев активен
-    console.log(`[OverheatModal] Перегрев активен, осталось: ${secondsLeft} секунд (until: ${overheatedUntilDate.toISOString()}, now: ${now.toISOString()})`)
-  } else if (!isActive && secondsLeft <= 0 && props.overheatedUntil) {
-    // Логируем когда перегрев закончился
-    console.log(`[OverheatModal] Перегрев закончился! (until: ${overheatedUntilDate.toISOString()}, now: ${now.toISOString()})`)
-  }
+  // Убрана отладочная информация о времени
   
   return isActive
 })
@@ -106,7 +93,6 @@ const isOverheatActive = computed(() => {
 const canUseNitrogen = computed(() => {
   const user = app.user
   if (!user) {
-    console.log('[OverheatModal] canUseNitrogen: user отсутствует')
     return false
   }
   
@@ -120,25 +106,21 @@ const canUseNitrogen = computed(() => {
   const hasGoldSBT = user.has_gold_sbt && user.has_gold_sbt_nft
   const premiumActive = user.premium_sub_expires && new Date(user.premium_sub_expires) > new Date()
   
-  // Если прошло 24 часа с последней активации, добавляем бесплатные использования
-  const freeUses = hourDiff >= 24 ? (hasGoldSBT || premiumActive ? 2 : hasSilverSBT ? 1 : 0) : 0
-  
-  // Общее количество доступного азота
+  // Базовые использования азота
   const azotUsesLeft = user.azot_uses_left || 0
   const azotRewardBalance = user.azot_reward_balance || 0
-  const totalNitrogen = azotUsesLeft + azotRewardBalance + freeUses
   
-  console.log('[OverheatModal] canUseNitrogen:', {
-    azotUsesLeft,
-    azotRewardBalance,
-    freeUses,
-    hourDiff,
-    hasSilverSBT,
-    hasGoldSBT,
-    premiumActive,
-    totalNitrogen,
-    result: totalNitrogen > 0
-  })
+  // Если прошло 24 часа с последней активации, добавляем бесплатные использования
+  // Логика из Boost.vue: если прошло 24 часа ИЛИ есть azot_uses_left/azot_reward_balance, то доступен
+  let freeUses = 0
+  if (hourDiff >= 24) {
+    // Если прошло 24 часа, добавляем бесплатные использования в зависимости от SBT/premium
+    freeUses = hasGoldSBT || premiumActive ? 2 : hasSilverSBT ? 1 : 1 // Базово 1 использование для всех после 24 часов
+  }
+  
+  // Общее количество доступного азота
+  // Азот доступен если: есть uses/reward ИЛИ прошло 24 часа (тогда добавляем freeUses)
+  const totalNitrogen = azotUsesLeft + azotRewardBalance + freeUses
   
   return totalNitrogen > 0
 })
@@ -156,10 +138,17 @@ const nitrogenUsesLeft = computed(() => {
   const hasGoldSBT = user.has_gold_sbt && user.has_gold_sbt_nft
   const premiumActive = user.premium_sub_expires && new Date(user.premium_sub_expires) > new Date()
   
-  // Если прошло 24 часа с последней активации, добавляем бесплатные использования
-  const freeUses = hourDiff >= 24 ? (hasGoldSBT || premiumActive ? 2 : hasSilverSBT ? 1 : 0) : 0
+  // Базовые использования азота
+  const azotUsesLeft = user.azot_uses_left || 0
+  const azotRewardBalance = user.azot_reward_balance || 0
   
-  return (user.azot_uses_left || 0) + (user.azot_reward_balance || 0) + freeUses
+  // Если прошло 24 часа с последней активации, добавляем бесплатные использования
+  let freeUses = 0
+  if (hourDiff >= 24) {
+    freeUses = hasGoldSBT || premiumActive ? 2 : hasSilverSBT ? 1 : 1 // Базово 1 использование для всех после 24 часов
+  }
+  
+  return azotUsesLeft + azotRewardBalance + freeUses
 })
 
 const isUsingNitrogen = ref(false)

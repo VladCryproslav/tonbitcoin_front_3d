@@ -1741,7 +1741,6 @@ onMounted(() => {
       
       // Если перегрев закончился, обновляем состояние (но не закрываем модалку)
       if (until <= now) {
-        console.log('[GameRunView] Перегрев закончился по локальному времени, обновляем состояние')
         isOverheated.value = false
         
         // Обновляем данные пользователя с сервера для подтверждения
@@ -1752,7 +1751,6 @@ onMounted(() => {
             const serverUntil = new Date(app.user.overheated_until)
             if (serverUntil > now) {
               // На сервере перегрев еще активен (возможна рассинхронизация времени)
-              console.log('[GameRunView] На сервере перегрев еще активен, обновляем локальное состояние')
               overheatedUntil.value = serverUntil
               isOverheated.value = true
             } else {
@@ -1776,10 +1774,7 @@ onMounted(() => {
         // НЕ переключаем на паузу - модалка перегрева остается активной
         // Пользователь должен нажать кнопку "Продолжить"
       } else {
-        const secondsLeft = Math.max(0, Math.floor((until - now) / 1000))
-        if (secondsLeft % 5 === 0 && secondsLeft > 0) { // Логируем каждые 5 секунд
-          console.log(`[GameRunView] Перегрев активен, осталось: ${secondsLeft} секунд`)
-        }
+        // Убрана отладочная информация о времени
       }
     }
   }, 1000)
