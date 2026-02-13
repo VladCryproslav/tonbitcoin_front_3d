@@ -2432,17 +2432,6 @@ onUnmounted(() => {
   }
 }
 
-    text-align: center;
-    font-family: 'Inter' !important;
-    font-size: 9px;
-    font-weight: 500;
-    color: #fff;
-    padding: 0.4rem;
-    background: #2e080875;
-    border-radius: 1rem;
-  }
-}
-
 .building-wrapper {
   margin: 0;
   padding: 0;
