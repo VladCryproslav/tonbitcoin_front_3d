@@ -251,6 +251,14 @@
       v-if="isOverheated && showOverheatModal"
       class="overheat-screen-pulse"
     />
+    
+    <!-- Таймер обратного отсчета перед началом забега -->
+    <div
+      v-if="showCountdown"
+      class="countdown-overlay"
+    >
+      <div class="countdown-number">{{ countdownNumber }}</div>
+    </div>
   </div>
 </template>
 
@@ -442,6 +450,11 @@ let overheatCheckInterval = null
 const overheatEnergyCollected = ref(0)
 const overheatGoal = ref(null)
 const wasOverheated = ref(false)
+
+// Таймер обратного отсчета перед началом забега
+const showCountdown = ref(false)
+const countdownNumber = ref(3)
+let countdownInterval = null
 
 // Конфигурация перегревов по типам станций
 const OVERHEAT_HOURS_BY_TYPE = {
@@ -1089,14 +1102,61 @@ const resumeGame = async () => {
     }
   }
   
-  // Перегрев закончился или был снят азотом, продолжаем забег
+  // Перегрев закончился или был снят азотом, показываем таймер обратного отсчета
   isOverheated.value = false
   showOverheatModal.value = false
   overheatedUntil.value = app.user?.overheated_until ? new Date(app.user.overheated_until) : null
   
-  gameRun.resumeRun()
-  lastUpdateTime = 0
-  launcherOverlayMode.value = 'none'
+  // Показываем таймер обратного отсчета 3-2-1
+  showCountdown.value = true
+  countdownNumber.value = 3
+  
+  // Вибрация при каждом числе
+  const triggerVibration = () => {
+    if (vibrationEnabled.value) {
+      try {
+        const tg = window.Telegram?.WebApp
+        tg?.HapticFeedback?.impactOccurred?.('medium')
+      } catch {
+        // ignore
+      }
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(50)
+      }
+    }
+  }
+  
+  triggerVibration()
+  
+  countdownInterval = setInterval(() => {
+    countdownNumber.value--
+    
+    if (countdownNumber.value > 0) {
+      triggerVibration()
+    } else {
+      // Таймер закончился, начинаем забег
+      clearInterval(countdownInterval)
+      countdownInterval = null
+      showCountdown.value = false
+      
+      gameRun.resumeRun()
+      lastUpdateTime = 0
+      launcherOverlayMode.value = 'none'
+      
+      // Финальная вибрация
+      if (vibrationEnabled.value) {
+        try {
+          const tg = window.Telegram?.WebApp
+          tg?.HapticFeedback?.impactOccurred?.('heavy')
+        } catch {
+          // ignore
+        }
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate([100, 50, 100])
+        }
+      }
+    }
+  }, 1000)
 }
 
 function doOneStep(playerBox, inRollImmuneWindow) {
@@ -1793,6 +1853,11 @@ onUnmounted(() => {
     clearInterval(overheatCheckInterval)
     overheatCheckInterval = null
   }
+  // Очищаем таймер обратного отсчета
+  if (countdownInterval) {
+    clearInterval(countdownInterval)
+    countdownInterval = null
+  }
   if (gameWorld.value) {
     gameWorld.value.clearAll()
   }
@@ -2000,6 +2065,44 @@ onUnmounted(() => {
   z-index: 9998;
   background: rgba(255, 59, 89, 0.1);
   animation: screenPulse 1s ease-in-out infinite;
+}
+
+.countdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.countdown-number {
+  font-size: 120px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.8), 0 0 60px rgba(255, 255, 255, 0.5);
+  animation: countdownPulse 0.8s ease-out;
+  font-family: 'Inter', sans-serif;
+}
+
+@keyframes countdownPulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes screenPulse {

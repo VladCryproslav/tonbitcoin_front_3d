@@ -487,6 +487,7 @@
     "continue": "Continue",
     "use_nitrogen": "Use Nitrogen",
     "activate_nitrogen": "Activate Nitrogen",
+    "buy_nitrogen": "Buy Nitrogen",
     "available": "available",
     "overheat_ready_desc": "Station is ready to use, press continue button to resume the run."
   },

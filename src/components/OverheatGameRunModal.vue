@@ -22,13 +22,20 @@
           
           <!-- Кнопка активации азота (под кнопкой продолжить) -->
           <button
-            v-if="canUseNitrogen"
+            v-if="showNitrogenButton"
             class="btn-primary btn-primary--secondary btn-primary--wide btn-activate-nitrogen"
+            :class="{ 'btn-buy-nitrogen': !canUseFreeNitrogen }"
             @click.stop.prevent="handleUseNitrogen"
             :disabled="isUsingNitrogen"
           >
-            <span class="btn-activate-nitrogen__text">{{ t('game.activate_nitrogen') }}</span>
-            <span class="btn-activate-nitrogen__available">{{ t('game.available') }}: {{ nitrogenUsesLeft }}</span>
+            <span v-if="canUseFreeNitrogen" class="btn-activate-nitrogen__text">{{ t('game.activate_nitrogen') }}</span>
+            <span v-else class="btn-activate-nitrogen__text">{{ t('game.buy_nitrogen') }}</span>
+            <span v-if="canUseFreeNitrogen" class="btn-activate-nitrogen__available">{{ t('game.available') }}: {{ nitrogenUsesLeft }}</span>
+            <span v-else class="btn-activate-nitrogen__price">
+              <img v-if="paymentRadio === 'fbtc'" src="@/assets/fBTC.webp" width="15px" alt="fBTC" />
+              <img v-else src="@/assets/stars.png" width="15px" alt="Stars" />
+              {{ azotPrice }}
+            </span>
           </button>
         </div>
       </div>
@@ -40,6 +47,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
+import { useTelegram } from '@/services/telegram'
 import { host } from '@/../axios.config'
 
 const props = defineProps({
@@ -53,6 +61,10 @@ const emit = defineEmits(['continue', 'close'])
 
 const { t } = useI18n()
 const app = useAppStore()
+const { tg } = useTelegram()
+
+// Режим оплаты (по умолчанию stars)
+const paymentRadio = ref('stars')
 
 // Текущее время для реактивной проверки перегрева
 const currentTime = ref(new Date())
@@ -60,10 +72,15 @@ const currentTime = ref(new Date())
 // Обновляем текущее время каждую секунду для проверки окончания перегрева
 let timeInterval = null
 
-onMounted(() => {
+onMounted(async () => {
   timeInterval = setInterval(() => {
     currentTime.value = new Date()
   }, 1000) // Обновляем каждую секунду
+  
+  // Инициализируем бустеры если их еще нет
+  if (!app.boosters || app.boosters.length === 0) {
+    await app.initBoosters()
+  }
 })
 
 onUnmounted(() => {
@@ -89,47 +106,33 @@ const isOverheatActive = computed(() => {
   return isActive
 })
 
-// Проверка доступности азота (логика из Boost.vue)
-const canUseNitrogen = computed(() => {
+// Проверка доступности бесплатного азота (логика из Boost.vue isFreeBooster)
+const isFreeNitrogen = computed(() => {
   const user = app.user
-  if (!user) {
-    return false
-  }
+  if (!user) return false
   
-  // Проверяем время с последней активации азота
   const hourDiff = user.azot_activated 
     ? Math.max(0, Math.floor((new Date() - new Date(user.azot_activated)) / (1000 * 60 * 60)))
-    : 24 // Если никогда не активировался, считаем что прошло 24 часа
+    : 24
   
-  // Проверяем наличие азота с учетом времени активации и SBT/premium статуса
-  const hasSilverSBT = user.has_silver_sbt && user.has_silver_sbt_nft
-  const hasGoldSBT = user.has_gold_sbt && user.has_gold_sbt_nft
-  const premiumActive = user.premium_sub_expires && new Date(user.premium_sub_expires) > new Date()
-  
-  // Базовые использования азота
-  const azotUsesLeft = user.azot_uses_left || 0
-  const azotRewardBalance = user.azot_reward_balance || 0
-  
-  // Если прошло 24 часа с последней активации, добавляем бесплатные использования
-  // Логика из Boost.vue: если прошло 24 часа ИЛИ есть azot_uses_left/azot_reward_balance, то доступен
-  let freeUses = 0
-  if (hourDiff >= 24) {
-    // Если прошло 24 часа, добавляем бесплатные использования в зависимости от SBT/premium
-    freeUses = hasGoldSBT || premiumActive ? 2 : hasSilverSBT ? 1 : 1 // Базово 1 использование для всех после 24 часов
-  }
-  
-  // Общее количество доступного азота
-  // Азот доступен если: есть uses/reward ИЛИ прошло 24 часа (тогда добавляем freeUses)
-  const totalNitrogen = azotUsesLeft + azotRewardBalance + freeUses
-  
-  return totalNitrogen > 0
+  // Азот бесплатный если: прошло 24 часа ИЛИ есть azot_uses_left/azot_reward_balance
+  return hourDiff >= 24 || (user.azot_uses_left || 0) + (user.azot_reward_balance || 0) > 0
+})
+
+// Кнопка азота должна показываться всегда (либо бесплатно, либо купить)
+const showNitrogenButton = computed(() => {
+  return true // Всегда показываем кнопку
+})
+
+// Проверка доступности бесплатного азота для отображения
+const canUseFreeNitrogen = computed(() => {
+  return isFreeNitrogen.value
 })
 
 const nitrogenUsesLeft = computed(() => {
   const user = app.user
   if (!user) return 0
   
-  // Проверяем время с последней активации азота
   const hourDiff = user.azot_activated 
     ? Math.max(0, Math.floor((new Date() - new Date(user.azot_activated)) / (1000 * 60 * 60)))
     : 24
@@ -138,17 +141,39 @@ const nitrogenUsesLeft = computed(() => {
   const hasGoldSBT = user.has_gold_sbt && user.has_gold_sbt_nft
   const premiumActive = user.premium_sub_expires && new Date(user.premium_sub_expires) > new Date()
   
-  // Базовые использования азота
   const azotUsesLeft = user.azot_uses_left || 0
   const azotRewardBalance = user.azot_reward_balance || 0
   
-  // Если прошло 24 часа с последней активации, добавляем бесплатные использования
   let freeUses = 0
   if (hourDiff >= 24) {
-    freeUses = hasGoldSBT || premiumActive ? 2 : hasSilverSBT ? 1 : 1 // Базово 1 использование для всех после 24 часов
+    freeUses = hasGoldSBT || premiumActive ? 2 : hasSilverSBT ? 1 : 1
   }
   
   return azotUsesLeft + azotRewardBalance + freeUses
+})
+
+// Получаем информацию о бустере азота
+const azotBooster = computed(() => {
+  return app.boosters?.find(b => b.slug === 'azot')
+})
+
+// Расчет цены азота (логика из Boost.vue getTotalStarsPrice)
+const azotPrice = computed(() => {
+  const booster = azotBooster.value
+  const user = app.user
+  if (!booster || !user) return 0
+  
+  const premiumActive = user.premium_sub_expires && new Date(user.premium_sub_expires) > new Date()
+  const hasSilverSBT = user.has_silver_sbt && user.has_silver_sbt_nft
+  const hasGoldSBT = user.has_gold_sbt && user.has_gold_sbt_nft
+  
+  let sum = (paymentRadio.value == 'fbtc' ? booster?.price1_fbtc : booster?.price1) + (booster?.n1 || 0) * (user.azot_counts || 0)
+  
+  if ((hasSilverSBT || hasGoldSBT || premiumActive) && paymentRadio.value == 'stars') {
+    sum = Math.floor(sum * (100 - (hasSilverSBT ? 5 : (hasGoldSBT || premiumActive) ? 10 : 0)) / 100)
+  }
+  
+  return Math.ceil(sum)
 })
 
 const isUsingNitrogen = ref(false)
@@ -160,34 +185,50 @@ const handleContinue = () => {
 }
 
 const handleUseNitrogen = async () => {
-  if (isUsingNitrogen.value || !canUseNitrogen.value) {
+  if (isUsingNitrogen.value) {
     return
   }
   
   isUsingNitrogen.value = true
+  let response = null
   
   try {
-    // Активируем азот через существующий endpoint
-    const response = await host.post('tasks/activate_booster/', {
+    const isFree = isFreeNitrogen.value
+    const activate_url = paymentRadio.value == 'fbtc' ? "tasks/activate_booster_fbtc/" : "tasks/activate_booster/"
+    
+    response = await host.post(activate_url, {
       slug: 'azot',
       day_count: null // Азот не требует day_count
     })
     
     if (response.status === 200) {
-      // Обновляем данные пользователя
-      await app.initUser()
-      
-      // Перегрев снят азотом, закрываем модалку и продолжаем забег
-      // emit('continue') вызовет handleOverheatContinue в GameRunView
-      emit('continue')
+      if (isFree || paymentRadio.value == 'fbtc') {
+        // Бесплатный бустер или fBTC - сразу активируем
+        await app.initUser()
+        emit('continue')
+        isUsingNitrogen.value = false
+      } else {
+        // Покупка через invoice
+        const invoiceLink = response.data?.link
+        if (invoiceLink && tg) {
+          tg.openInvoice(invoiceLink, async (status) => {
+            if (status == 'paid') {
+              await app.initUser()
+              emit('continue')
+            }
+            isUsingNitrogen.value = false
+          })
+          return // Не сбрасываем isUsingNitrogen здесь, так как это сделается в callback
+        } else {
+          isUsingNitrogen.value = false
+        }
+      }
     } else {
       console.error('Failed to activate nitrogen:', response)
-      // Можно показать ошибку пользователю
+      isUsingNitrogen.value = false
     }
   } catch (error) {
     console.error('Error activating nitrogen:', error)
-    // Можно показать ошибку пользователю
-  } finally {
     isUsingNitrogen.value = false
   }
 }
@@ -359,6 +400,30 @@ const handleBackdropClick = () => {
     font-size: 11px;
     opacity: 0.6;
     font-weight: 400;
+  }
+  
+  &__price {
+    font-size: 11px;
+    opacity: 0.8;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  
+  &.btn-buy-nitrogen {
+    background: linear-gradient(135deg, #e757ec 0%, #9851ec 50%, #5e7cea 100%);
+    box-shadow: 0 12px 30px rgba(102, 126, 234, 0.45);
+    
+    &:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+    
+    &:active:not(:disabled) {
+      transform: scale(0.96);
+      box-shadow: 0 6px 18px rgba(102, 126, 234, 0.35);
+    }
   }
 }
 </style>
