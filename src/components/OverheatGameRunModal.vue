@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { host } from '@/../axios.config'
@@ -62,8 +62,52 @@ const emit = defineEmits(['continue', 'close'])
 const { t } = useI18n()
 const app = useAppStore()
 
+// Текущее время для реактивной проверки перегрева
+const currentTime = ref(new Date())
+
+// Обновляем текущее время каждую секунду для проверки окончания перегрева
+let timeInterval = null
+
+onMounted(() => {
+  timeInterval = setInterval(() => {
+    currentTime.value = new Date()
+  }, 1000) // Обновляем каждую секунду
+})
+
+onUnmounted(() => {
+  if (timeInterval) {
+    clearInterval(timeInterval)
+    timeInterval = null
+  }
+})
+
+// Отслеживаем изменения пропса overheatedUntil
+watch(() => props.overheatedUntil, (newValue) => {
+  if (newValue) {
+    console.log('[OverheatModal] overheatedUntil обновлен:', new Date(newValue).toISOString())
+  }
+}, { immediate: true })
+
 const isOverheatActive = computed(() => {
-  return props.overheatedUntil && new Date(props.overheatedUntil) > new Date()
+  if (!props.overheatedUntil) {
+    console.log('[OverheatModal] overheatedUntil отсутствует')
+    return false
+  }
+  const overheatedUntilDate = new Date(props.overheatedUntil)
+  const now = currentTime.value
+  const isActive = overheatedUntilDate > now
+  
+  // Отладочная информация
+  const secondsLeft = Math.max(0, Math.floor((overheatedUntilDate - now) / 1000))
+  if (isActive && secondsLeft > 0 && secondsLeft % 5 === 0) {
+    // Логируем каждые 5 секунд когда перегрев активен
+    console.log(`[OverheatModal] Перегрев активен, осталось: ${secondsLeft} секунд (until: ${overheatedUntilDate.toISOString()}, now: ${now.toISOString()})`)
+  } else if (!isActive && secondsLeft <= 0) {
+    // Логируем когда перегрев закончился
+    console.log(`[OverheatModal] Перегрев закончился! (until: ${overheatedUntilDate.toISOString()}, now: ${now.toISOString()})`)
+  }
+  
+  return isActive
 })
 
 // Проверка доступности азота

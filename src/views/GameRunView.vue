@@ -438,6 +438,7 @@ const launcherOverlayMode = ref('idle')
 const showOverheatModal = ref(false)
 const overheatedUntil = ref(null)
 const isOverheated = ref(false)
+let overheatCheckInterval = null
 const overheatEnergyCollected = ref(0)
 const overheatGoal = ref(null)
 const wasOverheated = ref(false)
@@ -986,18 +987,30 @@ const handleOverheatContinue = async () => {
   await app.initUser()
   
   // Проверяем состояние перегрева после обновления данных
-  if (app.user?.overheated_until) {
-    const overheatedUntilDate = new Date(app.user.overheated_until)
-    if (overheatedUntilDate > new Date()) {
-      // Перегрев еще активен (не был снят азотом)
-      const now = new Date()
-      const until = new Date(overheatedUntil.value)
-      
-      // Проверяем что перегрев закончился по времени
-      if (until > now) {
-        // Перегрев еще активен, кнопка должна быть неактивна
-        return
+  const now = new Date()
+  
+  // Проверяем локальное состояние перегрева
+  if (overheatedUntil.value) {
+    const until = new Date(overheatedUntil.value)
+    if (until > now) {
+      // Перегрев еще активен по локальному времени, кнопка должна быть неактивна
+      // Но если пользователь нажал кнопку, значит она стала активной, проверяем серверные данные
+      if (app.user?.overheated_until) {
+        const serverUntil = new Date(app.user.overheated_until)
+        if (serverUntil > now) {
+          // Перегрев еще активен на сервере
+          return
+        }
       }
+    }
+  }
+  
+  // Проверяем серверные данные перегрева
+  if (app.user?.overheated_until) {
+    const serverUntil = new Date(app.user.overheated_until)
+    if (serverUntil > now) {
+      // Перегрев еще активен на сервере
+      return
     }
   }
   
@@ -1688,6 +1701,51 @@ onMounted(() => {
       applyGraphicsQuality()
     }
   }
+  
+  // Периодическая проверка состояния перегрева (каждую секунду)
+  overheatCheckInterval = setInterval(async () => {
+    if (showOverheatModal.value && overheatedUntil.value) {
+      const now = new Date()
+      const until = new Date(overheatedUntil.value)
+      
+      // Если перегрев закончился, обновляем состояние
+      if (until <= now) {
+        console.log('[GameRunView] Перегрев закончился по локальному времени, обновляем состояние')
+        isOverheated.value = false
+        
+        // Обновляем данные пользователя с сервера для подтверждения
+        try {
+          await app.initUser()
+          // Обновляем overheatedUntil из серверных данных
+          if (app.user?.overheated_until) {
+            const serverUntil = new Date(app.user.overheated_until)
+            if (serverUntil > now) {
+              // На сервере перегрев еще активен (возможна рассинхронизация времени)
+              console.log('[GameRunView] На сервере перегрев еще активен, обновляем локальное состояние')
+              overheatedUntil.value = serverUntil
+              isOverheated.value = true
+            } else {
+              // На сервере перегрев закончился
+              overheatedUntil.value = null
+              isOverheated.value = false
+            }
+          } else {
+            // На сервере нет перегрева
+            overheatedUntil.value = null
+            isOverheated.value = false
+          }
+        } catch (error) {
+          console.error('[GameRunView] Ошибка при обновлении состояния перегрева:', error)
+        }
+        // Не закрываем модалку автоматически - пользователь должен нажать кнопку
+      } else {
+        const secondsLeft = Math.max(0, Math.floor((until - now) / 1000))
+        if (secondsLeft % 5 === 0 && secondsLeft > 0) { // Логируем каждые 5 секунд
+          console.log(`[GameRunView] Перегрев активен, осталось: ${secondsLeft} секунд`)
+        }
+      }
+    }
+  }, 1000)
 })
 
 onUnmounted(() => {
@@ -1697,6 +1755,11 @@ onUnmounted(() => {
   }
   if (gameRun.isRunning.value) {
     gameRun.stopRun()
+  }
+  // Очищаем интервал проверки перегрева
+  if (overheatCheckInterval) {
+    clearInterval(overheatCheckInterval)
+    overheatCheckInterval = null
   }
   if (gameWorld.value) {
     gameWorld.value.clearAll()
