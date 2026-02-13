@@ -7,7 +7,7 @@
           <h1>{{ t('game.overheat_title') }}</h1>
         </div>
         <div class="overheat-modal-body">
-          <div class="overheat-message" v-html="t('game.overheat_desc')"></div>
+          <div class="overheat-message" v-html="isOverheatActive ? t('game.overheat_desc') : t('game.overheat_ready_desc')"></div>
         </div>
         <div class="overheat-modal-actions">
           <!-- Кнопка "Продолжить" -->
@@ -29,15 +29,6 @@
           >
             <span class="btn-activate-nitrogen__text">{{ t('game.activate_nitrogen') }}</span>
             <span class="btn-activate-nitrogen__available">{{ t('game.available') }}: {{ nitrogenUsesLeft }}</span>
-          </button>
-          
-          <!-- Кнопка "Назад" (только когда перегрев закончился) -->
-          <button
-            v-if="!isOverheatActive"
-            class="btn-primary btn-primary--secondary btn-primary--wide"
-            @click.stop.prevent="$emit('close')"
-          >
-            {{ t('game.back_to_main') }}
           </button>
         </div>
       </div>
@@ -114,7 +105,10 @@ const isOverheatActive = computed(() => {
 // Проверка доступности азота (логика из Boost.vue)
 const canUseNitrogen = computed(() => {
   const user = app.user
-  if (!user) return false
+  if (!user) {
+    console.log('[OverheatModal] canUseNitrogen: user отсутствует')
+    return false
+  }
   
   // Проверяем время с последней активации азота
   const hourDiff = user.azot_activated 
@@ -130,7 +124,21 @@ const canUseNitrogen = computed(() => {
   const freeUses = hourDiff >= 24 ? (hasGoldSBT || premiumActive ? 2 : hasSilverSBT ? 1 : 0) : 0
   
   // Общее количество доступного азота
-  const totalNitrogen = (user.azot_uses_left || 0) + (user.azot_reward_balance || 0) + freeUses
+  const azotUsesLeft = user.azot_uses_left || 0
+  const azotRewardBalance = user.azot_reward_balance || 0
+  const totalNitrogen = azotUsesLeft + azotRewardBalance + freeUses
+  
+  console.log('[OverheatModal] canUseNitrogen:', {
+    azotUsesLeft,
+    azotRewardBalance,
+    freeUses,
+    hourDiff,
+    hasSilverSBT,
+    hasGoldSBT,
+    premiumActive,
+    totalNitrogen,
+    result: totalNitrogen > 0
+  })
   
   return totalNitrogen > 0
 })
