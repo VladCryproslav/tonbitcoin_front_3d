@@ -457,6 +457,20 @@ const launcherOverlayMode = ref('idle')
 // Состояние перегрева
 const showOverheatModal = ref(false)
 const showStartRunWarning = ref(false)
+
+// Проверка настройки "не показывать предупреждение"
+const shouldShowStartRunWarning = () => {
+  try {
+    const saved = localStorage.getItem('startRunWarningDontShow')
+    const result = saved !== 'true'
+    console.log('[GameRunView] shouldShowStartRunWarning check:', { saved, result })
+    return result
+  } catch (e) {
+    console.error('[GameRunView] Error checking localStorage:', e)
+    return true // По умолчанию показываем предупреждение
+  }
+}
+
 const overheatedUntil = ref(null)
 const isOverheated = ref(false)
 let overheatCheckInterval = null
@@ -1672,13 +1686,18 @@ const endGame = async (isWinByState = false) => {
 
 // Обработчики кнопок из оверлеев
 const handleStartClick = async () => {
+  console.log('[GameRunView] handleStartClick called')
   // Проверяем нужно ли показывать предупреждение
-  if (shouldShowStartRunWarning()) {
+  const shouldShow = shouldShowStartRunWarning()
+  console.log('[GameRunView] shouldShowStartRunWarning:', shouldShow)
+  if (shouldShow) {
+    console.log('[GameRunView] Showing warning modal')
     showStartRunWarning.value = true
     return
   }
   
   // Если предупреждение не нужно показывать, сразу запускаем забег
+  console.log('[GameRunView] Starting run without warning')
   await startRun()
 }
 
