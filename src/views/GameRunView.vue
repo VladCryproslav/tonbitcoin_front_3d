@@ -453,6 +453,7 @@ const overheatGoal = ref(null)
 const wasOverheated = ref(false)
 const overheatCountdown = ref(null) // Обратный отсчет перед показом модалки (5, 4, 3, 2, 1)
 let overheatCountdownInterval = null
+const overheatDecelerating = ref(false) // Флаг плавной остановки при перегреве (с 3 до 1 секунды)
 
 // Таймер обратного отсчета перед началом забега
 const showCountdown = ref(false)
@@ -899,6 +900,7 @@ const initializeOverheat = () => {
     wasOverheated.value = false
     overheatedUntil.value = null
     showOverheatModal.value = false
+    overheatDecelerating.value = false
     return
   }
   
@@ -1006,9 +1008,18 @@ const activateOverheat = (serverData) => {
       return
     }
     
-    // Когда таймер показывает 3 секунды - останавливаем персонажа
+    // Когда таймер показывает 3 секунды - начинаем плавное замедление
     if (overheatCountdown.value === 3) {
-      console.log('[GameRunView] Overheat countdown at 3, stopping character')
+      console.log('[GameRunView] Overheat countdown at 3, starting smooth deceleration. Current speed:', gameSpeed.value)
+      overheatDecelerating.value = true
+    }
+    
+    // Когда таймер показывает 1 секунду - останавливаем и показываем модалку
+    if (overheatCountdown.value === 1) {
+      console.log('[GameRunView] Overheat countdown at 1, stopping and showing modal')
+      
+      // Останавливаем плавное замедление
+      overheatDecelerating.value = false
       gameSpeed.value = 0
       if (gameWorld.value) {
         gameWorld.value.setRoadSpeed(0)
@@ -1020,11 +1031,6 @@ const activateOverheat = (serverData) => {
       if (gamePhysics.value?.setAnimationState) {
         gamePhysics.value.setAnimationState('idle')
       }
-    }
-    
-    // Когда таймер показывает 1 секунду - показываем модалку
-    if (overheatCountdown.value === 1) {
-      console.log('[GameRunView] Overheat countdown at 1, showing modal')
       
       // Убеждаемся что перегрев активен
       if (!isOverheated.value) {
@@ -1088,6 +1094,7 @@ const handleOverheatContinue = async () => {
   showOverheatModal.value = false
   overheatedUntil.value = app.user?.overheated_until ? new Date(app.user.overheated_until) : null
   overheatCountdown.value = null // Сбрасываем таймер
+  overheatDecelerating.value = false // Сбрасываем флаг замедления
   
   // Возобновляем забег
   resumeGame()
@@ -1164,6 +1171,7 @@ const resumeGame = async () => {
   showOverheatModal.value = false
   overheatedUntil.value = app.user?.overheated_until ? new Date(app.user.overheated_until) : null
   overheatCountdown.value = null // Сбрасываем таймер
+  overheatDecelerating.value = false // Сбрасываем флаг замедления
   
   // Показываем таймер обратного отсчета 3-2-1
   showCountdown.value = true
@@ -1322,6 +1330,20 @@ function doOneStep(playerBox, inRollImmuneWindow) {
       if (!winTriggered && gameRun.isRunComplete()) {
         winTriggered = true
         winDecelerating = true
+      }
+    }
+
+    // Плавная остановка при перегреве (с 3 до 1 секунды, как при победе)
+    if (overheatDecelerating.value) {
+      gameSpeed.value *= WIN_DECEL_RATE
+      if (gameWorld.value) gameWorld.value.setRoadSpeed(gameSpeed.value)
+      
+      // Обновляем дистанцию даже во время замедления, если игра еще работает
+      if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value) {
+        const distanceDelta = gameSpeed.value * 10
+        if (distanceDelta > 0) {
+          gameRun.updateDistance(gameRun.distance.value + distanceDelta)
+        }
       }
     }
 
