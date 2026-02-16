@@ -453,9 +453,6 @@ const overheatGoal = ref(null)
 const wasOverheated = ref(false)
 const overheatCountdown = ref(null) // Обратный отсчет перед показом модалки (5, 4, 3, 2, 1)
 let overheatCountdownInterval = null
-const overheatDecelerating = ref(false) // Флаг плавной остановки при перегреве
-const OVERHEAT_DECEL_RATE = 0.92 // Коэффициент замедления при перегреве (как при победе)
-const OVERHEAT_SPEED_THRESHOLD = 0.04 // Порог скорости для полной остановки
 
 // Таймер обратного отсчета перед началом забега
 const showCountdown = ref(false)
@@ -902,7 +899,6 @@ const initializeOverheat = () => {
     wasOverheated.value = false
     overheatedUntil.value = null
     showOverheatModal.value = false
-    overheatDecelerating.value = false
     return
   }
   
@@ -1004,17 +1000,52 @@ const activateOverheat = (serverData) => {
   }
   
   overheatCountdownInterval = setInterval(() => {
-    if (overheatCountdown.value > 1) {
-      overheatCountdown.value--
-    } else {
-      // Отсчет закончился - начинаем плавную остановку персонажа
+    if (overheatCountdown.value === null || overheatCountdown.value <= 0) {
+      clearInterval(overheatCountdownInterval)
+      overheatCountdownInterval = null
+      return
+    }
+    
+    // Когда таймер показывает 3 секунды - останавливаем персонажа
+    if (overheatCountdown.value === 3) {
+      console.log('[GameRunView] Overheat countdown at 3, stopping character')
+      gameSpeed.value = 0
+      if (gameWorld.value) {
+        gameWorld.value.setRoadSpeed(0)
+      }
+      stopGameLoop()
+      gameRun.pauseRun()
+      
+      // Переводим персонажа в состояние idle (standing) - анимация покоя
+      if (gamePhysics.value?.setAnimationState) {
+        gamePhysics.value.setAnimationState('idle')
+      }
+    }
+    
+    // Когда таймер показывает 1 секунду - показываем модалку
+    if (overheatCountdown.value === 1) {
+      console.log('[GameRunView] Overheat countdown at 1, showing modal')
+      
+      // Убеждаемся что перегрев активен
+      if (!isOverheated.value) {
+        isOverheated.value = true
+      }
+      
+      // Показываем модалку перегрева
+      showOverheatModal.value = true
+      launcherOverlayMode.value = 'none' // Не показываем модалку паузы
+      
       clearInterval(overheatCountdownInterval)
       overheatCountdownInterval = null
       overheatCountdown.value = null
       
-      // Запускаем плавное замедление
-      overheatDecelerating.value = true
-      console.log('[GameRunView] Overheat countdown finished, starting deceleration. Current speed:', gameSpeed.value)
+      console.log('[GameRunView] Overheat modal shown. showOverheatModal:', showOverheatModal.value, 'isOverheated:', isOverheated.value)
+      return
+    }
+    
+    // Уменьшаем таймер
+    if (overheatCountdown.value > 1) {
+      overheatCountdown.value--
     }
   }, 1000)
 }
@@ -1056,7 +1087,6 @@ const handleOverheatContinue = async () => {
   isOverheated.value = false
   showOverheatModal.value = false
   overheatedUntil.value = app.user?.overheated_until ? new Date(app.user.overheated_until) : null
-  overheatDecelerating.value = false // Сбрасываем флаг замедления
   overheatCountdown.value = null // Сбрасываем таймер
   
   // Возобновляем забег
@@ -1133,7 +1163,6 @@ const resumeGame = async () => {
   isOverheated.value = false
   showOverheatModal.value = false
   overheatedUntil.value = app.user?.overheated_until ? new Date(app.user.overheated_until) : null
-  overheatDecelerating.value = false // Сбрасываем флаг замедления
   overheatCountdown.value = null // Сбрасываем таймер
   
   // Показываем таймер обратного отсчета 3-2-1
@@ -1296,56 +1325,6 @@ function doOneStep(playerBox, inRollImmuneWindow) {
       }
     }
 
-    // Плавная остановка при перегреве (работает независимо от состояния паузы/запуска)
-    if (overheatDecelerating.value) {
-      gameSpeed.value *= OVERHEAT_DECEL_RATE
-      if (gameWorld.value) gameWorld.value.setRoadSpeed(gameSpeed.value)
-      
-      // Обновляем дистанцию даже во время замедления, если игра еще работает
-      if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value) {
-        const distanceDelta = gameSpeed.value * 10
-        if (distanceDelta > 0) {
-          gameRun.updateDistance(gameRun.distance.value + distanceDelta)
-        }
-      }
-      
-      if (gameSpeed.value < OVERHEAT_SPEED_THRESHOLD) {
-        console.log('[GameRunView] Overheat speed threshold reached:', gameSpeed.value, '<', OVERHEAT_SPEED_THRESHOLD)
-        
-        // Убеждаемся что перегрев активен ПЕРЕД показом модалки
-        if (!isOverheated.value) {
-          console.warn('[GameRunView] WARNING: isOverheated is false when showing modal! Setting to true.')
-          isOverheated.value = true
-        }
-        
-        // Показываем модалку перегрева ПЕРЕД остановкой игры
-        showOverheatModal.value = true
-        launcherOverlayMode.value = 'none' // Не показываем модалку паузы
-        
-        // Останавливаем движение
-        gameSpeed.value = 0
-        if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
-        overheatDecelerating.value = false
-        
-        // Останавливаем игру только после полной остановки
-        stopGameLoop()
-        gameRun.pauseRun()
-        
-        // Переводим персонажа в состояние idle (standing) - анимация покоя
-        if (gamePhysics.value?.setAnimationState) {
-          gamePhysics.value.setAnimationState('idle')
-          console.log('[GameRunView] Character animation set to idle')
-        }
-        
-        console.log('[GameRunView] Overheat deceleration complete. showOverheatModal:', showOverheatModal.value, 'isOverheated:', isOverheated.value, 'overheatedUntil:', overheatedUntil.value)
-      } else {
-        // Логируем процесс замедления для отладки
-        if (Math.random() < 0.1) { // Логируем примерно каждый 10-й кадр
-          console.log('[GameRunView] Overheat decelerating, speed:', gameSpeed.value.toFixed(4))
-        }
-      }
-    }
-    
     // Плавная остановка при победе
     if (winDecelerating) {
       gameSpeed.value *= WIN_DECEL_RATE
