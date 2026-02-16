@@ -2,61 +2,63 @@
   <div class="game-ui">
     <div class="ui-top">
       <div class="top-left" :class="{ 'top-left--compact': compactDistance }">
-        <div class="energy-counter" :class="{ 'energy-counter--with-distance': compactDistance }">
-          <div class="energy-counter-row">
-            <img
-              class="icon energy-icon"
-              src="@/assets/kW.png"
-              alt="energy"
-            />
-            <span class="value energy-value">
-              {{ formatEnergy(Math.min(energy, maxEnergy)) }} / {{ formatEnergy(maxEnergy) }} kW
-            </span>
-          </div>
-          <div v-if="compactDistance" class="energy-counter-distance">
-            <div class="distance-bar">
-              <div
-                v-if="overheatCountdown === null"
-                class="distance-fill"
-                :style="{ width: `${Math.max(0, Math.min(100, Number.isFinite(power) ? power : 0))}%` }"
-              ></div>
-              <div
-                v-else
-                class="distance-fill distance-fill--overheat"
-                :style="{ width: '100%' }"
-              ></div>
+        <div class="counters-column">
+          <div class="energy-counter" :class="{ 'energy-counter--with-distance': compactDistance }">
+            <div class="energy-counter-row">
+              <img
+                class="icon energy-icon"
+                src="@/assets/kW.png"
+                alt="energy"
+              />
+              <span class="value energy-value">
+                {{ formatEnergy(Math.min(energy, maxEnergy)) }} / {{ formatEnergy(maxEnergy) }} kW
+              </span>
             </div>
-            <span class="distance-value" v-if="overheatCountdown === null">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</span>
-            <span class="distance-value distance-value--overheat" v-else>{{ overheatCountdown }}</span>
+            <div v-if="compactDistance" class="energy-counter-distance">
+              <div class="distance-bar">
+                <div
+                  v-if="overheatCountdown === null"
+                  class="distance-fill"
+                  :style="{ width: `${Math.max(0, Math.min(100, Number.isFinite(power) ? power : 0))}%` }"
+                ></div>
+                <div
+                  v-else
+                  class="distance-fill distance-fill--overheat"
+                  :style="{ width: '100%' }"
+                ></div>
+              </div>
+              <span class="distance-value" v-if="overheatCountdown === null">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</span>
+              <span class="distance-value distance-value--overheat" v-else>{{ overheatCountdown }}</span>
+            </div>
           </div>
-        </div>
-        <div class="lives-counter" :class="{ 'lives-counter--compact': compactDistance }">
-          <img
-            class="icon energy-icon lives-icon"
-            src="@/assets/engineer.webp"
-            alt="lives"
-          />
-          <div class="lives-hearts">
-            <span
-              v-for="n in maxLives"
-              :key="n"
-              class="life-heart"
-              :class="{
-                'life-heart--lost': n > lives,
-                'life-heart--critical': isLastLife && n === lives
-              }"
-            >
-              ♥
-            </span>
+          <div class="lives-counter" :class="{ 'lives-counter--compact': compactDistance }">
+            <img
+              class="icon energy-icon lives-icon"
+              src="@/assets/engineer.webp"
+              alt="lives"
+            />
+            <div class="lives-hearts">
+              <span
+                v-for="n in maxLives"
+                :key="n"
+                class="life-heart"
+                :class="{
+                  'life-heart--lost': n > lives,
+                  'life-heart--critical': isLastLife && n === lives
+                }"
+              >
+                ♥
+              </span>
+            </div>
           </div>
-        </div>
-        <div v-if="isCryoActive" class="cryochamber-counter">
-          <img
-            class="icon cryochamber-icon"
-            src="@/assets/cryochamber_icon.webp"
-            alt="cryochamber"
-            @error="handleCryoIconError"
-          />
+          <div v-if="isCryoActive" class="cryochamber-counter">
+            <img
+              class="icon cryochamber-icon"
+              src="@/assets/cryochamber_icon.webp"
+              alt="cryochamber"
+              @error="handleCryoIconError"
+            />
+          </div>
         </div>
       </div>
       <div class="top-right">
@@ -155,12 +157,19 @@ const handleCryoIconError = (event) => {
 .top-left {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
 
   &.top-left--compact {
-    align-items: stretch;
+    align-items: flex-start;
   }
+}
+
+.counters-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
 }
 
 .top-right {
