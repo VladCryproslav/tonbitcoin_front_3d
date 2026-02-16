@@ -23,8 +23,11 @@
           <!-- Кнопка "Купить азот" (под кнопкой продолжить) -->
           <button
             v-if="showNitrogenButton"
-            class="btn-primary btn-primary--secondary btn-primary--wide btn-activate-nitrogen"
-            :class="{ 'btn-buy-nitrogen': !canUseFreeNitrogen }"
+            class="btn-primary btn-primary--wide btn-activate-nitrogen"
+            :class="{ 
+              'btn-buy-nitrogen': !canUseFreeNitrogen,
+              'btn-free-nitrogen': canUseFreeNitrogen
+            }"
             @click.stop.prevent="handleBuyNitrogenClick"
             :disabled="isUsingNitrogen"
           >
@@ -579,6 +582,23 @@ const handleModalClose = () => {
     &:active:not(:disabled) {
       transform: scale(0.96);
       box-shadow: 0 6px 18px rgba(102, 126, 234, 0.35);
+    }
+  }
+  
+  &.btn-free-nitrogen {
+    background: linear-gradient(135deg, #00ff88 0%, #00d977 50%, #00b366 100%) !important;
+    box-shadow: 0 12px 30px rgba(0, 255, 136, 0.45) !important;
+    
+    &:hover:not(:disabled) {
+      opacity: 0.9;
+      background: linear-gradient(135deg, #00ff88 0%, #00d977 50%, #00b366 100%) !important;
+    }
+    
+    &:active:not(:disabled) {
+      transform: scale(0.96);
+      box-shadow: 0 6px 18px rgba(0, 255, 136, 0.35) !important;
+      opacity: 0.9;
+      background: linear-gradient(135deg, #00ff88 0%, #00d977 50%, #00b366 100%) !important;
     }
   }
 }

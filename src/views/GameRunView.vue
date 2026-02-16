@@ -1209,6 +1209,11 @@ const resumeGame = async () => {
       lastUpdateTime = 0
       launcherOverlayMode.value = 'none'
       
+      // Активируем анимацию бега персонажа
+      if (gamePhysics.value?.setAnimationState) {
+        gamePhysics.value.setAnimationState('running')
+      }
+      
       // Финальная вибрация
       if (vibrationEnabled.value) {
         try {
