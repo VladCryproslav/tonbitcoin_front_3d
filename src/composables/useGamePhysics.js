@@ -66,6 +66,17 @@ export function useGamePhysics(scene) {
   const playAnimationState = (state) => {
     if (!mixer || !animations || animations.length === 0) return
 
+    // Блокируем изменение анимации если уже установлена анимация победы
+    // или если персонаж разворачивается для победы
+    if ((currentAnimation && currentAnimation._clip && currentAnimation._clip.name && 
+         (currentAnimation._clip.name.includes('win') || currentAnimation._clip.name.includes('victory') || currentAnimation._clip.name.includes('success'))) ||
+        winFaceState !== null) {
+      // Разрешаем только установку анимации победы или idle
+      if (state !== 'win' && state !== 'victory' && state !== 'success' && state !== 'idle' && state !== 'standing') {
+        return
+      }
+    }
+
     const idx = animationIndexByState[state]
     const clip =
       (typeof idx === 'number' && animations[idx]) ||

@@ -755,6 +755,13 @@ export function useGameWorld(scene) {
   const _activeCollectibles = []
 
   // Обновление препятствий. Кэшируем speed и работаем только с активным окном по Z для коллизий.
+  // Скрыть все активные препятствия (используется при победе)
+  const hideAllObstacles = () => {
+    for (let i = 0; i < obstacles.length; i++) {
+      obstacles[i].visible = false
+    }
+  }
+
   const updateObstacles = (playerBox, onCollision, isSliding = false, inRollImmuneWindow = false) => {
     _obstaclesToRemove.length = 0
     const obstaclesToRemove = _obstaclesToRemove
@@ -967,6 +974,7 @@ export function useGameWorld(scene) {
     setRoadSpeed,
     roadSpeed,
     setFenceEnabled,
+    hideAllObstacles,
     setRoadReceiveShadow
   }
 }

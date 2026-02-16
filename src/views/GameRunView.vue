@@ -489,6 +489,7 @@ const isDead = ref(false)
 let winTriggered = false
 let winDecelerating = false
 let winAnimationStartTime = 0
+let obstaclesHidden = false
 const WIN_DECEL_RATE = 0.88
 const WIN_SPEED_THRESHOLD = 0.04
 const WIN_ANIMATION_DURATION_MS = 1700
@@ -868,6 +869,7 @@ const startGame = (training = false, initialStorage = null) => {
   winTriggered = false
   winDecelerating = false
   winAnimationStartTime = 0
+  obstaclesHidden = false
   showGameOver.value = false
   launcherOverlayMode.value = 'none'
   // Сбрасываем сохраненное значение энергии для модалки при старте нового забега
@@ -1238,8 +1240,16 @@ function doOneStep(playerBox, inRollImmuneWindow) {
       if (gameWorld.value) {
         gameWorld.value.updateRoad()
 
-        // Не проверяем коллизии если игрок уже победил (во время анимации победы)
-        if (!winTriggered && winAnimationStartTime === 0) {
+        // Не обновляем препятствия если игрок уже победил (с начала замедления)
+        // Скрываем препятствия и останавливаем их движение
+        if (winTriggered || winDecelerating || winAnimationStartTime > 0) {
+          // Скрываем все препятствия при победе (только один раз)
+          if (!obstaclesHidden && gameWorld.value.hideAllObstacles) {
+            gameWorld.value.hideAllObstacles()
+            obstaclesHidden = true
+          }
+        } else {
+          // Не проверяем коллизии если игрок уже победил (во время анимации победы)
           gameWorld.value.updateObstacles(
             playerBox,
             () => {
@@ -1709,29 +1719,29 @@ const closeSettings = () => {
 
 const handleSwipeLeft = () => {
   // Игрок реагирует на свайпы только во время активного забега
-  // Блокируем свайпы если игрок победил (во время анимации победы)
-  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value || winTriggered || winAnimationStartTime > 0) return
+  // Блокируем свайпы если игрок победил (с начала замедления до конца анимации победы)
+  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value || winTriggered || winDecelerating || winAnimationStartTime > 0) return
   if (gamePhysics.value) {
     gamePhysics.value.moveLeft()
   }
 }
 
 const handleSwipeRight = () => {
-  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value || winTriggered || winAnimationStartTime > 0) return
+  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value || winTriggered || winDecelerating || winAnimationStartTime > 0) return
   if (gamePhysics.value) {
     gamePhysics.value.moveRight()
   }
 }
 
 const handleSwipeUp = () => {
-  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value || winTriggered || winAnimationStartTime > 0) return
+  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value || winTriggered || winDecelerating || winAnimationStartTime > 0) return
   if (gamePhysics.value) {
     gamePhysics.value.jump()
   }
 }
 
 const handleSwipeDown = () => {
-  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value || winTriggered || winAnimationStartTime > 0) return
+  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value || winTriggered || winDecelerating || winAnimationStartTime > 0) return
   if (gamePhysics.value) {
     gamePhysics.value.slide()
   }
