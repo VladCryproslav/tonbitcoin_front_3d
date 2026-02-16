@@ -147,6 +147,8 @@
           </button>
           <button
             class="btn-primary btn-secondary btn-primary--wide"
+            :class="{ 'btn-disabled': !isTrainingRun }"
+            :disabled="!isTrainingRun"
             @click.stop.prevent="exitToMain"
           >
           {{ t('game.back_to_main') }}
@@ -1122,6 +1124,11 @@ const pauseGame = () => {
   gameRun.pauseRun()
   stopGameLoop()
   
+  // Устанавливаем анимацию стояния при паузе
+  if (gamePhysics.value?.setAnimationState) {
+    gamePhysics.value.setAnimationState('idle')
+  }
+  
   // Если модалка перегрева открыта (активна или только что закончилась), не показываем модалку паузы
   if (showOverheatModal.value) {
     launcherOverlayMode.value = 'none' // Не показываем обычную паузу
@@ -1702,7 +1709,68 @@ const handleTrainingClick = () => {
 }
 
 const handleResumeClick = () => {
-  resumeGame()
+  // Закрываем модалку паузы
+  launcherOverlayMode.value = 'none'
+  
+  // Показываем таймер обратного отсчета 3-2-1 (как после перегрева)
+  showCountdown.value = true
+  countdownNumber.value = 3
+  
+  // Вибрация при каждом числе
+  const triggerVibration = () => {
+    if (vibrationEnabled.value) {
+      try {
+        const tg = window.Telegram?.WebApp
+        tg?.HapticFeedback?.impactOccurred?.('medium')
+      } catch {
+        // ignore
+      }
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(50)
+      }
+    }
+  }
+  
+  triggerVibration()
+  
+  // Очищаем предыдущий интервал если есть
+  if (countdownInterval) {
+    clearInterval(countdownInterval)
+  }
+  
+  countdownInterval = setInterval(() => {
+    countdownNumber.value--
+    
+    if (countdownNumber.value > 0) {
+      triggerVibration()
+    } else {
+      // Таймер закончился, начинаем забег
+      clearInterval(countdownInterval)
+      countdownInterval = null
+      showCountdown.value = false
+      
+      gameRun.resumeRun()
+      lastUpdateTime = 0
+      
+      // Активируем анимацию бега персонажа (из стоячего положения)
+      if (gamePhysics.value?.setAnimationState) {
+        gamePhysics.value.setAnimationState('running')
+      }
+      
+      // Финальная вибрация
+      if (vibrationEnabled.value) {
+        try {
+          const tg = window.Telegram?.WebApp
+          tg?.HapticFeedback?.impactOccurred?.('heavy')
+        } catch {
+          // ignore
+        }
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate([100, 50, 100])
+        }
+      }
+    }
+  }, 1000)
 }
 
 const openPauseOverlay = () => {
@@ -2071,6 +2139,16 @@ onUnmounted(() => {
   &:active {
     box-shadow: 0 4px 14px rgba(15, 23, 42, 0.85);
     opacity: 0.95;
+  }
+}
+
+.btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  
+  &:active {
+    transform: none;
   }
 }
 
