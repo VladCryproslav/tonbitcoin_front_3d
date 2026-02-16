@@ -496,7 +496,8 @@
     "nitrogen_pay_fbtc": "fBTC",
     "available": "available",
     "overheat_ready_desc": "Station is ready to use, press continue button to resume the run.",
-    "overheat_countdown_label": "Station overheated, character stop in"
+    "overheat_countdown_label": "Station overheated, character stop in",
+    "cryochamber_active": "Active"
   },
   "energizer": {
     "collect_energy": "Collect Energy",

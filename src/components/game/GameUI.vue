@@ -58,6 +58,7 @@
               alt="cryochamber"
               @error="handleCryoIconError"
             />
+            <span class="cryochamber-status">{{ t('game.cryochamber_active') }}</span>
           </div>
         </div>
       </div>
@@ -240,18 +241,24 @@ const handleCryoIconError = (event) => {
   padding: 6px 10px;
   border-radius: 12px;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 255, 136, 0.5);
-  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
+  gap: 6px;
+  min-width: 100px;
 
   .cryochamber-icon {
-    width: 24px;
-    height: 24px;
-    filter: drop-shadow(0 0 4px rgba(0, 255, 136, 0.8));
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  .cryochamber-status {
+    color: #00ff88;
+    font-size: 16px;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   }
 }
 
@@ -414,9 +421,12 @@ const handleCryoIconError = (event) => {
 
 .pause-button {
   pointer-events: auto;
-  width: 52px;
-  height: 52px;
-  border-radius: 999px;
+  width: auto;
+  min-width: 100px;
+  height: auto;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 12px;
   border: none;
   background: radial-gradient(circle at 30% 0%, #38bdf8, #4c1d95);
   color: #fff;
@@ -425,8 +435,8 @@ const handleCryoIconError = (event) => {
   justify-content: center;
   font-size: 22px;
   cursor: pointer;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
   transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
 
   &:active {
