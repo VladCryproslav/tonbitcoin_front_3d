@@ -1014,6 +1014,7 @@ const activateOverheat = (serverData) => {
       
       // Запускаем плавное замедление
       overheatDecelerating.value = true
+      console.log('[GameRunView] Overheat countdown finished, starting deceleration. Current speed:', gameSpeed.value)
     }
   }, 1000)
 }
@@ -1295,26 +1296,53 @@ function doOneStep(playerBox, inRollImmuneWindow) {
       }
     }
 
-    // Плавная остановка при перегреве
+    // Плавная остановка при перегреве (работает независимо от состояния паузы/запуска)
     if (overheatDecelerating.value) {
       gameSpeed.value *= OVERHEAT_DECEL_RATE
       if (gameWorld.value) gameWorld.value.setRoadSpeed(gameSpeed.value)
+      
+      // Обновляем дистанцию даже во время замедления, если игра еще работает
+      if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value) {
+        const distanceDelta = gameSpeed.value * 10
+        if (distanceDelta > 0) {
+          gameRun.updateDistance(gameRun.distance.value + distanceDelta)
+        }
+      }
+      
       if (gameSpeed.value < OVERHEAT_SPEED_THRESHOLD) {
+        console.log('[GameRunView] Overheat speed threshold reached:', gameSpeed.value, '<', OVERHEAT_SPEED_THRESHOLD)
+        
+        // Убеждаемся что перегрев активен ПЕРЕД показом модалки
+        if (!isOverheated.value) {
+          console.warn('[GameRunView] WARNING: isOverheated is false when showing modal! Setting to true.')
+          isOverheated.value = true
+        }
+        
+        // Показываем модалку перегрева ПЕРЕД остановкой игры
+        showOverheatModal.value = true
+        launcherOverlayMode.value = 'none' // Не показываем модалку паузы
+        
+        // Останавливаем движение
         gameSpeed.value = 0
         if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
         overheatDecelerating.value = false
+        
+        // Останавливаем игру только после полной остановки
         stopGameLoop()
         gameRun.pauseRun()
         
         // Переводим персонажа в состояние idle (standing) - анимация покоя
         if (gamePhysics.value?.setAnimationState) {
           gamePhysics.value.setAnimationState('idle')
+          console.log('[GameRunView] Character animation set to idle')
         }
         
-        launcherOverlayMode.value = 'none' // Не показываем модалку паузы
-        
-        // Показываем модалку перегрева
-        showOverheatModal.value = true
+        console.log('[GameRunView] Overheat deceleration complete. showOverheatModal:', showOverheatModal.value, 'isOverheated:', isOverheated.value, 'overheatedUntil:', overheatedUntil.value)
+      } else {
+        // Логируем процесс замедления для отладки
+        if (Math.random() < 0.1) { // Логируем примерно каждый 10-й кадр
+          console.log('[GameRunView] Overheat decelerating, speed:', gameSpeed.value.toFixed(4))
+        }
       }
     }
     
