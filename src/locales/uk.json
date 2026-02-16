@@ -488,6 +488,12 @@
     "use_nitrogen": "Використати азот",
     "activate_nitrogen": "Активувати азот",
     "buy_nitrogen": "Купити азот",
+    "nitrogen_free": "Безкоштовно",
+    "nitrogen_or": "або",
+    "nitrogen_pay_title": "Оберіть спосіб оплати",
+    "nitrogen_pay_desc": "Оплатіть рідкий азот зірками або fBTC — він зніме перегрів і ви зможете продовжити забіг.",
+    "nitrogen_pay_stars": "Зірки",
+    "nitrogen_pay_fbtc": "fBTC",
     "available": "доступно",
     "overheat_ready_desc": "Станція готова до використання, натисніть кнопку продовжити для продовження забігу."
   },

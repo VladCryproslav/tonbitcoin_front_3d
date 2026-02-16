@@ -20,22 +20,55 @@
             {{ t('game.continue') }}
           </button>
           
-          <!-- Кнопка активации азота (под кнопкой продолжить) -->
+          <!-- Кнопка "Купить азот" (под кнопкой продолжить) -->
           <button
             v-if="showNitrogenButton"
             class="btn-primary btn-primary--secondary btn-primary--wide btn-activate-nitrogen"
             :class="{ 'btn-buy-nitrogen': !canUseFreeNitrogen }"
-            @click.stop.prevent="handleUseNitrogen"
+            @click.stop.prevent="handleBuyNitrogenClick"
             :disabled="isUsingNitrogen"
           >
-            <span v-if="canUseFreeNitrogen" class="btn-activate-nitrogen__text">{{ t('game.activate_nitrogen') }}</span>
-            <span v-else class="btn-activate-nitrogen__text">{{ t('game.buy_nitrogen') }}</span>
-            <span v-if="canUseFreeNitrogen" class="btn-activate-nitrogen__available">{{ t('game.available') }}: {{ nitrogenUsesLeft }}</span>
-            <span v-else class="btn-activate-nitrogen__price">
-              <img v-if="paymentRadio === 'fbtc'" src="@/assets/fBTC.webp" width="15px" alt="fBTC" />
-              <img v-else src="@/assets/stars.png" width="15px" alt="Stars" />
-              {{ azotPrice }}
+            <span class="btn-activate-nitrogen__text">{{ canUseFreeNitrogen ? t('game.use_nitrogen') : t('game.buy_nitrogen') }}</span>
+            <span v-if="canUseFreeNitrogen" class="btn-activate-nitrogen__sub">{{ t('game.nitrogen_free') }}</span>
+            <span v-else class="btn-activate-nitrogen__prices">
+              <span class="btn-activate-nitrogen__price-row">
+                <img src="@/assets/stars.png" width="14px" alt="Stars" /> {{ azotPriceStars }}
+              </span>
+              <span class="btn-activate-nitrogen__price-sep">{{ t('game.nitrogen_or') }}</span>
+              <span class="btn-activate-nitrogen__price-row">
+                <img src="@/assets/fBTC.webp" width="14px" alt="fBTC" /> {{ azotPriceFbtc }}
+              </span>
             </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модалка выбора способа оплаты (Stars / fBTC) -->
+    <div v-if="showPaymentChoice" class="overheat-modal-mask overheat-payment-choice-mask" @click.self="showPaymentChoice = false">
+      <div class="overheat-payment-choice">
+        <h2 class="overheat-payment-choice__title">{{ t('game.nitrogen_pay_title') }}</h2>
+        <p class="overheat-payment-choice__desc">{{ t('game.nitrogen_pay_desc') }}</p>
+        <div class="overheat-payment-choice__actions">
+          <button
+            class="btn-primary btn-primary--wide overheat-payment-choice__btn"
+            @click.stop="handlePaymentChoice('stars')"
+          >
+            <img src="@/assets/stars.png" width="20px" alt="Stars" />
+            {{ t('game.nitrogen_pay_stars') }} ({{ azotPriceStars }})
+          </button>
+          <button
+            class="btn-primary btn-primary--wide overheat-payment-choice__btn"
+            @click.stop="handlePaymentChoice('fbtc')"
+          >
+            <img src="@/assets/fBTC.webp" width="20px" alt="fBTC" />
+            {{ t('game.nitrogen_pay_fbtc') }} ({{ azotPriceFbtc }})
+          </button>
+          <button
+            class="btn-primary btn-primary--secondary btn-primary--wide"
+            @click.stop="showPaymentChoice = false"
+          >
+            {{ t('common.cancel') }}
           </button>
         </div>
       </div>
@@ -157,8 +190,8 @@ const azotBooster = computed(() => {
   return app.boosters?.find(b => b.slug === 'azot')
 })
 
-// Расчет цены азота (логика из Boost.vue getTotalStarsPrice)
-const azotPrice = computed(() => {
+// Цена азота в Stars (логика из Boost.vue getTotalStarsPrice)
+const azotPriceStars = computed(() => {
   const booster = azotBooster.value
   const user = app.user
   if (!booster || !user) return 0
@@ -167,16 +200,47 @@ const azotPrice = computed(() => {
   const hasSilverSBT = user.has_silver_sbt && user.has_silver_sbt_nft
   const hasGoldSBT = user.has_gold_sbt && user.has_gold_sbt_nft
   
-  let sum = (paymentRadio.value == 'fbtc' ? booster?.price1_fbtc : booster?.price1) + (booster?.n1 || 0) * (user.azot_counts || 0)
+  let sum = (booster?.price1 || 0) + (booster?.n1 || 0) * (user.azot_counts || 0)
   
-  if ((hasSilverSBT || hasGoldSBT || premiumActive) && paymentRadio.value == 'stars') {
+  if (hasSilverSBT || hasGoldSBT || premiumActive) {
     sum = Math.floor(sum * (100 - (hasSilverSBT ? 5 : (hasGoldSBT || premiumActive) ? 10 : 0)) / 100)
   }
   
   return Math.ceil(sum)
 })
 
+// Цена азота в fBTC
+const azotPriceFbtc = computed(() => {
+  const booster = azotBooster.value
+  const user = app.user
+  if (!booster || !user) return 0
+  
+  const sum = (booster?.price1_fbtc || 0) + (booster?.n1 || 0) * (user.azot_counts || 0)
+  return Math.ceil(sum)
+})
+
 const isUsingNitrogen = ref(false)
+const showPaymentChoice = ref(false)
+
+// Клик по кнопке "Купить азот"
+const handleBuyNitrogenClick = () => {
+  if (isUsingNitrogen.value) return
+  
+  if (canUseFreeNitrogen.value) {
+    // Бесплатное использование — сразу активируем
+    handleUseNitrogen()
+  } else {
+    // Нужна покупка — показываем модалку выбора способа оплаты
+    showPaymentChoice.value = true
+  }
+}
+
+// Выбор способа оплаты в модалке (Stars или fBTC)
+const handlePaymentChoice = (method) => {
+  paymentRadio.value = method
+  showPaymentChoice.value = false
+  handleUseNitrogen()
+}
 
 const handleContinue = () => {
   if (!isOverheatActive.value) {
@@ -396,20 +460,32 @@ const handleBackdropClick = () => {
     font-weight: 600;
   }
   
-  &__available {
-    font-size: 11px;
-    opacity: 0.6;
-    font-weight: 400;
+  &__sub {
+    font-size: 12px;
+    opacity: 0.8;
+    font-weight: 500;
   }
   
-  &__price {
+  &__prices {
     font-size: 11px;
-    opacity: 0.8;
+    opacity: 0.85;
     font-weight: 500;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+  }
+  
+  &__price-row {
+    display: inline-flex;
+    align-items: center;
     gap: 4px;
+  }
+  
+  &__price-sep {
+    opacity: 0.7;
+    font-size: 10px;
   }
   
   &.btn-buy-nitrogen {
@@ -424,6 +500,48 @@ const handleBackdropClick = () => {
       transform: scale(0.96);
       box-shadow: 0 6px 18px rgba(102, 126, 234, 0.35);
     }
+  }
+}
+
+.overheat-payment-choice-mask {
+  z-index: 10000;
+}
+
+.overheat-payment-choice {
+  background: #10151b;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 340px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+  
+  &__title {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    margin: 0 0 0.5rem;
+  }
+  
+  &__desc {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    text-align: center;
+    margin: 0 0 1.25rem;
+    line-height: 1.4;
+  }
+  
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    align-items: center;
+  }
+  
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
   }
 }
 </style>

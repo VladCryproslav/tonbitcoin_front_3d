@@ -488,6 +488,12 @@
     "use_nitrogen": "Use Nitrogen",
     "activate_nitrogen": "Activate Nitrogen",
     "buy_nitrogen": "Buy Nitrogen",
+    "nitrogen_free": "Free",
+    "nitrogen_or": "or",
+    "nitrogen_pay_title": "Choose payment method",
+    "nitrogen_pay_desc": "Pay for liquid nitrogen with Stars or fBTC — it will clear the overheat and you can resume the run.",
+    "nitrogen_pay_stars": "Stars",
+    "nitrogen_pay_fbtc": "fBTC",
     "available": "available",
     "overheat_ready_desc": "Station is ready to use, press continue button to resume the run."
   },
