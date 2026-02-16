@@ -73,6 +73,9 @@
         </div>
       </div>
     </div>
+    
+    <!-- Модалка успешной активации азота -->
+    <ModalNew v-if="openModal" :status="modalStatus" :title="modalTitle" :body="modalBody" @close="handleModalClose" />
   </div>
 </template>
 
@@ -82,6 +85,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { useTelegram } from '@/services/telegram'
 import { host } from '@/../axios.config'
+import ModalNew from '@/components/ModalNew.vue'
 
 const props = defineProps({
   overheatedUntil: {
@@ -92,12 +96,21 @@ const props = defineProps({
 
 const emit = defineEmits(['continue', 'close'])
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const app = useAppStore()
 const { tg } = useTelegram()
 
 // Режим оплаты (по умолчанию stars)
 const paymentRadio = ref('stars')
+
+// Модалка успешной активации
+const modalStatus = ref(null)
+const modalTitle = ref(null)
+const modalBody = ref(null)
+const openModal = ref(false)
+
+// Локализация для popup текста
+const loc_add = computed(() => locale.value == 'uk' ? '' : locale.value == 'ru' ? '_ru' : '_en')
 
 // Текущее время для реактивной проверки перегрева
 const currentTime = ref(new Date())
@@ -271,7 +284,26 @@ const handleUseNitrogen = async () => {
       if (isFree || paymentRadio.value == 'fbtc') {
         // Бесплатный бустер или fBTC - сразу активируем
         await app.initUser()
-        emit('continue')
+        
+        // Показываем модалку успешной активации
+        modalStatus.value = 'success'
+        modalTitle.value = t('notification.st_success')
+        // Получаем popup текст из бустера азота
+        const azotBoosterData = azotBooster.value
+        if (azotBoosterData && azotBoosterData[`popup${loc_add.value}`]) {
+          modalBody.value = azotBoosterData[`popup${loc_add.value}`]
+        } else {
+          // Fallback текст если popup не найден
+          modalBody.value = locale.value == 'uk' 
+            ? 'Азот успішно активовано!' 
+            : locale.value == 'ru' 
+            ? 'Азот успешно активирован!' 
+            : 'Nitrogen successfully activated!'
+        }
+        openModal.value = true
+        
+        // После закрытия модалки продолжаем забег
+        // emit('continue') будет вызван после закрытия модалки
         isUsingNitrogen.value = false
       } else {
         // Покупка через invoice
@@ -280,7 +312,24 @@ const handleUseNitrogen = async () => {
           tg.openInvoice(invoiceLink, async (status) => {
             if (status == 'paid') {
               await app.initUser()
-              emit('continue')
+              
+              // Показываем модалку успешной активации
+              modalStatus.value = 'success'
+              modalTitle.value = t('notification.st_success')
+              const azotBoosterData = azotBooster.value
+              if (azotBoosterData && azotBoosterData[`popup${loc_add.value}`]) {
+                modalBody.value = azotBoosterData[`popup${loc_add.value}`]
+              } else {
+                // Fallback текст если popup не найден
+                modalBody.value = locale.value == 'uk' 
+                  ? 'Азот успішно активовано!' 
+                  : locale.value == 'ru' 
+                  ? 'Азот успешно активирован!' 
+                  : 'Nitrogen successfully activated!'
+              }
+              openModal.value = true
+              
+              // emit('continue') будет вызван после закрытия модалки
             }
             isUsingNitrogen.value = false
           })
@@ -291,10 +340,18 @@ const handleUseNitrogen = async () => {
       }
     } else {
       console.error('Failed to activate nitrogen:', response)
+      modalStatus.value = 'error'
+      modalTitle.value = t('notification.st_error')
+      modalBody.value = t('notification.imposible_activate_booster')
+      openModal.value = true
       isUsingNitrogen.value = false
     }
   } catch (error) {
     console.error('Error activating nitrogen:', error)
+    modalStatus.value = 'error'
+    modalTitle.value = t('notification.st_error')
+    modalBody.value = t('notification.imposible_activate_booster')
+    openModal.value = true
     isUsingNitrogen.value = false
   }
 }
@@ -303,6 +360,15 @@ const handleBackdropClick = () => {
   // Не закрываем при клике на backdrop во время перегрева
   if (!isOverheatActive.value) {
     emit('close')
+  }
+}
+
+// Обработчик закрытия модалки успешной активации
+const handleModalClose = () => {
+  openModal.value = false
+  // После закрытия модалки успеха продолжаем забег
+  if (modalStatus.value === 'success') {
+    emit('continue')
   }
 }
 </script>

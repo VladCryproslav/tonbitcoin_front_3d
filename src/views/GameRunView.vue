@@ -453,6 +453,9 @@ const overheatGoal = ref(null)
 const wasOverheated = ref(false)
 const overheatCountdown = ref(null) // Обратный отсчет перед показом модалки (5, 4, 3, 2, 1)
 let overheatCountdownInterval = null
+const overheatDecelerating = ref(false) // Флаг плавной остановки при перегреве
+const OVERHEAT_DECEL_RATE = 0.92 // Коэффициент замедления при перегреве (как при победе)
+const OVERHEAT_SPEED_THRESHOLD = 0.04 // Порог скорости для полной остановки
 
 // Таймер обратного отсчета перед началом забега
 const showCountdown = ref(false)
@@ -899,6 +902,7 @@ const initializeOverheat = () => {
     wasOverheated.value = false
     overheatedUntil.value = null
     showOverheatModal.value = false
+    overheatDecelerating.value = false
     return
   }
   
@@ -966,7 +970,7 @@ const checkOverheatTrigger = async (amount) => {
 
 // Активация перегрева
 const activateOverheat = (serverData) => {
-  // Устанавливаем состояние перегрева из ответа сервера ПЕРЕД остановкой игры
+  // Устанавливаем состояние перегрева из ответа сервера
   isOverheated.value = true
   
   if (serverData.overheated_until) {
@@ -977,11 +981,7 @@ const activateOverheat = (serverData) => {
   overheatEnergyCollected.value = serverData.overheat_energy_collected || 0
   overheatGoal.value = serverData.overheat_goal
   
-  // Останавливаем забег (как при паузе), но без показа модалки паузы
-  gameRun.pauseRun()
-  stopGameLoop()
-  launcherOverlayMode.value = 'none' // Не показываем модалку паузы
-  
+  // НЕ останавливаем игру сразу - персонаж продолжает бежать
   // Вибрация при перегреве
   if (vibrationEnabled.value) {
     try {
@@ -995,7 +995,7 @@ const activateOverheat = (serverData) => {
     }
   }
   
-  // Запускаем обратный отсчет 5 секунд перед показом модалки
+  // Запускаем обратный отсчет 5 секунд перед остановкой персонажа
   overheatCountdown.value = 5
   
   // Очищаем предыдущий интервал если есть
@@ -1007,11 +1007,13 @@ const activateOverheat = (serverData) => {
     if (overheatCountdown.value > 1) {
       overheatCountdown.value--
     } else {
-      // Отсчет закончился, показываем модалку
+      // Отсчет закончился - начинаем плавную остановку персонажа
       clearInterval(overheatCountdownInterval)
       overheatCountdownInterval = null
       overheatCountdown.value = null
-      showOverheatModal.value = true
+      
+      // Запускаем плавное замедление
+      overheatDecelerating.value = true
     }
   }, 1000)
 }
@@ -1053,6 +1055,8 @@ const handleOverheatContinue = async () => {
   isOverheated.value = false
   showOverheatModal.value = false
   overheatedUntil.value = app.user?.overheated_until ? new Date(app.user.overheated_until) : null
+  overheatDecelerating.value = false // Сбрасываем флаг замедления
+  overheatCountdown.value = null // Сбрасываем таймер
   
   // Возобновляем забег
   resumeGame()
@@ -1128,6 +1132,8 @@ const resumeGame = async () => {
   isOverheated.value = false
   showOverheatModal.value = false
   overheatedUntil.value = app.user?.overheated_until ? new Date(app.user.overheated_until) : null
+  overheatDecelerating.value = false // Сбрасываем флаг замедления
+  overheatCountdown.value = null // Сбрасываем таймер
   
   // Показываем таймер обратного отсчета 3-2-1
   showCountdown.value = true
@@ -1289,6 +1295,29 @@ function doOneStep(playerBox, inRollImmuneWindow) {
       }
     }
 
+    // Плавная остановка при перегреве
+    if (overheatDecelerating.value) {
+      gameSpeed.value *= OVERHEAT_DECEL_RATE
+      if (gameWorld.value) gameWorld.value.setRoadSpeed(gameSpeed.value)
+      if (gameSpeed.value < OVERHEAT_SPEED_THRESHOLD) {
+        gameSpeed.value = 0
+        if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
+        overheatDecelerating.value = false
+        stopGameLoop()
+        gameRun.pauseRun()
+        
+        // Переводим персонажа в состояние idle (standing) - анимация покоя
+        if (gamePhysics.value?.setAnimationState) {
+          gamePhysics.value.setAnimationState('idle')
+        }
+        
+        launcherOverlayMode.value = 'none' // Не показываем модалку паузы
+        
+        // Показываем модалку перегрева
+        showOverheatModal.value = true
+      }
+    }
+    
     // Плавная остановка при победе
     if (winDecelerating) {
       gameSpeed.value *= WIN_DECEL_RATE

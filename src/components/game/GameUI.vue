@@ -249,7 +249,8 @@ const formatEnergy = (value) => {
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  min-width: 240px;
+  min-width: 320px;
+  width: 320px;
 }
 
 .power-label {
