@@ -16,11 +16,18 @@
           <div v-if="compactDistance" class="energy-counter-distance">
             <div class="distance-bar">
               <div
+                v-if="overheatCountdown === null"
                 class="distance-fill"
                 :style="{ width: `${Math.max(0, Math.min(100, Number.isFinite(power) ? power : 0))}%` }"
               ></div>
+              <div
+                v-else
+                class="distance-fill distance-fill--overheat"
+                :style="{ width: '100%' }"
+              ></div>
             </div>
-            <span class="distance-value">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</span>
+            <span class="distance-value" v-if="overheatCountdown === null">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</span>
+            <span class="distance-value distance-value--overheat" v-else>{{ overheatCountdown }}</span>
           </div>
         </div>
         <div class="lives-counter" :class="{ 'lives-counter--compact': compactDistance }">
@@ -56,14 +63,22 @@
 
     <div v-if="!compactDistance" class="ui-bottom">
       <div class="power-bar-container">
-        <div class="power-label">Дистанция</div>
+        <div class="power-label" v-if="overheatCountdown === null">Дистанция</div>
+        <div class="power-label" v-else>{{ t('game.overheat_countdown_label') }}</div>
         <div class="power-bar">
           <div
+            v-if="overheatCountdown === null"
             class="power-fill power-fill--distance"
             :style="{ width: `${Math.max(0, Math.min(100, Number.isFinite(power) ? power : 0))}%` }"
           ></div>
+          <div
+            v-else
+            class="power-fill power-fill--overheat"
+            :style="{ width: '100%' }"
+          ></div>
         </div>
-        <div class="power-value">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</div>
+        <div class="power-value" v-if="overheatCountdown === null">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</div>
+        <div class="power-value power-value--overheat" v-else>{{ overheatCountdown }}</div>
       </div>
     </div>
   </div>
@@ -71,16 +86,19 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-const { energy, maxEnergy, power, lives, maxLives, compactDistance } = defineProps({
+const { energy, maxEnergy, power, lives, maxLives, compactDistance, overheatCountdown } = defineProps({
   energy: { type: Number, default: 0 },
   maxEnergy: { type: Number, default: 0 },
   power: { type: Number, default: 100 },
   lives: { type: Number, default: 3 },
   maxLives: { type: Number, default: 3 },
-  compactDistance: { type: Boolean, default: false }
+  compactDistance: { type: Boolean, default: false },
+  overheatCountdown: { type: Number, default: null }
 })
 
+const { t } = useI18n()
 const isLastLife = computed(() => lives === 1)
 
 defineEmits(['pause'])
@@ -265,6 +283,50 @@ const formatEnergy = (value) => {
   font-size: 14px;
   font-weight: 600;
   text-align: center;
+  
+  &--overheat {
+    color: #ff3b59;
+    font-size: 24px;
+    font-weight: 700;
+    animation: overheat-countdown-pulse 0.5s ease-in-out infinite;
+  }
+}
+
+.power-fill--overheat {
+  background: linear-gradient(90deg, #ff3b59, #ff6b7a);
+  animation: overheat-bar-pulse 0.5s ease-in-out infinite;
+}
+
+.distance-fill--overheat {
+  background: linear-gradient(90deg, #ff3b59, #ff6b7a);
+  animation: overheat-bar-pulse 0.5s ease-in-out infinite;
+}
+
+.distance-value--overheat {
+  color: #ff3b59;
+  font-size: 14px;
+  font-weight: 700;
+  animation: overheat-countdown-pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes overheat-countdown-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.9;
+  }
+}
+
+@keyframes overheat-bar-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .distance-bar {

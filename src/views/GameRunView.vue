@@ -12,7 +12,8 @@
       v-if="gameRun.isRunning || gameRun.isPaused"
       :energy="Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0)"
       :max-energy="gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0"
-      :power="gameRun.distanceProgress?.value ?? 0"
+      :power="overheatCountdown !== null ? null : gameRun.distanceProgress?.value ?? 0"
+      :overheat-countdown="overheatCountdown"
       :lives="livesLeft"
       :max-lives="MAX_LIVES"
       :compact-distance="controlMode === 'buttons'"
@@ -450,6 +451,8 @@ let overheatCheckInterval = null
 const overheatEnergyCollected = ref(0)
 const overheatGoal = ref(null)
 const wasOverheated = ref(false)
+const overheatCountdown = ref(null) // Обратный отсчет перед показом модалки (5, 4, 3, 2, 1)
+let overheatCountdownInterval = null
 
 // Таймер обратного отсчета перед началом забега
 const showCountdown = ref(false)
@@ -990,8 +993,25 @@ const activateOverheat = (serverData) => {
     }
   }
   
-  // Показываем модальное окно перегрева
-  showOverheatModal.value = true
+  // Запускаем обратный отсчет 5 секунд перед показом модалки
+  overheatCountdown.value = 5
+  
+  // Очищаем предыдущий интервал если есть
+  if (overheatCountdownInterval) {
+    clearInterval(overheatCountdownInterval)
+  }
+  
+  overheatCountdownInterval = setInterval(() => {
+    if (overheatCountdown.value > 1) {
+      overheatCountdown.value--
+    } else {
+      // Отсчет закончился, показываем модалку
+      clearInterval(overheatCountdownInterval)
+      overheatCountdownInterval = null
+      overheatCountdown.value = null
+      showOverheatModal.value = true
+    }
+  }, 1000)
 }
 
 // Обработчик кнопки "Продолжить" в модалке перегрева
@@ -1853,10 +1873,15 @@ onUnmounted(() => {
     clearInterval(overheatCheckInterval)
     overheatCheckInterval = null
   }
-  // Очищаем таймер обратного отсчета
+  // Очищаем таймер обратного отсчета перед началом забега
   if (countdownInterval) {
     clearInterval(countdownInterval)
     countdownInterval = null
+  }
+  // Очищаем таймер обратного отсчета перегрева
+  if (overheatCountdownInterval) {
+    clearInterval(overheatCountdownInterval)
+    overheatCountdownInterval = null
   }
   if (gameWorld.value) {
     gameWorld.value.clearAll()

@@ -65,7 +65,7 @@
             {{ t('game.nitrogen_pay_fbtc') }} ({{ azotPriceFbtc }})
           </button>
           <button
-            class="btn-primary btn-primary--secondary btn-primary--wide"
+            class="btn-primary btn-secondary btn-primary--wide"
             @click.stop="showPaymentChoice = false"
           >
             {{ t('common.cancel') }}
@@ -239,6 +239,7 @@ const handleBuyNitrogenClick = () => {
 const handlePaymentChoice = (method) => {
   paymentRadio.value = method
   showPaymentChoice.value = false
+  console.log('[OverheatGameRunModal] Payment method selected:', method, 'paymentRadio.value:', paymentRadio.value)
   handleUseNitrogen()
 }
 
@@ -259,6 +260,7 @@ const handleUseNitrogen = async () => {
   try {
     const isFree = isFreeNitrogen.value
     const activate_url = paymentRadio.value == 'fbtc' ? "tasks/activate_booster_fbtc/" : "tasks/activate_booster/"
+    console.log('[OverheatGameRunModal] Activating nitrogen:', { isFree, paymentRadio: paymentRadio.value, activate_url })
     
     response = await host.post(activate_url, {
       slug: 'azot',
@@ -423,6 +425,18 @@ const handleBackdropClick = () => {
   &:active:not(:disabled) {
     transform: scale(0.9);
     opacity: 0.85;
+  }
+}
+
+.btn-secondary {
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.85);
+
+  &:active {
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.85);
+    opacity: 0.95;
   }
 }
 
