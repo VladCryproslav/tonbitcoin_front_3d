@@ -3,32 +3,34 @@
     <div class="ui-top">
       <div class="top-left" :class="{ 'top-left--compact': compactDistance }">
         <div class="counters-column">
-          <div class="energy-counter" :class="{ 'energy-counter--with-distance': compactDistance }">
-            <div class="energy-counter-row">
-              <img
-                class="icon energy-icon"
-                src="@/assets/kW.png"
-                alt="energy"
-              />
-              <span class="value energy-value">
-                {{ formatEnergy(Math.min(energy, maxEnergy)) }} / {{ formatEnergy(maxEnergy) }} kW
-              </span>
-            </div>
-            <div v-if="compactDistance" class="energy-counter-distance">
-              <div class="distance-bar">
-                <div
-                  v-if="overheatCountdown === null"
-                  class="distance-fill"
-                  :style="{ width: `${Math.max(0, Math.min(100, Number.isFinite(power) ? power : 0))}%` }"
-                ></div>
-                <div
-                  v-else
-                  class="distance-fill distance-fill--overheat"
-                  :style="{ width: '100%' }"
-                ></div>
+          <div class="energy-counter-wrapper">
+            <div class="energy-counter" :class="{ 'energy-counter--with-distance': compactDistance }">
+              <div class="energy-counter-row">
+                <img
+                  class="icon energy-icon"
+                  src="@/assets/kW.png"
+                  alt="energy"
+                />
+                <span class="value energy-value">
+                  {{ formatEnergy(Math.min(energy, maxEnergy)) }} / {{ formatEnergy(maxEnergy) }} kW
+                </span>
               </div>
-              <span class="distance-value" v-if="overheatCountdown === null">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</span>
-              <span class="distance-value distance-value--overheat" v-else>{{ overheatCountdown }}</span>
+              <div v-if="compactDistance" class="energy-counter-distance">
+                <div class="distance-bar">
+                  <div
+                    v-if="overheatCountdown === null"
+                    class="distance-fill"
+                    :style="{ width: `${Math.max(0, Math.min(100, Number.isFinite(power) ? power : 0))}%` }"
+                  ></div>
+                  <div
+                    v-else
+                    class="distance-fill distance-fill--overheat"
+                    :style="{ width: '100%' }"
+                  ></div>
+                </div>
+                <span class="distance-value" v-if="overheatCountdown === null">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</span>
+                <span class="distance-value distance-value--overheat" v-else>{{ overheatCountdown }}</span>
+              </div>
             </div>
           </div>
           <div class="lives-counter" :class="{ 'lives-counter--compact': compactDistance }">
@@ -152,7 +154,7 @@ const handleCryoIconError = (event) => {
 .ui-top {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .top-left {
@@ -173,9 +175,15 @@ const handleCryoIconError = (event) => {
   align-items: flex-start;
 }
 
+.energy-counter-wrapper {
+  display: flex;
+  align-items: flex-start;
+}
+
 .top-right {
   display: flex;
   align-items: flex-start;
+  padding-top: 0;
 }
 
 .energy-counter-row {
