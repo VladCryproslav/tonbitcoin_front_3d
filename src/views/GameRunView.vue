@@ -966,10 +966,7 @@ const checkOverheatTrigger = async (amount) => {
 
 // Активация перегрева
 const activateOverheat = (serverData) => {
-  // Останавливаем забег (как при паузе)
-  pauseGame()
-  
-  // Устанавливаем состояние перегрева из ответа сервера
+  // Устанавливаем состояние перегрева из ответа сервера ПЕРЕД остановкой игры
   isOverheated.value = true
   
   if (serverData.overheated_until) {
@@ -979,6 +976,11 @@ const activateOverheat = (serverData) => {
   wasOverheated.value = serverData.was_overheated || false
   overheatEnergyCollected.value = serverData.overheat_energy_collected || 0
   overheatGoal.value = serverData.overheat_goal
+  
+  // Останавливаем забег (как при паузе), но без показа модалки паузы
+  gameRun.pauseRun()
+  stopGameLoop()
+  launcherOverlayMode.value = 'none' // Не показываем модалку паузы
   
   // Вибрация при перегреве
   if (vibrationEnabled.value) {

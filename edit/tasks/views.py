@@ -538,7 +538,6 @@ class ActivateBoosterFTBCView(APIView):
             UserProfile.objects.filter(id=user_profile.id).update(
                 tbtc_wallet=F("tbtc_wallet") - final_price
             )
-            days = int(day_count)
             
             if booster.slug == "azot":
                 UserProfile.objects.filter(id=user_profile.id).update(
@@ -546,7 +545,9 @@ class ActivateBoosterFTBCView(APIView):
                     overheated_until=None,
                     tap_count_since_overheat=0,
                 )
+                user_profile.refresh_from_db()
             elif booster.slug == "jarvis":
+                days = int(day_count) if day_count else 1
                 now = timezone.now()
                 jarvis_expires = user_profile.jarvis_expires
                 is_active = jarvis_expires and jarvis_expires > now
@@ -554,7 +555,7 @@ class ActivateBoosterFTBCView(APIView):
                 if not is_active:
                     jarvis_expires = now
 
-                jarvis_expires += timedelta(days=int(days))
+                jarvis_expires += timedelta(days=days)
 
                 if jarvis_expires > now + timedelta(days=31):
                     return Response(
@@ -567,6 +568,7 @@ class ActivateBoosterFTBCView(APIView):
                     jarvis_expires=jarvis_expires
                 )
             elif booster.slug == "cryo":
+                days = int(day_count) if day_count else 1
                 now = timezone.now()
                 cryo_expires = user_profile.cryo_expires
                 is_active = cryo_expires and cryo_expires > now
@@ -574,7 +576,7 @@ class ActivateBoosterFTBCView(APIView):
                 if not is_active:
                     cryo_expires = now
 
-                cryo_expires += timedelta(days=int(days))
+                cryo_expires += timedelta(days=days)
 
                 if cryo_expires > now + timedelta(days=31):
                     return Response(
@@ -587,10 +589,12 @@ class ActivateBoosterFTBCView(APIView):
                     cryo_expires=cryo_expires
                 )
             elif booster.slug == "autostart":
+                days = int(day_count) if day_count else 1
                 UserProfile.objects.filter(id=user_profile.id).update(
-                    autostart_count=F("autostart_count") + int(days)
+                    autostart_count=F("autostart_count") + days
                 )
             elif booster.slug == "magnit":
+                days = int(day_count) if day_count else 1
                 now = timezone.now()
                 magnit_expires = user_profile.magnit_expires
                 is_active = magnit_expires and magnit_expires > now
@@ -598,7 +602,7 @@ class ActivateBoosterFTBCView(APIView):
                 if not is_active:
                     magnit_expires = now
 
-                magnit_expires += timedelta(days=int(days))
+                magnit_expires += timedelta(days=days)
 
                 if magnit_expires > now + timedelta(days=31):
                     return Response(
@@ -612,6 +616,7 @@ class ActivateBoosterFTBCView(APIView):
                     magnit_buy_hashrate=F("mining_farm_speed"),
                 )
             elif booster.slug == "asic_manager":
+                days = int(day_count) if day_count else 1
                 now = timezone.now()
                 manager_expires = user_profile.manager_expires
                 is_active = manager_expires and manager_expires > now
@@ -619,7 +624,7 @@ class ActivateBoosterFTBCView(APIView):
                 if not is_active:
                     manager_expires = now
 
-                manager_expires += timedelta(days=int(days))
+                manager_expires += timedelta(days=days)
 
                 if manager_expires > now + timedelta(days=31):
                     return Response(
@@ -633,6 +638,7 @@ class ActivateBoosterFTBCView(APIView):
                     manager_buy_hashrate=F("mining_farm_speed"),
                 )
             elif booster.slug == "electrics":
+                days = int(day_count) if day_count else 1
                 now = timezone.now()
                 electrics_expires = user_profile.electrics_expires
                 is_active = electrics_expires and electrics_expires > now
@@ -640,7 +646,7 @@ class ActivateBoosterFTBCView(APIView):
                 if not is_active:
                     electrics_expires = now
 
-                electrics_expires += timedelta(days=int(days))
+                electrics_expires += timedelta(days=days)
 
                 if electrics_expires > now + timedelta(days=31):
                     return Response(
@@ -653,6 +659,7 @@ class ActivateBoosterFTBCView(APIView):
                     electrics_expires=electrics_expires
                 )
             elif booster.slug == "premium_sub":
+                days = int(day_count) if day_count else 1
                 now = timezone.now()
                 premium_sub_expires = user_profile.premium_sub_expires
                 is_active = premium_sub_expires and premium_sub_expires > now
@@ -660,7 +667,7 @@ class ActivateBoosterFTBCView(APIView):
                 if not is_active:
                     premium_sub_expires = now
 
-                premium_sub_expires += timedelta(days=int(days))
+                premium_sub_expires += timedelta(days=days)
 
                 if premium_sub_expires > now + timedelta(days=31):
                     return Response(
@@ -673,6 +680,7 @@ class ActivateBoosterFTBCView(APIView):
                     premium_sub_expires=premium_sub_expires
                 )
             elif booster.slug == "repair_kit":
+                days = int(day_count) if day_count else 1
                 now = timezone.now()
                 repair_kit_expires = user_profile.repair_kit_expires
                 is_active = repair_kit_expires and repair_kit_expires > now
@@ -680,7 +688,7 @@ class ActivateBoosterFTBCView(APIView):
                 if not is_active:
                     repair_kit_expires = now
 
-                repair_kit_expires += timedelta(days=int(days))
+                repair_kit_expires += timedelta(days=days)
 
                 if repair_kit_expires > now + timedelta(days=31):
                     return Response(
@@ -708,7 +716,7 @@ class ActivateBoosterFTBCView(APIView):
         #         status=status.HTTP_200_OK,
         #     )
 
-        # user_profile.refresh_from_db()
+        user_profile.refresh_from_db()
         return Response(
             {
                 "status": "Booster activated",
