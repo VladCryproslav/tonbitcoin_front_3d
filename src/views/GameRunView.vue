@@ -1008,9 +1008,9 @@ const activateOverheat = (serverData) => {
       return
     }
     
-    // Когда таймер показывает 3 секунды - начинаем плавное замедление
-    if (overheatCountdown.value === 3) {
-      console.log('[GameRunView] Overheat countdown at 3, starting smooth deceleration. Current speed:', gameSpeed.value)
+    // Когда таймер показывает 2 секунды - начинаем плавное замедление
+    if (overheatCountdown.value === 2) {
+      console.log('[GameRunView] Overheat countdown at 2, starting smooth deceleration. Current speed:', gameSpeed.value)
       overheatDecelerating.value = true
     }
     
@@ -1333,7 +1333,7 @@ function doOneStep(playerBox, inRollImmuneWindow) {
       }
     }
 
-    // Плавная остановка при перегреве (с 3 до 1 секунды, как при победе)
+    // Плавная остановка при перегреве (с 2 до 1 секунды, как при победе)
     if (overheatDecelerating.value) {
       gameSpeed.value *= WIN_DECEL_RATE
       if (gameWorld.value) gameWorld.value.setRoadSpeed(gameSpeed.value)
