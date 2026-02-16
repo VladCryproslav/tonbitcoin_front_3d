@@ -497,7 +497,11 @@
     "available": "available",
     "overheat_ready_desc": "Station is ready to use, press continue button to resume the run.",
     "overheat_countdown_label": "Station overheated, character stop in",
-    "cryochamber_active": "Active"
+    "cryochamber_active": "Active",
+    "start_run_warning_title": "Important!",
+    "start_run_warning_message": "After starting the run, your accumulated storage balance will be deducted for point generation.<br><br>Your engineer has 3 lives and one additional life to complete the entire distance and collect energy.<br><br>Exiting the run is not possible.<br><br><b>We recommend doing several training runs before starting the actual run.</b>",
+    "start_run_warning_dont_show": "Don't show this warning again",
+    "start_run_warning_confirm": "Confirm"
   },
   "energizer": {
     "collect_energy": "Collect Energy",

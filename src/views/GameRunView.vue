@@ -250,6 +250,13 @@
       @close="handleOverheatModalClose"
     />
     
+    <!-- Модальное окно предупреждения перед стартом забега -->
+    <StartRunWarningModal
+      v-if="showStartRunWarning"
+      @confirm="handleStartRunWarningConfirm"
+      @cancel="handleStartRunWarningCancel"
+    />
+    
     <!-- Пульсация экрана красным цветом во время перегрева -->
     <div
       v-if="isOverheated && showOverheatModal"
@@ -276,6 +283,7 @@ import GameControls from '@/components/game/GameControls.vue'
 import VirtualControls from '@/components/game/VirtualControls.vue'
 import InfoModal from '@/components/InfoModal.vue'
 import OverheatGameRunModal from '@/components/OverheatGameRunModal.vue'
+import StartRunWarningModal from '@/components/StartRunWarningModal.vue'
 import { useGameRun } from '@/composables/useGameRun'
 import { useGamePhysics } from '@/composables/useGamePhysics'
 import { useGameWorld } from '@/composables/useGameWorld'
@@ -448,6 +456,7 @@ const launcherOverlayMode = ref('idle')
 
 // Состояние перегрева
 const showOverheatModal = ref(false)
+const showStartRunWarning = ref(false)
 const overheatedUntil = ref(null)
 const isOverheated = ref(false)
 let overheatCheckInterval = null
@@ -1663,6 +1672,18 @@ const endGame = async (isWinByState = false) => {
 
 // Обработчики кнопок из оверлеев
 const handleStartClick = async () => {
+  // Проверяем нужно ли показывать предупреждение
+  if (shouldShowStartRunWarning()) {
+    showStartRunWarning.value = true
+    return
+  }
+  
+  // Если предупреждение не нужно показывать, сразу запускаем забег
+  await startRun()
+}
+
+// Функция для запуска забега (вынесена отдельно для использования из модалки)
+const startRun = async () => {
   // Вызываем API для записи времени старта (если не тренировка)
   try {
     // Сохраняем начальное значение storage ДО обнуления на сервере
@@ -1702,6 +1723,24 @@ const handleStartClick = async () => {
     console.error('Error starting energy run:', error)
     startGame(false)
   }
+}
+
+// Обработчик подтверждения предупреждения
+const handleStartRunWarningConfirm = (dontShowAgain) => {
+  showStartRunWarning.value = false
+  
+  // Сохраняем настройку если пользователь выбрал "не показывать снова"
+  if (dontShowAgain) {
+    localStorage.setItem('startRunWarningDontShow', 'true')
+  }
+  
+  // Запускаем забег
+  startRun()
+}
+
+// Обработчик отмены предупреждения
+const handleStartRunWarningCancel = () => {
+  showStartRunWarning.value = false
 }
 
 const handleTrainingClick = () => {
