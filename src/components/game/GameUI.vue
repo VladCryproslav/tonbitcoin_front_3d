@@ -175,7 +175,7 @@ const handleCryoIconError = (event) => {
 
 .top-right {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .energy-counter-row {
@@ -421,12 +421,9 @@ const handleCryoIconError = (event) => {
 
 .pause-button {
   pointer-events: auto;
-  width: auto;
-  min-width: 100px;
-  height: auto;
-  min-height: 30px;
-  padding: 6px 10px;
-  border-radius: 12px;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
   border: none;
   background: radial-gradient(circle at 30% 0%, #38bdf8, #4c1d95);
   color: #fff;
@@ -435,8 +432,8 @@ const handleCryoIconError = (event) => {
   justify-content: center;
   font-size: 22px;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px);
   transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
 
   &:active {
