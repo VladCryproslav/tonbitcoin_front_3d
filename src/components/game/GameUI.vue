@@ -50,6 +50,14 @@
             </span>
           </div>
         </div>
+        <div v-if="isCryoActive" class="cryochamber-counter">
+          <img
+            class="icon cryochamber-icon"
+            src="@/assets/cryochamber_icon.webp"
+            alt="cryochamber"
+            @error="handleCryoIconError"
+          />
+        </div>
       </div>
       <div class="top-right">
         <button
@@ -88,14 +96,15 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-const { energy, maxEnergy, power, lives, maxLives, compactDistance, overheatCountdown } = defineProps({
+const { energy, maxEnergy, power, lives, maxLives, compactDistance, overheatCountdown, isCryoActive } = defineProps({
   energy: { type: Number, default: 0 },
   maxEnergy: { type: Number, default: 0 },
   power: { type: Number, default: 100 },
   lives: { type: Number, default: 3 },
   maxLives: { type: Number, default: 3 },
   compactDistance: { type: Boolean, default: false },
-  overheatCountdown: { type: Number, default: null }
+  overheatCountdown: { type: Number, default: null },
+  isCryoActive: { type: Boolean, default: false }
 })
 
 const { t } = useI18n()
@@ -106,6 +115,16 @@ defineEmits(['pause'])
 const formatEnergy = (value) => {
   const v = Number(value ?? 0)
   return Number.isFinite(v) ? v.toFixed(1) : '0.0'
+}
+
+const handleCryoIconError = (event) => {
+  // Пробуем альтернативные форматы для иконки криокамеры
+  const img = event.target
+  if (img.src.includes('.webp')) {
+    img.src = img.src.replace('.webp', '.png')
+  } else if (img.src.includes('.png')) {
+    img.src = img.src.replace('.png', '.svg')
+  }
 }
 
 // formatDistance оставлен на будущее, когда блок дистанции переедет вниз
@@ -204,6 +223,26 @@ const formatEnergy = (value) => {
 
   .life-heart {
     font-size: 20px;
+  }
+}
+
+.cryochamber-counter {
+  background: rgba(0, 0, 0, 0.7);
+  padding: 6px 10px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 255, 136, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+
+  .cryochamber-icon {
+    width: 24px;
+    height: 24px;
+    filter: drop-shadow(0 0 4px rgba(0, 255, 136, 0.8));
   }
 }
 
