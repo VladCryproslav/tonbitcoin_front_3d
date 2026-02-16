@@ -255,6 +255,8 @@ export function useGamePhysics(scene) {
   }
 
   const moveLeft = () => {
+    // Блокируем движение если персонаж в состоянии победы
+    if (currentAnimation === 'win' || winFaceState !== null) return
     if (playerLane.value > 0) {
       playerLane.value--
       playerPosition.value.x = lanes[playerLane.value]
@@ -267,6 +269,8 @@ export function useGamePhysics(scene) {
   }
 
   const moveRight = () => {
+    // Блокируем движение если персонаж в состоянии победы
+    if (currentAnimation === 'win' || winFaceState !== null) return
     if (playerLane.value < 2) {
       playerLane.value++
       playerPosition.value.x = lanes[playerLane.value]
@@ -280,6 +284,8 @@ export function useGamePhysics(scene) {
 
   const jump = () => {
     if (!playerMesh || isDead) return
+    // Блокируем прыжок если персонаж в состоянии победы
+    if (currentAnimation === 'win' || winFaceState !== null) return
     if (!isJumping.value) {
       isJumping.value = true
       isSliding.value = false
@@ -294,6 +300,8 @@ export function useGamePhysics(scene) {
 
   const slide = () => {
     if (!playerMesh || isDead) return
+    // Блокируем слайд если персонаж в состоянии победы
+    if (currentAnimation === 'win' || winFaceState !== null) return
     const now = performance.now()
 
     // Если уже идёт roll, блокируем повторный свайп до 70% длительности клипа,

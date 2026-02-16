@@ -1238,76 +1238,79 @@ function doOneStep(playerBox, inRollImmuneWindow) {
       if (gameWorld.value) {
         gameWorld.value.updateRoad()
 
-        gameWorld.value.updateObstacles(
-          playerBox,
-          () => {
-            hitCount.value += 1
-            hitFlashTick.value++
-            gameRun.hitObstacle()
-            const newPower = gameRun.currentPower.value - 10
-            app.setPower(Math.max(0, newPower))
-            if (!isDead.value && livesLeft.value <= 0) {
-              isDead.value = true
-              // Сохраняем energyCollected ДО остановки игрового цикла
-              // Ограничиваем значение максимумом storage (та же логика, что в счетчике энергии)
-              const savedEnergyBeforeStop = Math.min(
-                gameRun.energyCollected?.value ?? 0,
-                gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0
-              )
-              // Сохраняем значение для модалки сразу при смерти
-              savedEnergyCollectedForModal.value = savedEnergyBeforeStop
-              console.log('Player died (livesLeft=0): energyCollected BEFORE stop=', savedEnergyBeforeStop, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
-              
-              // НЕ вызываем stopRun() здесь, чтобы не сбросить startStorage и energyCollected
-              // Останавливаем только игровой цикл и физику
-              stopGameLoop()
-              if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
-              gameSpeed.value = 0
-              // Останавливаем физику персонажа - запускаем анимацию падения
-              if (gamePhysics.value?.onFinalHit) {
-                gamePhysics.value.onFinalHit()
-              } else if (gamePhysics.value?.setAnimationState) {
-                // Fallback: просто включаем анимацию падения
-                gamePhysics.value.setAnimationState('lose')
-              }
-              // Устанавливаем тип проигрыша, но НЕ показываем модалку сразу
-              // Модалка появится после завершения анимации падения в endGame
-              gameOverType.value = 'lose'
-              launcherOverlayMode.value = 'none'
-              
-              // Проверяем energyCollected после остановки игрового цикла
-              console.log('Player died (livesLeft=0): energyCollected AFTER stop=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
-              
-              // Вызываем endGame после задержки для завершения анимации падения
-              setTimeout(() => {
-                console.log('Calling endGame after delay (livesLeft=0): energyCollected=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
-                if (!endGame._isProcessing) {
-                  endGame(false)
+        // Не проверяем коллизии если игрок уже победил (во время анимации победы)
+        if (!winTriggered && winAnimationStartTime === 0) {
+          gameWorld.value.updateObstacles(
+            playerBox,
+            () => {
+              hitCount.value += 1
+              hitFlashTick.value++
+              gameRun.hitObstacle()
+              const newPower = gameRun.currentPower.value - 10
+              app.setPower(Math.max(0, newPower))
+              if (!isDead.value && livesLeft.value <= 0) {
+                isDead.value = true
+                // Сохраняем energyCollected ДО остановки игрового цикла
+                // Ограничиваем значение максимумом storage (та же логика, что в счетчике энергии)
+                const savedEnergyBeforeStop = Math.min(
+                  gameRun.energyCollected?.value ?? 0,
+                  gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0
+                )
+                // Сохраняем значение для модалки сразу при смерти
+                savedEnergyCollectedForModal.value = savedEnergyBeforeStop
+                console.log('Player died (livesLeft=0): energyCollected BEFORE stop=', savedEnergyBeforeStop, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
+                
+                // НЕ вызываем stopRun() здесь, чтобы не сбросить startStorage и energyCollected
+                // Останавливаем только игровой цикл и физику
+                stopGameLoop()
+                if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
+                gameSpeed.value = 0
+                // Останавливаем физику персонажа - запускаем анимацию падения
+                if (gamePhysics.value?.onFinalHit) {
+                  gamePhysics.value.onFinalHit()
+                } else if (gamePhysics.value?.setAnimationState) {
+                  // Fallback: просто включаем анимацию падения
+                  gamePhysics.value.setAnimationState('lose')
                 }
-              }, 2000) // Увеличиваем задержку до 2 секунд для завершения анимации падения
-            }
-            // Мягкая тряска камеры только при ударе: статичный вертикальный "рывок"
-            shakeFramesLeft = SHAKE_DURATION_FRAMES
-            const amp = 0.28
-            shakeBaseX = 0
-            shakeBaseY = amp
+                // Устанавливаем тип проигрыша, но НЕ показываем модалку сразу
+                // Модалка появится после завершения анимации падения в endGame
+                gameOverType.value = 'lose'
+                launcherOverlayMode.value = 'none'
+                
+                // Проверяем energyCollected после остановки игрового цикла
+                console.log('Player died (livesLeft=0): energyCollected AFTER stop=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
+                
+                // Вызываем endGame после задержки для завершения анимации падения
+                setTimeout(() => {
+                  console.log('Calling endGame after delay (livesLeft=0): energyCollected=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
+                  if (!endGame._isProcessing) {
+                    endGame(false)
+                  }
+                }, 2000) // Увеличиваем задержку до 2 секунд для завершения анимации падения
+              }
+              // Мягкая тряска камеры только при ударе: статичный вертикальный "рывок"
+              shakeFramesLeft = SHAKE_DURATION_FRAMES
+              const amp = 0.28
+              shakeBaseX = 0
+              shakeBaseY = amp
 
-            if (vibrationEnabled.value) {
-              // Haptic feedback: Telegram WebApp + fallback через navigator.vibrate
-              try {
-                const tg = window.Telegram?.WebApp
-                tg?.HapticFeedback?.impactOccurred?.('medium')
-              } catch {
-                // ignore
+              if (vibrationEnabled.value) {
+                // Haptic feedback: Telegram WebApp + fallback через navigator.vibrate
+                try {
+                  const tg = window.Telegram?.WebApp
+                  tg?.HapticFeedback?.impactOccurred?.('medium')
+                } catch {
+                  // ignore
+                }
+                if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                  navigator.vibrate(30)
+                }
               }
-              if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                navigator.vibrate(30)
-              }
-            }
-          },
-          gamePhysics.value.isSliding?.value === true,
-          inRollImmuneWindow
-        )
+            },
+            gamePhysics.value.isSliding?.value === true,
+            inRollImmuneWindow
+          )
+        }
 
         gameWorld.value.updateCollectibles(
           playerBox,
@@ -1706,28 +1709,29 @@ const closeSettings = () => {
 
 const handleSwipeLeft = () => {
   // Игрок реагирует на свайпы только во время активного забега
-  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value) return
+  // Блокируем свайпы если игрок победил (во время анимации победы)
+  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value || winTriggered || winAnimationStartTime > 0) return
   if (gamePhysics.value) {
     gamePhysics.value.moveLeft()
   }
 }
 
 const handleSwipeRight = () => {
-  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value) return
+  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value || winTriggered || winAnimationStartTime > 0) return
   if (gamePhysics.value) {
     gamePhysics.value.moveRight()
   }
 }
 
 const handleSwipeUp = () => {
-  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value) return
+  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value || winTriggered || winAnimationStartTime > 0) return
   if (gamePhysics.value) {
     gamePhysics.value.jump()
   }
 }
 
 const handleSwipeDown = () => {
-  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value) return
+  if (!gameRun.isRunning.value || gameRun.isPaused.value || isDead.value || winTriggered || winAnimationStartTime > 0) return
   if (gamePhysics.value) {
     gamePhysics.value.slide()
   }
