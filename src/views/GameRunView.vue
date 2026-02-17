@@ -212,13 +212,17 @@
           >
             {{ t('game.run_claim') }}
           </button>
-          <button
-            v-else
-            class="btn-primary btn-primary--wide"
-            @click.stop.prevent="exitToMain"
-          >
-            {{ t('game.back_to_main') }}
-          </button>
+          <div v-else class="training-warning-container">
+            <p class="training-warning-text">
+              {{ t('game.training_warning') }}
+            </p>
+            <button
+              class="btn-primary btn-primary--wide"
+              @click.stop.prevent="exitToMain"
+            >
+              {{ t('game.back_to_main') }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -2465,6 +2469,24 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.training-warning-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.training-warning-text {
+  color: #ffd700;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  margin: 0;
+  padding: 0 16px;
+  line-height: 1.4;
 }
 
 .overheat-screen-pulse {
