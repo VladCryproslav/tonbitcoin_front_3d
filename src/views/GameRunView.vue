@@ -689,29 +689,21 @@ const startThreeLoop = () => {
         }
       }
       // Плавное ускорение после паузы/перегрева (за 3 секунды до целевой скорости)
+      // Обновляем скорость один раз за кадр (не в фиксированных шагах)
+      // Скорость дороги и дистанция обновляются автоматически в фиксированных шагах выше
       if (isAccelerating.value) {
         const elapsed = nowGlobal - accelerationStartTime.value
         const progress = Math.min(elapsed / ACCELERATION_DURATION_MS, 1) // От 0 до 1
         
-        // Плавная интерполяция от сохраненной скорости до целевой (ease-out для плавности)
-        const easeOutProgress = 1 - Math.pow(1 - progress, 3) // Кубическая ease-out кривая
+        // Упрощенная плавная интерполяция (квадратичная ease-out - быстрее чем кубическая)
+        // Используем простую формулу без Math.pow для оптимизации производительности
+        const easeOutProgress = progress < 1 ? progress * (2 - progress) : 1
         gameSpeed.value = savedSpeed.value + (targetSpeed.value - savedSpeed.value) * easeOutProgress
         
         // Если достигли целевой скорости - завершаем разгон
         if (progress >= 1) {
           gameSpeed.value = targetSpeed.value
           isAccelerating.value = false
-        }
-        
-        // Обновляем скорость дороги во время ускорения
-        if (gameWorld.value) {
-          gameWorld.value.setRoadSpeed(gameSpeed.value)
-        }
-        
-        // Обновляем дистанцию во время разгона
-        const distanceDelta = gameSpeed.value * 10
-        if (distanceDelta > 0) {
-          gameRun.updateDistance(gameRun.distance.value + distanceDelta)
         }
       } else if (!winTriggered && !winDecelerating && winAnimationStartTime === 0) {
         // Плавный набор: к 55% дистанции выходим на чуть меньшую макс. скорость (один раз на кадр, не на шаг)
