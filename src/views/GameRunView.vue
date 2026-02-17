@@ -499,6 +499,7 @@ const OVERHEAT_HOURS_BY_TYPE = {
 
 let threeLoop = null
 let lastUpdateTime = 0
+let timeAccumulator = 0 // Аккумулятор времени для фиксированного шага (исправление проблемы с разным FPS на iOS/Android)
 let shakeFramesLeft = 0
 let shakeBaseX = 0
 let shakeBaseY = 0
@@ -610,45 +611,74 @@ const startThreeLoop = () => {
     threeLoop = requestAnimationFrame(animate)
 
     const nowGlobal = performance.now()
-    const baseFrameContext = { nowMs: nowGlobal, deltaMs: FIXED_STEP_MS, fixedSteps: 1 }
-
-    // 1) Сначала физика (позиция персонажа, смена полосы) — потом рендер, без кадра задержки
+    
+    // Обновляем время кадра всегда (нужно для камеры и других систем)
+    const now = nowGlobal
+    if (lastUpdateTime <= 0) {
+      lastUpdateTime = now
+      timeAccumulator = 0 // Сбрасываем аккумулятор при первом кадре
+    }
+    
+    const frameTime = Math.min(now - lastUpdateTime, 100)
+    lastUpdateTime = now
+    
+    // EMA по времени кадра для адаптивного DPR (используем реальный frameTime)
+    frameTimeEMA = frameTimeEMA * 0.9 + frameTime * 0.1
+    lastFrameDtSec = frameTime / 1000
+    
+    // 1) Физика всегда обновляется (для камеры, анимаций персонажа и т.д.)
+    // Используем фиксированный шаг для физики, чтобы анимации были синхронизированы
     if (gamePhysics.value) {
+      const baseFrameContext = { nowMs: nowGlobal, deltaMs: FIXED_STEP_MS, fixedSteps: 1 }
       gamePhysics.value.update(baseFrameContext)
     }
-
+    
     // 2) Игровая логика в том же rAF (фикс. шаг). playerBox один раз за кадр — меньше setFromObject при наборе скорости.
     if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value) {
-      const now = nowGlobal
-      if (lastUpdateTime <= 0) lastUpdateTime = now
-      const frameTime = Math.min(now - lastUpdateTime, 100)
-      lastUpdateTime = now
-      // EMA по времени кадра для адаптивного DPR
-      frameTimeEMA = frameTimeEMA * 0.9 + frameTime * 0.1
-      lastFrameDtSec = frameTime / 1000
+      // ИСПРАВЛЕНИЕ: Используем аккумулятор времени для фиксированного шага
+      // Это гарантирует одинаковую скорость независимо от FPS (60Hz на iPhone vs 120Hz на Android)
+      // На Android с 120 FPS frameTime будет ~8ms, но мы накапливаем время и выполняем шаги только когда накопилось достаточно
+      timeAccumulator += frameTime
 
       const nowMs = now
       const slideStartTime = gamePhysics.value?.getSlideStartTime?.() ?? 0
       const inRollImmuneWindow = slideStartTime > 0 && nowMs - slideStartTime < ROLL_IMMUNE_MS
       const framePlayerBox = gamePhysics.value?.getPlayerBox?.() ?? null
-      let stepsCount = Math.floor(frameTime / FIXED_STEP_MS)
-      if (stepsCount < 1) stepsCount = 1
-      else if (stepsCount > MAX_STEPS) stepsCount = MAX_STEPS
-      const frameContext = { nowMs, deltaMs: frameTime, fixedSteps: stepsCount }
-      let distanceDelta = 0
-      let accumulatedSpeed = 0
-      for (let i = 0; i < stepsCount; i++) {
-        const s = gameSpeed.value
-        accumulatedSpeed += s
-        distanceDelta += s * 10
-        doOneStep(framePlayerBox, inRollImmuneWindow)
+      
+      // Выполняем фиксированные шаги только когда накопилось достаточно времени
+      // Это гарантирует одинаковую скорость на всех платформах независимо от FPS
+      let stepsCount = 0
+      while (timeAccumulator >= FIXED_STEP_MS && stepsCount < MAX_STEPS) {
+        timeAccumulator -= FIXED_STEP_MS
+        stepsCount++
       }
-      if (gameWorld.value && accumulatedSpeed !== 0) {
-        const avgSpeed = accumulatedSpeed / stepsCount
-        gameWorld.value.setRoadSpeed(avgSpeed)
-      }
-      if (distanceDelta !== 0) {
-        gameRun.updateDistance(gameRun.distance.value + distanceDelta)
+      
+      // Выполняем фиксированные шаги только когда накопилось достаточно времени
+      if (stepsCount > 0) {
+        const frameContext = { nowMs, deltaMs: FIXED_STEP_MS * stepsCount, fixedSteps: stepsCount }
+        
+        let distanceDelta = 0
+        let accumulatedSpeed = 0
+        for (let i = 0; i < stepsCount; i++) {
+          const s = gameSpeed.value
+          accumulatedSpeed += s
+          distanceDelta += s * 10
+          doOneStep(framePlayerBox, inRollImmuneWindow)
+        }
+        if (gameWorld.value && accumulatedSpeed !== 0) {
+          const avgSpeed = accumulatedSpeed / stepsCount
+          gameWorld.value.setRoadSpeed(avgSpeed)
+        }
+        if (distanceDelta !== 0) {
+          gameRun.updateDistance(gameRun.distance.value + distanceDelta)
+        }
+        
+        if (gameEffects.value) {
+          const q = graphicsQuality.value
+          if (q === 'normal' || q === 'medium') {
+            gameEffects.value.updateEffects(frameContext)
+          }
+        }
       }
       if (!winTriggered && !winDecelerating && winAnimationStartTime === 0) {
         // Плавный набор: к 55% дистанции выходим на чуть меньшую макс. скорость (один раз на кадр, не на шаг)
@@ -659,13 +689,8 @@ const startThreeLoop = () => {
         const targetSpeed = baseSpeed + (maxSpeed - baseSpeed) * rampProgress
         gameSpeed.value = 0.92 * gameSpeed.value + 0.08 * targetSpeed
       }
+      // Спавн объектов выполняется независимо от количества шагов
       if (gameWorld.value) gameWorld.value.spawnObjects(playerZ.value, gameRun.getNextEnergyPoint)
-      if (gameEffects.value) {
-        const q = graphicsQuality.value
-        if (q === 'normal' || q === 'medium') {
-          gameEffects.value.updateEffects(frameContext)
-        }
-      }
       if (hitCount.value >= 3 && !isDead.value) {
         isDead.value = true
         // Сохраняем energyCollected ДО остановки игрового цикла
@@ -863,6 +888,7 @@ const startGame = (training = false, initialStorage = null) => {
   isTrainingRun.value = training
   playerZ.value = 0
   gameSpeed.value = 0.15
+  timeAccumulator = 0 // Сбрасываем аккумулятор времени при старте игры
   if (gameWorld.value) {
     gameWorld.value.clearAll()
     gameWorld.value.createRoad()
@@ -1437,6 +1463,7 @@ function doOneStep(playerBox, inRollImmuneWindow) {
 
 const stopGameLoop = () => {
   lastUpdateTime = 0
+  timeAccumulator = 0 // Сбрасываем аккумулятор времени при остановке
 }
 
 const toggleGraphicsQuality = () => {
