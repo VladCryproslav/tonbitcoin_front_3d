@@ -685,7 +685,29 @@ const startThreeLoop = () => {
           }
         }
       }
-      if (!winTriggered && !winDecelerating && winAnimationStartTime === 0 && !isAccelerating.value) {
+      // Плавное ускорение после паузы/перегрева (обратная логика к замедлению)
+      if (isAccelerating.value) {
+        // Используем обратную логику к WIN_DECEL_RATE для плавного разгона
+        const ACCEL_RATE = 1 / WIN_DECEL_RATE // ~1.136
+        gameSpeed.value *= ACCEL_RATE
+        
+        // Ограничиваем максимальной целевой скоростью
+        if (gameSpeed.value >= targetSpeed.value) {
+          gameSpeed.value = targetSpeed.value
+          isAccelerating.value = false // Завершаем разгон
+        }
+        
+        // Обновляем скорость дороги во время ускорения
+        if (gameWorld.value) {
+          gameWorld.value.setRoadSpeed(gameSpeed.value)
+        }
+        
+        // Обновляем дистанцию во время разгона
+        const distanceDelta = gameSpeed.value * 10
+        if (distanceDelta > 0) {
+          gameRun.updateDistance(gameRun.distance.value + distanceDelta)
+        }
+      } else if (!winTriggered && !winDecelerating && winAnimationStartTime === 0) {
         // Плавный набор: к 55% дистанции выходим на чуть меньшую макс. скорость (один раз на кадр, не на шаг)
         // Не применяем если идет плавное ускорение после паузы/перегрева
         const progress = (gameRun.distanceProgress?.value ?? 0) / 100
@@ -1297,10 +1319,17 @@ const resumeGame = async () => {
       lastUpdateTime = 0
       launcherOverlayMode.value = 'none'
       
+      // Вычисляем целевую скорость на основе текущего прогресса дистанции
+      const progress = (gameRun.distanceProgress?.value ?? 0) / 100
+      const maxSpeed = 0.36
+      const rampProgress = Math.min(1, progress / 0.55)
+      const baseSpeed = 0.15
+      targetSpeed.value = baseSpeed + (maxSpeed - baseSpeed) * rampProgress
+      
       // Начинаем плавное ускорение до целевой скорости
-      gameSpeed.value = 0 // Начинаем с нуля
+      gameSpeed.value = 0.01 // Начинаем с небольшой скорости (не с нуля, чтобы ускорение началось сразу)
       if (gameWorld.value) {
-        gameWorld.value.setRoadSpeed(0)
+        gameWorld.value.setRoadSpeed(gameSpeed.value)
       }
       isAccelerating.value = true // Включаем флаг плавного разгона
       
@@ -1450,31 +1479,6 @@ function doOneStep(playerBox, inRollImmuneWindow) {
       if (gameWorld.value) gameWorld.value.setRoadSpeed(gameSpeed.value)
       
       // Обновляем дистанцию даже во время замедления, если игра еще работает
-      if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value) {
-        const distanceDelta = gameSpeed.value * 10
-        if (distanceDelta > 0) {
-          gameRun.updateDistance(gameRun.distance.value + distanceDelta)
-        }
-      }
-    }
-
-    // Плавное ускорение после паузы/перегрева (обратная логика к замедлению)
-    if (isAccelerating.value) {
-      // Используем обратную логику к WIN_DECEL_RATE для плавного разгона
-      const ACCEL_RATE = 1 / WIN_DECEL_RATE // ~1.136
-      gameSpeed.value *= ACCEL_RATE
-      
-      // Ограничиваем максимальной целевой скоростью
-      if (gameSpeed.value >= targetSpeed.value) {
-        gameSpeed.value = targetSpeed.value
-        isAccelerating.value = false // Завершаем разгон
-      }
-      
-      if (gameWorld.value) {
-        gameWorld.value.setRoadSpeed(gameSpeed.value)
-      }
-      
-      // Обновляем дистанцию во время разгона
       if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value) {
         const distanceDelta = gameSpeed.value * 10
         if (distanceDelta > 0) {
@@ -1920,9 +1924,9 @@ const handleResumeClick = () => {
       lastUpdateTime = 0
       
       // Начинаем плавное ускорение до целевой скорости
-      gameSpeed.value = 0 // Начинаем с нуля
+      gameSpeed.value = 0.01 // Начинаем с небольшой скорости (не с нуля, чтобы ускорение началось сразу)
       if (gameWorld.value) {
-        gameWorld.value.setRoadSpeed(0)
+        gameWorld.value.setRoadSpeed(gameSpeed.value)
       }
       isAccelerating.value = true // Включаем флаг плавного разгона
       
