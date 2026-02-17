@@ -100,10 +100,10 @@ const handleDownEnd = () => {
   --btn-lr-w: 105px;
   --btn-lr-h: 115px;
   --btn-ud-w: 137px;
-  --btn-ud-h: 50px;
+  --btn-ud-h: 70px; /* Увеличена высота кнопок вверх/вниз */
 
   position: absolute;
-  bottom: var(--control-pad);
+  bottom: calc(var(--control-pad) + 15px); /* Подняты кнопки вверх */
   left: 0;
   right: 0;
   display: flex;
@@ -130,7 +130,7 @@ const handleDownEnd = () => {
   pointer-events: auto;
   border-radius: 6px;
   border: none;
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(15, 23, 42, 0.5); /* Увеличена прозрачность */
   backdrop-filter: blur(12px);
   border: 2px solid rgba(148, 163, 184, 0.3);
   color: #e5e7eb;
@@ -142,6 +142,7 @@ const handleDownEnd = () => {
   transition: all 0.15s ease;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
+  opacity: 0.85; /* Добавлена общая прозрачность для всех кнопок */
 
   &:active,
   &:focus {
@@ -154,9 +155,10 @@ const handleDownEnd = () => {
 
   &:active {
     transform: scale(0.92);
-    background: rgba(30, 64, 175, 0.6);
+    background: rgba(30, 64, 175, 0.5); /* Увеличена прозрачность при активном состоянии */
     border-color: rgba(148, 163, 184, 0.5);
     box-shadow: 0 4px 16px rgba(56, 189, 248, 0.3);
+    opacity: 1; /* Полная непрозрачность при нажатии */
 
     svg {
       transform: scale(1.1);
@@ -174,7 +176,7 @@ const handleDownEnd = () => {
 .control-btn--up,
 .control-btn--down {
   width: clamp(80px, 36vw, var(--btn-ud-w));
-  height: clamp(36px, 13vw, var(--btn-ud-h));
+  height: clamp(50px, 18vw, var(--btn-ud-h)); /* Увеличена высота кнопок вверх/вниз */
 }
 
 @media (max-width: 400px) {
