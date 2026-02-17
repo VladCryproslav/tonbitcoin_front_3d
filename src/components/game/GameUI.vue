@@ -16,25 +16,27 @@
                 </span>
               </div>
               <div v-if="compactDistance" class="energy-counter-distance">
-                <!-- Статус бар дистанции/перегрева -->
-                <div class="distance-bar">
-                  <div
-                    v-if="overheatCountdown === null"
-                    class="distance-fill"
-                    :style="{ width: `${Math.max(0, Math.min(100, Number.isFinite(power) ? power : 0))}%` }"
-                  ></div>
-                  <div
-                    v-else
-                    class="distance-fill distance-fill--overheat"
-                    :style="{ width: `${(overheatCountdown / 5) * 100}%` }"
-                  ></div>
+                <!-- Статус бар дистанции/перегрева с процентом/таймером на одном уровне -->
+                <div class="distance-bar-row">
+                  <div class="distance-bar">
+                    <div
+                      v-if="overheatCountdown === null"
+                      class="distance-fill"
+                      :style="{ width: `${Math.max(0, Math.min(100, Number.isFinite(power) ? power : 0))}%` }"
+                    ></div>
+                    <div
+                      v-else
+                      class="distance-fill distance-fill--overheat"
+                      :style="{ width: `${(overheatCountdown / 5) * 100}%` }"
+                    ></div>
+                  </div>
+                  <span class="distance-value" v-if="overheatCountdown === null">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</span>
+                  <span class="distance-value distance-value--overheat" v-else>{{ overheatCountdown }}</span>
                 </div>
-                <span class="distance-value" v-if="overheatCountdown === null">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</span>
-                <span class="distance-value distance-value--overheat" v-else>{{ overheatCountdown }}</span>
                 
-                <!-- Текст "Перегрев через" снизу статус бара -->
+                <!-- Текст "Остановка персонажа через" снизу статус бара -->
                 <div v-if="overheatCountdown !== null" class="overheat-label-compact">
-                  {{ t('game.overheat_countdown_label') }}
+                  {{ t('game.overheat_countdown_label_compact') }}
                 </div>
               </div>
             </div>
@@ -238,6 +240,8 @@ const handleCryoIconError = (event) => {
   align-self: stretch;
   display: inline-flex;
   align-items: center;
+  width: 120px; // Фиксированная ширина, чтобы не расширялся вместе с счетчиком энергии
+  flex-shrink: 0; // Не сжимается
 
   .lives-icon {
     width: 22px;
@@ -283,6 +287,14 @@ const handleCryoIconError = (event) => {
   gap: 6px;
   width: 100%;
 
+  // Строка со статус баром и процентом/таймером на одном уровне
+  .distance-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
   .distance-bar {
     flex: 1;
     height: 5px;
@@ -304,10 +316,9 @@ const handleCryoIconError = (event) => {
     font-weight: 600;
     min-width: 28px;
     text-align: right;
-    align-self: flex-end;
   }
 
-  // Текст "Перегрев через" снизу статус бара
+  // Текст "Остановка персонажа через" снизу статус бара
   .overheat-label-compact {
     color: rgba(255, 255, 255, 0.6);
     font-size: 10px;
@@ -388,7 +399,7 @@ const handleCryoIconError = (event) => {
   color: #ff3b59;
   font-size: 14px;
   font-weight: 700;
-  animation: overheat-countdown-pulse 0.5s ease-in-out infinite;
+  // Убрана анимация отсчета, только пульсация статус бара
 }
 
 @keyframes overheat-countdown-pulse {
