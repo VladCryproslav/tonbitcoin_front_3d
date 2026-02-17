@@ -100,7 +100,7 @@ const handleDownEnd = () => {
   --btn-lr-w: 105px;
   --btn-lr-h: 115px;
   --btn-ud-w: 137px;
-  --btn-ud-h: 75px; /* Увеличена высота кнопок вверх/вниз */
+  --btn-ud-h: 80px; /* Увеличена высота кнопок вверх/вниз */
   --control-gap: clamp(12px, 3vw, 24px); /* Отступ между кнопками */
 
   position: absolute;
