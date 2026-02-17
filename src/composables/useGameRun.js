@@ -21,8 +21,8 @@ import { host } from '../../axios.config'
  *   2. Собрал весь Storage (все поинты собраны, даже если не все прошли)
  *   3. Потерял все жизни (hitCount >= 3, обрабатывается в GameRunView.vue)
  */
-const ENERGY_POINTS_BASE_COUNT = 100
-const ENERGY_POINTS_RESERVE_PERCENT = 10
+const ENERGY_POINTS_BASE_COUNT = 200
+const ENERGY_POINTS_RESERVE_PERCENT = 5
 
 /**
  * Генерирует массив поинтов энергии: 0.5%, 1%, 2% от storage.
