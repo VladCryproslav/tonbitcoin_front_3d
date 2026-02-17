@@ -651,7 +651,6 @@ const startThreeLoop = () => {
       const nowMs = now
       const slideStartTime = gamePhysics.value?.getSlideStartTime?.() ?? 0
       const inRollImmuneWindow = slideStartTime > 0 && nowMs - slideStartTime < ROLL_IMMUNE_MS
-      const framePlayerBox = gamePhysics.value?.getPlayerBox?.() ?? null
       
       // Выполняем фиксированные шаги только когда накопилось достаточно времени
       // Это гарантирует одинаковую скорость на всех платформах независимо от FPS
@@ -661,8 +660,23 @@ const startThreeLoop = () => {
         stepsCount++
       }
       
-      // Выполняем фиксированные шаги только когда накопилось достаточно времени
+      // ОПТИМИЗАЦИЯ: На iPhone с 60Hz предотвращаем микрофризы
+      // Если frameTime близок к фиксированному шагу (нормальный 60Hz), всегда выполняем минимум 1 шаг
+      // Это гарантирует плавность - на iPhone frameTime ≈ 16.67ms, что равно FIXED_STEP_MS
+      // На Android с 120Hz frameTime будет ~8ms, поэтому это условие не сработает и аккумулятор будет работать правильно
+      if (stepsCount === 0 && frameTime >= FIXED_STEP_MS * 0.85) {
+        // Выполняем 1 шаг, вычитая из аккумулятора (может уйти в небольшой минус, но компенсируется в следующих кадрах)
+        stepsCount = 1
+        timeAccumulator -= FIXED_STEP_MS
+        // Ограничиваем аккумулятор снизу, чтобы не накапливать слишком большой долг
+        if (timeAccumulator < -FIXED_STEP_MS * 0.5) {
+          timeAccumulator = -FIXED_STEP_MS * 0.5
+        }
+      }
+      
+      // Выполняем шаги только если они есть (оптимизация: не вызываем getPlayerBox лишний раз)
       if (stepsCount > 0) {
+        const framePlayerBox = gamePhysics.value?.getPlayerBox?.() ?? null
         const frameContext = { nowMs, deltaMs: FIXED_STEP_MS * stepsCount, fixedSteps: stepsCount }
         
         let distanceDelta = 0
