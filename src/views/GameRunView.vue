@@ -695,10 +695,14 @@ const startThreeLoop = () => {
         const elapsed = nowGlobal - accelerationStartTime.value
         const progress = Math.min(elapsed / ACCELERATION_DURATION_MS, 1) // От 0 до 1
         
+        // Начальная скорость разгона = сохраненная скорость - 40%, но не меньше минимальной 0.15
+        const MIN_START_SPEED = 0.15
+        const startAccelSpeed = Math.max(savedSpeed.value * 0.6, MIN_START_SPEED)
+        
         // Упрощенная плавная интерполяция (квадратичная ease-out - быстрее чем кубическая)
         // Используем простую формулу без Math.pow для оптимизации производительности
         const easeOutProgress = progress < 1 ? progress * (2 - progress) : 1
-        gameSpeed.value = savedSpeed.value + (targetSpeed.value - savedSpeed.value) * easeOutProgress
+        gameSpeed.value = startAccelSpeed + (targetSpeed.value - startAccelSpeed) * easeOutProgress
         
         // Если достигли целевой скорости - завершаем разгон
         if (progress >= 1) {
@@ -1331,8 +1335,11 @@ const resumeGame = async () => {
       const baseSpeed = 0.15
       targetSpeed.value = baseSpeed + (maxSpeed - baseSpeed) * rampProgress
       
-      // Начинаем плавное ускорение от сохраненной скорости до целевой за 3 секунды
-      gameSpeed.value = savedSpeed.value // Начинаем с сохраненной скорости
+      // Начинаем плавное ускорение от -40% сохраненной скорости до целевой за 3 секунды
+      // Но не меньше минимальной стартовой скорости 0.15
+      const MIN_START_SPEED = 0.15
+      const startAccelSpeed = Math.max(savedSpeed.value * 0.6, MIN_START_SPEED)
+      gameSpeed.value = startAccelSpeed
       if (gameWorld.value) {
         gameWorld.value.setRoadSpeed(gameSpeed.value)
       }
@@ -1929,8 +1936,11 @@ const handleResumeClick = () => {
       gameRun.resumeRun()
       lastUpdateTime = 0
       
-      // Начинаем плавное ускорение от сохраненной скорости до целевой за 3 секунды
-      gameSpeed.value = savedSpeed.value // Начинаем с сохраненной скорости
+      // Начинаем плавное ускорение от -40% сохраненной скорости до целевой за 3 секунды
+      // Но не меньше минимальной стартовой скорости 0.15
+      const MIN_START_SPEED = 0.15
+      const startAccelSpeed = Math.max(savedSpeed.value * 0.6, MIN_START_SPEED)
+      gameSpeed.value = startAccelSpeed
       if (gameWorld.value) {
         gameWorld.value.setRoadSpeed(gameSpeed.value)
       }
