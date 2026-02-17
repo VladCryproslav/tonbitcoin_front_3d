@@ -130,11 +130,11 @@ const handleDownEnd = () => {
 
 .control-btn {
   pointer-events: auto;
-  border-radius: 15px;
+  border-radius: 20px;
   border: none;
-  background: rgba(15, 23, 42, 0.5); /* Увеличена прозрачность */
+  background: rgba(15, 23, 42, 0.45); /* Увеличена прозрачность */
   backdrop-filter: blur(12px);
-  border: 5px solid rgba(148, 163, 184, 0.3);
+  border: 2px solid rgba(148, 163, 184, 0.3);
   color: #e5e7eb;
   display: flex;
   align-items: center;
