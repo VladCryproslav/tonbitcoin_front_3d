@@ -627,9 +627,10 @@ const startThreeLoop = () => {
     lastFrameDtSec = frameTime / 1000
     
     // 1) Физика всегда обновляется (для камеры, анимаций персонажа и т.д.)
-    // Используем фиксированный шаг для физики, чтобы анимации были синхронизированы
+    // ИСПРАВЛЕНИЕ: Используем реальный frameTime для анимаций, чтобы они синхронизировались с частотой кадров экрана
+    // На Android с 120Hz анимации будут обновляться чаще, но с меньшим deltaTime, что даст правильную скорость
     if (gamePhysics.value) {
-      const baseFrameContext = { nowMs: nowGlobal, deltaMs: FIXED_STEP_MS, fixedSteps: 1 }
+      const baseFrameContext = { nowMs: nowGlobal, deltaMs: frameTime, fixedSteps: 1 }
       gamePhysics.value.update(baseFrameContext)
     }
     
