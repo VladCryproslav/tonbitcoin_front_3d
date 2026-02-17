@@ -101,6 +101,7 @@ const handleDownEnd = () => {
   --btn-lr-h: 115px;
   --btn-ud-w: 137px;
   --btn-ud-h: 70px; /* Увеличена высота кнопок вверх/вниз */
+  --control-gap: clamp(12px, 3vw, 24px); /* Отступ между кнопками */
 
   position: absolute;
   bottom: calc(var(--control-pad) + 15px); /* Подняты кнопки вверх */
@@ -108,22 +109,23 @@ const handleDownEnd = () => {
   right: 0;
   display: flex;
   justify-content: space-between;
-  align-items: stretch;
+  align-items: center; /* Центрируем все кнопки по высоте */
   padding: 0 var(--control-pad);
   pointer-events: none;
   z-index: 50;
-  gap: clamp(12px, 3vw, 24px);
+  gap: var(--control-gap);
 }
 
 .control-center {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center; /* Центрируем кнопки вверх/вниз по вертикали */
   align-items: center;
   max-width: min(var(--btn-ud-w), 40vw);
   margin: 0 auto;
   min-height: 0;
+  gap: var(--control-gap); /* Отступ между кнопками вверх и вниз такой же как между другими кнопками */
 }
 
 .control-btn {
@@ -142,7 +144,7 @@ const handleDownEnd = () => {
   transition: all 0.15s ease;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
-  opacity: 0.85; /* Добавлена общая прозрачность для всех кнопок */
+  opacity: 0.65; /* Увеличена прозрачность кнопок */
 
   &:active,
   &:focus {
