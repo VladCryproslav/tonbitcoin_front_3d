@@ -483,6 +483,10 @@ const overheatCountdown = ref(null) // Обратный отсчет перед 
 let overheatCountdownInterval = null
 const overheatDecelerating = ref(false) // Флаг плавной остановки при перегреве (с 3 до 1 секунды)
 
+// Плавное ускорение после паузы/перегрева
+const isAccelerating = ref(false) // Флаг плавного разгона после таймера
+const targetSpeed = ref(0.15) // Целевая скорость для разгона
+
 // Таймер обратного отсчета перед началом забега
 const showCountdown = ref(false)
 const countdownNumber = ref(3)
@@ -681,8 +685,9 @@ const startThreeLoop = () => {
           }
         }
       }
-      if (!winTriggered && !winDecelerating && winAnimationStartTime === 0) {
+      if (!winTriggered && !winDecelerating && winAnimationStartTime === 0 && !isAccelerating.value) {
         // Плавный набор: к 55% дистанции выходим на чуть меньшую макс. скорость (один раз на кадр, не на шаг)
+        // Не применяем если идет плавное ускорение после паузы/перегрева
         const progress = (gameRun.distanceProgress?.value ?? 0) / 100
         const maxSpeed = 0.36
         const rampProgress = Math.min(1, progress / 0.55)
@@ -889,6 +894,7 @@ const startGame = (training = false, initialStorage = null) => {
   isTrainingRun.value = training
   playerZ.value = 0
   gameSpeed.value = 0.15
+  isAccelerating.value = false // Сбрасываем флаг ускорения при новом старте
   timeAccumulator = 0 // Сбрасываем аккумулятор времени при старте игры
   if (gameWorld.value) {
     gameWorld.value.clearAll()
@@ -958,6 +964,7 @@ const initializeOverheat = () => {
     overheatedUntil.value = null
     showOverheatModal.value = false
     overheatDecelerating.value = false
+    isAccelerating.value = false // Сбрасываем флаг ускорения
     return
   }
   
@@ -1075,6 +1082,13 @@ const activateOverheat = (serverData) => {
     if (overheatCountdown.value === 1) {
       console.log('[GameRunView] Overheat countdown at 1, stopping and showing modal')
       
+      // Сохраняем целевую скорость перед остановкой (для плавного разгона после возобновления)
+      const progress = (gameRun.distanceProgress?.value ?? 0) / 100
+      const maxSpeed = 0.36
+      const rampProgress = Math.min(1, progress / 0.55)
+      const baseSpeed = 0.15
+      targetSpeed.value = baseSpeed + (maxSpeed - baseSpeed) * rampProgress
+      
       // Останавливаем плавное замедление
       overheatDecelerating.value = false
       gameSpeed.value = 0
@@ -1152,6 +1166,7 @@ const handleOverheatContinue = async () => {
   overheatedUntil.value = app.user?.overheated_until ? new Date(app.user.overheated_until) : null
   overheatCountdown.value = null // Сбрасываем таймер
   overheatDecelerating.value = false // Сбрасываем флаг замедления
+  isAccelerating.value = false // Сбрасываем флаг ускорения
   
   // Возобновляем забег
   resumeGame()
@@ -1175,6 +1190,16 @@ const handleOverheatModalClose = () => {
 const pauseGame = () => {
   gameRun.pauseRun()
   stopGameLoop()
+  
+  // Сохраняем целевую скорость перед паузой (для плавного разгона после возобновления)
+  const progress = (gameRun.distanceProgress?.value ?? 0) / 100
+  const maxSpeed = 0.36
+  const rampProgress = Math.min(1, progress / 0.55)
+  const baseSpeed = 0.15
+  targetSpeed.value = baseSpeed + (maxSpeed - baseSpeed) * rampProgress
+  
+  // Сбрасываем флаг ускорения при паузе
+  isAccelerating.value = false
   
   // Устанавливаем анимацию стояния при паузе
   if (gamePhysics.value?.setAnimationState) {
@@ -1234,6 +1259,7 @@ const resumeGame = async () => {
   overheatedUntil.value = app.user?.overheated_until ? new Date(app.user.overheated_until) : null
   overheatCountdown.value = null // Сбрасываем таймер
   overheatDecelerating.value = false // Сбрасываем флаг замедления
+  isAccelerating.value = false // Сбрасываем флаг ускорения
   
   // Показываем таймер обратного отсчета 3-2-1
   showCountdown.value = true
@@ -1270,6 +1296,13 @@ const resumeGame = async () => {
       gameRun.resumeRun()
       lastUpdateTime = 0
       launcherOverlayMode.value = 'none'
+      
+      // Начинаем плавное ускорение до целевой скорости
+      gameSpeed.value = 0 // Начинаем с нуля
+      if (gameWorld.value) {
+        gameWorld.value.setRoadSpeed(0)
+      }
+      isAccelerating.value = true // Включаем флаг плавного разгона
       
       // Активируем анимацию бега персонажа
       if (gamePhysics.value?.setAnimationState) {
@@ -1417,6 +1450,31 @@ function doOneStep(playerBox, inRollImmuneWindow) {
       if (gameWorld.value) gameWorld.value.setRoadSpeed(gameSpeed.value)
       
       // Обновляем дистанцию даже во время замедления, если игра еще работает
+      if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value) {
+        const distanceDelta = gameSpeed.value * 10
+        if (distanceDelta > 0) {
+          gameRun.updateDistance(gameRun.distance.value + distanceDelta)
+        }
+      }
+    }
+
+    // Плавное ускорение после паузы/перегрева (обратная логика к замедлению)
+    if (isAccelerating.value) {
+      // Используем обратную логику к WIN_DECEL_RATE для плавного разгона
+      const ACCEL_RATE = 1 / WIN_DECEL_RATE // ~1.136
+      gameSpeed.value *= ACCEL_RATE
+      
+      // Ограничиваем максимальной целевой скоростью
+      if (gameSpeed.value >= targetSpeed.value) {
+        gameSpeed.value = targetSpeed.value
+        isAccelerating.value = false // Завершаем разгон
+      }
+      
+      if (gameWorld.value) {
+        gameWorld.value.setRoadSpeed(gameSpeed.value)
+      }
+      
+      // Обновляем дистанцию во время разгона
       if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value) {
         const distanceDelta = gameSpeed.value * 10
         if (distanceDelta > 0) {
@@ -1851,8 +1909,22 @@ const handleResumeClick = () => {
       countdownInterval = null
       showCountdown.value = false
       
+      // Вычисляем целевую скорость на основе текущего прогресса дистанции
+      const progress = (gameRun.distanceProgress?.value ?? 0) / 100
+      const maxSpeed = 0.36
+      const rampProgress = Math.min(1, progress / 0.55)
+      const baseSpeed = 0.15
+      targetSpeed.value = baseSpeed + (maxSpeed - baseSpeed) * rampProgress
+      
       gameRun.resumeRun()
       lastUpdateTime = 0
+      
+      // Начинаем плавное ускорение до целевой скорости
+      gameSpeed.value = 0 // Начинаем с нуля
+      if (gameWorld.value) {
+        gameWorld.value.setRoadSpeed(0)
+      }
+      isAccelerating.value = true // Включаем флаг плавного разгона
       
       // Активируем анимацию бега персонажа (из стоячего положения)
       if (gamePhysics.value?.setAnimationState) {
