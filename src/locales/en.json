@@ -463,7 +463,7 @@
     "lose_title": "You lost",
     "lose_subtitle": "Try again to collect more energy.",
     "back_to_main": "Back to main screen",
-    "training_warning": "Important! Training run results are not recorded",
+    "training_warning": "Important! Training run results are not saved",
     "graphics_label_normal": "Graphics: High",
     "graphics_label_medium": "Graphics: Medium",
     "graphics_label_low": "Graphics: Low",
