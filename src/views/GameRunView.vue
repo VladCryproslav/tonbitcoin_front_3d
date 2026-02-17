@@ -626,7 +626,12 @@ const startThreeLoop = () => {
       timeAccumulator = 0 // Сбрасываем аккумулятор при первом кадре
     }
     
-    const frameTime = Math.min(now - lastUpdateTime, 100)
+    // Защита от аномальных значений frameTime (слишком маленькие или большие скачки)
+    let frameTime = now - lastUpdateTime
+    // Ограничиваем сверху для защиты от больших скачков (например, при переключении вкладок)
+    frameTime = Math.min(frameTime, 100)
+    // Ограничиваем снизу для защиты от слишком маленьких значений (может вызывать проблемы)
+    frameTime = Math.max(frameTime, 1)
     lastUpdateTime = now
     
     // EMA по времени кадра для адаптивного DPR (используем реальный frameTime)
@@ -669,9 +674,16 @@ const startThreeLoop = () => {
         stepsCount = 1
         timeAccumulator -= FIXED_STEP_MS
         // Ограничиваем аккумулятор снизу, чтобы не накапливать слишком большой долг
-        if (timeAccumulator < -FIXED_STEP_MS * 0.5) {
-          timeAccumulator = -FIXED_STEP_MS * 0.5
+        // Используем более мягкое ограничение для плавности
+        if (timeAccumulator < -FIXED_STEP_MS * 0.3) {
+          timeAccumulator = -FIXED_STEP_MS * 0.3
         }
+      }
+      
+      // Защита от накопления слишком большого долга в аккумуляторе
+      // Если аккумулятор ушел слишком далеко в минус, постепенно компенсируем
+      if (timeAccumulator < -FIXED_STEP_MS * 2) {
+        timeAccumulator = -FIXED_STEP_MS * 2
       }
       
       // Выполняем шаги только если они есть (оптимизация: не вызываем getPlayerBox лишний раз)
@@ -733,8 +745,11 @@ const startThreeLoop = () => {
         const targetSpeed = baseSpeed + (maxSpeed - baseSpeed) * rampProgress
         gameSpeed.value = 0.92 * gameSpeed.value + 0.08 * targetSpeed
       }
-      // Спавн объектов выполняется независимо от количества шагов
-      if (gameWorld.value) gameWorld.value.spawnObjects(playerZ.value, gameRun.getNextEnergyPoint)
+      // ОПТИМИЗАЦИЯ: Спавн объектов только когда есть шаги (экономит вычисления на Android с 120Hz)
+      // На Android с 120Hz это предотвращает лишние вызовы spawnObjects при stepsCount = 0
+      if (gameWorld.value && stepsCount > 0) {
+        gameWorld.value.spawnObjects(playerZ.value, gameRun.getNextEnergyPoint)
+      }
       if (hitCount.value >= 3 && !isDead.value) {
         isDead.value = true
         // Сохраняем energyCollected ДО остановки игрового цикла
@@ -777,7 +792,9 @@ const startThreeLoop = () => {
     }
 
     // 3) Камера: цель из физики напрямую (не из game loop), плавное следование без качания
+    // ОПТИМИЗАЦИЯ: Используем кэшированное значение lastFrameDtSec для стабильности
     if (camera && gamePhysics.value?.getCameraLaneX) {
+      // Ограничиваем dt для защиты от аномальных значений (например, при переключении вкладок)
       const dt = lastFrameDtSec > 0 ? Math.min(lastFrameDtSec, 0.05) : 0.016
       const laneX = gamePhysics.value.getCameraLaneX()
       const targetCamX = laneX === 0 ? 0 : laneX * 0.95
@@ -803,16 +820,19 @@ const startThreeLoop = () => {
     }
 
     // 4) Адаптивный DPR на основе средней длительности кадра (только для normal/medium)
-    if (renderer) {
+    // ОПТИМИЗАЦИЯ: Проверяем только когда игра запущена (экономит вычисления)
+    if (renderer && gameRun.isRunning.value) {
       const q = graphicsQuality.value
       const isLow = q === 'low'
       if (!isLow) {
         if (++dprAdjustCounter >= 30) {
           dprAdjustCounter = 0
-          if (frameTimeEMA > 18 && dynamicPixelRatio > minPixelRatio) {
+          // Более консервативные пороги для предотвращения частых изменений DPR
+          // Это улучшает стабильность и предотвращает визуальные артефакты
+          if (frameTimeEMA > 20 && dynamicPixelRatio > minPixelRatio) {
             dynamicPixelRatio = Math.max(minPixelRatio, dynamicPixelRatio - 0.1)
             renderer.setPixelRatio(dynamicPixelRatio)
-          } else if (frameTimeEMA < 15 && dynamicPixelRatio < targetPixelRatio) {
+          } else if (frameTimeEMA < 14 && dynamicPixelRatio < targetPixelRatio) {
             dynamicPixelRatio = Math.min(targetPixelRatio, dynamicPixelRatio + 0.1)
             renderer.setPixelRatio(dynamicPixelRatio)
           }
