@@ -22,7 +22,7 @@ import { host } from '../../axios.config'
  *   3. Потерял все жизни (hitCount >= 3, обрабатывается в GameRunView.vue)
  */
 const ENERGY_POINTS_BASE_COUNT = 200
-const ENERGY_POINTS_RESERVE_PERCENT = 5
+const ENERGY_POINTS_RESERVE_PERCENT = 10
 
 /**
  * Генерирует массив поинтов энергии. Проценты масштабируются от базового количества:
