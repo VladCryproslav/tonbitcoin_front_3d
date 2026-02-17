@@ -16,7 +16,7 @@
                 </span>
               </div>
               <div v-if="compactDistance" class="energy-counter-distance">
-                <!-- Обычное заполнение дистанции (зеленое) -->
+                <!-- Статус бар дистанции/перегрева -->
                 <div class="distance-bar">
                   <div
                     v-if="overheatCountdown === null"
@@ -26,19 +26,11 @@
                   <div
                     v-else
                     class="distance-fill distance-fill--overheat"
-                    :style="{ width: '100%' }"
+                    :style="{ width: `${(overheatCountdown / 5) * 100}%` }"
                   ></div>
                 </div>
                 <span class="distance-value" v-if="overheatCountdown === null">{{ Number.isFinite(power) ? Math.round(power) : 0 }}%</span>
                 <span class="distance-value distance-value--overheat" v-else>{{ overheatCountdown }}</span>
-                
-                <!-- Красное заполнение с таймером при перегреве в режиме кнопок (как в статус баре при свайпах) -->
-                <div v-if="overheatCountdown !== null" class="overheat-indicator-compact">
-                  <div class="overheat-bar-compact">
-                    <div class="overheat-fill-compact" :style="{ width: '100%' }"></div>
-                  </div>
-                  <span class="overheat-countdown-compact">{{ overheatCountdown }}</span>
-                </div>
                 
                 <!-- Текст "Перегрев через" снизу статус бара -->
                 <div v-if="overheatCountdown !== null" class="overheat-label-compact">
@@ -315,39 +307,6 @@ const handleCryoIconError = (event) => {
     align-self: flex-end;
   }
 
-  // Красное заполнение с таймером при перегреве (как в статус баре при свайпах)
-  .overheat-indicator-compact {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    margin-top: 4px;
-  }
-
-  .overheat-bar-compact {
-    flex: 1;
-    height: 8px; // Такая же высота как в статус баре
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .overheat-fill-compact {
-    height: 100%;
-    background: linear-gradient(90deg, #ff3b59, #ff6b7a);
-    border-radius: 4px;
-    animation: overheat-bar-pulse 0.5s ease-in-out infinite;
-  }
-
-  .overheat-countdown-compact {
-    color: #ff3b59;
-    font-size: 24px; // Такой же размер как в статус баре
-    font-weight: 700;
-    min-width: 32px;
-    text-align: right;
-    animation: overheat-countdown-pulse 0.5s ease-in-out infinite;
-  }
-
   // Текст "Перегрев через" снизу статус бара
   .overheat-label-compact {
     color: rgba(255, 255, 255, 0.6);
@@ -422,6 +381,7 @@ const handleCryoIconError = (event) => {
 .distance-fill--overheat {
   background: linear-gradient(90deg, #ff3b59, #ff6b7a);
   animation: overheat-bar-pulse 0.5s ease-in-out infinite;
+  transition: width 0.3s ease; // Плавная анимация заполнения по секундам
 }
 
 .distance-value--overheat {
