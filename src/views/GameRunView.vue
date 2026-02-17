@@ -253,6 +253,8 @@
     <!-- Модальное окно предупреждения перед стартом забега -->
     <StartRunWarningModal
       v-if="showStartRunWarning"
+      :control-mode="controlMode"
+      @update:control-mode="handleStartRunControlModeUpdate"
       @confirm="handleStartRunWarningConfirm"
       @cancel="handleStartRunWarningCancel"
     />
@@ -1760,6 +1762,20 @@ const handleStartRunWarningConfirm = (dontShowAgain) => {
 // Обработчик отмены предупреждения
 const handleStartRunWarningCancel = () => {
   showStartRunWarning.value = false
+}
+
+// Обновление режима управления из модалки предупреждения (сохраняем в localStorage)
+const handleStartRunControlModeUpdate = (mode) => {
+  if (mode === 'swipes' || mode === 'buttons') {
+    controlMode.value = mode
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        window.localStorage.setItem('game_control_mode', mode)
+      } catch {
+        // ignore
+      }
+    }
+  }
 }
 
 const handleTrainingClick = () => {

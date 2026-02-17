@@ -3,8 +3,9 @@
     <div class="warning-modal-wrapper">
       <div class="warning-modal-container">
         <div class="warning-modal-header">
-          <img src="@/assets/warning.png" width="74px" alt="Warning" />
-          <h1>{{ t('game.start_run_warning_title') }}</h1>
+          <img src="@/assets/warning.png" class="warning-icon" alt="Warning" />
+          <h1 class="warning-title">{{ t('game.start_run_warning_title') }}</h1>
+          <img src="@/assets/warning.png" class="warning-icon" alt="Warning" />
         </div>
         <div class="warning-modal-body">
           <div class="warning-message" v-html="t('game.start_run_warning_message')"></div>
@@ -28,6 +29,12 @@
           </button>
           <button
             class="btn-primary btn-secondary btn-primary--wide"
+            @click.stop.prevent="toggleControlMode"
+          >
+            {{ controlModeLabel }}
+          </button>
+          <button
+            class="btn-primary btn-secondary btn-primary--wide"
             @click.stop.prevent="handleCancel"
           >
             {{ t('common.cancel') }}
@@ -39,18 +46,30 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-const emit = defineEmits(['confirm', 'cancel'])
+const props = defineProps({
+  controlMode: {
+    type: String,
+    default: 'swipes' // 'swipes' | 'buttons'
+  }
+})
+
+const emit = defineEmits(['confirm', 'cancel', 'update:controlMode'])
 
 const { t } = useI18n()
 
 const dontShowAgain = ref(false)
 
-onMounted(() => {
-  console.log('[StartRunWarningModal] Modal mounted')
-})
+const controlModeLabel = computed(() =>
+  props.controlMode === 'swipes' ? t('game.control_swipes') : t('game.control_buttons')
+)
+
+const toggleControlMode = () => {
+  const next = props.controlMode === 'swipes' ? 'buttons' : 'swipes'
+  emit('update:controlMode', next)
+}
 
 const handleConfirm = () => {
   emit('confirm', dontShowAgain.value)
@@ -93,16 +112,25 @@ const handleBackdropClick = () => {
 
 .warning-modal-header {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
+  gap: 0.5rem;
   margin-bottom: 1.5rem;
-  
-  h1 {
+
+  .warning-icon {
+    height: 28px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  .warning-title {
     color: #ffc300;
     font-size: 18px;
     font-weight: 700;
-    text-align: center;
+    margin: 0;
+    white-space: nowrap;
   }
 }
 
