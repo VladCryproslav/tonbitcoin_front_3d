@@ -308,6 +308,11 @@ const handleCryoIconError = (event) => {
     background: linear-gradient(90deg, #00ff00, #ffff00);
     transition: width 0.3s ease;
     border-radius: 3px;
+
+    &--overheat {
+      background: linear-gradient(90deg, #ff3b59, #ff6b7a) !important;
+      animation: overheat-bar-pulse 0.5s ease-in-out infinite;
+    }
   }
 
   .distance-value {
@@ -389,11 +394,6 @@ const handleCryoIconError = (event) => {
   animation: overheat-bar-pulse 0.5s ease-in-out infinite;
 }
 
-.distance-fill--overheat {
-  background: linear-gradient(90deg, #ff3b59, #ff6b7a);
-  animation: overheat-bar-pulse 0.5s ease-in-out infinite;
-  transition: width 0.3s ease; // Плавная анимация заполнения по секундам
-}
 
 .distance-value--overheat {
   color: #ff3b59;
