@@ -25,9 +25,10 @@ const ENERGY_POINTS_BASE_COUNT = 200
 const ENERGY_POINTS_RESERVE_PERCENT = 5
 
 /**
- * Генерирует массив поинтов энергии: 0.5%, 1%, 2% от storage.
- * Сумма = storage. 2% поинты — светящиеся (isGlowing).
- * Распределение: 40×1%, 40×0.5%, 20×2% = 100%
+ * Генерирует массив поинтов энергии. Проценты масштабируются от базового количества:
+ * при BASE=100: 0.5%, 1%, 2%; при BASE=1000: 0.05%, 0.1%, 0.2%.
+ * Сумма всех поинтов = 100% storage. Крупные (2×) поинты — светящиеся (isGlowing).
+ * Распределение по типам: 40%×мелкие(0.5×), 40%×средние(1×), 20%×крупные(2×).
  *
  * Генерируется больше поинтов чем базовое количество (с запасом),
  * чтобы поинты продолжали спавниться даже если некоторые пропущены.
@@ -38,18 +39,22 @@ function generateEnergyPoints(storageKw) {
   // Рассчитываем общее количество поинтов с учетом запаса
   const totalPointsCount = Math.ceil(ENERGY_POINTS_BASE_COUNT * (1 + ENERGY_POINTS_RESERVE_PERCENT / 100))
 
-  // Распределяем проценты пропорционально базовому количеству
-  // Базовое распределение: 40×1%, 40×0.5%, 20×2% = 100 поинтов
-  // Масштабируем пропорционально для общего количества
+  // Масштаб процента: при 100 поинтах 1% = 1%, при 1000 поинтах 1% → 0.1%
+  const pctScale = 100 / ENERGY_POINTS_BASE_COUNT
+  const pct05 = 0.5 * pctScale
+  const pct1 = 1 * pctScale
+  const pct2 = 2 * pctScale
+
+  // Распределение по типам: 40% средние, 40% мелкие, 20% крупные (от totalPointsCount)
   const scale = totalPointsCount / ENERGY_POINTS_BASE_COUNT
   const count1pct = Math.round(40 * scale)
   const count05pct = Math.round(40 * scale)
   const count2pct = Math.round(20 * scale)
 
   const points = []
-  for (let i = 0; i < count1pct; i++) points.push({ pct: 1, isGlowing: false })
-  for (let i = 0; i < count05pct; i++) points.push({ pct: 0.5, isGlowing: false })
-  for (let i = 0; i < count2pct; i++) points.push({ pct: 2, isGlowing: true })
+  for (let i = 0; i < count1pct; i++) points.push({ pct: pct1, isGlowing: false })
+  for (let i = 0; i < count05pct; i++) points.push({ pct: pct05, isGlowing: false })
+  for (let i = 0; i < count2pct; i++) points.push({ pct: pct2, isGlowing: true })
 
   // Перемешиваем поинты
   for (let i = points.length - 1; i > 0; i--) {
