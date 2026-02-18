@@ -334,6 +334,8 @@ const isTrainingRun = ref(false)
 const completedRunData = ref(null) // { energy_collected, is_win, energy_gained }
 // Сохраненное значение собранной энергии для отображения в модалке (не обнуляется до нажатия "Забрать")
 const savedEnergyCollectedForModal = ref(0)
+// Сохраненное значение начального storage для расчета цены дополнительной жизни
+const savedStartStorageForExtraLife = ref(0)
 // Та же логика уровней, что в EnergizerView: 49 белых, остаток — золотые
 const getWorkers = computed(() => {
   const simple = Math.min(app?.user?.engineer_level ?? 0, 49) || 0
@@ -808,6 +810,10 @@ const startThreeLoop = () => {
         isDead.value = true
         // Сохраняем скорость перед смертью (для восстановления после покупки жизни)
         savedSpeed.value = gameSpeed.value || 0.15
+        // Сохраняем начальный storage для расчета цены дополнительной жизни
+        if (gameRun.startStorage?.value) {
+          savedStartStorageForExtraLife.value = gameRun.startStorage.value
+        }
         // Сохраняем energyCollected ДО остановки игрового цикла
         // Ограничиваем значение максимумом storage (та же логика, что в счетчике энергии)
         const savedEnergyBeforeStop = Math.min(
@@ -1055,6 +1061,7 @@ const startGame = (training = false, initialStorage = null) => {
   launcherOverlayMode.value = 'none'
   // Сбрасываем сохраненное значение энергии для модалки при старте нового забега
   savedEnergyCollectedForModal.value = 0
+  savedStartStorageForExtraLife.value = 0
   completedRunData.value = null
   // Сбрасываем флаг обработки завершения игры
   if (endGame._isProcessing) {
@@ -1584,6 +1591,10 @@ function doOneStep(playerBox, inRollImmuneWindow) {
                 isDead.value = true
                 // Сохраняем скорость перед смертью (для восстановления после покупки жизни)
                 savedSpeed.value = gameSpeed.value || 0.15
+                // Сохраняем начальный storage для расчета цены дополнительной жизни
+                if (gameRun.startStorage?.value) {
+                  savedStartStorageForExtraLife.value = gameRun.startStorage.value
+                }
                 // Сохраняем energyCollected ДО остановки игрового цикла
                 // Ограничиваем значение максимумом storage (та же логика, что в счетчике энергии)
                 const savedEnergyBeforeStop = Math.min(
@@ -1592,7 +1603,7 @@ function doOneStep(playerBox, inRollImmuneWindow) {
                 )
                 // Сохраняем значение для модалки сразу при смерти
                 savedEnergyCollectedForModal.value = savedEnergyBeforeStop
-                console.log('Player died (livesLeft=0): energyCollected BEFORE stop=', savedEnergyBeforeStop, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
+                console.log('Player died (livesLeft=0): energyCollected BEFORE stop=', savedEnergyBeforeStop, 'startStorage=', gameRun.startStorage?.value, 'savedStartStorageForExtraLife=', savedStartStorageForExtraLife.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
 
                 // НЕ вызываем stopRun() здесь, чтобы не сбросить startStorage и energyCollected
                 // Останавливаем только игровой цикл и физику
@@ -1955,14 +1966,25 @@ const endGame = async (isWinByState = false) => {
           savedEnergyCollectedForModal.value = loseEnergy
           console.log('endGame: Restored savedEnergyCollectedForModal from current state:', loseEnergy)
         }
-        console.log('endGame: Before showing LOSE modal, savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'completedRunData.energy_collected=', completedRunData.value?.energy_collected, 'gameRun.energyCollected?.value=', gameRun.energyCollected?.value)
+        // Сохраняем startStorage если еще не сохранен
+        if (!savedStartStorageForExtraLife.value && gameRun.startStorage?.value) {
+          savedStartStorageForExtraLife.value = gameRun.startStorage.value
+          console.log('endGame: Saved startStorage for extra life calculation:', savedStartStorageForExtraLife.value)
+        }
+        console.log('endGame: Before showing LOSE modal, savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'savedStartStorageForExtraLife=', savedStartStorageForExtraLife.value, 'completedRunData.energy_collected=', completedRunData.value?.energy_collected, 'gameRun.energyCollected?.value=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value)
         // Убеждаемся что данные установлены перед показом модалки
         await nextTick()
-        console.log('endGame: After nextTick before showing modal, displayedEnergyCollected computed value would be:', savedEnergyCollectedForModal.value > 0 ? savedEnergyCollectedForModal.value : (completedRunData.value?.energy_collected ?? 0))
+        console.log('endGame: After nextTick before showing modal, displayedEnergyCollected computed value would be:', savedEnergyCollectedForModal.value > 0 ? savedEnergyCollectedForModal.value : (completedRunData.value?.energy_collected ?? 0), 'startStorage=', gameRun.startStorage?.value)
         gameOverType.value = 'lose'
         showGameOver.value = true
         launcherOverlayMode.value = 'none'
         console.log('endGame: Set gameOverType to LOSE, showGameOver=', showGameOver.value)
+        // Вызываем расчет цены после показа модалки
+        await nextTick()
+        if (canBuyExtraLife.value) {
+          console.log('endGame: Triggering calculateExtraLifePrice after showing modal')
+          calculateExtraLifePrice()
+        }
       }
     } else {
       // Если модалка уже показана, убеждаемся что gameOverType правильный
@@ -2259,6 +2281,7 @@ const handleClaim = async () => {
       // Очищаем данные забега только после успешного начисления
       completedRunData.value = null
       savedEnergyCollectedForModal.value = 0
+      savedStartStorageForExtraLife.value = 0
       // Очищаем startStorage и energyCollected только после успешного начисления
       if (gameRun.startStorage) {
         gameRun.startStorage.value = 0
@@ -2266,7 +2289,7 @@ const handleClaim = async () => {
       if (gameRun.energyCollected) {
         gameRun.energyCollected.value = 0
       }
-      console.log('handleClaim: Cleared run data after successful claim', 'startStorage=', gameRun.startStorage?.value, 'energyCollected=', gameRun.energyCollected?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
+      console.log('handleClaim: Cleared run data after successful claim', 'startStorage=', gameRun.startStorage?.value, 'energyCollected=', gameRun.energyCollected?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'savedStartStorageForExtraLife=', savedStartStorageForExtraLife.value)
     }
   } catch (error) {
     console.error('Ошибка при начислении энергии:', error)
@@ -2303,7 +2326,9 @@ const canBuyExtraLife = computed(() => {
     return false
   }
   
-  if (!gameRun.startStorage?.value || gameRun.startStorage.value <= 0) {
+  // Проверяем сохраненное значение или текущее значение startStorage
+  const startStorage = savedStartStorageForExtraLife.value || gameRun.startStorage?.value || 0
+  if (startStorage <= 0) {
     return false
   }
   
@@ -2312,34 +2337,47 @@ const canBuyExtraLife = computed(() => {
 
 // Расчет остатка энергии и цены
 const calculateExtraLifePrice = async () => {
+  console.log('[calculateExtraLifePrice] Called, canBuyExtraLife:', canBuyExtraLife.value)
+  
   if (!canBuyExtraLife.value) {
     extraLifePrice.value = 0
+    console.log('[calculateExtraLifePrice] canBuyExtraLife is false, setting price to 0')
     return
   }
   
   try {
     // Остаток = начальный storage - собранная энергия
-    const startStorage = gameRun.startStorage?.value ?? 0
+    // Используем сохраненное значение startStorage, так как оно может быть очищено
+    const startStorage = savedStartStorageForExtraLife.value || gameRun.startStorage?.value || 0
     const collectedEnergy = savedEnergyCollectedForModal.value || 0
     const remainingEnergy = Math.max(0, startStorage - collectedEnergy)
     
+    console.log('[calculateExtraLifePrice] savedStartStorageForExtraLife:', savedStartStorageForExtraLife.value, 'gameRun.startStorage:', gameRun.startStorage?.value, 'startStorage (used):', startStorage, 'collectedEnergy:', collectedEnergy, 'remainingEnergy:', remainingEnergy)
+    
     if (remainingEnergy <= 0) {
+      console.log('[calculateExtraLifePrice] remainingEnergy <= 0, setting price to 0')
       extraLifePrice.value = 0
       return
     }
     
     // Запрашиваем цену с сервера
+    console.log('[calculateExtraLifePrice] Requesting price from server with remaining_energy:', remainingEnergy)
     const response = await host.post('runner-extra-life-stars/', {
       remaining_energy: remainingEnergy
     })
     
+    console.log('[calculateExtraLifePrice] Server response:', response.status, response.data)
+    
     if (response.status === 200 && response.data?.price) {
       extraLifePrice.value = response.data.price
+      console.log('[calculateExtraLifePrice] Price set to:', extraLifePrice.value)
     } else {
+      console.log('[calculateExtraLifePrice] Invalid response, setting price to 0')
       extraLifePrice.value = 0
     }
   } catch (error) {
-    console.error('Error calculating extra life price:', error)
+    console.error('[calculateExtraLifePrice] Error calculating extra life price:', error)
+    console.error('[calculateExtraLifePrice] Error details:', error.response?.data)
     extraLifePrice.value = 0
   }
 }
@@ -2354,9 +2392,12 @@ const handleBuyExtraLife = async () => {
   
   try {
     // Расчет остатка энергии
-    const startStorage = gameRun.startStorage?.value ?? 0
+    // Используем сохраненное значение startStorage, так как оно может быть очищено
+    const startStorage = savedStartStorageForExtraLife.value || gameRun.startStorage?.value || 0
     const collectedEnergy = savedEnergyCollectedForModal.value || 0
     const remainingEnergy = Math.max(0, startStorage - collectedEnergy)
+    
+    console.log('[handleBuyExtraLife] savedStartStorageForExtraLife:', savedStartStorageForExtraLife.value, 'gameRun.startStorage:', gameRun.startStorage?.value, 'startStorage (used):', startStorage, 'collectedEnergy:', collectedEnergy, 'remainingEnergy:', remainingEnergy)
     
     // Получаем invoice ссылку
     const response = await host.post('runner-extra-life-stars/', {
@@ -2523,9 +2564,20 @@ const restoreRunAfterExtraLife = async () => {
 }
 
 // Вычисляем цену при изменении состояния
-watch([showGameOver, gameOverType, livesLeft], () => {
+watch([showGameOver, gameOverType, livesLeft, savedEnergyCollectedForModal, () => gameRun.startStorage?.value, () => app.user?.energy_run_extra_life_used], () => {
+  console.log('[watch] State changed:', {
+    showGameOver: showGameOver.value,
+    gameOverType: gameOverType.value,
+    livesLeft: livesLeft.value,
+    savedEnergyCollectedForModal: savedEnergyCollectedForModal.value,
+    startStorage: gameRun.startStorage?.value,
+    energy_run_extra_life_used: app.user?.energy_run_extra_life_used,
+    canBuyExtraLife: canBuyExtraLife.value
+  })
   if (canBuyExtraLife.value) {
     calculateExtraLifePrice()
+  } else {
+    extraLifePrice.value = 0
   }
 }, { immediate: true })
 

@@ -318,6 +318,7 @@ class WithdrawalConfigAdmin(admin.ModelAdmin):
 class RunnerConfigAdmin(admin.ModelAdmin):
     list_display = ['stars_per_kw']
     list_editable = ['stars_per_kw']
+    list_display_links = None
 
 
 @admin.register(AutoWithdrawalRequest)
