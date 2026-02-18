@@ -62,15 +62,33 @@ while True:
     try:
         booster = Booster.objects.filter(slug="jarvis").first()
         jarvis_percent = float(getattr(booster, "n1", 100) or 100)
-        with transaction.atomic():
-            now = timezone.now()
-
-            for u in UserProfile.objects.filter(
-                    Q(jarvis_expires__gt=now)
-                    & Q(jarvis_expires__isnull=False)
-                    & (Q(building_until__lt=now) | Q(building_until__isnull=True))
-                ).all():
+        now = timezone.now()
+        
+        # Накопление суммы для ChartData (оптимизация: один вызов вместо тысячи)
+        total_added_kw = 0.0
+        
+        # Оптимизация: загружаем только нужные поля
+        users_queryset = UserProfile.objects.filter(
+            Q(jarvis_expires__gt=now)
+            & Q(jarvis_expires__isnull=False)
+            & (Q(building_until__lt=now) | Q(building_until__isnull=True))
+        ).only(
+            'id', 'generation_rate', 'power', 'repair_kit_expires', 
+            'repair_kit_power_level', 'ton_wallet', 'premium_sub_expires',
+            'has_gold_sbt', 'has_gold_sbt_nft', 'has_silver_sbt', 'has_silver_sbt_nft'
+        )
+        
+        # Оптимизация: используем iterator() вместо .all() для экономии памяти
+        # Оптимизация: обрабатываем батчами по 50 пользователей
+        BATCH_SIZE = 50
+        batch = []
+        
+        for u in users_queryset.iterator(chunk_size=100):
+            try:
                 added_kw = float(u.generation_rate) * float(u.power) / 100 / 1800 * jarvis_percent / 100 * u.sbt_get_jarvis()
+                
+                # Накопление суммы для ChartData
+                total_added_kw += added_kw
                 
                 # Проверяем активность Repair Kit
                 is_repair_kit_active = (
@@ -94,16 +112,41 @@ while True:
                     # Обычное снижение power
                     update_data["power"] = F("power") - 1 / 3600 * u.sbt_get_power()
                 
-                UserProfile.objects.filter(id=u.id).update(**update_data)
-                WalletInfo.objects.filter(user=u, wallet=u.ton_wallet).update(kw_amount=F("kw_amount") + added_kw)
-
-
-                add_chart_kw(added_kw)
-                today = timezone.now().date()
-                # JarvisEnergyStat.objects.update_or_create(date=today, defaults={"total_jarvis_energy": F("total_jarvis_energy") + added_kw})
-
+                batch.append((u, update_data, added_kw))
+                
+                # Оптимизация: обрабатываем батчами в отдельных транзакциях
+                if len(batch) >= BATCH_SIZE:
+                    with transaction.atomic():
+                        for user_obj, update_data, added_kw in batch:
+                            UserProfile.objects.filter(id=user_obj.id).update(**update_data)
+                            WalletInfo.objects.filter(user=user_obj, wallet=user_obj.ton_wallet).update(
+                                kw_amount=F("kw_amount") + added_kw
+                            )
+                    batch = []
+                    
+            except Exception as e:
+                # Оптимизация: обработка ошибок для отдельных записей
+                logger.error(f"Error processing user {u.id}: {e}")
+                traceback.print_exc()
+                continue
+        
+        # Обработка остатка батча
+        if batch:
+            with transaction.atomic():
+                for user_obj, update_data, added_kw in batch:
+                    UserProfile.objects.filter(id=user_obj.id).update(**update_data)
+                    WalletInfo.objects.filter(user=user_obj, wallet=user_obj.ton_wallet).update(
+                        kw_amount=F("kw_amount") + added_kw
+                    )
+        
+        # Оптимизация: один вызов add_chart_kw вместо тысячи
+        if total_added_kw > 0:
+            add_chart_kw(total_added_kw)
+        
+        # Обновление power < 0 и autostart_count остается в одной транзакции
+        with transaction.atomic():
             UserProfile.objects.filter(power__lt=0).update(power=0)
-
+            
             logger.info(
                 UserProfile.objects.filter(
                     autostart_count__gt=0, overheated_until__lt=now
@@ -112,7 +155,7 @@ while True:
                     tap_count_since_overheat=0,
                     autostart_count=F("autostart_count") - 1,
                 )
-        )
+            )
     except Exception:
         traceback.print_exc()
 
