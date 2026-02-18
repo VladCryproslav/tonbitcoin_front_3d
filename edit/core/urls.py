@@ -34,6 +34,8 @@ from .views import (
     GameRunClaimView,
     GameRunResetOverheatFlagView,
     GameRunUpdateOverheatView,
+    RunnerExtraLifeStarsView,
+    RunnerExtraLifeActivateView,
     GenPowerStationConfigView,
     GetTbtcReferralBonusesView,
     ReferralInfoView,
@@ -96,6 +98,8 @@ urlpatterns = [
     path("game-run-claim/", GameRunClaimView.as_view(), name="game_run_claim"),
     path("game-run-update-overheat/", GameRunUpdateOverheatView.as_view(), name="game-run-update-overheat"),
     path("game-run-reset-overheat-flag/", GameRunResetOverheatFlagView.as_view(), name="game-run-reset-overheat-flag"),
+    path("runner-extra-life-stars/", RunnerExtraLifeStarsView.as_view(), name="runner-extra-life-stars"),
+    path("runner-extra-life-activate/", RunnerExtraLifeActivateView.as_view(), name="runner-extra-life-activate"),
     path("add-kw-to-wallet/", AddKwToWalletView.as_view(), name="add_kw_to_wallet"),
     path(
         "add-tbtc-to-wallet/", AddTbtcToWalletView.as_view(), name="add_tbtc_to_wallet"

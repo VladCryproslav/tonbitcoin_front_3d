@@ -306,12 +306,18 @@ class OverheatConfigAdmin(admin.ModelAdmin):
     # )
 
 
-from .models import WithdrawalConfig
+from .models import WithdrawalConfig, RunnerConfig
 
 
 @admin.register(WithdrawalConfig)
 class WithdrawalConfigAdmin(admin.ModelAdmin):
     list_display = [field.name for field in WithdrawalConfig._meta.get_fields()]
+
+
+@admin.register(RunnerConfig)
+class RunnerConfigAdmin(admin.ModelAdmin):
+    list_display = ['stars_per_kw']
+    list_editable = ['stars_per_kw']
 
 
 @admin.register(AutoWithdrawalRequest)

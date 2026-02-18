@@ -331,6 +331,10 @@ class UserProfile(models.Model):
         blank=True,
         help_text="Storage при старте забега (для валидации)"
     )
+    energy_run_extra_life_used = models.BooleanField(
+        default=False,
+        help_text="Использована ли 4-я жизнь в текущем забеге"
+    )
 
     stop_mining_at1 = models.DateTimeField(null=True, blank=True)
     stop_mining_at2 = models.DateTimeField(null=True, blank=True)
@@ -1236,6 +1240,22 @@ class WithdrawalConfig(models.Model):
 
     min_rent = models.FloatField(default=10)
     max_auto_rent = models.FloatField(default=1000)
+
+
+class RunnerConfig(models.Model):
+    """Конфигурация для раннера"""
+    # Цена 1 STAR в kW (например, 100 kW = 1 STAR)
+    stars_per_kw = models.FloatField(
+        default=100,
+        help_text="Количество kW за 1 STAR (например, 100 означает 100 kW = 1 STAR)"
+    )
+    
+    class Meta:
+        verbose_name = "Runner Config"
+        verbose_name_plural = "Runner Configs"
+    
+    def __str__(self):
+        return f"Runner Config: {self.stars_per_kw} kW = 1 STAR"
 
 
 class KwCommissions(models.Model):

@@ -223,6 +223,20 @@
               {{ t('game.back_to_main') }}
             </button>
           </div>
+          
+          <!-- Кнопка покупки дополнительной жизни -->
+          <button
+            v-if="canBuyExtraLife"
+            class="btn-primary btn-primary--wide btn-extra-life"
+            :disabled="isBuyingExtraLife"
+            @click.stop.prevent="handleBuyExtraLife"
+          >
+            <span v-if="!isBuyingExtraLife">
+              <img src="@/assets/stars.png" width="16px" alt="Stars" />
+              {{ t('game.buy_extra_life') }} ({{ extraLifePrice }})
+            </span>
+            <span v-else>{{ t('game.processing') }}</span>
+          </button>
         </div>
       </div>
     </div>
@@ -280,7 +294,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import GameScene from '@/components/game/GameScene.vue'
@@ -296,10 +310,12 @@ import { useGameWorld } from '@/composables/useGameWorld'
 import { useGameEffects } from '@/composables/useGameEffects'
 import { useAppStore } from '@/stores/app'
 import { host } from '@/../axios.config'
+import { useTelegram } from '@/services/telegram'
 
 const router = useRouter()
 const { t } = useI18n()
 const app = useAppStore()
+const { tg } = useTelegram()
 
 const gameSceneRef = ref(null)
 const gameRun = useGameRun()
@@ -790,6 +806,8 @@ const startThreeLoop = () => {
       }
       if (hitCount.value >= 3 && !isDead.value) {
         isDead.value = true
+        // Сохраняем скорость перед смертью (для восстановления после покупки жизни)
+        savedSpeed.value = gameSpeed.value || 0.15
         // Сохраняем energyCollected ДО остановки игрового цикла
         // Ограничиваем значение максимумом storage (та же логика, что в счетчике энергии)
         const savedEnergyBeforeStop = Math.min(
@@ -1564,6 +1582,8 @@ function doOneStep(playerBox, inRollImmuneWindow) {
               app.setPower(Math.max(0, newPower))
               if (!isDead.value && livesLeft.value <= 0) {
                 isDead.value = true
+                // Сохраняем скорость перед смертью (для восстановления после покупки жизни)
+                savedSpeed.value = gameSpeed.value || 0.15
                 // Сохраняем energyCollected ДО остановки игрового цикла
                 // Ограничиваем значение максимумом storage (та же логика, что в счетчике энергии)
                 const savedEnergyBeforeStop = Math.min(
@@ -2259,6 +2279,256 @@ const handleClaim = async () => {
   exitToMain()
 }
 
+// Состояние покупки дополнительной жизни
+const isBuyingExtraLife = ref(false)
+const extraLifePrice = ref(0)
+
+// Проверка возможности покупки дополнительной жизни
+const canBuyExtraLife = computed(() => {
+  // Показываем кнопку только если:
+  // 1. Забег завершен (showGameOver = true)
+  // 2. Проигрыш (gameOverType = 'lose')
+  // 3. Использованы все 3 жизни (livesLeft = 0)
+  // 4. 4-я жизнь еще не использована (!app.user?.energy_run_extra_life_used)
+  // 5. Забег был начат (gameRun.startStorage > 0)
+  if (!showGameOver.value || gameOverType.value !== 'lose') {
+    return false
+  }
+  
+  if (livesLeft.value > 0) {
+    return false
+  }
+  
+  if (app.user?.energy_run_extra_life_used) {
+    return false
+  }
+  
+  if (!gameRun.startStorage?.value || gameRun.startStorage.value <= 0) {
+    return false
+  }
+  
+  return true
+})
+
+// Расчет остатка энергии и цены
+const calculateExtraLifePrice = async () => {
+  if (!canBuyExtraLife.value) {
+    extraLifePrice.value = 0
+    return
+  }
+  
+  try {
+    // Остаток = начальный storage - собранная энергия
+    const startStorage = gameRun.startStorage?.value ?? 0
+    const collectedEnergy = savedEnergyCollectedForModal.value || 0
+    const remainingEnergy = Math.max(0, startStorage - collectedEnergy)
+    
+    if (remainingEnergy <= 0) {
+      extraLifePrice.value = 0
+      return
+    }
+    
+    // Запрашиваем цену с сервера
+    const response = await host.post('runner-extra-life-stars/', {
+      remaining_energy: remainingEnergy
+    })
+    
+    if (response.status === 200 && response.data?.price) {
+      extraLifePrice.value = response.data.price
+    } else {
+      extraLifePrice.value = 0
+    }
+  } catch (error) {
+    console.error('Error calculating extra life price:', error)
+    extraLifePrice.value = 0
+  }
+}
+
+// Обработчик покупки дополнительной жизни
+const handleBuyExtraLife = async () => {
+  if (isBuyingExtraLife.value || !canBuyExtraLife.value) {
+    return
+  }
+  
+  isBuyingExtraLife.value = true
+  
+  try {
+    // Расчет остатка энергии
+    const startStorage = gameRun.startStorage?.value ?? 0
+    const collectedEnergy = savedEnergyCollectedForModal.value || 0
+    const remainingEnergy = Math.max(0, startStorage - collectedEnergy)
+    
+    // Получаем invoice ссылку
+    const response = await host.post('runner-extra-life-stars/', {
+      remaining_energy: remainingEnergy
+    })
+    
+    if (response.status === 200 && response.data?.link) {
+      const invoiceLink = response.data.link
+      
+      // Открываем invoice
+      tg.openInvoice(invoiceLink, async (status) => {
+        if (status === 'paid') {
+          // Успешная оплата - активируем жизнь
+          try {
+            await host.post('runner-extra-life-activate/', {})
+            
+            // Обновляем данные пользователя
+            await app.initUser()
+            
+            // Восстанавливаем забег (как выход из перегрева)
+            await restoreRunAfterExtraLife()
+          } catch (error) {
+            console.error('Error activating extra life:', error)
+            // Показываем ошибку пользователю
+            alert(t('game.extra_life_activation_error'))
+          }
+        }
+        
+        isBuyingExtraLife.value = false
+      })
+    } else {
+      console.error('Failed to get invoice link')
+      isBuyingExtraLife.value = false
+    }
+  } catch (error) {
+    console.error('Error buying extra life:', error)
+    isBuyingExtraLife.value = false
+  }
+}
+
+// Восстановление забега после покупки жизни
+const restoreRunAfterExtraLife = async () => {
+  // Сохраняем текущую скорость перед восстановлением (если не сохранена)
+  if (!savedSpeed.value || savedSpeed.value === 0.15) {
+    savedSpeed.value = gameSpeed.value || 0.15
+  }
+  
+  // Закрываем модалку проигрыша
+  showGameOver.value = false
+  gameOverType.value = null
+  
+  // Сбрасываем состояние смерти
+  isDead.value = false
+  hitCount.value = 0 // Восстанавливаем жизни (теперь у нас 1 жизнь)
+  
+  // Показываем таймер обратного отсчета 3-2-1 (как при выходе из перегрева)
+  showCountdown.value = true
+  countdownNumber.value = 3
+  
+  // Вибрация при каждом числе
+  const triggerVibration = () => {
+    if (vibrationEnabled.value) {
+      try {
+        const tg = window.Telegram?.WebApp
+        tg?.HapticFeedback?.impactOccurred?.('medium')
+      } catch {
+        // ignore
+      }
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(50)
+      }
+    }
+  }
+  
+  triggerVibration()
+  
+  // Очищаем предыдущий интервал если есть
+  if (countdownInterval) {
+    clearInterval(countdownInterval)
+  }
+  
+  countdownInterval = setInterval(() => {
+    countdownNumber.value--
+    
+    if (countdownNumber.value > 0) {
+      triggerVibration()
+    } else {
+      // Таймер закончился, возобновляем забег
+      clearInterval(countdownInterval)
+      countdownInterval = null
+      showCountdown.value = false
+      
+      // Устанавливаем время окончания защиты от коллизий (2 секунды)
+      overheatProtectionActive.value = true
+      overheatProtectionEndTime = performance.now() + 2000
+      
+      // Включаем мигание персонажа
+      if (gamePhysics.value?.setBlinking) {
+        gamePhysics.value.setBlinking(true)
+      }
+      
+      // Возобновляем забег
+      gameRun.resumeRun()
+      lastUpdateTime = 0
+      launcherOverlayMode.value = 'none'
+      
+      // Восстанавливаем скорость на основе текущего прогресса
+      const BASE_SPEED = 0.15
+      const MID_SPEED = 0.30
+      const MAX_SPEED = 0.36
+      const FIRST_RAMP_END = 60
+      const SECOND_RAMP_END = 90
+      
+      const progress = (gameRun.distanceProgress?.value ?? 0) / 100
+      
+      if (progress <= FIRST_RAMP_END / 100) {
+        const rampProgress = progress / (FIRST_RAMP_END / 100)
+        targetSpeed.value = BASE_SPEED + (MID_SPEED - BASE_SPEED) * rampProgress
+      } else if (progress <= SECOND_RAMP_END / 100) {
+        const rampProgress = (progress - FIRST_RAMP_END / 100) / ((SECOND_RAMP_END - FIRST_RAMP_END) / 100)
+        targetSpeed.value = MID_SPEED + (MAX_SPEED - MID_SPEED) * rampProgress
+      } else {
+        targetSpeed.value = MAX_SPEED
+      }
+      
+      // Начинаем плавное ускорение
+      const MIN_START_SPEED = 0.15
+      const currentSavedSpeed = savedSpeed.value || 0.15
+      const startAccelSpeed = Math.max(currentSavedSpeed * 0.6, MIN_START_SPEED)
+      gameSpeed.value = startAccelSpeed
+      if (gameWorld.value) {
+        gameWorld.value.setRoadSpeed(gameSpeed.value)
+      }
+      accelerationStartTime.value = performance.now()
+      isAccelerating.value = true
+      
+      // Активируем анимацию бега
+      if (gamePhysics.value?.setAnimationState) {
+        gamePhysics.value.setAnimationState('running')
+      }
+      
+      // Выключаем мигание через 2 секунды
+      setTimeout(() => {
+        if (gamePhysics.value?.setBlinking) {
+          gamePhysics.value.setBlinking(false)
+        }
+        overheatProtectionActive.value = false
+      }, 2000)
+      
+      // Финальная вибрация
+      if (vibrationEnabled.value) {
+        try {
+          const tg = window.Telegram?.WebApp
+          tg?.HapticFeedback?.impactOccurred?.('heavy')
+        } catch {
+          // ignore
+        }
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate(100)
+        }
+      }
+    }
+  }, 1000)
+}
+
+// Вычисляем цену при изменении состояния
+watch([showGameOver, gameOverType, livesLeft], () => {
+  if (canBuyExtraLife.value) {
+    calculateExtraLifePrice()
+  }
+}, { immediate: true })
+
 // Выход из лаунчера обратно в основное приложение.
 const exitToMain = () => {
   stopGameLoop()
@@ -2613,6 +2883,28 @@ onUnmounted(() => {
   object-fit: contain;
 }
 
+
+.btn-extra-life {
+  background: linear-gradient(135deg, #e757ec 0%, #9851ec 50%, #5e7cea 100%);
+  box-shadow: 0 12px 30px rgba(102, 126, 234, 0.45);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+  
+  &:active:not(:disabled) {
+    transform: scale(0.96);
+    box-shadow: 0 6px 18px rgba(102, 126, 234, 0.35);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
 
 .game-over-actions {
   display: flex;

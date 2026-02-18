@@ -35,6 +35,7 @@ from .models import (  # Import the Notification model
     OrbitalOwner,
     RepairPowerStationConfig,
     RoadmapItem,
+    RunnerConfig,
     SpecialAsicStaking,
     StakingPeriodConfig,
     GradationConfig,
@@ -1917,7 +1918,8 @@ class EnergyRunStartView(APIView):
             updated_count = UserProfile.objects.filter(user_id=user_profile.user_id).update(
                 energy_run_last_started_at=now,
                 energy_run_start_storage=Decimal(str(current_storage)),
-                storage=Decimal('0')
+                storage=Decimal('0'),
+                energy_run_extra_life_used=False  # Сбрасываем флаг использования 4-й жизни при старте нового забега
             )
             # Логирование убрано для оптимизации - логируем только ошибки
             # action_logger.info(
@@ -3431,6 +3433,167 @@ class EngineerStarsView(APIView):
         except UserProfile.DoesNotExist:
             return Response(
                 {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class RunnerExtraLifeStarsView(APIView):
+    """Получение ссылки для покупки дополнительной жизни за STARS"""
+    
+    @swagger_auto_schema(
+        tags=["game"],
+        operation_description="Получить ссылку для покупки дополнительной жизни за STARS",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["remaining_energy"],
+            properties={
+                "remaining_energy": openapi.Schema(
+                    type=openapi.TYPE_NUMBER,
+                    description="Остаток не собранной энергии в kW"
+                ),
+            },
+        ),
+        responses={
+            200: openapi.Response(
+                description="Ссылка для оплаты",
+                examples={
+                    "application/json": {
+                        "link": "https://example.com/invoice_link",
+                        "price": 10,
+                    }
+                },
+            ),
+            400: "Ошибка валидации",
+        },
+    )
+    @require_auth
+    def post(self, request):
+        try:
+            user_profile: UserProfile = request.user_profile
+            
+            # Проверка что забег активен
+            if not user_profile.energy_run_last_started_at:
+                return Response(
+                    {"error": "Run not started"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Проверка что 4-я жизнь еще не использована
+            if user_profile.energy_run_extra_life_used:
+                return Response(
+                    {"error": "Extra life already used in this run"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            remaining_energy = float(request.data.get("remaining_energy", 0))
+            if remaining_energy <= 0:
+                return Response(
+                    {"error": "Invalid remaining energy"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Получаем конфигурацию
+            runner_config = RunnerConfig.objects.first()
+            if not runner_config:
+                return Response(
+                    {"error": "Runner config not found"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            
+            # Расчет цены: остаток энергии / цена за 1 STAR, округляем вверх
+            stars_per_kw = runner_config.stars_per_kw
+            price = math.ceil(remaining_energy / stars_per_kw)
+            
+            # Минимальная цена - 1 STAR
+            if price < 1:
+                price = 1
+            
+            # Применяем скидку пользователя (если есть)
+            final_price = int(price * user_profile.sbt_get_stars_discount())
+            
+            # Создаем invoice ссылку
+            link = bot.create_invoice_link(
+                title="Дополнительная жизнь",
+                description=f"Покупка дополнительной жизни за {final_price} Stars",
+                currency="XTR",
+                provider_token="",
+                prices=[LabeledPrice(label="XTR", amount=final_price)],
+                payload=f"runner_extra_life:{user_profile.user_id}",
+            )
+            
+            return Response(
+                {
+                    "link": link,
+                    "price": final_price,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            action_logger.exception(f"Error creating extra life invoice: {e}")
+            return Response(
+                {"error": "Internal server error"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class RunnerExtraLifeActivateView(APIView):
+    """Активация дополнительной жизни после успешной оплаты"""
+    
+    @swagger_auto_schema(
+        tags=["game"],
+        operation_description="Активировать дополнительную жизнь после оплаты",
+        responses={
+            200: openapi.Response(
+                description="Жизнь успешно активирована",
+                examples={
+                    "application/json": {
+                        "success": True,
+                        "message": "Extra life activated",
+                    }
+                },
+            ),
+            400: "Ошибка валидации",
+        },
+    )
+    @require_auth
+    def post(self, request):
+        try:
+            user_profile: UserProfile = request.user_profile
+            
+            # Проверка что забег активен
+            if not user_profile.energy_run_last_started_at:
+                return Response(
+                    {"error": "Run not started"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Проверка что 4-я жизнь еще не использована
+            if user_profile.energy_run_extra_life_used:
+                return Response(
+                    {"error": "Extra life already used in this run"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Активируем 4-ю жизнь
+            UserProfile.objects.filter(id=user_profile.id).update(
+                energy_run_extra_life_used=True
+            )
+            
+            action_logger.info(
+                f"Extra life activated for user {user_profile.user_id}"
+            )
+            
+            return Response(
+                {
+                    "success": True,
+                    "message": "Extra life activated",
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            action_logger.exception(f"Error activating extra life: {e}")
+            return Response(
+                {"error": "Internal server error"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
