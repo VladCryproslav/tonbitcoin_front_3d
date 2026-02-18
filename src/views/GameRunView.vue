@@ -65,7 +65,7 @@
             @click.stop.prevent="handleTrainingClick"
           >
             <div class="training-button-content">
-              {{ t('game.run_training') }} {{ trainingRunsUsedToday }}/{{ maxTrainingRunsPerDay }}
+              {{ t('game.run_training') }} {{ trainingRunsAvailable ?? 5 }}/{{ maxTrainingRunsPerDay }}
             </div>
           </button>
           <button
