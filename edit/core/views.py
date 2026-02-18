@@ -1970,6 +1970,134 @@ class EnergyRunStartView(APIView):
             )
 
 
+class TrainingRunCheckView(APIView):
+    """Проверка доступности тренировочного забега"""
+    
+    @require_auth
+    def get(self, request):
+        try:
+            user_profile = request.user_profile
+            now = timezone.now()
+            today = now.date()
+            
+            # Получаем конфигурацию (или создаем дефолтную если нет)
+            runner_config = RunnerConfig.objects.first()
+            if not runner_config:
+                runner_config = RunnerConfig.objects.create(
+                    stars_per_kw=100,
+                    max_training_runs_per_day=5
+                )
+            
+            max_runs = runner_config.max_training_runs_per_day
+            
+            # Проверяем нужно ли сбросить счетчик (если последний забег был не сегодня)
+            if user_profile.training_run_last_date != today:
+                # Сбрасываем счетчик если это новый день
+                UserProfile.objects.filter(user_id=user_profile.user_id).update(
+                    training_run_count_today=0,
+                    training_run_last_date=today
+                )
+                user_profile.refresh_from_db()
+            
+            available_runs = max(0, max_runs - user_profile.training_run_count_today)
+            can_run = available_runs > 0
+            
+            return Response({
+                "can_run": can_run,
+                "available_runs": available_runs,
+                "max_runs_per_day": max_runs,
+                "runs_used_today": user_profile.training_run_count_today,
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            import traceback
+            action_logger.error(
+                f"TrainingRunCheckView error: {str(e)}, traceback: {traceback.format_exc()}"
+            )
+            return Response(
+                {"error": f"Internal server error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class TrainingRunStartView(APIView):
+    """Записывает старт тренировочного забега. Проверяет лимит на количество забегов в день."""
+    
+    @require_auth
+    def post(self, request):
+        try:
+            user_profile = request.user_profile
+            now = timezone.now()
+            today = now.date()
+            
+            # Получаем конфигурацию
+            runner_config = RunnerConfig.objects.first()
+            if not runner_config:
+                runner_config = RunnerConfig.objects.create(
+                    stars_per_kw=100,
+                    max_training_runs_per_day=5
+                )
+            
+            max_runs = runner_config.max_training_runs_per_day
+            
+            # Проверяем нужно ли сбросить счетчик
+            if user_profile.training_run_last_date != today:
+                UserProfile.objects.filter(user_id=user_profile.user_id).update(
+                    training_run_count_today=0,
+                    training_run_last_date=today
+                )
+                user_profile.refresh_from_db()
+            
+            # Проверяем лимит
+            if user_profile.training_run_count_today >= max_runs:
+                return Response(
+                    {
+                        "error": "training_run_limit_exceeded",
+                        "max_runs_per_day": max_runs,
+                        "runs_used_today": user_profile.training_run_count_today,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Увеличиваем счетчик тренировочных забегов
+            from django.db.models import F
+            UserProfile.objects.filter(user_id=user_profile.user_id).update(
+                training_run_count_today=F('training_run_count_today') + 1,
+                training_run_last_date=today
+            )
+            
+            user_profile.refresh_from_db()
+            serializer_data = UserProfileSerializer(user_profile).data
+            
+            return Response(
+                {
+                    "message": "Training run started",
+                    "user": serializer_data,
+                    "runs_used_today": user_profile.training_run_count_today,
+                    "available_runs": max_runs - user_profile.training_run_count_today,
+                },
+                status=status.HTTP_200_OK,
+            )
+            
+        except UserProfile.DoesNotExist:
+            action_logger.error(
+                f"TrainingRunStartView error: UserProfile.DoesNotExist for user_id={request.user_profile.user_id if hasattr(request, 'user_profile') else 'unknown'}"
+            )
+            return Response(
+                {"error": "User not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            import traceback
+            action_logger.error(
+                f"TrainingRunStartView error: {str(e)}, traceback: {traceback.format_exc()}"
+            )
+            return Response(
+                {"error": f"Internal server error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
 class GameRunCompleteView(APIView):
     """Завершение забега и начисление энергии"""
     

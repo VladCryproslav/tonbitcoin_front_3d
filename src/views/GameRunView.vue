@@ -62,9 +62,16 @@
           </button>
           <button
             class="btn-primary btn-primary--training btn-primary--wide"
+            :class="{ 'btn-disabled': !canRunTraining || trainingRunsAvailable <= 0 }"
+            :disabled="!canRunTraining || trainingRunsAvailable <= 0"
             @click.stop.prevent="handleTrainingClick"
           >
-            {{ t('game.run_training') }}
+            <div class="training-button-content">
+              <span>{{ t('game.run_training') }}</span>
+              <span class="training-runs-available">
+                {{ t('game.training_runs_available', { count: trainingRunsAvailable }) }}
+              </span>
+            </div>
           </button>
           <button
             class="btn-primary btn-secondary btn-primary--wide"
@@ -334,6 +341,11 @@ const showGameOver = ref(false)
 const gameOverType = ref('lose') // 'win' | 'lose'
 // Тренировочный забег: та же логика, в конце не начисляем энергию (только «Вернуться назад»)
 const isTrainingRun = ref(false)
+// Данные о доступности тренировочных забегов
+const trainingRunsAvailable = ref(5) // По умолчанию 5
+const maxTrainingRunsPerDay = ref(5)
+const trainingRunsUsedToday = ref(0)
+const canRunTraining = ref(true)
 // Данные завершенного забега для начисления при нажатии "Забрать"
 const completedRunData = ref(null) // { energy_collected, is_win, energy_gained }
 // Сохраненное значение собранной энергии для отображения в модалке (не обнуляется до нажатия "Забрать")
@@ -1917,6 +1929,11 @@ const endGame = async (isWinByState = false) => {
     // НЕ обновляем состояние приложения здесь - энергия еще не начислена
     // Обновление произойдет после нажатия "Забрать" в handleClaim()
 
+    // Обновляем доступность тренировочных забегов после завершения тренировочного забега
+    if (isTrainingRun.value) {
+      await checkTrainingRunAvailability()
+    }
+
     // Определяем результат забега: приоритет у isWinByState (переданного параметра)
     // Если isWinByState явно передан (true или false), используем его
     // Иначе используем данные из result
@@ -2091,8 +2108,71 @@ const handleStartRunControlModeUpdate = (mode) => {
   }
 }
 
-const handleTrainingClick = () => {
-  startGame(true)
+// Функция для проверки доступности тренировочных забегов
+const checkTrainingRunAvailability = async () => {
+  try {
+    const response = await host.get('training-run-check/')
+    if (response.data) {
+      trainingRunsAvailable.value = response.data.available_runs || 0
+      maxTrainingRunsPerDay.value = response.data.max_runs_per_day || 5
+      trainingRunsUsedToday.value = response.data.runs_used_today || 0
+      canRunTraining.value = response.data.can_run || false
+    }
+  } catch (error) {
+    console.error('Error checking training run availability:', error)
+    // В случае ошибки разрешаем запуск (fallback)
+    canRunTraining.value = true
+  }
+}
+
+const handleTrainingClick = async () => {
+  // Проверяем доступность перед запуском
+  if (!canRunTraining.value || trainingRunsAvailable.value <= 0) {
+    alert(t('game.training_run_limit_exceeded', { 
+      max: maxTrainingRunsPerDay.value,
+      used: trainingRunsUsedToday.value 
+    }))
+    return
+  }
+  
+  try {
+    // Вызываем API для записи старта тренировочного забега
+    const response = await host.post('training-run-start/')
+    console.log('training-run-start response:', response.data)
+    
+    if (response.data.user) {
+      // Обновляем данные пользователя если нужно
+      if (response.data.user.training_run_count_today !== undefined) {
+        app.user.training_run_count_today = response.data.user.training_run_count_today
+      }
+      if (response.data.user.training_run_last_date !== undefined) {
+        app.user.training_run_last_date = response.data.user.training_run_last_date
+      }
+    }
+    
+    // Обновляем счетчик доступных забегов
+    trainingRunsAvailable.value = response.data.available_runs || 0
+    trainingRunsUsedToday.value = response.data.runs_used_today || 0
+    
+    // Запускаем тренировочный забег
+    startGame(true)
+  } catch (error) {
+    // Если ошибка лимита - показываем сообщение
+    if (error.response?.status === 400 && error.response?.data?.error === 'training_run_limit_exceeded') {
+      const maxRuns = error.response.data.max_runs_per_day || 5
+      const usedRuns = error.response.data.runs_used_today || 0
+      alert(t('game.training_run_limit_exceeded', { 
+        max: maxRuns,
+        used: usedRuns 
+      }))
+      // Обновляем данные о доступности
+      await checkTrainingRunAvailability()
+      return
+    }
+    // Другие ошибки - запускаем игру всё равно (fallback)
+    console.error('Error starting training run:', error)
+    startGame(true)
+  }
 }
 
 const handleResumeClick = () => {
@@ -2732,6 +2812,9 @@ onMounted(() => {
     }
   }
 
+  // Проверяем доступность тренировочных забегов при монтировании
+  checkTrainingRunAvailability()
+
   // Периодическая проверка состояния перегрева (каждую секунду)
   overheatCheckInterval = setInterval(async () => {
     if (showOverheatModal.value && overheatedUntil.value) {
@@ -2890,6 +2973,19 @@ onUnmounted(() => {
   width: 100%;
 }
 
+.training-button-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.training-runs-available {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  font-weight: normal;
+}
+
 .btn-primary--training {
   background: linear-gradient(135deg, #f59e0b 0%, #ea580c 50%, #c2410c 100%);
   color: #fff;
@@ -2898,6 +2994,12 @@ onUnmounted(() => {
 
   &:active {
     box-shadow: 0 6px 18px rgba(234, 88, 12, 0.35);
+  }
+
+  &.btn-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
   }
 }
 
