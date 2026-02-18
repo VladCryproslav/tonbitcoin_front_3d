@@ -2112,16 +2112,20 @@ const handleStartRunControlModeUpdate = (mode) => {
 const checkTrainingRunAvailability = async () => {
   try {
     const response = await host.get('training-run-check/')
-    if (response.data) {
-      trainingRunsAvailable.value = response.data.available_runs || 0
-      maxTrainingRunsPerDay.value = response.data.max_runs_per_day || 5
-      trainingRunsUsedToday.value = response.data.runs_used_today || 0
-      canRunTraining.value = response.data.can_run || false
+    if (response && response.data) {
+      trainingRunsAvailable.value = response.data.available_runs ?? 5
+      maxTrainingRunsPerDay.value = response.data.max_runs_per_day ?? 5
+      trainingRunsUsedToday.value = response.data.runs_used_today ?? 0
+      canRunTraining.value = response.data.can_run ?? true
     }
   } catch (error) {
-    console.error('Error checking training run availability:', error)
-    // В случае ошибки разрешаем запуск (fallback)
+    // В случае ошибки не блокируем интерфейс - используем значения по умолчанию
+    console.warn('Training run availability check failed, using defaults:', error?.message || error)
+    // Устанавливаем значения по умолчанию, чтобы не блокировать интерфейс
     canRunTraining.value = true
+    trainingRunsAvailable.value = 5
+    maxTrainingRunsPerDay.value = 5
+    trainingRunsUsedToday.value = 0
   }
 }
 
@@ -2812,8 +2816,14 @@ onMounted(() => {
     }
   }
 
-  // Проверяем доступность тренировочных забегов при монтировании
-  checkTrainingRunAvailability()
+  // Проверяем доступность тренировочных забегов при монтировании (неблокирующий вызов)
+  // Используем setTimeout чтобы не блокировать рендеринг
+  setTimeout(() => {
+    checkTrainingRunAvailability().catch(err => {
+      console.error('Failed to check training run availability on mount:', err)
+      // Не блокируем интерфейс при ошибке - используем значения по умолчанию
+    })
+  }, 100)
 
   // Периодическая проверка состояния перегрева (каждую секунду)
   overheatCheckInterval = setInterval(async () => {
