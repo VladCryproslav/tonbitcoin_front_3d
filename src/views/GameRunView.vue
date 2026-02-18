@@ -55,15 +55,7 @@
         </div>
         <div class="game-over-actions">
           <button
-            class="btn-primary btn-primary--wide"
-            @click.stop.prevent="handleStartClick"
-          >
-            {{ t('game.run_start_button') }}
-          </button>
-          <button
             class="btn-primary btn-primary--training btn-primary--wide"
-            :class="{ 'btn-disabled': !canRunTraining || (trainingRunsAvailable ?? 0) <= 0 }"
-            :disabled="!canRunTraining || (trainingRunsAvailable ?? 0) <= 0"
             @click.stop.prevent="handleTrainingClick"
           >
             <div class="training-button-content">
@@ -72,6 +64,12 @@
                 {{ t('game.training_runs_available', { count: trainingRunsAvailable ?? 5 }) }}
               </span>
             </div>
+          </button>
+          <button
+            class="btn-primary btn-primary--wide"
+            @click.stop.prevent="handleStartClick"
+          >
+            {{ t('game.run_start_button') }}
           </button>
           <button
             class="btn-primary btn-secondary btn-primary--wide"
@@ -263,6 +261,15 @@
       </template>
     </InfoModal>
 
+    <!-- Модалка предупреждения о лимите тренировочных забегов -->
+    <ModalNew
+      v-if="showTrainingLimitModal"
+      status="warning"
+      :title="t('notification.st_attention')"
+      :body="t('game.training_run_limit_exceeded', { used: trainingRunsUsedToday, max: maxTrainingRunsPerDay })"
+      @close="showTrainingLimitModal = false"
+    />
+
     <!-- Красная вспышка по краям экрана при ударе (CSS-анимация, без JS-таймеров) -->
     <div
       v-if="hitFlashEnabled && hitFlashTick"
@@ -314,6 +321,7 @@ import VirtualControls from '@/components/game/VirtualControls.vue'
 import InfoModal from '@/components/InfoModal.vue'
 import OverheatGameRunModal from '@/components/OverheatGameRunModal.vue'
 import StartRunWarningModal from '@/components/StartRunWarningModal.vue'
+import ModalNew from '@/components/ModalNew.vue'
 import { useGameRun } from '@/composables/useGameRun'
 import { useGamePhysics } from '@/composables/useGamePhysics'
 import { useGameWorld } from '@/composables/useGameWorld'
@@ -346,6 +354,10 @@ const trainingRunsAvailable = ref(5) // По умолчанию 5
 const maxTrainingRunsPerDay = ref(5)
 const trainingRunsUsedToday = ref(0)
 const canRunTraining = ref(true)
+// Модалка предупреждения о лимите тренировочных забегов
+const showTrainingLimitModal = ref(false)
+// Модалка предупреждения о лимите тренировочных забегов
+const showTrainingLimitModal = ref(false)
 // Данные завершенного забега для начисления при нажатии "Забрать"
 const completedRunData = ref(null) // { energy_collected, is_win, energy_gained }
 // Сохраненное значение собранной энергии для отображения в модалке (не обнуляется до нажатия "Забрать")
@@ -2132,10 +2144,8 @@ const checkTrainingRunAvailability = async () => {
 const handleTrainingClick = async () => {
   // Проверяем доступность перед запуском
   if (!canRunTraining.value || (trainingRunsAvailable.value ?? 0) <= 0) {
-    alert(t('game.training_run_limit_exceeded', { 
-      max: maxTrainingRunsPerDay.value,
-      used: trainingRunsUsedToday.value 
-    }))
+    // Показываем желтую модалку предупреждения
+    showTrainingLimitModal.value = true
     return
   }
   
@@ -2161,14 +2171,15 @@ const handleTrainingClick = async () => {
     // Запускаем тренировочный забег
     startGame(true)
   } catch (error) {
-    // Если ошибка лимита - показываем сообщение
+    // Если ошибка лимита - показываем модалку предупреждения
     if (error.response?.status === 400 && error.response?.data?.error === 'training_run_limit_exceeded') {
       const maxRuns = error.response.data.max_runs_per_day || 5
       const usedRuns = error.response.data.runs_used_today || 0
-      alert(t('game.training_run_limit_exceeded', { 
-        max: maxRuns,
-        used: usedRuns 
-      }))
+      maxTrainingRunsPerDay.value = maxRuns
+      trainingRunsUsedToday.value = usedRuns
+      trainingRunsAvailable.value = 0
+      // Показываем желтую модалку предупреждения
+      showTrainingLimitModal.value = true
       // Обновляем данные о доступности
       await checkTrainingRunAvailability()
       return
@@ -2987,7 +2998,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .training-runs-available {
