@@ -1575,7 +1575,10 @@ class UserProfileView(APIView):
     def get(self, request):
         try:
             serializer = UserProfileSerializer(request.user_profile)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            data = serializer.data
+            # Добавляем серверное время для синхронизации таймеров на клиенте
+            data['server_time'] = timezone.now().isoformat()
+            return Response(data, status=status.HTTP_200_OK)
         except UserProfile.DoesNotExist:
             return Response(
                 {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND

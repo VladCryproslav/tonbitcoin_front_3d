@@ -663,6 +663,18 @@ const energyRunCooldown = computed(() => {
   const cooldownMs = 60 * 60 * 1000 // 60 минут
   const availableAt = new Date(lastStarted.getTime() + cooldownMs)
   const isActive = now < availableAt
+  
+  // Отладочная информация
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Energy run cooldown check:', {
+      lastStarted: lastStarted.toISOString(),
+      now: now.toISOString(),
+      availableAt: availableAt.toISOString(),
+      isActive,
+      timeRemaining: isActive ? (availableAt - now) / 1000 / 60 : 0
+    })
+  }
+  
   return {
     isActive,
     timeRemaining: isActive ? availableAt.toISOString() : null,

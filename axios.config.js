@@ -46,11 +46,20 @@ let serverTimeOffset = 0
 host.interceptors.response.use(
   (response) => {
     // Вычисляем смещение серверного времени при каждом ответе
-    const serverDateHeader = response.headers['date']
-    if (serverDateHeader) {
-      const serverTime = new Date(serverDateHeader).getTime()
+    // Приоритет: server_time из ответа > заголовок Date
+    if (response.data?.server_time) {
+      const serverTime = new Date(response.data.server_time).getTime()
       const clientTime = Date.now()
       serverTimeOffset = serverTime - clientTime
+      console.log('Server time offset updated from response:', serverTimeOffset, 'ms')
+    } else {
+      const serverDateHeader = response.headers['date']
+      if (serverDateHeader) {
+        const serverTime = new Date(serverDateHeader).getTime()
+        const clientTime = Date.now()
+        serverTimeOffset = serverTime - clientTime
+        console.log('Server time offset updated from header:', serverTimeOffset, 'ms')
+      }
     }
     
     console.log('API Response:', {
