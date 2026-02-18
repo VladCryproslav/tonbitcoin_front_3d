@@ -1419,8 +1419,10 @@ const resumeGame = async () => {
       countdownInterval = null
       showCountdown.value = false
 
-      // Устанавливаем время окончания защиты (2 секунды после окончания таймера 3-2-1)
-      overheatProtectionEndTime = performance.now() + 2000
+      // Устанавливаем время окончания защиты только если защита активна (т.е. при перегреве)
+      if (overheatProtectionActive.value) {
+        overheatProtectionEndTime = performance.now() + 2000
+      }
 
       gameRun.resumeRun()
       lastUpdateTime = 0
@@ -1483,7 +1485,8 @@ function doOneStep(playerBox, inRollImmuneWindow) {
           }
         } else {
           // Не проверяем коллизии если игрок уже победил (во время анимации победы)
-          // Также отключаем коллизии во время защиты при перегреве (таймер 5-1, таймер 3-2-1, и 3 секунды после)
+          // Также отключаем коллизии только во время защиты при перегреве (таймер 4-1, таймер 3-2-1, и 2 секунды после)
+          // При паузе коллизии работают нормально
           gameWorld.value.updateObstacles(
             playerBox,
             () => {
@@ -1553,7 +1556,7 @@ function doOneStep(playerBox, inRollImmuneWindow) {
             },
             gamePhysics.value.isSliding?.value === true,
             inRollImmuneWindow,
-            overheatProtectionActive.value || overheatDecelerating.value || isAccelerating.value
+            overheatProtectionActive.value || overheatDecelerating.value
           )
         }
 
