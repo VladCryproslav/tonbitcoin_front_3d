@@ -742,7 +742,7 @@ const startThreeLoop = () => {
           isAccelerating.value = false
         }
       }
-      
+
       // Проверяем окончание защиты от коллизий (2 секунды после таймера 3-2-1)
       if (overheatProtectionActive.value && overheatProtectionEndTime > 0) {
         const now = performance.now()
@@ -757,16 +757,16 @@ const startThreeLoop = () => {
       } else if (!winTriggered && !winDecelerating && winAnimationStartTime === 0) {
         // Плавный набор скорости на основе прогресса дистанции (один раз на кадр, не на шаг)
         // Не применяем если идет плавное ускорение после паузы/перегрева
-        
+
         // НАСТРОЙКА СКОРОСТИ - можно менять эти значения:
         const BASE_SPEED = 0.15        // Минимальная скорость (старт)
         const MID_SPEED = 0.30         // Скорость на 60% дистанции
         const MAX_SPEED = 0.36         // Максимальная скорость (с 90%)
         const FIRST_RAMP_END = 60      // Процент дистанции, до которого идет первый набор (0% -> 60%)
         const SECOND_RAMP_END = 90     // Процент дистанции, до которого идет второй набор (60% -> 90%)
-        
+
         const progress = (gameRun.distanceProgress?.value ?? 0) / 100
-        
+
         let targetSpeed
         if (progress <= FIRST_RAMP_END / 100) {
           // Этап 1: от 0% до 60% - набор с BASE_SPEED до MID_SPEED
@@ -780,7 +780,7 @@ const startThreeLoop = () => {
           // Этап 3: с 90% и далее - постоянная MAX_SPEED
           targetSpeed = MAX_SPEED
         }
-        
+
         gameSpeed.value = 0.92 * gameSpeed.value + 0.08 * targetSpeed
       }
       // ОПТИМИЗАЦИЯ: Спавн объектов только когда есть шаги (экономит вычисления на Android с 120Hz)
@@ -1174,12 +1174,12 @@ const activateOverheat = (serverData) => {
 
   // Запускаем обратный отсчет 5 секунд перед остановкой персонажа
   overheatCountdown.value = 5
-  
+
   // Очищаем предыдущий интервал если есть
   if (overheatCountdownInterval) {
     clearInterval(overheatCountdownInterval)
   }
-  
+
   overheatCountdownInterval = setInterval(() => {
     if (overheatCountdown.value === null || overheatCountdown.value <= 0) {
       clearInterval(overheatCountdownInterval)
@@ -1216,9 +1216,9 @@ const activateOverheat = (serverData) => {
       const MAX_SPEED = 0.36         // Максимальная скорость (с 90%)
       const FIRST_RAMP_END = 60      // Процент дистанции, до которого идет первый набор (0% -> 60%)
       const SECOND_RAMP_END = 90     // Процент дистанции, до которого идет второй набор (60% -> 90%)
-      
+
       const progress = (gameRun.distanceProgress?.value ?? 0) / 100
-      
+
       if (progress <= FIRST_RAMP_END / 100) {
         // Этап 1: от 0% до 60% - набор с BASE_SPEED до MID_SPEED
         const rampProgress = progress / (FIRST_RAMP_END / 100)
@@ -1357,9 +1357,9 @@ const pauseGame = () => {
   const MAX_SPEED = 0.36         // Максимальная скорость (с 90%)
   const FIRST_RAMP_END = 60      // Процент дистанции, до которого идет первый набор (0% -> 60%)
   const SECOND_RAMP_END = 90     // Процент дистанции, до которого идет второй набор (60% -> 90%)
-  
+
   const progress = (gameRun.distanceProgress?.value ?? 0) / 100
-  
+
   if (progress <= FIRST_RAMP_END / 100) {
     // Этап 1: от 0% до 60% - набор с BASE_SPEED до MID_SPEED
     const rampProgress = progress / (FIRST_RAMP_END / 100)
@@ -1486,9 +1486,9 @@ const resumeGame = async () => {
       const MAX_SPEED = 0.36         // Максимальная скорость (с 90%)
       const FIRST_RAMP_END = 60      // Процент дистанции, до которого идет первый набор (0% -> 60%)
       const SECOND_RAMP_END = 90     // Процент дистанции, до которого идет второй набор (60% -> 90%)
-      
+
       const progress = (gameRun.distanceProgress?.value ?? 0) / 100
-      
+
       if (progress <= FIRST_RAMP_END / 100) {
         // Этап 1: от 0% до 60% - набор с BASE_SPEED до MID_SPEED
         const rampProgress = progress / (FIRST_RAMP_END / 100)
@@ -2100,13 +2100,13 @@ const handleResumeClick = () => {
       // Вычисляем целевую скорость на основе текущего прогресса дистанции
       // НАСТРОЙКА СКОРОСТИ - можно менять эти значения:
       const BASE_SPEED = 0.15        // Минимальная скорость (старт)
-      const MID_SPEED = 0.30         // Скорость на 60% дистанции
-      const MAX_SPEED = 0.36         // Максимальная скорость (с 90%)
+      const MID_SPEED = 0.28         // Скорость на 60% дистанции
+      const MAX_SPEED = 0.34         // Максимальная скорость (с 90%)
       const FIRST_RAMP_END = 60      // Процент дистанции, до которого идет первый набор (0% -> 60%)
       const SECOND_RAMP_END = 90     // Процент дистанции, до которого идет второй набор (60% -> 90%)
-      
+
       const progress = (gameRun.distanceProgress?.value ?? 0) / 100
-      
+
       if (progress <= FIRST_RAMP_END / 100) {
         // Этап 1: от 0% до 60% - набор с BASE_SPEED до MID_SPEED
         const rampProgress = progress / (FIRST_RAMP_END / 100)
