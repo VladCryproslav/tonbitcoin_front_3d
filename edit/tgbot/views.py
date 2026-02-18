@@ -148,7 +148,71 @@ from telebot.types import Message, PreCheckoutQuery
 
 @bot.pre_checkout_query_handler(func=lambda query: True)
 def checkout(pre_checkout_query: PreCheckoutQuery):
-    bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True, error_message="Error")
+    """
+    Обработчик pre_checkout_query - проверяет возможность обработки платежа
+    Согласно документации Telegram: нужно ответить в течение 10 секунд
+    """
+    close_old_connections()
+    
+    payload = pre_checkout_query.invoice_payload
+    user_id = pre_checkout_query.from_user.id
+    
+    try:
+        # Для extra life проверяем что забег активен и жизнь еще не использована
+        if payload.startswith("runner_extra_life:"):
+            try:
+                target_user_id = int(payload.replace("runner_extra_life:", ""))
+                user_profile = UserProfile.objects.get(user_id=target_user_id)
+                
+                # Проверяем что забег активен
+                if not user_profile.energy_run_last_started_at:
+                    action_logger.warning(
+                        f"user {user_id} | Pre-checkout: Extra life but run not started | payload: {payload}"
+                    )
+                    bot.answer_pre_checkout_query(
+                        pre_checkout_query.id,
+                        ok=False,
+                        error_message="Забег не начат. Начните забег перед покупкой дополнительной жизни."
+                    )
+                    return
+                
+                # Проверяем что 4-я жизнь еще не использована
+                if user_profile.energy_run_extra_life_used:
+                    action_logger.warning(
+                        f"user {user_id} | Pre-checkout: Extra life already used | payload: {payload}"
+                    )
+                    bot.answer_pre_checkout_query(
+                        pre_checkout_query.id,
+                        ok=False,
+                        error_message="Дополнительная жизнь уже использована в этом забеге."
+                    )
+                    return
+                
+                # Все проверки пройдены, одобряем платеж
+                bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
+                action_logger.info(
+                    f"user {user_id} | Pre-checkout: Extra life approved | payload: {payload}"
+                )
+            except (ValueError, UserProfile.DoesNotExist) as e:
+                action_logger.error(
+                    f"user {user_id} | Pre-checkout: Invalid payload for extra life | payload: {payload} | error: {e}"
+                )
+                bot.answer_pre_checkout_query(
+                    pre_checkout_query.id,
+                    ok=False,
+                    error_message="Ошибка обработки запроса. Попробуйте позже."
+                )
+            return
+        
+        # Для остальных типов платежей одобряем по умолчанию
+        bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
+    except Exception as e:
+        action_logger.exception(f"user {user_id} | Pre-checkout error | payload: {payload} | error: {e}")
+        bot.answer_pre_checkout_query(
+            pre_checkout_query.id,
+            ok=False,
+            error_message="Ошибка обработки запроса. Попробуйте позже."
+        )
 
 
 from shared import setup_logger

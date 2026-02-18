@@ -2421,6 +2421,9 @@ const handleBuyExtraLife = async () => {
       let paymentProcessed = false
       
       // Функция активации жизни после оплаты
+      // ВАЖНО: Согласно документации Telegram, мы должны начислять жизнь ТОЛЬКО после получения
+      // successful_payment от Telegram Bot. Эта функция вызывается только когда мы УЖЕ знаем,
+      // что Telegram Bot обработал платеж (через polling или callback)
       const activateExtraLife = async () => {
         if (paymentProcessed) {
           console.log('[handleBuyExtraLife] Payment already processed, skipping activation')
@@ -2430,47 +2433,24 @@ const handleBuyExtraLife = async () => {
         paymentInProgress = false
         
         try {
-          // Небольшая задержка для гарантии что платеж обработан на сервере
-          console.log('[handleBuyExtraLife] Waiting 2 seconds for payment processing on server...')
-          await new Promise(resolve => setTimeout(resolve, 2000))
-          
-          // Проверяем статус через обновление данных пользователя (возможно Telegram Bot уже обработал платеж)
-          console.log('[handleBuyExtraLife] Checking if payment was already processed by Telegram Bot...')
+          // Проверяем что Telegram Bot действительно обработал платеж
+          console.log('[handleBuyExtraLife] Verifying that Telegram Bot processed the payment...')
           await app.initUser()
-          console.log('[handleBuyExtraLife] After waiting - energy_run_extra_life_used:', app.user?.energy_run_extra_life_used)
+          console.log('[handleBuyExtraLife] energy_run_extra_life_used:', app.user?.energy_run_extra_life_used)
           
-          if (app.user?.energy_run_extra_life_used) {
-            console.log('[handleBuyExtraLife] Extra life already activated by Telegram Bot, proceeding to restore run...')
-          } else {
-            // Сначала активируем жизнь через API (на случай если Telegram Bot callback не сработал)
-            console.log('[handleBuyExtraLife] Telegram Bot did not activate, calling runner-extra-life-activate API...')
-            const activateResponse = await host.post('runner-extra-life-activate/', {})
-            console.log('[handleBuyExtraLife] Activate response:', activateResponse.status, activateResponse.data)
-            
-            if (activateResponse.status !== 200 || !activateResponse.data?.success) {
-              throw new Error('Activation failed: ' + JSON.stringify(activateResponse.data))
-            }
-            
-            // Обновляем данные пользователя
-            console.log('[handleBuyExtraLife] Updating user data after API activation...')
+          if (!app.user?.energy_run_extra_life_used) {
+            // Если Telegram Bot еще не обработал платеж, ждем еще немного
+            console.log('[handleBuyExtraLife] Telegram Bot has not processed payment yet, waiting...')
+            await new Promise(resolve => setTimeout(resolve, 2000))
             await app.initUser()
-            console.log('[handleBuyExtraLife] User data updated, energy_run_extra_life_used:', app.user?.energy_run_extra_life_used)
             
-            // Проверяем что жизнь действительно активирована
             if (!app.user?.energy_run_extra_life_used) {
-              console.warn('[handleBuyExtraLife] Warning: energy_run_extra_life_used is still false after activation, retrying...')
-              // Пытаемся еще раз активировать
-              await new Promise(resolve => setTimeout(resolve, 1000))
-              const retryResponse = await host.post('runner-extra-life-activate/', {})
-              await app.initUser()
-              if (!app.user?.energy_run_extra_life_used) {
-                throw new Error('Extra life activation failed after retry')
-              }
+              throw new Error('Telegram Bot has not processed the payment. Please wait or contact support.')
             }
           }
           
-          // Восстанавливаем забег (как выход из перегрева)
-          console.log('[handleBuyExtraLife] Restoring run...')
+          // Telegram Bot обработал платеж, восстанавливаем забег
+          console.log('[handleBuyExtraLife] Telegram Bot processed payment successfully, restoring run...')
           await restoreRunAfterExtraLife()
           console.log('[handleBuyExtraLife] Run restored after extra life')
           
@@ -2505,10 +2485,12 @@ const handleBuyExtraLife = async () => {
       })
       
       // Polling для проверки статуса оплаты (на случай если callback не вызывается)
+      let pollingStartTime = Date.now()
       const checkPaymentStatus = async () => {
         if (!paymentInProgress || paymentProcessed) return
         
-        console.log('[handleBuyExtraLife] Checking payment status via polling...')
+        const elapsedSeconds = Math.floor((Date.now() - pollingStartTime) / 1000)
+        console.log(`[handleBuyExtraLife] Checking payment status via polling... (elapsed: ${elapsedSeconds}s)`)
         try {
           // Обновляем данные пользователя чтобы проверить статус
           await app.initUser()
@@ -2518,7 +2500,10 @@ const handleBuyExtraLife = async () => {
             console.log('[handleBuyExtraLife] Extra life was activated (checked via polling)')
             await activateExtraLife()
           } else {
-            console.log('[handleBuyExtraLife] Polling check - extra life not activated yet')
+            console.log('[handleBuyExtraLife] Polling check - extra life not activated yet (waiting for Telegram Bot to process successful_payment)')
+            // НЕ активируем жизнь напрямую через API - ждем только подтверждения от Telegram Bot
+            // Согласно документации Telegram: "You must always check that you received a successful_payment 
+            // update before delivering the goods or services purchased by the user"
           }
         } catch (error) {
           console.error('[handleBuyExtraLife] Error checking payment status:', error)

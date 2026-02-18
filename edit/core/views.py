@@ -3536,17 +3536,28 @@ class RunnerExtraLifeStarsView(APIView):
 
 
 class RunnerExtraLifeActivateView(APIView):
-    """Активация дополнительной жизни после успешной оплаты"""
+    """
+    Проверка статуса активации дополнительной жизни
+    
+    ВАЖНО: Этот endpoint НЕ активирует жизнь напрямую.
+    Жизнь активируется ТОЛЬКО через Telegram Bot после получения successful_payment.
+    Этот endpoint используется только для проверки статуса активации.
+    
+    Согласно документации Telegram:
+    "You must always check that you received a successful_payment update 
+    before delivering the goods or services purchased by the user"
+    """
     
     @swagger_auto_schema(
         tags=["game"],
-        operation_description="Активировать дополнительную жизнь после оплаты",
+        operation_description="Проверить статус активации дополнительной жизни (только для проверки, не активирует)",
         responses={
             200: openapi.Response(
-                description="Жизнь успешно активирована",
+                description="Статус активации",
                 examples={
                     "application/json": {
                         "success": True,
+                        "activated": True,
                         "message": "Extra life activated",
                     }
                 },
@@ -3566,31 +3577,18 @@ class RunnerExtraLifeActivateView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             
-            # Проверка что 4-я жизнь еще не использована
-            if user_profile.energy_run_extra_life_used:
-                return Response(
-                    {"error": "Extra life already used in this run"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            
-            # Активируем 4-ю жизнь
-            UserProfile.objects.filter(id=user_profile.id).update(
-                energy_run_extra_life_used=True
-            )
-            
-            action_logger.info(
-                f"Extra life activated for user {user_profile.user_id}"
-            )
-            
+            # Возвращаем текущий статус активации
+            # Жизнь активируется ТОЛЬКО через Telegram Bot после successful_payment
             return Response(
                 {
                     "success": True,
-                    "message": "Extra life activated",
+                    "activated": user_profile.energy_run_extra_life_used,
+                    "message": "Extra life already activated" if user_profile.energy_run_extra_life_used else "Extra life not activated yet",
                 },
                 status=status.HTTP_200_OK,
             )
         except Exception as e:
-            action_logger.exception(f"Error activating extra life: {e}")
+            action_logger.exception(f"Error checking extra life status: {e}")
             return Response(
                 {"error": "Internal server error"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
