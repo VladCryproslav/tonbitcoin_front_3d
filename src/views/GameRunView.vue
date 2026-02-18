@@ -1979,9 +1979,9 @@ const endGame = async (isWinByState = false) => {
         showGameOver.value = true
         launcherOverlayMode.value = 'none'
         console.log('endGame: Set gameOverType to LOSE, showGameOver=', showGameOver.value)
-        // Вызываем расчет цены после показа модалки
+        // Вызываем расчет цены после показа модалки (только если не тренировочный забег)
         await nextTick()
-        if (canBuyExtraLife.value) {
+        if (canBuyExtraLife.value && !isTrainingRun.value) {
           console.log('endGame: Triggering calculateExtraLifePrice after showing modal')
           calculateExtraLifePrice()
         }
@@ -2314,6 +2314,7 @@ const canBuyExtraLife = computed(() => {
   // 3. Использованы все 3 жизни (livesLeft = 0)
   // 4. 4-я жизнь еще не использована (!app.user?.energy_run_extra_life_used)
   // 5. Забег был начат (gameRun.startStorage > 0)
+  // 6. НЕ тренировочный забег (в тренировке покупка жизни не имеет смысла)
   if (!showGameOver.value || gameOverType.value !== 'lose') {
     return false
   }
@@ -2323,6 +2324,11 @@ const canBuyExtraLife = computed(() => {
   }
   
   if (app.user?.energy_run_extra_life_used) {
+    return false
+  }
+  
+  // В тренировочном забеге не показываем кнопку покупки жизни
+  if (isTrainingRun.value) {
     return false
   }
   
@@ -2564,7 +2570,7 @@ const restoreRunAfterExtraLife = async () => {
 }
 
 // Вычисляем цену при изменении состояния
-watch([showGameOver, gameOverType, livesLeft, savedEnergyCollectedForModal, () => gameRun.startStorage?.value, () => app.user?.energy_run_extra_life_used], () => {
+watch([showGameOver, gameOverType, livesLeft, savedEnergyCollectedForModal, () => gameRun.startStorage?.value, () => app.user?.energy_run_extra_life_used, isTrainingRun], () => {
   console.log('[watch] State changed:', {
     showGameOver: showGameOver.value,
     gameOverType: gameOverType.value,
@@ -2572,9 +2578,10 @@ watch([showGameOver, gameOverType, livesLeft, savedEnergyCollectedForModal, () =
     savedEnergyCollectedForModal: savedEnergyCollectedForModal.value,
     startStorage: gameRun.startStorage?.value,
     energy_run_extra_life_used: app.user?.energy_run_extra_life_used,
+    isTrainingRun: isTrainingRun.value,
     canBuyExtraLife: canBuyExtraLife.value
   })
-  if (canBuyExtraLife.value) {
+  if (canBuyExtraLife.value && !isTrainingRun.value) {
     calculateExtraLifePrice()
   } else {
     extraLifePrice.value = 0
