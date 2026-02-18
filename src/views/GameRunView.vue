@@ -743,7 +743,7 @@ const startThreeLoop = () => {
         }
       }
       
-      // Проверяем окончание защиты от коллизий (3 секунды после таймера 3-2-1)
+      // Проверяем окончание защиты от коллизий (2 секунды после таймера 3-2-1)
       if (overheatProtectionActive.value && overheatProtectionEndTime > 0) {
         const now = performance.now()
         if (now >= overheatProtectionEndTime) {
@@ -1156,12 +1156,6 @@ const activateOverheat = (serverData) => {
   // Запускаем обратный отсчет 5 секунд перед остановкой персонажа
   overheatCountdown.value = 5
   
-  // Включаем защиту от коллизий и мигание с самого начала таймера
-  overheatProtectionActive.value = true
-  if (gamePhysics.value?.setBlinking) {
-    gamePhysics.value.setBlinking(true)
-  }
-  
   // Очищаем предыдущий интервал если есть
   if (overheatCountdownInterval) {
     clearInterval(overheatCountdownInterval)
@@ -1172,6 +1166,14 @@ const activateOverheat = (serverData) => {
       clearInterval(overheatCountdownInterval)
       overheatCountdownInterval = null
       return
+    }
+
+    // Когда таймер показывает 3 секунды - включаем защиту от коллизий и мигание
+    if (overheatCountdown.value === 3) {
+      overheatProtectionActive.value = true
+      if (gamePhysics.value?.setBlinking) {
+        gamePhysics.value.setBlinking(true)
+      }
     }
 
     // Когда таймер показывает 2 секунды - начинаем плавное замедление
@@ -1417,8 +1419,8 @@ const resumeGame = async () => {
       countdownInterval = null
       showCountdown.value = false
 
-      // Устанавливаем время окончания защиты (3 секунды после окончания таймера 3-2-1)
-      overheatProtectionEndTime = performance.now() + 3000
+      // Устанавливаем время окончания защиты (2 секунды после окончания таймера 3-2-1)
+      overheatProtectionEndTime = performance.now() + 2000
 
       gameRun.resumeRun()
       lastUpdateTime = 0
