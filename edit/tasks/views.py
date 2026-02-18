@@ -544,6 +544,7 @@ class ActivateBoosterFTBCView(APIView):
                     azot_counts=F("azot_counts") + 1,
                     overheated_until=None,
                     tap_count_since_overheat=0,
+                    was_overheated=False,  # Сбрасываем флаг перегрева при активации азота
                 )
                 user_profile.refresh_from_db()
             elif booster.slug == "jarvis":

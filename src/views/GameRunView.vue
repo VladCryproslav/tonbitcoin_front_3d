@@ -1047,13 +1047,19 @@ const initializeOverheat = () => {
       showOverheatModal.value = true
       pauseGame()
     } else {
-      // Перегрев закончился
+      // Перегрев закончился - сбрасываем все флаги перегрева
       isOverheated.value = false
       overheatedUntil.value = null
+      wasOverheated.value = false  // Сбрасываем флаг перегрева когда перегрев закончился
     }
   } else {
+    // Нет активного перегрева - сбрасываем флаг если перегрев закончился
     isOverheated.value = false
     overheatedUntil.value = null
+    // Если перегрев закончился, но флаг был установлен, сбрасываем его
+    if (wasOverheated.value && !app.user?.overheated_until) {
+      wasOverheated.value = false
+    }
   }
 }
 
@@ -1230,6 +1236,10 @@ const handleOverheatContinue = async () => {
   isOverheated.value = false
   showOverheatModal.value = false
   overheatedUntil.value = app.user?.overheated_until ? new Date(app.user.overheated_until) : null
+  // Сбрасываем флаг перегрева если перегрев закончился или был снят азотом
+  if (!app.user?.overheated_until || new Date(app.user.overheated_until) <= new Date()) {
+    wasOverheated.value = false
+  }
   overheatCountdown.value = null // Сбрасываем таймер
   overheatDecelerating.value = false // Сбрасываем флаг замедления
   isAccelerating.value = false // Сбрасываем флаг ускорения

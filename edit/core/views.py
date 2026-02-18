@@ -548,6 +548,15 @@ class GameRunUpdateOverheatView(APIView):
                 "overheat_goal": user_profile.overheat_goal,
                 "was_overheated": user_profile.was_overheated,
             })
+        elif user_profile.overheated_until and user_profile.overheated_until <= now:
+            # Перегрев закончился - сбрасываем флаг was_overheated
+            UserProfile.objects.filter(
+                user_id=user_profile.user_id
+            ).update(
+                was_overheated=False,
+                overheated_until=None,
+            )
+            user_profile.refresh_from_db()
         
         # ВАЖНО: Power больше не участвует в системе перегрева
         # Не обновляем power при перегреве (в отличие от старой системы тапов)
