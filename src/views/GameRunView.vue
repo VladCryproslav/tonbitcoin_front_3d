@@ -356,8 +356,6 @@ const trainingRunsUsedToday = ref(0)
 const canRunTraining = ref(true)
 // Модалка предупреждения о лимите тренировочных забегов
 const showTrainingLimitModal = ref(false)
-// Модалка предупреждения о лимите тренировочных забегов
-const showTrainingLimitModal = ref(false)
 // Данные завершенного забега для начисления при нажатии "Забрать"
 const completedRunData = ref(null) // { energy_collected, is_win, energy_gained }
 // Сохраненное значение собранной энергии для отображения в модалке (не обнуляется до нажатия "Забрать")
