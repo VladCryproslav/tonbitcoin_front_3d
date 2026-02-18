@@ -314,6 +314,7 @@ import { useGameEffects } from '@/composables/useGameEffects'
 import { useAppStore } from '@/stores/app'
 import { host } from '@/../axios.config'
 import { useTelegram } from '@/services/telegram'
+import { runnerExtraLifeStarsEnabled } from '@/services/data'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -2394,6 +2395,12 @@ const calculateExtraLifePrice = async () => {
 // Обработчик покупки дополнительной жизни
 const handleBuyExtraLife = async () => {
   if (isBuyingExtraLife.value || !canBuyExtraLife.value) {
+    return
+  }
+  
+  // Проверка флага активности функционала
+  if (!runnerExtraLifeStarsEnabled) {
+    alert(t('game.extra_life_unavailable'))
     return
   }
   

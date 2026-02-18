@@ -506,6 +506,7 @@
     "start_run_warning_confirm": "Подтвердить",
     "buy_extra_life": "Доп. жизнь",
     "extra_life_activation_error": "Ошибка активации дополнительной жизни",
+    "extra_life_unavailable": "На данный момент функционал недоступен",
     "processing": "Обработка..."
   },
   "common": {
