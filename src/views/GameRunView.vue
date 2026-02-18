@@ -1168,8 +1168,8 @@ const activateOverheat = (serverData) => {
       return
     }
 
-    // Когда таймер показывает 3 секунды - включаем защиту от коллизий и мигание
-    if (overheatCountdown.value === 3) {
+    // Когда таймер показывает 4 секунды - включаем защиту от коллизий и мигание
+    if (overheatCountdown.value === 4) {
       overheatProtectionActive.value = true
       if (gamePhysics.value?.setBlinking) {
         gamePhysics.value.setBlinking(true)

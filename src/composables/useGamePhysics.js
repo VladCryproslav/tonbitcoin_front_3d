@@ -665,7 +665,7 @@ export function useGamePhysics(scene) {
     
     if (enabled) {
       let startTime = performance.now()
-      const blinkDuration = 200 // Длительность одного цикла мигания (мс)
+      const blinkDuration = 350 // Длительность одного цикла мигания (мс) - увеличено для более редкого мигания
       
       const animateBlink = () => {
         if (!isBlinking) {
