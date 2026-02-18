@@ -1607,7 +1607,6 @@ function doOneStep(playerBox, inRollImmuneWindow) {
                 )
                 // Сохраняем значение для модалки сразу при смерти
                 savedEnergyCollectedForModal.value = savedEnergyBeforeStop
-                console.log('Player died (livesLeft=0): energyCollected BEFORE stop=', savedEnergyBeforeStop, 'startStorage=', gameRun.startStorage?.value, 'savedStartStorageForExtraLife=', savedStartStorageForExtraLife.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
 
                 // НЕ вызываем stopRun() здесь, чтобы не сбросить startStorage и energyCollected
                 // Останавливаем только игровой цикл и физику
@@ -1968,25 +1967,19 @@ const endGame = async (isWinByState = false) => {
             gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0
           )
           savedEnergyCollectedForModal.value = loseEnergy
-          console.log('endGame: Restored savedEnergyCollectedForModal from current state:', loseEnergy)
         }
         // Сохраняем startStorage если еще не сохранен
         if (!savedStartStorageForExtraLife.value && gameRun.startStorage?.value) {
           savedStartStorageForExtraLife.value = gameRun.startStorage.value
-          console.log('endGame: Saved startStorage for extra life calculation:', savedStartStorageForExtraLife.value)
         }
-        console.log('endGame: Before showing LOSE modal, savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'savedStartStorageForExtraLife=', savedStartStorageForExtraLife.value, 'completedRunData.energy_collected=', completedRunData.value?.energy_collected, 'gameRun.energyCollected?.value=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value)
         // Убеждаемся что данные установлены перед показом модалки
         await nextTick()
-        console.log('endGame: After nextTick before showing modal, displayedEnergyCollected computed value would be:', savedEnergyCollectedForModal.value > 0 ? savedEnergyCollectedForModal.value : (completedRunData.value?.energy_collected ?? 0), 'startStorage=', gameRun.startStorage?.value)
         gameOverType.value = 'lose'
         showGameOver.value = true
         launcherOverlayMode.value = 'none'
-        console.log('endGame: Set gameOverType to LOSE, showGameOver=', showGameOver.value)
         // Вызываем расчет цены после показа модалки (только если не тренировочный забег)
         await nextTick()
         if (canBuyExtraLife.value && !isTrainingRun.value) {
-          console.log('endGame: Triggering calculateExtraLifePrice after showing modal')
           calculateExtraLifePrice()
         }
       }
@@ -2293,7 +2286,6 @@ const handleClaim = async () => {
       if (gameRun.energyCollected) {
         gameRun.energyCollected.value = 0
       }
-      console.log('handleClaim: Cleared run data after successful claim', 'startStorage=', gameRun.startStorage?.value, 'energyCollected=', gameRun.energyCollected?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'savedStartStorageForExtraLife=', savedStartStorageForExtraLife.value)
     }
   } catch (error) {
     console.error('Ошибка при начислении энергии:', error)
@@ -2347,11 +2339,8 @@ const canBuyExtraLife = computed(() => {
 
 // Расчет остатка энергии и цены
 const calculateExtraLifePrice = async () => {
-  console.log('[calculateExtraLifePrice] Called, canBuyExtraLife:', canBuyExtraLife.value)
-  
   if (!canBuyExtraLife.value) {
     extraLifePrice.value = 0
-    console.log('[calculateExtraLifePrice] canBuyExtraLife is false, setting price to 0')
     return
   }
   
@@ -2362,32 +2351,23 @@ const calculateExtraLifePrice = async () => {
     const collectedEnergy = savedEnergyCollectedForModal.value || 0
     const remainingEnergy = Math.max(0, startStorage - collectedEnergy)
     
-    console.log('[calculateExtraLifePrice] savedStartStorageForExtraLife:', savedStartStorageForExtraLife.value, 'gameRun.startStorage:', gameRun.startStorage?.value, 'startStorage (used):', startStorage, 'collectedEnergy:', collectedEnergy, 'remainingEnergy:', remainingEnergy)
-    
     if (remainingEnergy <= 0) {
-      console.log('[calculateExtraLifePrice] remainingEnergy <= 0, setting price to 0')
       extraLifePrice.value = 0
       return
     }
     
     // Запрашиваем цену с сервера
-    console.log('[calculateExtraLifePrice] Requesting price from server with remaining_energy:', remainingEnergy)
     const response = await host.post('runner-extra-life-stars/', {
       remaining_energy: remainingEnergy
     })
     
-    console.log('[calculateExtraLifePrice] Server response:', response.status, response.data)
-    
     if (response.status === 200 && response.data?.price) {
       extraLifePrice.value = response.data.price
-      console.log('[calculateExtraLifePrice] Price set to:', extraLifePrice.value)
     } else {
-      console.log('[calculateExtraLifePrice] Invalid response, setting price to 0')
       extraLifePrice.value = 0
     }
   } catch (error) {
     console.error('[calculateExtraLifePrice] Error calculating extra life price:', error)
-    console.error('[calculateExtraLifePrice] Error details:', error.response?.data)
     extraLifePrice.value = 0
   }
 }
@@ -2413,8 +2393,6 @@ const handleBuyExtraLife = async () => {
     const collectedEnergy = savedEnergyCollectedForModal.value || 0
     const remainingEnergy = Math.max(0, startStorage - collectedEnergy)
     
-    console.log('[handleBuyExtraLife] savedStartStorageForExtraLife:', savedStartStorageForExtraLife.value, 'gameRun.startStorage:', gameRun.startStorage?.value, 'startStorage (used):', startStorage, 'collectedEnergy:', collectedEnergy, 'remainingEnergy:', remainingEnergy)
-    
     // Получаем invoice ссылку
     const response = await host.post('runner-extra-life-stars/', {
       remaining_energy: remainingEnergy
@@ -2422,9 +2400,6 @@ const handleBuyExtraLife = async () => {
     
     if (response.status === 200 && response.data?.link) {
       const invoiceLink = response.data.link
-      
-      // Открываем invoice
-      console.log('[handleBuyExtraLife] Opening invoice:', invoiceLink)
       
       // Сохраняем флаг что мы ожидаем оплату (чтобы не закрывать модалку)
       let paymentInProgress = true
@@ -2436,7 +2411,6 @@ const handleBuyExtraLife = async () => {
       // что Telegram Bot обработал платеж (через polling или callback)
       const activateExtraLife = async () => {
         if (paymentProcessed) {
-          console.log('[handleBuyExtraLife] Payment already processed, skipping activation')
           return
         }
         paymentProcessed = true
@@ -2444,13 +2418,10 @@ const handleBuyExtraLife = async () => {
         
         try {
           // Проверяем что Telegram Bot действительно обработал платеж
-          console.log('[handleBuyExtraLife] Verifying that Telegram Bot processed the payment...')
           await app.initUser()
-          console.log('[handleBuyExtraLife] energy_run_extra_life_used:', app.user?.energy_run_extra_life_used)
           
           if (!app.user?.energy_run_extra_life_used) {
             // Если Telegram Bot еще не обработал платеж, ждем еще немного
-            console.log('[handleBuyExtraLife] Telegram Bot has not processed payment yet, waiting...')
             await new Promise(resolve => setTimeout(resolve, 2000))
             await app.initUser()
             
@@ -2460,14 +2431,11 @@ const handleBuyExtraLife = async () => {
           }
           
           // Telegram Bot обработал платеж, восстанавливаем забег
-          console.log('[handleBuyExtraLife] Telegram Bot processed payment successfully, restoring run...')
           await restoreRunAfterExtraLife()
-          console.log('[handleBuyExtraLife] Run restored after extra life')
           
           isBuyingExtraLife.value = false
         } catch (error) {
           console.error('[handleBuyExtraLife] Error activating extra life:', error)
-          console.error('[handleBuyExtraLife] Error details:', error.response?.data)
           // Показываем ошибку пользователю
           alert(t('game.extra_life_activation_error') + ': ' + (error.response?.data?.error || error.message))
           isBuyingExtraLife.value = false
@@ -2477,20 +2445,12 @@ const handleBuyExtraLife = async () => {
       }
       
       tg.openInvoice(invoiceLink, async (status) => {
-        console.log('[handleBuyExtraLife] Invoice callback received, status:', status, 'type:', typeof status, 'value:', JSON.stringify(status))
-        console.log('[handleBuyExtraLife] Callback - paymentInProgress:', paymentInProgress, 'paymentProcessed:', paymentProcessed)
-        
         // Проверяем статус (может быть 'paid' или другие значения)
         if (status === 'paid' || status === 'PAID' || status === true || status === 'success') {
-          console.log('[handleBuyExtraLife] Payment successful, activating extra life...')
           await activateExtraLife()
         } else if (status === 'cancelled' || status === 'failed' || status === false) {
-          console.log('[handleBuyExtraLife] Payment cancelled or failed, status:', status)
           paymentInProgress = false
           isBuyingExtraLife.value = false
-        } else {
-          console.log('[handleBuyExtraLife] Payment status unknown:', status, 'continuing polling...')
-          // Не сбрасываем флаги, продолжаем polling
         }
       })
       
@@ -2499,21 +2459,12 @@ const handleBuyExtraLife = async () => {
       const checkPaymentStatus = async () => {
         if (!paymentInProgress || paymentProcessed) return
         
-        const elapsedSeconds = Math.floor((Date.now() - pollingStartTime) / 1000)
-        console.log(`[handleBuyExtraLife] Checking payment status via polling... (elapsed: ${elapsedSeconds}s)`)
         try {
           // Обновляем данные пользователя чтобы проверить статус
           await app.initUser()
-          console.log('[handleBuyExtraLife] Polling check - energy_run_extra_life_used:', app.user?.energy_run_extra_life_used, 'user_id:', app.user?.user_id)
           
           if (app.user?.energy_run_extra_life_used) {
-            console.log('[handleBuyExtraLife] Extra life was activated (checked via polling)')
             await activateExtraLife()
-          } else {
-            console.log('[handleBuyExtraLife] Polling check - extra life not activated yet (waiting for Telegram Bot to process successful_payment)')
-            // НЕ активируем жизнь напрямую через API - ждем только подтверждения от Telegram Bot
-            // Согласно документации Telegram: "You must always check that you received a successful_payment 
-            // update before delivering the goods or services purchased by the user"
           }
         } catch (error) {
           console.error('[handleBuyExtraLife] Error checking payment status:', error)
@@ -2526,10 +2477,8 @@ const handleBuyExtraLife = async () => {
       
       const pollingInterval = setInterval(() => {
         pollingAttempts++
-        console.log(`[handleBuyExtraLife] Polling attempt ${pollingAttempts}/${maxPollingAttempts}, paymentInProgress: ${paymentInProgress}, paymentProcessed: ${paymentProcessed}`)
         
         if (!paymentInProgress || paymentProcessed) {
-          console.log('[handleBuyExtraLife] Stopping polling - paymentInProgress:', paymentInProgress, 'paymentProcessed:', paymentProcessed)
           clearInterval(pollingInterval)
           return
         }
@@ -2538,10 +2487,8 @@ const handleBuyExtraLife = async () => {
       
       // Останавливаем polling через 60 секунд
       setTimeout(() => {
-        console.log('[handleBuyExtraLife] Polling timeout check - paymentInProgress:', paymentInProgress, 'paymentProcessed:', paymentProcessed)
         clearInterval(pollingInterval)
         if (paymentInProgress && !paymentProcessed) {
-          console.log('[handleBuyExtraLife] Payment polling timeout after 60 seconds')
           paymentInProgress = false
           isBuyingExtraLife.value = false
           alert('Платеж не был обработан. Пожалуйста, проверьте статус в профиле или обратитесь в поддержку.')
