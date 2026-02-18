@@ -1232,14 +1232,21 @@ const handleOverheatContinue = async () => {
     }
   }
   
+  // Перегрев закончился или был снят азотом - сбрасываем флаг was_overheated на сервере
+  try {
+    await host.post('game-run-reset-overheat-flag/', {})
+  } catch (error) {
+    console.error('[GameRunView] Ошибка при сбросе флага перегрева:', error)
+  }
+  
+  // Обновляем данные пользователя после сброса флага
+  await app.initUser()
+  
   // Перегрев закончился или был снят азотом, продолжаем забег
   isOverheated.value = false
   showOverheatModal.value = false
   overheatedUntil.value = app.user?.overheated_until ? new Date(app.user.overheated_until) : null
-  // Сбрасываем флаг перегрева если перегрев закончился или был снят азотом
-  if (!app.user?.overheated_until || new Date(app.user.overheated_until) <= new Date()) {
-    wasOverheated.value = false
-  }
+  wasOverheated.value = false // Сбрасываем локальный флаг перегрева
   overheatCountdown.value = null // Сбрасываем таймер
   overheatDecelerating.value = false // Сбрасываем флаг замедления
   isAccelerating.value = false // Сбрасываем флаг ускорения

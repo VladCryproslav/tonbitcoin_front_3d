@@ -549,11 +549,11 @@ class GameRunUpdateOverheatView(APIView):
                 "was_overheated": user_profile.was_overheated,
             })
         elif user_profile.overheated_until and user_profile.overheated_until <= now:
-            # Перегрев закончился - сбрасываем флаг was_overheated
+            # Перегрев закончился - очищаем overheated_until, но НЕ сбрасываем was_overheated
+            # was_overheated должен сбрасываться только при явном действии пользователя (продолжить/азот)
             UserProfile.objects.filter(
                 user_id=user_profile.user_id
             ).update(
-                was_overheated=False,
                 overheated_until=None,
             )
             user_profile.refresh_from_db()
@@ -620,6 +620,31 @@ class GameRunUpdateOverheatView(APIView):
             "overheated_until": user_profile.overheated_until.isoformat() if user_profile.overheated_until else None,
             "overheat_energy_collected": user_profile.overheat_energy_collected,
             "overheat_goal": user_profile.overheat_goal,
+            "was_overheated": user_profile.was_overheated,
+        })
+
+
+class GameRunResetOverheatFlagView(APIView):
+    """Сбрасывает флаг was_overheated когда пользователь продолжает забег после перегрева"""
+    
+    @require_auth
+    def post(self, request):
+        user_profile = request.user_profile
+        
+        # Сбрасываем флаг was_overheated и очищаем связанные данные перегрева
+        UserProfile.objects.filter(
+            user_id=user_profile.user_id
+        ).update(
+            was_overheated=False,
+            overheated_until=None,
+            overheat_energy_collected=0,
+            overheat_goal=None,
+        )
+        
+        user_profile.refresh_from_db()
+        
+        return Response({
+            "success": True,
             "was_overheated": user_profile.was_overheated,
         })
 
