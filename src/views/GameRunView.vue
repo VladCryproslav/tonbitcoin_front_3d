@@ -65,10 +65,7 @@
             @click.stop.prevent="handleTrainingClick"
           >
             <div class="training-button-content">
-              <span>{{ t('game.run_training') }}</span>
-              <span class="training-runs-available">
-                {{ trainingRunsUsedToday }}/{{ maxTrainingRunsPerDay }}
-              </span>
+              {{ t('game.run_training') }} {{ trainingRunsUsedToday }}/{{ maxTrainingRunsPerDay }}
             </div>
           </button>
           <button
@@ -2994,15 +2991,9 @@ onUnmounted(() => {
 
 .training-button-content {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
-}
-
-.training-runs-available {
-  font-size: 0.75rem;
-  opacity: 0.8;
-  font-weight: normal;
+  justify-content: center;
+  gap: 6px;
 }
 
 .btn-primary--training {
