@@ -10,7 +10,7 @@ const Info = defineAsyncComponent(() => import('@/assets/white-info.svg'))
 const ArrowRight = defineAsyncComponent(() => import('@/assets/arrow-right.svg'))
 import('vue3-carousel/carousel.css')
 import { useTabsStore } from '@/stores/tabs'
-import { host, tonapi } from '@/../axios.config'
+import { host, tonapi, getServerTime } from '@/../axios.config'
 import { useAppStore } from '@/stores/app'
 import StationSlider from '@/components/StationSlider.vue'
 import { useTonAddress } from '@townsquarelabs/ui-vue'
@@ -274,7 +274,7 @@ const getTimeRemaining = (futureISO) => {
   const timeRemaining = ref('00:00:00')
   const timeRemainingMs = ref(null)
   const updateTime = () => {
-    const now = new Date()
+    const now = getServerTime() // Используем серверное время вместо локального
     const future = new Date(futureISO)
     const diffMs = future - now
     timeRemainingMs.value = diffMs
@@ -659,7 +659,7 @@ const energyRunCooldown = computed(() => {
     return { isActive: false, timeRemaining: null, availableAt: null }
   }
   const lastStarted = new Date(app.user.energy_run_last_started_at)
-  const now = new Date()
+  const now = getServerTime() // Используем серверное время вместо локального
   const cooldownMs = 60 * 60 * 1000 // 60 минут
   const availableAt = new Date(lastStarted.getTime() + cooldownMs)
   const isActive = now < availableAt

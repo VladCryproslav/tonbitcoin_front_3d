@@ -40,8 +40,19 @@ host.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
+// Смещение между серверным и локальным временем (в миллисекундах)
+let serverTimeOffset = 0
+
 host.interceptors.response.use(
   (response) => {
+    // Вычисляем смещение серверного времени при каждом ответе
+    const serverDateHeader = response.headers['date']
+    if (serverDateHeader) {
+      const serverTime = new Date(serverDateHeader).getTime()
+      const clientTime = Date.now()
+      serverTimeOffset = serverTime - clientTime
+    }
+    
     console.log('API Response:', {
       url: response.config.url,
       status: response.status,
@@ -73,4 +84,9 @@ const toncenter = axios.create({
   baseURL: "https://toncenter.com/api/v3/",
 })
 
-export { host, tonapi, toncenter}
+// Функция для получения текущего серверного времени
+export const getServerTime = () => {
+  return new Date(Date.now() + serverTimeOffset)
+}
+
+export { host, tonapi, toncenter, getServerTime }
