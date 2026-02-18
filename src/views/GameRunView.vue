@@ -226,7 +226,7 @@
           
           <!-- Кнопка покупки дополнительной жизни -->
           <button
-            v-if="canBuyExtraLife"
+            v-if="canBuyExtraLife && extraLifePrice > 0"
             class="btn-primary btn-primary--wide btn-extra-life"
             :disabled="isBuyingExtraLife"
             @click.stop.prevent="handleBuyExtraLife"
@@ -2414,26 +2414,118 @@ const handleBuyExtraLife = async () => {
       const invoiceLink = response.data.link
       
       // Открываем invoice
-      tg.openInvoice(invoiceLink, async (status) => {
-        if (status === 'paid') {
-          // Успешная оплата - активируем жизнь
-          try {
-            await host.post('runner-extra-life-activate/', {})
-            
-            // Обновляем данные пользователя
-            await app.initUser()
-            
-            // Восстанавливаем забег (как выход из перегрева)
-            await restoreRunAfterExtraLife()
-          } catch (error) {
-            console.error('Error activating extra life:', error)
-            // Показываем ошибку пользователю
-            alert(t('game.extra_life_activation_error'))
-          }
+      console.log('[handleBuyExtraLife] Opening invoice:', invoiceLink)
+      
+      // Сохраняем флаг что мы ожидаем оплату (чтобы не закрывать модалку)
+      let paymentInProgress = true
+      let paymentProcessed = false
+      
+      // Функция активации жизни после оплаты
+      const activateExtraLife = async () => {
+        if (paymentProcessed) {
+          console.log('[handleBuyExtraLife] Payment already processed, skipping activation')
+          return
         }
+        paymentProcessed = true
+        paymentInProgress = false
         
-        isBuyingExtraLife.value = false
+        try {
+          // Небольшая задержка для гарантии что платеж обработан на сервере
+          console.log('[handleBuyExtraLife] Waiting 1 second for payment processing...')
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          
+          // Сначала активируем жизнь через API (на случай если Telegram Bot callback не сработал)
+          console.log('[handleBuyExtraLife] Calling runner-extra-life-activate API...')
+          const activateResponse = await host.post('runner-extra-life-activate/', {})
+          console.log('[handleBuyExtraLife] Activate response:', activateResponse.status, activateResponse.data)
+          
+          if (activateResponse.status !== 200 || !activateResponse.data?.success) {
+            throw new Error('Activation failed: ' + JSON.stringify(activateResponse.data))
+          }
+          
+          // Обновляем данные пользователя
+          console.log('[handleBuyExtraLife] Updating user data...')
+          await app.initUser()
+          console.log('[handleBuyExtraLife] User data updated, energy_run_extra_life_used:', app.user?.energy_run_extra_life_used)
+          
+          // Проверяем что жизнь действительно активирована
+          if (!app.user?.energy_run_extra_life_used) {
+            console.warn('[handleBuyExtraLife] Warning: energy_run_extra_life_used is still false after activation, retrying...')
+            // Пытаемся еще раз активировать
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            const retryResponse = await host.post('runner-extra-life-activate/', {})
+            await app.initUser()
+            if (!app.user?.energy_run_extra_life_used) {
+              throw new Error('Extra life activation failed after retry')
+            }
+          }
+          
+          // Восстанавливаем забег (как выход из перегрева)
+          console.log('[handleBuyExtraLife] Restoring run...')
+          await restoreRunAfterExtraLife()
+          console.log('[handleBuyExtraLife] Run restored after extra life')
+          
+          isBuyingExtraLife.value = false
+        } catch (error) {
+          console.error('[handleBuyExtraLife] Error activating extra life:', error)
+          console.error('[handleBuyExtraLife] Error details:', error.response?.data)
+          // Показываем ошибку пользователю
+          alert(t('game.extra_life_activation_error') + ': ' + (error.response?.data?.error || error.message))
+          isBuyingExtraLife.value = false
+          paymentProcessed = false
+        }
+      }
+      
+      tg.openInvoice(invoiceLink, async (status) => {
+        console.log('[handleBuyExtraLife] Invoice callback received, status:', status, 'type:', typeof status, 'value:', JSON.stringify(status))
+        
+        // Проверяем статус (может быть 'paid' или другие значения)
+        if (status === 'paid' || status === 'PAID' || status === true || status === 'success') {
+          console.log('[handleBuyExtraLife] Payment successful, activating extra life...')
+          await activateExtraLife()
+        } else {
+          console.log('[handleBuyExtraLife] Payment not completed or cancelled, status:', status)
+          paymentInProgress = false
+          // Если оплата не завершена (пользователь закрыл invoice), сбрасываем флаг
+          isBuyingExtraLife.value = false
+        }
       })
+      
+      // Polling для проверки статуса оплаты (на случай если callback не вызывается)
+      const checkPaymentStatus = async () => {
+        if (!paymentInProgress) return
+        
+        console.log('[handleBuyExtraLife] Checking payment status via polling...')
+        try {
+          // Обновляем данные пользователя чтобы проверить статус
+          await app.initUser()
+          if (app.user?.energy_run_extra_life_used) {
+            console.log('[handleBuyExtraLife] Extra life was activated (checked via polling)')
+            await activateExtraLife()
+          }
+        } catch (error) {
+          console.error('[handleBuyExtraLife] Error checking payment status:', error)
+        }
+      }
+      
+      // Проверяем статус каждые 2 секунды в течение 30 секунд
+      const pollingInterval = setInterval(() => {
+        if (!paymentInProgress || paymentProcessed) {
+          clearInterval(pollingInterval)
+          return
+        }
+        checkPaymentStatus()
+      }, 2000)
+      
+      // Останавливаем polling через 30 секунд
+      setTimeout(() => {
+        clearInterval(pollingInterval)
+        if (paymentInProgress && !paymentProcessed) {
+          console.log('[handleBuyExtraLife] Payment polling timeout after 30 seconds')
+          paymentInProgress = false
+          isBuyingExtraLife.value = false
+        }
+      }, 30000)
     } else {
       console.error('Failed to get invoice link')
       isBuyingExtraLife.value = false

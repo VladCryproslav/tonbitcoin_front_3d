@@ -450,31 +450,47 @@ def got_payment(message: Message):
             user_id = int(payload.replace("runner_extra_life:", ""))
             user_profile = UserProfile.objects.get(user_id=user_id)
             
+            action_logger.info(
+                f"user {user_id} | Extra life payment received | amount: {payment_info.total_amount} stars | charge_id: {payment_info.telegram_payment_charge_id} | payload: {payload}"
+            )
+            
             # Проверяем что забег активен
             if not user_profile.energy_run_last_started_at:
                 action_logger.warning(
-                    f"user {user_id} | Extra life payment but run not started | {payment_info.telegram_payment_charge_id}"
+                    f"user {user_id} | Extra life payment but run not started | charge_id: {payment_info.telegram_payment_charge_id} | energy_run_last_started_at: {user_profile.energy_run_last_started_at}"
                 )
-                return
+                # НЕ возвращаемся - все равно активируем жизнь, так как платеж прошел
+                # Пользователь может использовать жизнь в следующем забеге
             
             # Проверяем что 4-я жизнь еще не использована
             if user_profile.energy_run_extra_life_used:
                 action_logger.warning(
-                    f"user {user_id} | Extra life already used | {payment_info.telegram_payment_charge_id}"
+                    f"user {user_id} | Extra life already used | charge_id: {payment_info.telegram_payment_charge_id} | energy_run_extra_life_used: {user_profile.energy_run_extra_life_used}"
                 )
-                return
+                # Все равно активируем (может быть повторный платеж или race condition)
             
             # Активируем 4-ю жизнь
             UserProfile.objects.filter(user_id=user_id).update(
                 energy_run_extra_life_used=True
             )
             
+            # Перезагружаем профиль для проверки
+            user_profile.refresh_from_db()
+            
             action_logger.info(
-                f"user {user_id} | Extra life activated | {payment_info.total_amount} stars | {payment_info.telegram_payment_charge_id}"
+                f"user {user_id} | Extra life activated successfully | amount: {payment_info.total_amount} stars | charge_id: {payment_info.telegram_payment_charge_id} | energy_run_extra_life_used: {user_profile.energy_run_extra_life_used}"
+            )
+        except ValueError as e:
+            action_logger.error(
+                f"user {message.from_user.id} | Invalid user_id in payload: {payload} | error: {e} | charge_id: {payment_info.telegram_payment_charge_id}"
+            )
+        except UserProfile.DoesNotExist:
+            action_logger.error(
+                f"user {message.from_user.id} | UserProfile not found for payload: {payload} | charge_id: {payment_info.telegram_payment_charge_id}"
             )
         except Exception as e:
             action_logger.exception(
-                f"user {user_id} | Error activating extra life | {payment_info.telegram_payment_charge_id}"
+                f"user {message.from_user.id} | Error activating extra life | payload: {payload} | charge_id: {payment_info.telegram_payment_charge_id} | error: {e}"
             )
     else:
         action_logger.info(f"user {message.from_user.id} | UNKNOWN payload {payload}")
