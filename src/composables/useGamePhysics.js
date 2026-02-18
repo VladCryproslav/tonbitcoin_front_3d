@@ -70,7 +70,7 @@ export function useGamePhysics(scene) {
 
     // Блокируем изменение анимации если уже установлена анимация победы
     // или если персонаж разворачивается для победы
-    if ((currentAnimation && currentAnimation._clip && currentAnimation._clip.name && 
+    if ((currentAnimation && currentAnimation._clip && currentAnimation._clip.name &&
          (currentAnimation._clip.name.includes('win') || currentAnimation._clip.name.includes('victory') || currentAnimation._clip.name.includes('success'))) ||
         winFaceState !== null) {
       // Разрешаем только установку анимации победы или idle
@@ -642,7 +642,7 @@ export function useGamePhysics(scene) {
   // Функция для установки прозрачности персонажа (мигание)
   const setCharacterOpacity = (opacity) => {
     if (!playerMesh) return
-    
+
     playerMesh.traverse((child) => {
       if (child.isMesh && child.material) {
         // Устанавливаем прозрачность для всех материалов
@@ -655,35 +655,35 @@ export function useGamePhysics(scene) {
   // Функция для включения/выключения мигающей прозрачности
   const setBlinking = (enabled) => {
     if (isBlinking === enabled) return
-    
+
     isBlinking = enabled
-    
+
     if (blinkAnimationId) {
       cancelAnimationFrame(blinkAnimationId)
       blinkAnimationId = null
     }
-    
+
     if (enabled) {
       let startTime = performance.now()
       const blinkDuration = 400 // Длительность одного цикла мигания (мс) - увеличено для более редкого мигания
-      
+
       const animateBlink = () => {
         if (!isBlinking) {
           setCharacterOpacity(1.0) // Возвращаем полную непрозрачность
           return
         }
-        
+
         const elapsed = performance.now() - startTime
         const cycle = elapsed % blinkDuration
-        // Мигание: от 0.3 до 1.0 прозрачности
+        // Мигание: от 0.5 до 1.0 прозрачности (от 50% до 100%)
         const opacity = cycle < blinkDuration / 2 
-          ? 0.3 + (cycle / (blinkDuration / 2)) * 0.7 // Плавное увеличение от 0.3 до 1.0
-          : 1.0 - ((cycle - blinkDuration / 2) / (blinkDuration / 2)) * 0.7 // Плавное уменьшение от 1.0 до 0.3
-        
+          ? 0.5 + (cycle / (blinkDuration / 2)) * 0.5 // Плавное увеличение от 0.5 до 1.0
+          : 1.0 - ((cycle - blinkDuration / 2) / (blinkDuration / 2)) * 0.5 // Плавное уменьшение от 1.0 до 0.5
+
         setCharacterOpacity(opacity)
         blinkAnimationId = requestAnimationFrame(animateBlink)
       }
-      
+
       blinkAnimationId = requestAnimationFrame(animateBlink)
     } else {
       setCharacterOpacity(1.0) // Возвращаем полную непрозрачность
