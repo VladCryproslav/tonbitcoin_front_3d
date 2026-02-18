@@ -231,8 +231,12 @@
             :disabled="isBuyingExtraLife"
             @click.stop.prevent="handleBuyExtraLife"
           >
-            <span v-if="!isBuyingExtraLife">
-              {{ t('game.buy_extra_life') }} {{ extraLifePrice }} <img src="@/assets/stars.png" width="16px" alt="Stars" />
+            <span v-if="!isBuyingExtraLife" style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+              <span>{{ t('game.buy_extra_life') }}</span>
+              <span style="display: inline-flex; align-items: center; gap: 4px;">
+                {{ extraLifePrice }}
+                <img src="@/assets/stars.png" width="16px" alt="Stars" style="display: inline-block; vertical-align: middle;" />
+              </span>
             </span>
             <span v-else>{{ t('game.processing') }}</span>
           </button>
