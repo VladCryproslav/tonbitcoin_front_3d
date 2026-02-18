@@ -132,7 +132,7 @@ const handleDownEnd = () => {
   pointer-events: auto;
   border-radius: 20px;
   border: none;
-  background: rgba(15, 23, 42, 0.45); /* Увеличена прозрачность */
+  background: rgba(15, 23, 42, 0.40); /* Увеличена прозрачность */
   backdrop-filter: blur(12px);
   border: 2px solid rgba(148, 163, 184, 0.3);
   color: #e5e7eb;
@@ -157,9 +157,9 @@ const handleDownEnd = () => {
 
   &:active {
     transform: scale(0.92);
-    background: rgba(30, 64, 175, 0.45); /* Увеличена прозрачность при активном состоянии */
-    border-color: rgba(148, 163, 184, 0.45);
-    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.3);
+    background: rgba(30, 64, 175, 0.40); /* Увеличена прозрачность при активном состоянии */
+    border-color: rgba(148, 163, 184, 0.4);
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.25);
     opacity: 1; /* Полная непрозрачность при нажатии */
 
     svg {
