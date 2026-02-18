@@ -62,14 +62,14 @@
           </button>
           <button
             class="btn-primary btn-primary--training btn-primary--wide"
-            :class="{ 'btn-disabled': !canRunTraining || trainingRunsAvailable <= 0 }"
-            :disabled="!canRunTraining || trainingRunsAvailable <= 0"
+            :class="{ 'btn-disabled': !canRunTraining || (trainingRunsAvailable ?? 0) <= 0 }"
+            :disabled="!canRunTraining || (trainingRunsAvailable ?? 0) <= 0"
             @click.stop.prevent="handleTrainingClick"
           >
             <div class="training-button-content">
               <span>{{ t('game.run_training') }}</span>
               <span class="training-runs-available">
-                {{ t('game.training_runs_available', { count: trainingRunsAvailable }) }}
+                {{ t('game.training_runs_available', { count: trainingRunsAvailable ?? 5 }) }}
               </span>
             </div>
           </button>
@@ -2131,7 +2131,7 @@ const checkTrainingRunAvailability = async () => {
 
 const handleTrainingClick = async () => {
   // Проверяем доступность перед запуском
-  if (!canRunTraining.value || trainingRunsAvailable.value <= 0) {
+  if (!canRunTraining.value || (trainingRunsAvailable.value ?? 0) <= 0) {
     alert(t('game.training_run_limit_exceeded', { 
       max: maxTrainingRunsPerDay.value,
       used: trainingRunsUsedToday.value 
