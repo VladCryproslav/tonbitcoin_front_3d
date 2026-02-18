@@ -1028,6 +1028,10 @@ const initializeOverheat = () => {
     showOverheatModal.value = false
     overheatDecelerating.value = false
     isAccelerating.value = false // Сбрасываем флаг ускорения
+    // Выключаем мигающую прозрачность
+    if (gamePhysics.value?.setBlinking) {
+      gamePhysics.value.setBlinking(false)
+    }
     return
   }
   
@@ -1147,6 +1151,10 @@ const activateOverheat = (serverData) => {
       // Сохраняем текущую скорость перед началом замедления (для плавного разгона после возобновления)
       savedSpeed.value = gameSpeed.value
       overheatDecelerating.value = true
+      // Включаем мигающую прозрачность и отключаем коллизии
+      if (gamePhysics.value?.setBlinking) {
+        gamePhysics.value.setBlinking(true)
+      }
     }
     
     // Когда таймер показывает 1 секунду - останавливаем и показываем модалку
@@ -1163,6 +1171,10 @@ const activateOverheat = (serverData) => {
       
       // Останавливаем плавное замедление
       overheatDecelerating.value = false
+      // Выключаем мигающую прозрачность (но коллизии остаются отключенными до разгона)
+      if (gamePhysics.value?.setBlinking) {
+        gamePhysics.value.setBlinking(false)
+      }
       gameSpeed.value = 0
       if (gameWorld.value) {
         gameWorld.value.setRoadSpeed(0)
@@ -1347,9 +1359,14 @@ const resumeGame = async () => {
   overheatDecelerating.value = false // Сбрасываем флаг замедления
   isAccelerating.value = false // Сбрасываем флаг ускорения
   
-  // Показываем таймер обратного отсчета 3-2-1
-  showCountdown.value = true
-  countdownNumber.value = 3
+      // Включаем мигающую прозрачность и отключаем коллизии для разгона
+      if (gamePhysics.value?.setBlinking) {
+        gamePhysics.value.setBlinking(true)
+      }
+      
+      // Показываем таймер обратного отсчета 3-2-1
+      showCountdown.value = true
+      countdownNumber.value = 3
   
   // Вибрация при каждом числе
   const triggerVibration = () => {
@@ -1439,6 +1456,7 @@ function doOneStep(playerBox, inRollImmuneWindow) {
           }
         } else {
           // Не проверяем коллизии если игрок уже победил (во время анимации победы)
+          // Также отключаем коллизии во время остановки и разгона при перегреве
           gameWorld.value.updateObstacles(
             playerBox,
             () => {

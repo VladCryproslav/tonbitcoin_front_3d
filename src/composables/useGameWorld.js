@@ -762,7 +762,7 @@ export function useGameWorld(scene) {
     }
   }
 
-  const updateObstacles = (playerBox, onCollision, isSliding = false, inRollImmuneWindow = false) => {
+  const updateObstacles = (playerBox, onCollision, isSliding = false, inRollImmuneWindow = false, skipCollisions = false) => {
     _obstaclesToRemove.length = 0
     const obstaclesToRemove = _obstaclesToRemove
     const active = _activeObstacles
@@ -784,8 +784,8 @@ export function useGameWorld(scene) {
       }
     }
 
-    // Шаг 2: коллизии только для активного окна
-    if (playerBox && active.length > 0) {
+    // Шаг 2: коллизии только для активного окна (пропускаем если skipCollisions = true)
+    if (playerBox && active.length > 0 && !skipCollisions) {
       const pMin = playerBox.min
       const pMax = playerBox.max
 

@@ -221,6 +221,9 @@ overheat_hours_by_type = {
     "Nuclear power plant": 2,  # station #5
     "Thermonuclear power plant": 1,  # station #6
     "Dyson Sphere": 1,  # station #7
+    "Neutron star": 1,  # использует логику Dyson Sphere
+    "Antimatter": 1,  # использует логику Dyson Sphere
+    "Galactic core": 1,  # использует логику Dyson Sphere  # station #7
 }
 
 from rest_framework.throttling import SimpleRateThrottle
@@ -574,18 +577,32 @@ class GameRunUpdateOverheatView(APIView):
             
             # Используем существующую логику перегрева из TapEnergyView (строки 448-491)
             if user_profile.was_overheated:
+                # После первого перегрева: фиксированный goal = generation_rate * needed_hours (без power)
+                # Если goal не установлен, устанавливаем фиксированный
+                if user_profile.overheat_goal is None:
+                    fixed_goal = float(user_profile.generation_rate) * needed_hours
+                    UserProfile.objects.filter(
+                        user_id=user_profile.user_id
+                    ).update(
+                        overheat_goal=fixed_goal
+                    )
+                    user_profile.refresh_from_db()
+                
+                # Проверяем достижение фиксированного goal
                 if (
                     user_profile.overheat_energy_collected
                     >= float(user_profile.generation_rate) * needed_hours
                 ):
+                    # Достигнут фиксированный goal - сбрасываем и начинаем новый цикл со случайным goal
                     UserProfile.objects.filter(
                         user_id=user_profile.user_id
                     ).update(
                         was_overheated=False,
                         overheat_energy_collected=0,
-                        overheat_goal=None,
+                        overheat_goal=None,  # Будет установлен случайный при следующем сборе
                     )
             else:
+                # Первый перегрев: случайный goal от 0 до generation_rate * needed_hours * (power/100)
                 if user_profile.overheat_goal is None:
                     UserProfile.objects.filter(
                         user_id=user_profile.user_id
@@ -611,6 +628,7 @@ class GameRunUpdateOverheatView(APIView):
                         overheated_until=timezone.now()
                         + timedelta(seconds=duration),
                         was_overheated=True,
+                        # НЕ сбрасываем overheat_goal - он будет использован как фиксированный для второго перегрева
                     )
         
         user_profile.refresh_from_db()
@@ -631,21 +649,36 @@ class GameRunResetOverheatFlagView(APIView):
     def post(self, request):
         user_profile = request.user_profile
         
+        # Получаем конфигурацию перегрева
+        needed_hours = overheat_hours_by_type.get(user_profile.station_type, None)
+        
         # Сбрасываем флаг was_overheated и очищаем связанные данные перегрева
+        # Если был первый перегрев (was_overheated=True), устанавливаем фиксированный goal для второго перегрева
+        update_data = {
+            "was_overheated": False,
+            "overheated_until": None,
+            "overheat_energy_collected": 0,
+        }
+        
+        # Если был перегрев и есть конфигурация, устанавливаем фиксированный goal для следующего перегрева
+        if user_profile.was_overheated and needed_hours:
+            # Второй перегрев должен быть фиксированным: generation_rate * needed_hours
+            fixed_goal = float(user_profile.generation_rate) * needed_hours
+            update_data["overheat_goal"] = fixed_goal
+        else:
+            # Если не было перегрева, сбрасываем goal (будет установлен случайный при следующем сборе)
+            update_data["overheat_goal"] = None
+        
         UserProfile.objects.filter(
             user_id=user_profile.user_id
-        ).update(
-            was_overheated=False,
-            overheated_until=None,
-            overheat_energy_collected=0,
-            overheat_goal=None,
-        )
+        ).update(**update_data)
         
         user_profile.refresh_from_db()
         
         return Response({
             "success": True,
             "was_overheated": user_profile.was_overheated,
+            "overheat_goal": user_profile.overheat_goal,
         })
 
 

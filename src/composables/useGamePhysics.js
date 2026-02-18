@@ -28,6 +28,8 @@ export function useGamePhysics(scene) {
   let jumpStartY = 0
   let slideStartTime = 0
   let rollDurationMs = 600
+  let blinkAnimationId = null
+  let isBlinking = false
   let slideLandState = null // { startY, startRotX, startTime, duration } — приземление при slide из прыжка
   let deathLandState = null // { startY, startTime, duration } — плавное опускание перед финальным падением
   let isDead = false
@@ -637,6 +639,57 @@ export function useGamePhysics(scene) {
     }
   }
 
+  // Функция для установки прозрачности персонажа (мигание)
+  const setCharacterOpacity = (opacity) => {
+    if (!playerMesh) return
+    
+    playerMesh.traverse((child) => {
+      if (child.isMesh && child.material) {
+        // Устанавливаем прозрачность для всех материалов
+        child.material.transparent = opacity < 1.0
+        child.material.opacity = opacity
+      }
+    })
+  }
+
+  // Функция для включения/выключения мигающей прозрачности
+  const setBlinking = (enabled) => {
+    if (isBlinking === enabled) return
+    
+    isBlinking = enabled
+    
+    if (blinkAnimationId) {
+      cancelAnimationFrame(blinkAnimationId)
+      blinkAnimationId = null
+    }
+    
+    if (enabled) {
+      let startTime = performance.now()
+      const blinkDuration = 200 // Длительность одного цикла мигания (мс)
+      
+      const animateBlink = () => {
+        if (!isBlinking) {
+          setCharacterOpacity(1.0) // Возвращаем полную непрозрачность
+          return
+        }
+        
+        const elapsed = performance.now() - startTime
+        const cycle = elapsed % blinkDuration
+        // Мигание: от 0.3 до 1.0 прозрачности
+        const opacity = cycle < blinkDuration / 2 
+          ? 0.3 + (cycle / (blinkDuration / 2)) * 0.7 // Плавное увеличение от 0.3 до 1.0
+          : 1.0 - ((cycle - blinkDuration / 2) / (blinkDuration / 2)) * 0.7 // Плавное уменьшение от 1.0 до 0.3
+        
+        setCharacterOpacity(opacity)
+        blinkAnimationId = requestAnimationFrame(animateBlink)
+      }
+      
+      blinkAnimationId = requestAnimationFrame(animateBlink)
+    } else {
+      setCharacterOpacity(1.0) // Возвращаем полную непрозрачность
+    }
+  }
+
   return {
     playerPosition,
     playerLane,
@@ -659,6 +712,7 @@ export function useGamePhysics(scene) {
     update,
     playerMesh: () => playerMesh,
     getPlayerBox,
-    setMixerRate
+    setMixerRate,
+    setBlinking
   }
 }
