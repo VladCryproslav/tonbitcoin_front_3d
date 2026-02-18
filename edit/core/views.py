@@ -1575,7 +1575,7 @@ class UserProfileView(APIView):
     def get(self, request):
         try:
             serializer = UserProfileSerializer(request.user_profile)
-            data = serializer.data
+            data = dict(serializer.data)  # Преобразуем в обычный dict для возможности изменения
             # Добавляем серверное время для синхронизации таймеров на клиенте
             data['server_time'] = timezone.now().isoformat()
             return Response(data, status=status.HTTP_200_OK)
