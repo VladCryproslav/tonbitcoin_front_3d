@@ -55,21 +55,21 @@
         </div>
         <div class="game-over-actions">
           <button
+            class="btn-primary btn-primary--wide"
+            @click.stop.prevent="handleStartClick"
+          >
+            {{ t('game.run_start_button') }}
+          </button>
+          <button
             class="btn-primary btn-primary--training btn-primary--wide"
             @click.stop.prevent="handleTrainingClick"
           >
             <div class="training-button-content">
               <span>{{ t('game.run_training') }}</span>
               <span class="training-runs-available">
-                {{ t('game.training_runs_available', { count: trainingRunsAvailable ?? 5 }) }}
+                {{ trainingRunsUsedToday }}/{{ maxTrainingRunsPerDay }}
               </span>
             </div>
-          </button>
-          <button
-            class="btn-primary btn-primary--wide"
-            @click.stop.prevent="handleStartClick"
-          >
-            {{ t('game.run_start_button') }}
           </button>
           <button
             class="btn-primary btn-secondary btn-primary--wide"
