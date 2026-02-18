@@ -245,7 +245,7 @@
       :key="hitFlashTick"
       class="hit-flash-overlay"
     />
-    
+
     <!-- Модальное окно перегрева -->
     <OverheatGameRunModal
       v-if="showOverheatModal"
@@ -253,7 +253,7 @@
       @continue="handleOverheatContinue"
       @close="handleOverheatModalClose"
     />
-    
+
     <!-- Модальное окно предупреждения перед стартом забега -->
     <StartRunWarningModal
       v-if="showStartRunWarning"
@@ -262,13 +262,13 @@
       @confirm="handleStartRunWarningConfirm"
       @cancel="handleStartRunWarningCancel"
     />
-    
+
     <!-- Пульсация экрана красным цветом во время перегрева -->
     <div
       v-if="isOverheated && showOverheatModal"
       class="overheat-screen-pulse"
     />
-    
+
     <!-- Таймер обратного отсчета перед началом забега -->
     <div
       v-if="showCountdown"
@@ -363,31 +363,31 @@ const displayedEnergyCollected = computed(() => {
     // Это значение было сохранено до любых изменений состояния и является самым надежным
     const savedValue = savedEnergyCollectedForModal.value
     console.log('displayedEnergyCollected COMPUTED: showGameOver=true, savedValue=', savedValue, 'completedRunData.value=', completedRunData.value, 'completedRunData.value?.energy_collected=', completedRunData.value?.energy_collected)
-    
+
     if (savedValue > 0) {
       console.log('displayedEnergyCollected: Using savedEnergyCollectedForModal =', savedValue, '(saved at death)')
       return savedValue
     }
-    
+
     // Приоритет 2: Используем значение из completedRunData если оно есть и больше 0
     // Если сервер вернул 0, это может быть ошибка, поэтому мы уже проверили сохраненное значение выше
-    if (completedRunData.value?.energy_collected !== undefined && 
+    if (completedRunData.value?.energy_collected !== undefined &&
         completedRunData.value?.energy_collected !== null &&
         completedRunData.value.energy_collected > 0) {
       const value = completedRunData.value.energy_collected
       console.log('displayedEnergyCollected: Using completedRunData.energy_collected =', value)
       return value
     }
-    
+
     // Приоритет 3: Fallback - используем значение из completedRunData даже если оно 0
     // (может быть валидным случаем, если игрок действительно не собрал энергию)
-    if (completedRunData.value?.energy_collected !== undefined && 
+    if (completedRunData.value?.energy_collected !== undefined &&
         completedRunData.value?.energy_collected !== null) {
       const value = completedRunData.value.energy_collected
       console.log('displayedEnergyCollected: Using completedRunData.energy_collected (fallback, value=', value, ')')
       return value
     }
-    
+
     // Приоритет 4: Последний fallback - текущее значение из счетчика (может быть 0, если уже обнулено)
     const currentValue = Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0)
     console.log('displayedEnergyCollected: Using current value from gameRun =', currentValue, '(fallback, savedValue=', savedValue, ')')
@@ -400,7 +400,7 @@ const displayedEnergyCollected = computed(() => {
 // Сколько энергии можно забрать: при победе — всё собранное (но не больше storage), при проигрыше — по проценту уровня
 const claimableEnergy = computed(() => {
   const collected = displayedEnergyCollected.value
-  
+
   // При выигрыше всегда начисляется вся собранная энергия
   if (gameOverType.value === 'win') {
     // Используем данные с сервера если они есть и больше 0, иначе используем собранное значение
@@ -410,12 +410,12 @@ const claimableEnergy = computed(() => {
     // Fallback: при выигрыше начисляется всё собранное
     return collected
   }
-  
+
   // При проигрыше используем данные с сервера или вычисляем на фронтенде
   if (completedRunData.value?.energy_gained !== undefined && completedRunData.value.energy_gained > 0) {
     return completedRunData.value.energy_gained
   }
-  
+
   // Fallback: вычисляем на фронтенде для проигрыша
   const pct = effectiveSavedPercentOnLose.value
   // Добавляем +2% если есть активные синие электрики
@@ -486,6 +486,8 @@ const wasOverheated = ref(false)
 const overheatCountdown = ref(null) // Обратный отсчет перед показом модалки (5, 4, 3, 2, 1)
 let overheatCountdownInterval = null
 const overheatDecelerating = ref(false) // Флаг плавной остановки при перегреве (с 3 до 1 секунды)
+const overheatProtectionActive = ref(false) // Флаг защиты от коллизий и мигания во время перегрева и после
+let overheatProtectionEndTime = 0 // Время окончания защиты (3 секунды после таймера 3-2-1)
 
 // Плавное ускорение после паузы/перегрева
 const isAccelerating = ref(false) // Флаг плавного разгона после таймера
@@ -622,14 +624,14 @@ const startThreeLoop = () => {
     threeLoop = requestAnimationFrame(animate)
 
     const nowGlobal = performance.now()
-    
+
     // Обновляем время кадра всегда (нужно для камеры и других систем)
     const now = nowGlobal
     if (lastUpdateTime <= 0) {
       lastUpdateTime = now
       timeAccumulator = 0 // Сбрасываем аккумулятор при первом кадре
     }
-    
+
     // Защита от аномальных значений frameTime (слишком маленькие или большие скачки)
     let frameTime = now - lastUpdateTime
     // Ограничиваем сверху для защиты от больших скачков (например, при переключении вкладок)
@@ -637,11 +639,11 @@ const startThreeLoop = () => {
     // Ограничиваем снизу для защиты от слишком маленьких значений (может вызывать проблемы)
     frameTime = Math.max(frameTime, 1)
     lastUpdateTime = now
-    
+
     // EMA по времени кадра для адаптивного DPR (используем реальный frameTime)
     frameTimeEMA = frameTimeEMA * 0.9 + frameTime * 0.1
     lastFrameDtSec = frameTime / 1000
-    
+
     // 1) Физика всегда обновляется (для камеры, анимаций персонажа и т.д.)
     // ИСПРАВЛЕНИЕ: Используем реальный frameTime для анимаций, чтобы они синхронизировались с частотой кадров экрана
     // На Android с 120Hz анимации будут обновляться чаще, но с меньшим deltaTime, что даст правильную скорость
@@ -649,7 +651,7 @@ const startThreeLoop = () => {
       const baseFrameContext = { nowMs: nowGlobal, deltaMs: frameTime, fixedSteps: 1 }
       gamePhysics.value.update(baseFrameContext)
     }
-    
+
     // 2) Игровая логика в том же rAF (фикс. шаг). playerBox один раз за кадр — меньше setFromObject при наборе скорости.
     if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value) {
       // ИСПРАВЛЕНИЕ: Используем аккумулятор времени для фиксированного шага
@@ -660,7 +662,7 @@ const startThreeLoop = () => {
       const nowMs = now
       const slideStartTime = gamePhysics.value?.getSlideStartTime?.() ?? 0
       const inRollImmuneWindow = slideStartTime > 0 && nowMs - slideStartTime < ROLL_IMMUNE_MS
-      
+
       // Выполняем фиксированные шаги только когда накопилось достаточно времени
       // Это гарантирует одинаковую скорость на всех платформах независимо от FPS
       let stepsCount = 0
@@ -668,7 +670,7 @@ const startThreeLoop = () => {
         timeAccumulator -= FIXED_STEP_MS
         stepsCount++
       }
-      
+
       // ОПТИМИЗАЦИЯ: На iPhone с 60Hz предотвращаем микрофризы
       // Если frameTime близок к фиксированному шагу (нормальный 60Hz), всегда выполняем минимум 1 шаг
       // Это гарантирует плавность - на iPhone frameTime ≈ 16.67ms, что равно FIXED_STEP_MS
@@ -683,18 +685,18 @@ const startThreeLoop = () => {
           timeAccumulator = -FIXED_STEP_MS * 0.3
         }
       }
-      
+
       // Защита от накопления слишком большого долга в аккумуляторе
       // Если аккумулятор ушел слишком далеко в минус, постепенно компенсируем
       if (timeAccumulator < -FIXED_STEP_MS * 2) {
         timeAccumulator = -FIXED_STEP_MS * 2
       }
-      
+
       // Выполняем шаги только если они есть (оптимизация: не вызываем getPlayerBox лишний раз)
       if (stepsCount > 0) {
         const framePlayerBox = gamePhysics.value?.getPlayerBox?.() ?? null
         const frameContext = { nowMs, deltaMs: FIXED_STEP_MS * stepsCount, fixedSteps: stepsCount }
-        
+
         let distanceDelta = 0
         let accumulatedSpeed = 0
         for (let i = 0; i < stepsCount; i++) {
@@ -710,7 +712,7 @@ const startThreeLoop = () => {
         if (distanceDelta !== 0) {
           gameRun.updateDistance(gameRun.distance.value + distanceDelta)
         }
-        
+
         if (gameEffects.value) {
           const q = graphicsQuality.value
           if (q === 'normal' || q === 'medium') {
@@ -724,20 +726,33 @@ const startThreeLoop = () => {
       if (isAccelerating.value) {
         const elapsed = nowGlobal - accelerationStartTime.value
         const progress = Math.min(elapsed / ACCELERATION_DURATION_MS, 1) // От 0 до 1
-        
+
         // Начальная скорость разгона = сохраненная скорость - 40%, но не меньше минимальной 0.15
         const MIN_START_SPEED = 0.15
         const startAccelSpeed = Math.max(savedSpeed.value * 0.6, MIN_START_SPEED)
-        
+
         // Упрощенная плавная интерполяция (квадратичная ease-out - быстрее чем кубическая)
         // Используем простую формулу без Math.pow для оптимизации производительности
         const easeOutProgress = progress < 1 ? progress * (2 - progress) : 1
         gameSpeed.value = startAccelSpeed + (targetSpeed.value - startAccelSpeed) * easeOutProgress
-        
+
         // Если достигли целевой скорости - завершаем разгон
         if (progress >= 1) {
           gameSpeed.value = targetSpeed.value
           isAccelerating.value = false
+        }
+      }
+      
+      // Проверяем окончание защиты от коллизий (3 секунды после таймера 3-2-1)
+      if (overheatProtectionActive.value && overheatProtectionEndTime > 0) {
+        const now = performance.now()
+        if (now >= overheatProtectionEndTime) {
+          // Защита закончилась - выключаем мигание и включаем коллизии
+          overheatProtectionActive.value = false
+          overheatProtectionEndTime = 0
+          if (gamePhysics.value?.setBlinking) {
+            gamePhysics.value.setBlinking(false)
+          }
         }
       } else if (!winTriggered && !winDecelerating && winAnimationStartTime === 0) {
         // Плавный набор: к 55% дистанции выходим на чуть меньшую макс. скорость (один раз на кадр, не на шаг)
@@ -765,7 +780,7 @@ const startThreeLoop = () => {
         // Сохраняем значение для модалки сразу при смерти
         savedEnergyCollectedForModal.value = savedEnergyBeforeStop
         console.log('Player died: hitCount=', hitCount.value, 'energyCollected BEFORE stop=', savedEnergyBeforeStop, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
-        
+
         // НЕ вызываем stopRun() здесь, чтобы не сбросить startStorage и energyCollected
         // Останавливаем только игровой цикл и физику
         stopGameLoop()
@@ -781,10 +796,10 @@ const startThreeLoop = () => {
         // Модалка появится после завершения анимации падения в endGame
         gameOverType.value = 'lose'
         launcherOverlayMode.value = 'none'
-        
+
         // Проверяем energyCollected после остановки игрового цикла
         console.log('Player died: energyCollected AFTER stop=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
-        
+
         // Вызываем endGame после задержки для завершения анимации падения
         setTimeout(() => {
           console.log('Calling endGame after delay: energyCollected=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
@@ -958,6 +973,12 @@ const startGame = (training = false, initialStorage = null) => {
   gameSpeed.value = 0.15
   savedSpeed.value = 0.15 // Инициализируем сохраненную скорость
   isAccelerating.value = false // Сбрасываем флаг ускорения при новом старте
+  overheatProtectionActive.value = false // Сбрасываем флаг защиты при новом старте
+  overheatProtectionEndTime = 0 // Сбрасываем время окончания защиты
+  // Выключаем мигающую прозрачность при новом старте
+  if (gamePhysics.value?.setBlinking) {
+    gamePhysics.value.setBlinking(false)
+  }
   timeAccumulator = 0 // Сбрасываем аккумулятор времени при старте игры
   if (gameWorld.value) {
     gameWorld.value.clearAll()
@@ -1002,10 +1023,10 @@ const startGame = (training = false, initialStorage = null) => {
   if (endGame._isProcessing) {
     endGame._isProcessing = false
   }
-  
+
   // Инициализируем перегрев при старте забега
   initializeOverheat()
-  
+
   if (gamePhysics.value?.setAnimationState) {
     gamePhysics.value.setAnimationState('running')
   }
@@ -1017,7 +1038,7 @@ const initializeOverheat = () => {
   const stationType = app.user?.station_type
   const neededHours = OVERHEAT_HOURS_BY_TYPE[stationType]
   const isCryoActive = app.user?.cryo_expires && new Date(app.user.cryo_expires) > new Date()
-  
+
   // Перегрев возможен только для определенных типов станций и если Cryo не активен
   if (!neededHours || isCryoActive) {
     isOverheated.value = false
@@ -1028,18 +1049,20 @@ const initializeOverheat = () => {
     showOverheatModal.value = false
     overheatDecelerating.value = false
     isAccelerating.value = false // Сбрасываем флаг ускорения
+    overheatProtectionActive.value = false // Сбрасываем флаг защиты
+    overheatProtectionEndTime = 0 // Сбрасываем время окончания защиты
     // Выключаем мигающую прозрачность
     if (gamePhysics.value?.setBlinking) {
       gamePhysics.value.setBlinking(false)
     }
     return
   }
-  
+
   // Инициализируем состояние перегрева из app.user (данные с сервера)
   overheatEnergyCollected.value = app.user?.overheat_energy_collected || 0
   wasOverheated.value = app.user?.was_overheated || false
   overheatGoal.value = app.user?.overheat_goal || null
-  
+
   // Проверяем активный перегрев
   if (app.user?.overheated_until) {
     const overheatedUntilDate = new Date(app.user.overheated_until)
@@ -1072,30 +1095,30 @@ const checkOverheatTrigger = async (amount) => {
   const stationType = app.user?.station_type
   const neededHours = OVERHEAT_HOURS_BY_TYPE[stationType]
   const isCryoActive = app.user?.cryo_expires && new Date(app.user.cryo_expires) > new Date()
-  
+
   // Проверяем условия для перегрева
   if (!neededHours || isCryoActive) {
     return false
   }
-  
+
   try {
     // Отправляем количество собранной энергии на сервер
     // Сервер обновит overheat_energy_collected и проверит активацию перегрева
     const response = await host.post('game-run-update-overheat/', {
       amount: amount
     })
-    
+
     if (response.data.overheated) {
       // Перегрев активирован на сервере
       activateOverheat(response.data)
       return true
     }
-    
+
     // Обновляем локальное состояние из ответа сервера
     overheatEnergyCollected.value = response.data.overheat_energy_collected || 0
     overheatGoal.value = response.data.overheat_goal
     wasOverheated.value = response.data.was_overheated || false
-    
+
     return false
   } catch (error) {
     console.error('Error checking overheat:', error)
@@ -1107,15 +1130,15 @@ const checkOverheatTrigger = async (amount) => {
 const activateOverheat = (serverData) => {
   // Устанавливаем состояние перегрева из ответа сервера
   isOverheated.value = true
-  
+
   if (serverData.overheated_until) {
     overheatedUntil.value = new Date(serverData.overheated_until)
   }
-  
+
   wasOverheated.value = serverData.was_overheated || false
   overheatEnergyCollected.value = serverData.overheat_energy_collected || 0
   overheatGoal.value = serverData.overheat_goal
-  
+
   // НЕ останавливаем игру сразу - персонаж продолжает бежать
   // Вибрация при перегреве
   if (vibrationEnabled.value) {
@@ -1129,9 +1152,15 @@ const activateOverheat = (serverData) => {
       navigator.vibrate([100, 50, 100]) // Двойная вибрация для перегрева
     }
   }
-  
+
   // Запускаем обратный отсчет 5 секунд перед остановкой персонажа
   overheatCountdown.value = 5
+  
+  // Включаем защиту от коллизий и мигание с самого начала таймера
+  overheatProtectionActive.value = true
+  if (gamePhysics.value?.setBlinking) {
+    gamePhysics.value.setBlinking(true)
+  }
   
   // Очищаем предыдущий интервал если есть
   if (overheatCountdownInterval) {
@@ -1144,23 +1173,20 @@ const activateOverheat = (serverData) => {
       overheatCountdownInterval = null
       return
     }
-    
+
     // Когда таймер показывает 2 секунды - начинаем плавное замедление
     if (overheatCountdown.value === 2) {
       console.log('[GameRunView] Overheat countdown at 2, starting smooth deceleration. Current speed:', gameSpeed.value)
       // Сохраняем текущую скорость перед началом замедления (для плавного разгона после возобновления)
       savedSpeed.value = gameSpeed.value
       overheatDecelerating.value = true
-      // Включаем мигающую прозрачность и отключаем коллизии
-      if (gamePhysics.value?.setBlinking) {
-        gamePhysics.value.setBlinking(true)
-      }
+      // Мигание и защита от коллизий уже включены с начала таймера
     }
-    
+
     // Когда таймер показывает 1 секунду - останавливаем и показываем модалку
     if (overheatCountdown.value === 1) {
       console.log('[GameRunView] Overheat countdown at 1, stopping and showing modal')
-      
+
       // Скорость уже сохранена на 2 секунде (перед началом замедления)
       // Вычисляем целевую скорость на основе текущего прогресса дистанции
       const progress = (gameRun.distanceProgress?.value ?? 0) / 100
@@ -1168,42 +1194,39 @@ const activateOverheat = (serverData) => {
       const rampProgress = Math.min(1, progress / 0.55)
       const baseSpeed = 0.15
       targetSpeed.value = baseSpeed + (maxSpeed - baseSpeed) * rampProgress
-      
+
       // Останавливаем плавное замедление
       overheatDecelerating.value = false
-      // Выключаем мигающую прозрачность (но коллизии остаются отключенными до разгона)
-      if (gamePhysics.value?.setBlinking) {
-        gamePhysics.value.setBlinking(false)
-      }
+      // Мигание и защита от коллизий продолжаются (не выключаем здесь)
       gameSpeed.value = 0
       if (gameWorld.value) {
         gameWorld.value.setRoadSpeed(0)
       }
       stopGameLoop()
       gameRun.pauseRun()
-      
+
       // Переводим персонажа в состояние idle (standing) - анимация покоя
       if (gamePhysics.value?.setAnimationState) {
         gamePhysics.value.setAnimationState('idle')
       }
-      
+
       // Убеждаемся что перегрев активен
       if (!isOverheated.value) {
         isOverheated.value = true
       }
-      
+
       // Показываем модалку перегрева
       showOverheatModal.value = true
       launcherOverlayMode.value = 'none' // Не показываем модалку паузы
-      
+
       clearInterval(overheatCountdownInterval)
       overheatCountdownInterval = null
       overheatCountdown.value = null
-      
+
       console.log('[GameRunView] Overheat modal shown. showOverheatModal:', showOverheatModal.value, 'isOverheated:', isOverheated.value)
       return
     }
-    
+
     // Уменьшаем таймер
     if (overheatCountdown.value > 1) {
       overheatCountdown.value--
@@ -1215,10 +1238,10 @@ const activateOverheat = (serverData) => {
 const handleOverheatContinue = async () => {
   // Обновляем данные пользователя с сервера (на случай если азот был использован)
   await app.initUser()
-  
+
   // Проверяем состояние перегрева после обновления данных
   const now = new Date()
-  
+
   // Проверяем локальное состояние перегрева
   if (overheatedUntil.value) {
     const until = new Date(overheatedUntil.value)
@@ -1234,7 +1257,7 @@ const handleOverheatContinue = async () => {
       }
     }
   }
-  
+
   // Проверяем серверные данные перегрева
   if (app.user?.overheated_until) {
     const serverUntil = new Date(app.user.overheated_until)
@@ -1243,17 +1266,17 @@ const handleOverheatContinue = async () => {
       return
     }
   }
-  
+
   // Перегрев закончился или был снят азотом - сбрасываем флаг was_overheated на сервере
   try {
     await host.post('game-run-reset-overheat-flag/', {})
   } catch (error) {
     console.error('[GameRunView] Ошибка при сбросе флага перегрева:', error)
   }
-  
+
   // Обновляем данные пользователя после сброса флага
   await app.initUser()
-  
+
   // Перегрев закончился или был снят азотом, продолжаем забег
   isOverheated.value = false
   showOverheatModal.value = false
@@ -1262,7 +1285,8 @@ const handleOverheatContinue = async () => {
   overheatCountdown.value = null // Сбрасываем таймер
   overheatDecelerating.value = false // Сбрасываем флаг замедления
   isAccelerating.value = false // Сбрасываем флаг ускорения
-  
+  // Защита от коллизий и мигание продолжаются (не выключаем здесь)
+
   // Возобновляем забег
   resumeGame()
 }
@@ -1272,7 +1296,7 @@ const handleOverheatModalClose = () => {
   // Закрываем модалку только если перегрев закончился
   const now = new Date()
   const until = overheatedUntil.value ? new Date(overheatedUntil.value) : null
-  
+
   if (!until || until <= now) {
     // Перегрев закончился, можно закрыть модалку
     showOverheatModal.value = false
@@ -1285,31 +1309,31 @@ const handleOverheatModalClose = () => {
 const pauseGame = () => {
   gameRun.pauseRun()
   stopGameLoop()
-  
+
   // Сохраняем текущую скорость перед паузой (для плавного разгона после возобновления)
   savedSpeed.value = gameSpeed.value
-  
+
   // Вычисляем целевую скорость на основе текущего прогресса дистанции
   const progress = (gameRun.distanceProgress?.value ?? 0) / 100
   const maxSpeed = 0.36
   const rampProgress = Math.min(1, progress / 0.55)
   const baseSpeed = 0.15
   targetSpeed.value = baseSpeed + (maxSpeed - baseSpeed) * rampProgress
-  
+
   // Сбрасываем флаг ускорения при паузе
   isAccelerating.value = false
-  
+
   // Устанавливаем анимацию стояния при паузе
   if (gamePhysics.value?.setAnimationState) {
     gamePhysics.value.setAnimationState('idle')
   }
-  
+
   // Если модалка перегрева открыта (активна или только что закончилась), не показываем модалку паузы
   if (showOverheatModal.value) {
     launcherOverlayMode.value = 'none' // Не показываем обычную паузу
     return
   }
-  
+
   // Если перегрев активен, показываем модалку перегрева
   if (isOverheated.value) {
     launcherOverlayMode.value = 'none' // Не показываем обычную паузу
@@ -1322,10 +1346,10 @@ const pauseGame = () => {
 const resumeGame = async () => {
   // Обновляем данные пользователя с сервера (на случай если азот был использован)
   await app.initUser()
-  
+
   // Проверяем состояние перегрева после обновления данных
   const now = new Date()
-  
+
   // Проверяем локальное состояние перегрева
   if (overheatedUntil.value) {
     const until = new Date(overheatedUntil.value)
@@ -1341,7 +1365,7 @@ const resumeGame = async () => {
       }
     }
   }
-  
+
   // Проверяем серверные данные перегрева
   if (app.user?.overheated_until) {
     const serverUntil = new Date(app.user.overheated_until)
@@ -1350,7 +1374,7 @@ const resumeGame = async () => {
       return
     }
   }
-  
+
   // Перегрев закончился или был снят азотом, показываем таймер обратного отсчета
   isOverheated.value = false
   showOverheatModal.value = false
@@ -1358,16 +1382,13 @@ const resumeGame = async () => {
   overheatCountdown.value = null // Сбрасываем таймер
   overheatDecelerating.value = false // Сбрасываем флаг замедления
   isAccelerating.value = false // Сбрасываем флаг ускорения
-  
-      // Включаем мигающую прозрачность и отключаем коллизии для разгона
-      if (gamePhysics.value?.setBlinking) {
-        gamePhysics.value.setBlinking(true)
-      }
-      
+  // Защита от коллизий и мигание продолжаются (не выключаем здесь)
+
+      // Мигание и защита от коллизий продолжаются во время таймера 3-2-1
       // Показываем таймер обратного отсчета 3-2-1
       showCountdown.value = true
       countdownNumber.value = 3
-  
+
   // Вибрация при каждом числе
   const triggerVibration = () => {
     if (vibrationEnabled.value) {
@@ -1382,12 +1403,12 @@ const resumeGame = async () => {
       }
     }
   }
-  
+
   triggerVibration()
-  
+
   countdownInterval = setInterval(() => {
     countdownNumber.value--
-    
+
     if (countdownNumber.value > 0) {
       triggerVibration()
     } else {
@@ -1395,18 +1416,21 @@ const resumeGame = async () => {
       clearInterval(countdownInterval)
       countdownInterval = null
       showCountdown.value = false
-      
+
+      // Устанавливаем время окончания защиты (3 секунды после окончания таймера 3-2-1)
+      overheatProtectionEndTime = performance.now() + 3000
+
       gameRun.resumeRun()
       lastUpdateTime = 0
       launcherOverlayMode.value = 'none'
-      
+
       // Вычисляем целевую скорость на основе текущего прогресса дистанции
       const progress = (gameRun.distanceProgress?.value ?? 0) / 100
       const maxSpeed = 0.36
       const rampProgress = Math.min(1, progress / 0.55)
       const baseSpeed = 0.15
       targetSpeed.value = baseSpeed + (maxSpeed - baseSpeed) * rampProgress
-      
+
       // Начинаем плавное ускорение от -40% сохраненной скорости до целевой за 3 секунды
       // Но не меньше минимальной стартовой скорости 0.15
       const MIN_START_SPEED = 0.15
@@ -1417,12 +1441,13 @@ const resumeGame = async () => {
       }
       accelerationStartTime.value = performance.now() // Запоминаем время начала ускорения
       isAccelerating.value = true // Включаем флаг плавного разгона
-      
+
       // Активируем анимацию бега персонажа
+      // Мигание и защита от коллизий продолжаются еще 3 секунды
       if (gamePhysics.value?.setAnimationState) {
         gamePhysics.value.setAnimationState('running')
       }
-      
+
       // Финальная вибрация
       if (vibrationEnabled.value) {
         try {
@@ -1456,7 +1481,7 @@ function doOneStep(playerBox, inRollImmuneWindow) {
           }
         } else {
           // Не проверяем коллизии если игрок уже победил (во время анимации победы)
-          // Также отключаем коллизии во время остановки и разгона при перегреве
+          // Также отключаем коллизии во время защиты при перегреве (таймер 5-1, таймер 3-2-1, и 3 секунды после)
           gameWorld.value.updateObstacles(
             playerBox,
             () => {
@@ -1476,7 +1501,7 @@ function doOneStep(playerBox, inRollImmuneWindow) {
                 // Сохраняем значение для модалки сразу при смерти
                 savedEnergyCollectedForModal.value = savedEnergyBeforeStop
                 console.log('Player died (livesLeft=0): energyCollected BEFORE stop=', savedEnergyBeforeStop, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
-                
+
                 // НЕ вызываем stopRun() здесь, чтобы не сбросить startStorage и energyCollected
                 // Останавливаем только игровой цикл и физику
                 stopGameLoop()
@@ -1493,10 +1518,10 @@ function doOneStep(playerBox, inRollImmuneWindow) {
                 // Модалка появится после завершения анимации падения в endGame
                 gameOverType.value = 'lose'
                 launcherOverlayMode.value = 'none'
-                
+
                 // Проверяем energyCollected после остановки игрового цикла
                 console.log('Player died (livesLeft=0): energyCollected AFTER stop=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
-                
+
                 // Вызываем endGame после задержки для завершения анимации падения
                 setTimeout(() => {
                   console.log('Calling endGame after delay (livesLeft=0): energyCollected=', gameRun.energyCollected?.value, 'startStorage=', gameRun.startStorage?.value, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value)
@@ -1525,7 +1550,8 @@ function doOneStep(playerBox, inRollImmuneWindow) {
               }
             },
             gamePhysics.value.isSliding?.value === true,
-            inRollImmuneWindow
+            inRollImmuneWindow,
+            overheatProtectionActive.value || overheatDecelerating.value || isAccelerating.value
           )
         }
 
@@ -1536,7 +1562,7 @@ function doOneStep(playerBox, inRollImmuneWindow) {
             // Также помечаем токен как пройденный (для прогресса дистанции)
             gameRun.collectEnergy(energy)
             gameRun.markPointPassed()
-            
+
             // Проверяем перегрев через API (только если перегрев еще не активен)
             if (!isOverheated.value) {
               const overheated = await checkOverheatTrigger(energy)
@@ -1563,7 +1589,7 @@ function doOneStep(playerBox, inRollImmuneWindow) {
     if (overheatDecelerating.value) {
       gameSpeed.value *= WIN_DECEL_RATE
       if (gameWorld.value) gameWorld.value.setRoadSpeed(gameSpeed.value)
-      
+
       // Обновляем дистанцию даже во время замедления, если игра еще работает
       if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value) {
         const distanceDelta = gameSpeed.value * 10
@@ -1689,7 +1715,7 @@ const endGame = async (isWinByState = false) => {
       gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0
     )
     const savedStartStorageBeforeComplete = gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0
-    
+
     // Сохраняем для отображения в модалке (не будет обнулено до нажатия "Забрать")
     // ВАЖНО: НЕ перезаписываем значение, если оно уже было установлено при смерти
     // Обновляем только если сохраненное значение равно 0 ИЛИ новое значение больше сохраненного
@@ -1702,9 +1728,9 @@ const endGame = async (isWinByState = false) => {
       savedEnergyCollectedForModal.value = savedEnergyBeforeComplete
     }
     // Иначе оставляем сохраненное значение без изменений
-    
+
     console.log('endGame called, isWinByState:', isWinByState, 'energyCollected BEFORE completeRun:', savedEnergyBeforeComplete, 'startStorage BEFORE completeRun:', savedStartStorageBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'isRunning:', gameRun.isRunning.value, 'runStartTime:', gameRun.runStartTime?.value)
-    
+
     // Вызываем completeRun для сохранения данных забега на сервере (без начисления энергии)
     const result = await gameRun.completeRun(isWinByState).catch((e) => {
       console.error('Ошибка завершения забега:', e)
@@ -1714,7 +1740,7 @@ const endGame = async (isWinByState = false) => {
     console.log('endGame completeRun result:', result)
 
     // Сохраняем данные завершенного забега для последующего начисления при нажатии "Забрать"
-    
+
     if (result && result.success) {
       // Определяем финальное значение собранной энергии
       // Приоритет: сохраненное значение при смерти > значение с сервера > значение до completeRun
@@ -1739,7 +1765,7 @@ const endGame = async (isWinByState = false) => {
           savedEnergyCollectedForModal.value = savedEnergyBeforeComplete
         }
       }
-      
+
       // При выигрыше energy_gained должно быть равно energy_collected (вся собранная энергия)
       // Если сервер вернул 0 или undefined, используем собранное значение
       let energyGained = result.energy_gained
@@ -1748,7 +1774,7 @@ const endGame = async (isWinByState = false) => {
       } else if (!energyGained) {
         energyGained = 0
       }
-      
+
       completedRunData.value = {
         energy_collected: finalEnergyCollected,
         is_win: result.is_win ?? isWinByState,
@@ -1762,10 +1788,10 @@ const endGame = async (isWinByState = false) => {
       // Если result не получен, используем сохраненное значение при смерти или значение до completeRun
       // Приоритет: сохраненное значение при смерти > значение до completeRun
       const finalEnergyCollected = savedEnergyCollectedForModal.value > 0 ? savedEnergyCollectedForModal.value : savedEnergyBeforeComplete
-      
+
       // При выигрыше energy_gained должно быть равно energy_collected (вся собранная энергия)
       const energyGainedFallback = (isWinByState && finalEnergyCollected > 0) ? finalEnergyCollected : 0
-      
+
       completedRunData.value = {
         energy_collected: finalEnergyCollected,
         is_win: isWinByState ?? false,
@@ -1801,7 +1827,7 @@ const endGame = async (isWinByState = false) => {
     // Устанавливаем модалку только если она еще не установлена
     // (при проигрыше она НЕ устанавливается в игровом цикле - только тип, модалка показывается здесь после анимации)
     console.log('endGame: showGameOver.value=', showGameOver.value, 'isWin=', isWin, 'gameOverType.value=', gameOverType.value)
-    
+
     if (!showGameOver.value) {
       if (isWin) {
         // Успешное завершение забега — проигрываем победную анимацию
@@ -1873,7 +1899,7 @@ const handleStartClick = async () => {
     showStartRunWarning.value = true
     return
   }
-  
+
   // Если предупреждение не нужно показывать, сразу запускаем забег
   console.log('[GameRunView] Starting run without warning')
   await startRun()
@@ -1925,12 +1951,12 @@ const startRun = async () => {
 // Обработчик подтверждения предупреждения
 const handleStartRunWarningConfirm = (dontShowAgain) => {
   showStartRunWarning.value = false
-  
+
   // Сохраняем настройку если пользователь выбрал "не показывать снова"
   if (dontShowAgain) {
     localStorage.setItem('startRunWarningDontShow', 'true')
   }
-  
+
   // Запускаем забег
   startRun()
 }
@@ -1961,11 +1987,11 @@ const handleTrainingClick = () => {
 const handleResumeClick = () => {
   // Закрываем модалку паузы
   launcherOverlayMode.value = 'none'
-  
+
   // Показываем таймер обратного отсчета 3-2-1 (как после перегрева)
   showCountdown.value = true
   countdownNumber.value = 3
-  
+
   // Вибрация при каждом числе
   const triggerVibration = () => {
     if (vibrationEnabled.value) {
@@ -1980,17 +2006,17 @@ const handleResumeClick = () => {
       }
     }
   }
-  
+
   triggerVibration()
-  
+
   // Очищаем предыдущий интервал если есть
   if (countdownInterval) {
     clearInterval(countdownInterval)
   }
-  
+
   countdownInterval = setInterval(() => {
     countdownNumber.value--
-    
+
     if (countdownNumber.value > 0) {
       triggerVibration()
     } else {
@@ -1998,17 +2024,17 @@ const handleResumeClick = () => {
       clearInterval(countdownInterval)
       countdownInterval = null
       showCountdown.value = false
-      
+
       // Вычисляем целевую скорость на основе текущего прогресса дистанции
       const progress = (gameRun.distanceProgress?.value ?? 0) / 100
       const maxSpeed = 0.36
       const rampProgress = Math.min(1, progress / 0.55)
       const baseSpeed = 0.15
       targetSpeed.value = baseSpeed + (maxSpeed - baseSpeed) * rampProgress
-      
+
       gameRun.resumeRun()
       lastUpdateTime = 0
-      
+
       // Начинаем плавное ускорение от -40% сохраненной скорости до целевой за 3 секунды
       // Но не меньше минимальной стартовой скорости 0.15
       const MIN_START_SPEED = 0.15
@@ -2019,12 +2045,12 @@ const handleResumeClick = () => {
       }
       accelerationStartTime.value = performance.now() // Запоминаем время начала ускорения
       isAccelerating.value = true // Включаем флаг плавного разгона
-      
+
       // Активируем анимацию бега персонажа (из стоячего положения)
       if (gamePhysics.value?.setAnimationState) {
         gamePhysics.value.setAnimationState('running')
       }
-      
+
       // Финальная вибрация
       if (vibrationEnabled.value) {
         try {
@@ -2102,14 +2128,14 @@ const handleClaim = async () => {
 
   try {
     console.log('handleClaim: calling game-run-claim with data:', completedRunData.value)
-    
+
     const response = await host.post('game-run-claim/', {
       energy_collected: completedRunData.value.energy_collected,
       is_win: completedRunData.value.is_win
     })
-    
+
     console.log('handleClaim: response:', response.data)
-    
+
     if (response.status === 200 && response.data.success) {
       // Обновляем состояние приложения после успешного начисления
       if (response.data.total_energy !== undefined) {
@@ -2121,7 +2147,7 @@ const handleClaim = async () => {
       if (response.data.power !== undefined) {
         app.setPower(response.data.power)
       }
-      
+
       // Очищаем данные забега только после успешного начисления
       completedRunData.value = null
       savedEnergyCollectedForModal.value = 0
@@ -2140,7 +2166,7 @@ const handleClaim = async () => {
     // Показываем сообщение об ошибке пользователю
     alert(error.response?.data?.error || 'Ошибка при начислении энергии')
   }
-  
+
   // Выходим из игры после начисления (или ошибки)
   exitToMain()
 }
@@ -2228,17 +2254,17 @@ onMounted(() => {
       applyGraphicsQuality()
     }
   }
-  
+
   // Периодическая проверка состояния перегрева (каждую секунду)
   overheatCheckInterval = setInterval(async () => {
     if (showOverheatModal.value && overheatedUntil.value) {
       const now = new Date()
       const until = new Date(overheatedUntil.value)
-      
+
       // Если перегрев закончился, обновляем состояние (но не закрываем модалку)
       if (until <= now) {
         isOverheated.value = false
-        
+
         // Обновляем данные пользователя с сервера для подтверждения
         try {
           await app.initUser()
@@ -2414,7 +2440,7 @@ onUnmounted(() => {
   opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
-  
+
   &:active {
     transform: none;
   }
