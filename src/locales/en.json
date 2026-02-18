@@ -504,7 +504,7 @@
     "start_run_warning_message": "After starting the run, your accumulated storage balance will be deducted for point generation.<br><br>Your engineer has 3 lives and one additional life to complete the entire distance and collect energy.<br><br>Exiting the run is not possible.<br><br><b>We recommend doing several training runs before starting the actual run.</b>",
     "start_run_warning_dont_show": "Don't show this warning again",
     "start_run_warning_confirm": "Confirm",
-    "buy_extra_life": "Buy extra life",
+    "buy_extra_life": "Extra life",
     "extra_life_activation_error": "Error activating extra life",
     "processing": "Processing..."
   },

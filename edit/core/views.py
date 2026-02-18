@@ -3510,14 +3510,14 @@ class RunnerExtraLifeStarsView(APIView):
             # Применяем скидку пользователя (если есть)
             final_price = int(price * user_profile.sbt_get_stars_discount())
             
-            # Создаем invoice ссылку
+            # Создаем invoice ссылку (используем статический payload как в speed_build)
             link = bot.create_invoice_link(
                 title="Дополнительная жизнь",
                 description=f"Покупка дополнительной жизни за {final_price} Stars",
                 currency="XTR",
                 provider_token="",
                 prices=[LabeledPrice(label="XTR", amount=final_price)],
-                payload=f"runner_extra_life:{user_profile.user_id}",
+                payload="runner_extra_life",
             )
             
             return Response(

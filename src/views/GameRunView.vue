@@ -232,8 +232,7 @@
             @click.stop.prevent="handleBuyExtraLife"
           >
             <span v-if="!isBuyingExtraLife">
-              <img src="@/assets/stars.png" width="16px" alt="Stars" />
-              {{ t('game.buy_extra_life') }} ({{ extraLifePrice }})
+              {{ t('game.buy_extra_life') }} {{ extraLifePrice }} <img src="@/assets/stars.png" width="16px" alt="Stars" />
             </span>
             <span v-else>{{ t('game.processing') }}</span>
           </button>
