@@ -337,14 +337,14 @@ class UserProfile(models.Model):
     )
 
     # Training Run (Тренировочные забеги)
-    training_run_last_date = models.DateField(
+    training_run_last_started_at = models.DateTimeField(
         blank=True,
         null=True,
-        help_text="Дата последнего тренировочного забега (для сброса счетчика)"
+        help_text="Время последнего тренировочного забега (для сброса счетчика по часам)"
     )
-    training_run_count_today = models.IntegerField(
+    training_run_count_this_hour = models.IntegerField(
         default=0,
-        help_text="Количество тренировочных забегов сегодня"
+        help_text="Количество тренировочных забегов в текущий час"
     )
 
     stop_mining_at1 = models.DateTimeField(null=True, blank=True)
@@ -1260,9 +1260,9 @@ class RunnerConfig(models.Model):
         default=100,
         help_text="Количество kW за 1 STAR (например, 100 означает 100 kW = 1 STAR)"
     )
-    max_training_runs_per_day = models.IntegerField(
+    max_training_runs_per_hour = models.IntegerField(
         default=5,
-        help_text="Максимальное количество тренировочных забегов в день для каждого пользователя"
+        help_text="Максимальное количество тренировочных забегов в час для каждого пользователя"
     )
     
     class Meta:
@@ -1270,7 +1270,7 @@ class RunnerConfig(models.Model):
         verbose_name_plural = "Runner Configs"
     
     def __str__(self):
-        return f"Runner Config: {self.stars_per_kw} kW = 1 STAR, {self.max_training_runs_per_day} training runs/day"
+        return f"Runner Config: {self.stars_per_kw} kW = 1 STAR, {self.max_training_runs_per_hour} training runs/hour"
 
 
 class KwCommissions(models.Model):

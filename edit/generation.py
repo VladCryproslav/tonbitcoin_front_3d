@@ -57,7 +57,7 @@ from django.utils import timezone
 # ОПЦИОНАЛЬНО: Переключение логики снижения power
 # False (по умолчанию): power снижается ВСЕГДА, даже когда storage = storage_limit
 # True: power снижается ТОЛЬКО пока storage < storage_limit
-POWER_REDUCTION_ONLY_WHEN_STORAGE_NOT_FULL = False
+POWER_REDUCTION_ONLY_WHEN_STORAGE_NOT_FULL = True
 
 while True:
     start_time = time.time()

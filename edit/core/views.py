@@ -1978,35 +1978,35 @@ class TrainingRunCheckView(APIView):
         try:
             user_profile = request.user_profile
             now = timezone.now()
-            today = now.date()
+            current_hour_start = now.replace(minute=0, second=0, microsecond=0)
             
             # Получаем конфигурацию (или создаем дефолтную если нет)
             runner_config = RunnerConfig.objects.first()
             if not runner_config:
                 runner_config = RunnerConfig.objects.create(
                     stars_per_kw=100,
-                    max_training_runs_per_day=5
+                    max_training_runs_per_hour=5
                 )
             
-            max_runs = runner_config.max_training_runs_per_day
+            max_runs = runner_config.max_training_runs_per_hour
             
-            # Проверяем нужно ли сбросить счетчик (если последний забег был не сегодня)
-            if user_profile.training_run_last_date != today:
-                # Сбрасываем счетчик если это новый день
+            # Проверяем нужно ли сбросить счетчик (если последний забег был не в текущий час)
+            if not user_profile.training_run_last_started_at or user_profile.training_run_last_started_at < current_hour_start:
+                # Сбрасываем счетчик если это новый час
                 UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                    training_run_count_today=0,
-                    training_run_last_date=today
+                    training_run_count_this_hour=0,
+                    training_run_last_started_at=None
                 )
                 user_profile.refresh_from_db()
             
-            available_runs = max(0, max_runs - user_profile.training_run_count_today)
+            available_runs = max(0, max_runs - user_profile.training_run_count_this_hour)
             can_run = available_runs > 0
             
             return Response({
                 "can_run": can_run,
                 "available_runs": available_runs,
-                "max_runs_per_day": max_runs,
-                "runs_used_today": user_profile.training_run_count_today,
+                "max_runs_per_hour": max_runs,
+                "runs_used_this_hour": user_profile.training_run_count_this_hour,
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
@@ -2021,40 +2021,40 @@ class TrainingRunCheckView(APIView):
 
 
 class TrainingRunStartView(APIView):
-    """Записывает старт тренировочного забега. Проверяет лимит на количество забегов в день."""
+    """Записывает старт тренировочного забега. Проверяет лимит на количество забегов в час."""
     
     @require_auth
     def post(self, request):
         try:
             user_profile = request.user_profile
             now = timezone.now()
-            today = now.date()
+            current_hour_start = now.replace(minute=0, second=0, microsecond=0)
             
             # Получаем конфигурацию
             runner_config = RunnerConfig.objects.first()
             if not runner_config:
                 runner_config = RunnerConfig.objects.create(
                     stars_per_kw=100,
-                    max_training_runs_per_day=5
+                    max_training_runs_per_hour=5
                 )
             
-            max_runs = runner_config.max_training_runs_per_day
+            max_runs = runner_config.max_training_runs_per_hour
             
-            # Проверяем нужно ли сбросить счетчик
-            if user_profile.training_run_last_date != today:
+            # Проверяем нужно ли сбросить счетчик (если последний забег был не в текущий час)
+            if not user_profile.training_run_last_started_at or user_profile.training_run_last_started_at < current_hour_start:
                 UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                    training_run_count_today=0,
-                    training_run_last_date=today
+                    training_run_count_this_hour=0,
+                    training_run_last_started_at=None
                 )
                 user_profile.refresh_from_db()
             
             # Проверяем лимит
-            if user_profile.training_run_count_today >= max_runs:
+            if user_profile.training_run_count_this_hour >= max_runs:
                 return Response(
                     {
                         "error": "training_run_limit_exceeded",
-                        "max_runs_per_day": max_runs,
-                        "runs_used_today": user_profile.training_run_count_today,
+                        "max_runs_per_hour": max_runs,
+                        "runs_used_this_hour": user_profile.training_run_count_this_hour,
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
@@ -2062,8 +2062,8 @@ class TrainingRunStartView(APIView):
             # Увеличиваем счетчик тренировочных забегов
             from django.db.models import F
             UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                training_run_count_today=F('training_run_count_today') + 1,
-                training_run_last_date=today
+                training_run_count_this_hour=F('training_run_count_this_hour') + 1,
+                training_run_last_started_at=now
             )
             
             user_profile.refresh_from_db()
@@ -2073,8 +2073,8 @@ class TrainingRunStartView(APIView):
                 {
                     "message": "Training run started",
                     "user": serializer_data,
-                    "runs_used_today": user_profile.training_run_count_today,
-                    "available_runs": max_runs - user_profile.training_run_count_today,
+                    "runs_used_this_hour": user_profile.training_run_count_this_hour,
+                    "available_runs": max_runs - user_profile.training_run_count_this_hour,
                 },
                 status=status.HTTP_200_OK,
             )

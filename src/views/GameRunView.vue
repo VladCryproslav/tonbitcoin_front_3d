@@ -65,7 +65,7 @@
             @click.stop.prevent="handleTrainingClick"
           >
             <div class="training-button-content">
-              {{ t('game.run_training') }} {{ trainingRunsAvailable ?? 5 }}/{{ maxTrainingRunsPerDay }}
+              {{ t('game.run_training') }} {{ trainingRunsAvailable ?? 5 }}/{{ maxTrainingRunsPerHour }}
             </div>
           </button>
           <button
@@ -263,7 +263,7 @@
       v-if="showTrainingLimitModal"
       status="warning"
       :title="t('notification.st_attention')"
-      :body="t('game.training_run_limit_exceeded', { used: trainingRunsUsedToday, max: maxTrainingRunsPerDay })"
+      :body="t('game.training_run_limit_exceeded', { used: trainingRunsUsedThisHour, max: maxTrainingRunsPerHour })"
       @close="showTrainingLimitModal = false"
     />
 
@@ -348,8 +348,8 @@ const gameOverType = ref('lose') // 'win' | 'lose'
 const isTrainingRun = ref(false)
 // Данные о доступности тренировочных забегов
 const trainingRunsAvailable = ref(5) // По умолчанию 5
-const maxTrainingRunsPerDay = ref(5)
-const trainingRunsUsedToday = ref(0)
+const maxTrainingRunsPerHour = ref(5)
+const trainingRunsUsedThisHour = ref(0)
 const canRunTraining = ref(true)
 // Модалка предупреждения о лимите тренировочных забегов
 const showTrainingLimitModal = ref(false)
@@ -2121,8 +2121,8 @@ const checkTrainingRunAvailability = async () => {
     const response = await host.get('training-run-check/')
     if (response && response.data) {
       trainingRunsAvailable.value = response.data.available_runs ?? 5
-      maxTrainingRunsPerDay.value = response.data.max_runs_per_day ?? 5
-      trainingRunsUsedToday.value = response.data.runs_used_today ?? 0
+      maxTrainingRunsPerHour.value = response.data.max_runs_per_hour ?? 5
+      trainingRunsUsedThisHour.value = response.data.runs_used_this_hour ?? 0
       canRunTraining.value = response.data.can_run ?? true
     }
   } catch (error) {
@@ -2131,8 +2131,8 @@ const checkTrainingRunAvailability = async () => {
     // Устанавливаем значения по умолчанию, чтобы не блокировать интерфейс
     canRunTraining.value = true
     trainingRunsAvailable.value = 5
-    maxTrainingRunsPerDay.value = 5
-    trainingRunsUsedToday.value = 0
+    maxTrainingRunsPerHour.value = 5
+    trainingRunsUsedThisHour.value = 0
   }
 }
 
@@ -2151,27 +2151,27 @@ const handleTrainingClick = async () => {
     
     if (response.data.user) {
       // Обновляем данные пользователя если нужно
-      if (response.data.user.training_run_count_today !== undefined) {
-        app.user.training_run_count_today = response.data.user.training_run_count_today
+      if (response.data.user.training_run_count_this_hour !== undefined) {
+        app.user.training_run_count_this_hour = response.data.user.training_run_count_this_hour
       }
-      if (response.data.user.training_run_last_date !== undefined) {
-        app.user.training_run_last_date = response.data.user.training_run_last_date
+      if (response.data.user.training_run_last_started_at !== undefined) {
+        app.user.training_run_last_started_at = response.data.user.training_run_last_started_at
       }
     }
     
     // Обновляем счетчик доступных забегов
     trainingRunsAvailable.value = response.data.available_runs || 0
-    trainingRunsUsedToday.value = response.data.runs_used_today || 0
+    trainingRunsUsedThisHour.value = response.data.runs_used_this_hour || 0
     
     // Запускаем тренировочный забег
     startGame(true)
   } catch (error) {
     // Если ошибка лимита - показываем модалку предупреждения
     if (error.response?.status === 400 && error.response?.data?.error === 'training_run_limit_exceeded') {
-      const maxRuns = error.response.data.max_runs_per_day || 5
-      const usedRuns = error.response.data.runs_used_today || 0
-      maxTrainingRunsPerDay.value = maxRuns
-      trainingRunsUsedToday.value = usedRuns
+      const maxRuns = error.response.data.max_runs_per_hour || 5
+      const usedRuns = error.response.data.runs_used_this_hour || 0
+      maxTrainingRunsPerHour.value = maxRuns
+      trainingRunsUsedThisHour.value = usedRuns
       trainingRunsAvailable.value = 0
       // Показываем желтую модалку предупреждения
       showTrainingLimitModal.value = true

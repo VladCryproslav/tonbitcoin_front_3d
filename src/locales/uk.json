@@ -465,7 +465,7 @@
     "back_to_main": "Повернутися назад",
     "training_warning": "Важливо! Під час тренувального забігу результати не зберігаються",
     "training_runs_available": "доступно {count}",
-    "training_run_limit_exceeded": "Досягнуто ліміт тренувальних забігів на сьогодні. Використано: {used} з {max} доступних",
+    "training_run_limit_exceeded": "Досягнуто ліміт тренувальних забігів в годину. Використано: {used}/{max}",
     "graphics_label_normal": "Графіка: Висока",
     "graphics_label_medium": "Графіка: Середня",
     "graphics_label_low": "Графіка: Низька",

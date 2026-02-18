@@ -316,8 +316,8 @@ class WithdrawalConfigAdmin(admin.ModelAdmin):
 
 @admin.register(RunnerConfig)
 class RunnerConfigAdmin(admin.ModelAdmin):
-    list_display = ['stars_per_kw', 'max_training_runs_per_day']
-    list_editable = ['stars_per_kw', 'max_training_runs_per_day']
+    list_display = ['stars_per_kw', 'max_training_runs_per_hour']
+    list_editable = ['stars_per_kw', 'max_training_runs_per_hour']
     list_display_links = None
 
 
