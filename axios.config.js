@@ -85,7 +85,7 @@ const toncenter = axios.create({
 })
 
 // Функция для получения текущего серверного времени
-export const getServerTime = () => {
+const getServerTime = () => {
   return new Date(Date.now() + serverTimeOffset)
 }
 
