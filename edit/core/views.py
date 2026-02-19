@@ -2104,19 +2104,17 @@ class TrainingRunStartView(APIView):
 def calculate_saved_percent_on_lose(user_profile, now=None):
     """
     Рассчитывает процент сохранения энергии при проигрыше согласно новой логике:
-    - Белые инженеры: всегда дают процент с уровня 49
-    - Золотые инженеры: дают разницу между процентом на уровне Engineer level (или Past engineer level) и 49%
     
     Логика:
     1. Если Engineer level <= 49 и < Past engineer level:
-       - Белые: 49%
-       - Золотые: (процент на уровне Past engineer level) - 49%
+       - Белые: процент с уровня Engineer level
+       - Золотые: (процент на уровне Past engineer level) - (процент уровня 49)
     2. Если Engineer level > 49 но < Past engineer level:
-       - Белые: 49%
-       - Золотые: (процент на уровне Engineer level) - 49%
+       - Белые: процент с уровня 49
+       - Золотые: (процент на уровне Engineer level) - (процент уровня 49)
     3. Если Engineer level > 49 и >= Past engineer level:
-       - Белые: 49%
-       - Золотые: (процент на уровне Engineer level) - 49%
+       - Белые: процент с уровня 49
+       - Золотые: (процент на уровне Engineer level) - (процент уровня 49)
     
     Также учитывает бонус +2% от электриков.
     """
@@ -2127,37 +2125,55 @@ def calculate_saved_percent_on_lose(user_profile, now=None):
     engineer_level = user_profile.engineer_level
     past_engineer_level = user_profile.past_engineer_level or 0
     
-    # Получаем процент для уровня 49 (белые инженеры)
+    # Получаем процент для уровня 49 (для расчета золотых инженеров)
     try:
         level49_config = EngineerConfig.objects.get(level=49)
-        white_percent = level49_config.saved_percent_on_lose or 0
+        level49_percent = level49_config.saved_percent_on_lose or 0
     except EngineerConfig.DoesNotExist:
-        white_percent = 0
+        level49_percent = 0
     
-    # Определяем общий уровень для расчета золотых инженеров
+    # Определяем уровень белых инженеров и общий уровень для расчета золотых
+    white_level = 0
     total_level = 0
+    
     if engineer_level <= 49 and engineer_level < past_engineer_level:
         # Случай 1: engineer_level <= 49 и < past_engineer_level
+        white_level = engineer_level
         total_level = past_engineer_level
     elif engineer_level > 49 and engineer_level < past_engineer_level:
         # Случай 2: engineer_level > 49 но < past_engineer_level
+        white_level = 49
         total_level = engineer_level
     elif engineer_level > 49 and engineer_level >= past_engineer_level:
         # Случай 3: engineer_level > 49 и >= past_engineer_level
+        white_level = 49
         total_level = engineer_level
     else:
         # Остальные случаи - только белые инженеры
+        white_level = engineer_level if engineer_level <= 49 else 49
+        try:
+            white_config = EngineerConfig.objects.get(level=white_level)
+            white_percent = white_config.saved_percent_on_lose or 0
+        except EngineerConfig.DoesNotExist:
+            white_percent = 0
         return min(white_percent + (2 if user_profile.electrics_expires and user_profile.electrics_expires > now else 0), 100)
     
-    # Получаем процент для общего уровня (золотые инженеры)
+    # Получаем процент для белых инженеров
+    try:
+        white_config = EngineerConfig.objects.get(level=white_level)
+        white_percent = white_config.saved_percent_on_lose or 0
+    except EngineerConfig.DoesNotExist:
+        white_percent = 0
+    
+    # Получаем процент для общего уровня (для расчета золотых инженеров)
     try:
         total_level_config = EngineerConfig.objects.get(level=total_level)
         total_percent = total_level_config.saved_percent_on_lose or 0
     except EngineerConfig.DoesNotExist:
-        total_percent = white_percent
+        total_percent = level49_percent
     
     # Золотые инженеры дают разницу между общим процентом и процентом уровня 49
-    gold_percent = max(0, total_percent - white_percent)
+    gold_percent = max(0, total_percent - level49_percent)
     
     # Общий процент = белые + золотые
     saved_percent = white_percent + gold_percent

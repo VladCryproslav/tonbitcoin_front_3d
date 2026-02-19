@@ -371,8 +371,8 @@ const getWorkers = computed(() => {
   // Логика согласно требованиям:
   if (engineerLevel <= 49 && engineerLevel < pastEngineerLevel) {
     // Случай 1: engineer_level <= 49 и < past_engineer_level
-    // Белые: уровень 49, процент 49%
-    simple = 49
+    // Белые: уровень = engineer_level (например, 38)
+    simple = engineerLevel
     // Золотые: уровень = past_engineer_level - 49
     gold = pastEngineerLevel > 49 ? pastEngineerLevel - 49 : 0
   } else if (engineerLevel > 49 && engineerLevel < pastEngineerLevel) {
@@ -401,13 +401,13 @@ const whiteEngineerLevel = computed(() => getWorkers.value.simple)
 const goldEngineerLevel = computed(() => getWorkers.value.gold)
 
 // Процент сохранения для белых инженеров
-// Всегда берем процент с уровня 49, так как белые инженеры всегда на уровне 49
+// Берем процент с уровня белых инженеров (может быть engineer_level или 49)
 const whiteEngineerSavedPercent = computed(() => {
   const level = getWorkers.value.simple
   if (!level) return 0
-  // Всегда используем уровень 49 для белых инженеров
-  const level49Cfg = app.stations?.eng_configs?.find((el) => el?.level === 49)
-  return Number(level49Cfg?.saved_percent_on_lose ?? 0)
+  // Используем процент с уровня белых инженеров
+  const cfg = app.stations?.eng_configs?.find((el) => el?.level === level)
+  return Number(cfg?.saved_percent_on_lose ?? 0)
 })
 
 // Процент сохранения для золотых инженеров
@@ -446,7 +446,8 @@ const goldEngineerBonusPercent = computed(() => {
   const totalLevelCfg = app.stations?.eng_configs?.find((el) => el?.level === totalLevel)
   const totalLevelPercent = Number(totalLevelCfg?.saved_percent_on_lose ?? 0)
   
-  // Получаем процент для уровня 49 (базовый для белых)
+  // Для случая 1: вычитаем процент уровня 49
+  // Для случаев 2 и 3: также вычитаем процент уровня 49
   const level49Cfg = app.stations?.eng_configs?.find((el) => el?.level === 49)
   const level49Percent = Number(level49Cfg?.saved_percent_on_lose ?? 0)
   
