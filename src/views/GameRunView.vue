@@ -704,7 +704,7 @@ const preloadAllModels = async () => {
   }
 
   // Если модели уже загружены, пропускаем загрузку
-  if (!isLoadingModels.value && gameWorld.value && gamePhysics.value?.playerMesh) {
+  if (!isLoadingModels.value && gameWorld.value && gamePhysics.value?.playerMesh?.()) {
     return
   }
 
@@ -731,11 +731,21 @@ const preloadAllModels = async () => {
       // Модель игрока (загружаем и добавляем в сцену сразу)
       (async () => {
         // Загружаем модель игрока только если еще не загружена
-        if (!gamePhysics.value.playerMesh) {
+        const currentMesh = gamePhysics.value.playerMesh?.()
+        if (!currentMesh) {
+          console.log('Loading player model in preload...')
           const model = await gamePhysics.value.loadPlayerModel(scene, '/models/main.glb')
+          if (model) {
+            console.log('Player model loaded successfully in preload:', model)
+            // Убеждаемся, что модель видна
+            model.visible = true
+          } else {
+            console.warn('Player model failed to load in preload')
+          }
           return model
         }
-        return gamePhysics.value.playerMesh
+        console.log('Player model already loaded:', currentMesh)
+        return currentMesh
       })()
     ])
 
@@ -777,9 +787,16 @@ const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: 
   // Предзагрузка всех моделей (барьеры, токены, забор, персонаж)
   await preloadAllModels()
 
-  // Если персонаж не загрузился в предзагрузке, создаем fallback
-  if (!gamePhysics.value.playerMesh) {
+  // Проверяем, что персонаж загрузился, и если нет - создаем fallback
+  const playerMesh = gamePhysics.value.playerMesh?.()
+  if (!playerMesh) {
+    console.warn('Player model not loaded in preload, creating fallback')
     gamePhysics.value.createPlayer(scene, '/models/main.glb')
+  } else {
+    console.log('Player model loaded successfully in preload:', playerMesh)
+    // Убеждаемся, что модель видна и находится в правильной позиции
+    playerMesh.visible = true
+    playerMesh.position.set(0, 0, 0)
   }
 
   // Инициализация эффектов
