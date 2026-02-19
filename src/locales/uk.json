@@ -508,6 +508,7 @@
     "start_run_warning_confirm": "Підтвердити",
     "buy_extra_life": "Доп. життя",
     "loading_models": "Завантаження моделей...",
+    "models_loaded_success": "Світ та моделі успішно завантажені, успішного забігу!",
     "extra_life_activation_error": "Помилка активації додаткового життя",
     "extra_life_unavailable": "На даний момент функціонал недоступний",
     "processing": "Обробка..."

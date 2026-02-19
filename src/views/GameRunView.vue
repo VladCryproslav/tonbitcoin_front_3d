@@ -55,12 +55,23 @@
         </div>
         
         <!-- Индикатор загрузки моделей -->
-        <div v-if="isLoadingModels" class="models-loading-container">
-          <div class="loading-spinner"></div>
+        <div v-if="isLoadingModels || (loadingProgress < 100 && !showLoadingSuccess)" class="models-loading-container">
+          <div class="loading-progress-container">
+            <div class="loading-progress-bar">
+              <div class="loading-progress-fill" :style="{ width: loadingProgress + '%' }"></div>
+            </div>
+            <div class="loading-progress-text">{{ loadingProgress }}%</div>
+          </div>
           <div class="loading-text">{{ t('game.loading_models') }}</div>
         </div>
         
-        <!-- Кнопки действий (показываются после загрузки) -->
+        <!-- Сообщение об успешной загрузке -->
+        <div v-else-if="showLoadingSuccess" class="models-loading-success">
+          <div class="success-icon">✓</div>
+          <div class="success-text">{{ t('game.models_loaded_success') }}</div>
+        </div>
+        
+        <!-- Кнопки действий (показываются после успешной загрузки) -->
         <div v-else class="game-over-actions">
           <button
             class="btn-primary btn-primary--wide"
@@ -577,6 +588,8 @@ const launcherOverlayMode = ref('idle')
 
 // Состояние загрузки моделей раннера
 const isLoadingModels = ref(true)
+const loadingProgress = ref(0)
+const showLoadingSuccess = ref(false)
 
 // Состояние перегрева
 const showOverheatModal = ref(false)
@@ -700,34 +713,44 @@ const preloadAllModels = async () => {
   if (!scene) {
     console.warn('Scene not ready for model preloading')
     isLoadingModels.value = false
+    loadingProgress.value = 100
     return
   }
 
   // Если модели уже загружены, пропускаем загрузку
   if (!isLoadingModels.value && gameWorld.value && gamePhysics.value?.playerMesh?.()) {
+    loadingProgress.value = 100
     return
   }
 
   try {
     isLoadingModels.value = true
+    loadingProgress.value = 0
+    showLoadingSuccess.value = false
 
     // Инициализация игрового мира (если еще не инициализирован)
     if (!gameWorld.value) {
       gameWorld.value = useGameWorld(scene)
       gameWorld.value.createRoad()
     }
+    loadingProgress.value = 20
 
     // Инициализация физики (если еще не инициализирована)
     if (!gamePhysics.value) {
       gamePhysics.value = useGamePhysics(scene)
     }
+    loadingProgress.value = 30
 
     // Загружаем все модели параллельно для ускорения (включая персонажа)
-    await Promise.all([
+    const loadPromises = [
       // Барьеры и токены
-      gameWorld.value.loadBarrierModels(),
+      gameWorld.value.loadBarrierModels().then(() => {
+        loadingProgress.value = Math.min(loadingProgress.value + 30, 80)
+      }),
       // Забор
-      gameWorld.value.loadFenceModel(),
+      gameWorld.value.loadFenceModel().then(() => {
+        loadingProgress.value = Math.min(loadingProgress.value + 20, 80)
+      }),
       // Модель игрока (загружаем и добавляем в сцену сразу)
       (async () => {
         // Загружаем модель игрока только если еще не загружена
@@ -742,17 +765,29 @@ const preloadAllModels = async () => {
           } else {
             console.warn('Player model failed to load in preload')
           }
+          loadingProgress.value = Math.min(loadingProgress.value + 20, 80)
           return model
         }
         console.log('Player model already loaded:', currentMesh)
+        loadingProgress.value = Math.min(loadingProgress.value + 20, 80)
         return currentMesh
       })()
-    ])
+    ]
+
+    await Promise.all(loadPromises)
+    loadingProgress.value = 100
 
     console.log('All runner models preloaded successfully (including player)')
+    
+    // Показываем сообщение об успешной загрузке на 2 секунды
+    showLoadingSuccess.value = true
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    showLoadingSuccess.value = false
+    
   } catch (error) {
     console.error('Error preloading models:', error)
     // Продолжаем работу даже при ошибке загрузки моделей
+    loadingProgress.value = 100
   } finally {
     isLoadingModels.value = false
   }
@@ -3300,30 +3335,123 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 20px;
   padding: 40px 20px;
   min-height: 200px;
 }
 
-.loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid rgba(148, 163, 184, 0.2);
-  border-top-color: #22d3ee;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+.loading-progress-container {
+  width: 100%;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+.loading-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.loading-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22d3ee, #7c3aed);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.loading-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
   }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.loading-progress-text {
+  text-align: center;
+  color: #22d3ee;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .loading-text {
   color: #9ca3af;
   font-size: 14px;
   font-weight: 500;
+}
+
+.models-loading-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 40px 20px;
+  min-height: 200px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.success-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #059669);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+  animation: scaleIn 0.4s ease;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.success-text {
+  color: #10b981;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.5;
 }
 
 .training-warning-container {

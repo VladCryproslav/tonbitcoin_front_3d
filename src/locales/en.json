@@ -508,6 +508,7 @@
     "start_run_warning_confirm": "Confirm",
     "buy_extra_life": "Extra life",
     "loading_models": "Loading models...",
+    "models_loaded_success": "World and models successfully loaded, good luck!",
     "extra_life_activation_error": "Error activating extra life",
     "extra_life_unavailable": "This feature is currently unavailable",
     "processing": "Processing..."
