@@ -695,7 +695,7 @@ const controlModeLabel = computed(() => (controlMode.value === 'swipes' ? t('gam
 
 let directionalLight = null
 
-// Предзагрузка всех моделей раннера (кроме персонажа - он загружается отдельно)
+// Предзагрузка всех моделей раннера (включая персонажа)
 const preloadAllModels = async () => {
   if (!scene) {
     console.warn('Scene not ready for model preloading')
@@ -704,7 +704,7 @@ const preloadAllModels = async () => {
   }
 
   // Если модели уже загружены, пропускаем загрузку
-  if (!isLoadingModels.value && gameWorld.value) {
+  if (!isLoadingModels.value && gameWorld.value && gamePhysics.value?.playerMesh) {
     return
   }
 
@@ -717,15 +717,29 @@ const preloadAllModels = async () => {
       gameWorld.value.createRoad()
     }
 
-    // Загружаем модели барьеров, токенов и забора параллельно
+    // Инициализация физики (если еще не инициализирована)
+    if (!gamePhysics.value) {
+      gamePhysics.value = useGamePhysics(scene)
+    }
+
+    // Загружаем все модели параллельно для ускорения (включая персонажа)
     await Promise.all([
       // Барьеры и токены
       gameWorld.value.loadBarrierModels(),
       // Забор
-      gameWorld.value.loadFenceModel()
+      gameWorld.value.loadFenceModel(),
+      // Модель игрока (загружаем и добавляем в сцену сразу)
+      (async () => {
+        // Загружаем модель игрока только если еще не загружена
+        if (!gamePhysics.value.playerMesh) {
+          const model = await gamePhysics.value.loadPlayerModel(scene, '/models/main.glb')
+          return model
+        }
+        return gamePhysics.value.playerMesh
+      })()
     ])
 
-    console.log('All runner models preloaded successfully')
+    console.log('All runner models preloaded successfully (including player)')
   } catch (error) {
     console.error('Error preloading models:', error)
     // Продолжаем работу даже при ошибке загрузки моделей
@@ -756,14 +770,17 @@ const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: 
   // Инициализация игрового мира
   gameWorld.value = useGameWorld(scene)
   gameWorld.value.createRoad()
+
+  // Инициализация физики (нужна для предзагрузки персонажа)
+  gamePhysics.value = useGamePhysics(scene)
   
-  // Предзагрузка моделей барьеров, токенов и забора
+  // Предзагрузка всех моделей (барьеры, токены, забор, персонаж)
   await preloadAllModels()
 
-  // Инициализация физики и создание игрока (как было раньше - сразу загружается и показывается)
-  gamePhysics.value = useGamePhysics(scene)
-  // Загружаем основную модель с полным набором анимаций (standing/running/jump/roll/fall)
-  gamePhysics.value.createPlayer(scene, '/models/main.glb')
+  // Если персонаж не загрузился в предзагрузке, создаем fallback
+  if (!gamePhysics.value.playerMesh) {
+    gamePhysics.value.createPlayer(scene, '/models/main.glb')
+  }
 
   // Инициализация эффектов
   gameEffects.value = useGameEffects(scene, graphicsQuality.value)
