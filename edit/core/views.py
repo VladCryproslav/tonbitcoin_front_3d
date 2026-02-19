@@ -2111,7 +2111,7 @@ def calculate_saved_percent_on_lose(user_profile, now=None):
        - Золотые: (процент на уровне Past engineer level) - (процент уровня 49)
     2. Если Engineer level > 49 но < Past engineer level:
        - Белые: процент с уровня 49
-       - Золотые: (процент на уровне Engineer level) - (процент уровня 49)
+       - Золотые: (процент на уровне Past engineer level) - (процент уровня 49)
     3. Если Engineer level > 49 и >= Past engineer level:
        - Белые: процент с уровня 49
        - Золотые: (процент на уровне Engineer level) - (процент уровня 49)
@@ -2143,7 +2143,7 @@ def calculate_saved_percent_on_lose(user_profile, now=None):
     elif engineer_level > 49 and engineer_level < past_engineer_level:
         # Случай 2: engineer_level > 49 но < past_engineer_level
         white_level = 49
-        total_level = engineer_level
+        total_level = past_engineer_level  # Используем past_engineer_level, а не engineer_level
     elif engineer_level > 49 and engineer_level >= past_engineer_level:
         # Случай 3: engineer_level > 49 и >= past_engineer_level
         white_level = 49

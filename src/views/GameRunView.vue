@@ -379,8 +379,8 @@ const getWorkers = computed(() => {
     // Случай 2: engineer_level > 49 но < past_engineer_level
     // Белые: уровень 49, процент 49%
     simple = 49
-    // Золотые: уровень = engineer_level - 49
-    gold = engineerLevel - 49
+    // Золотые: уровень = past_engineer_level - 49 (используем past_engineer_level, а не engineer_level)
+    gold = pastEngineerLevel > 49 ? pastEngineerLevel - 49 : 0
   } else if (engineerLevel > 49 && engineerLevel >= pastEngineerLevel) {
     // Случай 3: engineer_level > 49 и >= past_engineer_level
     // Белые: уровень 49, процент 49%
@@ -427,9 +427,9 @@ const goldEngineerBonusPercent = computed(() => {
     totalLevel = pastEngineerLevel
   } else if (engineerLevel > 49 && engineerLevel < pastEngineerLevel) {
     // Случай 2: engineer_level > 49 но < past_engineer_level
-    // Золотые = engineer_level - 49, общий = engineer_level
-    goldLevel = engineerLevel - 49
-    totalLevel = engineerLevel
+    // Золотые = past_engineer_level - 49, общий = past_engineer_level (используем past_engineer_level, а не engineer_level)
+    goldLevel = pastEngineerLevel > 49 ? pastEngineerLevel - 49 : 0
+    totalLevel = pastEngineerLevel
   } else if (engineerLevel > 49 && engineerLevel >= pastEngineerLevel) {
     // Случай 3: engineer_level > 49 и >= past_engineer_level
     // Золотые = engineer_level - 49, общий = engineer_level
