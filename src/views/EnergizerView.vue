@@ -76,9 +76,54 @@ const handleWorkers = () => {
 };
 
 const getWorkers = computed(() => {
-  const simple = Math.min(app?.user?.engineer_level, 49) || 0
-  const gold = app?.user?.past_engineer_level > 49 ? app?.user?.past_engineer_level - 49 : 0
+  const engineerLevel = app?.user?.engineer_level ?? 0
+  const pastEngineerLevel = app?.user?.past_engineer_level ?? 0
+  
+  let simple = 0
+  let gold = 0
+  
+  // Логика согласно требованиям (та же что и в GameRunView.vue):
+  if (engineerLevel <= 49 && engineerLevel < pastEngineerLevel) {
+    // Случай 1: engineer_level <= 49 и < past_engineer_level
+    // Белые: уровень = engineer_level (например, 38)
+    simple = engineerLevel
+    // Золотые: уровень = past_engineer_level - 49
+    gold = pastEngineerLevel > 49 ? pastEngineerLevel - 49 : 0
+  } else if (engineerLevel > 49 && engineerLevel < pastEngineerLevel) {
+    // Случай 2: engineer_level > 49 но < past_engineer_level
+    // Белые: уровень 49
+    simple = 49
+    // Золотые: уровень = past_engineer_level - 49 (используем past_engineer_level, а не engineer_level)
+    gold = pastEngineerLevel > 49 ? pastEngineerLevel - 49 : 0
+  } else if (engineerLevel > 49 && engineerLevel >= pastEngineerLevel) {
+    // Случай 3: engineer_level > 49 и >= past_engineer_level
+    // Белые: уровень 49
+    simple = 49
+    // Золотые: уровень = engineer_level - 49
+    gold = engineerLevel - 49
+  } else {
+    // Остальные случаи (engineer_level <= 49 и >= past_engineer_level или past_engineer_level отсутствует)
+    // Белые: уровень = engineer_level (если <= 49), иначе 49
+    simple = engineerLevel <= 49 ? engineerLevel : 49
+    gold = 0
+  }
+  
   const blue = new Date(app?.user?.electrics_expires) > new Date() ? 10 : 0
+  
+  // Общий уровень инженера (all) рассчитывается как общий уровень инженера
+  // В случае 1: past_engineer_level (если past_engineer_level > 49), иначе engineer_level
+  // В случае 2: past_engineer_level
+  // В случае 3: engineer_level
+  let all = 0
+  if (engineerLevel <= 49 && engineerLevel < pastEngineerLevel) {
+    all = pastEngineerLevel > 49 ? pastEngineerLevel : engineerLevel
+  } else if (engineerLevel > 49 && engineerLevel < pastEngineerLevel) {
+    all = pastEngineerLevel
+  } else if (engineerLevel > 49 && engineerLevel >= pastEngineerLevel) {
+    all = engineerLevel
+  } else {
+    all = engineerLevel <= 49 ? engineerLevel : 49
+  }
 
   // Формуємо масив доступних воркерів
   const available = ['simple'];
@@ -91,7 +136,7 @@ const getWorkers = computed(() => {
   }
 
   return {
-    all: simple + gold + blue,
+    all, // Общий уровень инженера (без blue, так как blue - это отдельный бонус)
     simple,
     gold,
     blue,
