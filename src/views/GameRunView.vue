@@ -695,7 +695,7 @@ const controlModeLabel = computed(() => (controlMode.value === 'swipes' ? t('gam
 
 let directionalLight = null
 
-// Предзагрузка всех моделей раннера
+// Предзагрузка всех моделей раннера (кроме персонажа - он загружается отдельно)
 const preloadAllModels = async () => {
   if (!scene) {
     console.warn('Scene not ready for model preloading')
@@ -704,7 +704,7 @@ const preloadAllModels = async () => {
   }
 
   // Если модели уже загружены, пропускаем загрузку
-  if (!isLoadingModels.value && gameWorld.value && gamePhysics.value?.playerMesh) {
+  if (!isLoadingModels.value && gameWorld.value) {
     return
   }
 
@@ -717,30 +717,12 @@ const preloadAllModels = async () => {
       gameWorld.value.createRoad()
     }
 
-    // Инициализация физики (если еще не инициализирована)
-    if (!gamePhysics.value) {
-      gamePhysics.value = useGamePhysics(scene)
-    }
-
-    // Загружаем все модели параллельно для ускорения
+    // Загружаем модели барьеров, токенов и забора параллельно
     await Promise.all([
       // Барьеры и токены
       gameWorld.value.loadBarrierModels(),
       // Забор
-      gameWorld.value.loadFenceModel(),
-      // Модель игрока (загружаем и добавляем в сцену, но скрываем до начала забега)
-      (async () => {
-        // Загружаем модель игрока только если еще не загружена
-        if (!gamePhysics.value.playerMesh) {
-          const model = await gamePhysics.value.loadPlayerModel(scene, '/models/main.glb')
-          // Скрываем модель до начала забега
-          if (model) {
-            model.visible = false
-          }
-          return model
-        }
-        return gamePhysics.value.playerMesh
-      })()
+      gameWorld.value.loadFenceModel()
     ])
 
     console.log('All runner models preloaded successfully')
@@ -774,9 +756,14 @@ const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: 
   // Инициализация игрового мира
   gameWorld.value = useGameWorld(scene)
   gameWorld.value.createRoad()
+  
+  // Предзагрузка моделей барьеров, токенов и забора
+  await preloadAllModels()
 
-  // Инициализация физики
+  // Инициализация физики и создание игрока (как было раньше - сразу загружается и показывается)
   gamePhysics.value = useGamePhysics(scene)
+  // Загружаем основную модель с полным набором анимаций (standing/running/jump/roll/fall)
+  gamePhysics.value.createPlayer(scene, '/models/main.glb')
 
   // Инициализация эффектов
   gameEffects.value = useGameEffects(scene, graphicsQuality.value)
@@ -785,9 +772,6 @@ const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: 
   startThreeLoop()
 
   applyGraphicsQuality()
-
-  // Предзагрузка всех моделей раннера после инициализации сцены
-  await preloadAllModels()
 }
 
 // Очень плавное следование камеры: без рывков, незаметный дрейф от центра при смене полосы
@@ -1211,11 +1195,6 @@ const startGame = (training = false, initialStorage = null) => {
   hitCount.value = 0
   isDead.value = false
   winTriggered = false
-  
-  // Показываем модель игрока при старте забега (если была скрыта при предзагрузке)
-  if (gamePhysics.value?.playerMesh) {
-    gamePhysics.value.playerMesh.visible = true
-  }
   winDecelerating = false
   winAnimationStartTime = 0
   obstaclesHidden = false
