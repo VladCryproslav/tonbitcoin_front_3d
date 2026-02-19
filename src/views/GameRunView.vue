@@ -359,40 +359,86 @@ const completedRunData = ref(null) // { energy_collected, is_win, energy_gained 
 const savedEnergyCollectedForModal = ref(0)
 // Сохраненное значение начального storage для расчета цены дополнительной жизни
 const savedStartStorageForExtraLife = ref(0)
-// Та же логика уровней, что в EnergizerView: 49 белых, остаток — золотые
+// Логика расчета уровней инженеров для модалки проигрыша
+// Используем engineer_level для определения белых и золотых инженеров
+// Белые инженеры всегда на уровне 49, золотые = engineer_level - 49 (если engineer_level > 49)
 const getWorkers = computed(() => {
-  const simple = Math.min(app?.user?.engineer_level ?? 0, 49) || 0
-  const gold = (app?.user?.past_engineer_level ?? 0) > 49 ? app.user.past_engineer_level - 49 : 0
-  return { simple, gold, all: simple + gold }
+  const engineerLevel = app?.user?.engineer_level ?? 0
+  
+  // Белые инженеры всегда на уровне 49
+  const simple = 49
+  
+  // Золотые инженеры: уровень = engineer_level - 49 (если engineer_level > 49)
+  const gold = engineerLevel > 49 ? engineerLevel - 49 : 0
+  
+  return { simple, gold, all: engineerLevel }
 })
 
 const whiteEngineerLevel = computed(() => getWorkers.value.simple)
 const goldEngineerLevel = computed(() => getWorkers.value.gold)
 
-// Процент сохранения при проигрыше из eng_configs (saved_percent_on_lose)
+// Процент сохранения для белых инженеров (всегда уровень 49)
 const whiteEngineerSavedPercent = computed(() => {
-  const level = getWorkers.value.simple
-  if (!level) return 0
+  const level = 49 // Всегда используем уровень 49 для белых инженеров
   const cfg = app.stations?.eng_configs?.find((el) => el?.level === level)
   return Number(cfg?.saved_percent_on_lose ?? 0)
 })
-const goldEngineerSavedPercent = computed(() => {
-  const level = getWorkers.value.all
-  if (level < 50) return 0
-  const cfg = app.stations?.eng_configs?.find((el) => el?.level === level)
-  return Number(cfg?.saved_percent_on_lose ?? 0)
-})
-// Бонус золотого над белым: напр. 62% − 49% = 13%
+
+// Процент сохранения для золотых инженеров
+// Вычисляем как разницу между процентом для реального уровня (get_real_engs) и процентом для уровня 49
 const goldEngineerBonusPercent = computed(() => {
-  const gold = goldEngineerSavedPercent.value
-  const white = whiteEngineerSavedPercent.value
-  return Math.max(0, gold - white)
+  // Используем ту же логику, что и бекенд get_real_engs()
+  let realEngLevel = app?.user?.engineer_level ?? 0
+  
+  // Если engineer_level < 49, добавляем past_engineer_level - 49
+  if (realEngLevel < 49) {
+    const pastEngineerLevel = app?.user?.past_engineer_level ?? 0
+    realEngLevel += Math.max(0, pastEngineerLevel - 49)
+  }
+  
+  // Ограничиваем максимумом 64 (как на бекенде)
+  realEngLevel = Math.min(64, realEngLevel)
+  
+  // Если реальный уровень <= 49, золотых инженеров нет
+  if (realEngLevel <= 49) return 0
+  
+  // Получаем процент для реального уровня инженера (используя ту же логику, что и бекенд)
+  const currentLevelCfg = app.stations?.eng_configs?.find((el) => el?.level === realEngLevel)
+  const currentLevelPercent = Number(currentLevelCfg?.saved_percent_on_lose ?? 0)
+  
+  // Получаем процент для уровня 49 (белые инженеры)
+  const level49Cfg = app.stations?.eng_configs?.find((el) => el?.level === 49)
+  const level49Percent = Number(level49Cfg?.saved_percent_on_lose ?? 0)
+  
+  // Бонус золотых = процент реального уровня - процент уровня 49
+  return Math.max(0, currentLevelPercent - level49Percent)
 })
-// Эффективный процент при проигрыше — по суммарному уровню (all)
+
+// Эффективный процент при проигрыше — используем ту же логику, что и бекенд (get_real_engs)
+// Бекенд использует get_real_engs() для расчета, который учитывает:
+// - engineer_level (если >= 49) или engineer_level + (past_engineer_level - 49) если < 49
+// - плюс бонус от electrics если активен
 const effectiveSavedPercentOnLose = computed(() => {
-  const level = getWorkers.value.all
-  if (!level) return 0
-  const cfg = app.stations?.eng_configs?.find((el) => el?.level === level)
+  // Используем ту же логику, что и бекенд get_real_engs()
+  let realEngLevel = app?.user?.engineer_level ?? 0
+  
+  // Если engineer_level < 49, добавляем past_engineer_level - 49
+  if (realEngLevel < 49) {
+    const pastEngineerLevel = app?.user?.past_engineer_level ?? 0
+    realEngLevel += Math.max(0, pastEngineerLevel - 49)
+  }
+  
+  // Бонус от electrics (если активен) - бекенд добавляет это в get_real_engs()
+  // Но для отображения процента мы используем только уровень без бонуса,
+  // так как бонус +2% добавляется отдельно на бекенде
+  
+  // Ограничиваем максимумом 64 (как на бекенде)
+  realEngLevel = Math.min(64, realEngLevel)
+  
+  if (!realEngLevel) return 0
+  
+  // Получаем процент для реального уровня инженера (это и есть общий процент сохранения)
+  const cfg = app.stations?.eng_configs?.find((el) => el?.level === realEngLevel)
   return Number(cfg?.saved_percent_on_lose ?? 0)
 })
 // Вычисляем собранную энергию для отображения в модалке - используем ту же логику, что и в счетчике энергии
