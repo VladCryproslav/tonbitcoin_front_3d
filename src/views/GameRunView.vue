@@ -55,7 +55,7 @@
         </div>
         
         <!-- Индикатор загрузки моделей -->
-        <div v-if="isLoadingModels || (loadingProgress < 100 && !showLoadingSuccess)" class="models-loading-container">
+        <div v-if="(isLoadingModels || loadingProgress < 100) && !showLoadingSuccess" class="models-loading-container">
           <div class="loading-progress-container">
             <div class="loading-progress-bar">
               <div class="loading-progress-fill" :style="{ width: loadingProgress + '%' }"></div>
@@ -779,6 +779,9 @@ const preloadAllModels = async () => {
 
     console.log('All runner models preloaded successfully (including player)')
     
+    // Устанавливаем isLoadingModels в false перед показом сообщения об успехе
+    isLoadingModels.value = false
+    
     // Показываем сообщение об успешной загрузке на 2 секунды
     showLoadingSuccess.value = true
     await new Promise(resolve => setTimeout(resolve, 2000))
@@ -788,8 +791,8 @@ const preloadAllModels = async () => {
     console.error('Error preloading models:', error)
     // Продолжаем работу даже при ошибке загрузки моделей
     loadingProgress.value = 100
-  } finally {
     isLoadingModels.value = false
+    showLoadingSuccess.value = false
   }
 }
 
