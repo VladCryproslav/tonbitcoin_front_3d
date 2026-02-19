@@ -2101,6 +2101,75 @@ class TrainingRunStartView(APIView):
             )
 
 
+def calculate_saved_percent_on_lose(user_profile, now=None):
+    """
+    Рассчитывает процент сохранения энергии при проигрыше согласно новой логике:
+    - Белые инженеры: всегда дают процент с уровня 49
+    - Золотые инженеры: дают разницу между процентом на уровне Engineer level (или Past engineer level) и 49%
+    
+    Логика:
+    1. Если Engineer level <= 49 и < Past engineer level:
+       - Белые: 49%
+       - Золотые: (процент на уровне Past engineer level) - 49%
+    2. Если Engineer level > 49 но < Past engineer level:
+       - Белые: 49%
+       - Золотые: (процент на уровне Engineer level) - 49%
+    3. Если Engineer level > 49 и >= Past engineer level:
+       - Белые: 49%
+       - Золотые: (процент на уровне Engineer level) - 49%
+    
+    Также учитывает бонус +2% от электриков.
+    """
+    from django.utils import timezone
+    if now is None:
+        now = timezone.now()
+    
+    engineer_level = user_profile.engineer_level
+    past_engineer_level = user_profile.past_engineer_level or 0
+    
+    # Получаем процент для уровня 49 (белые инженеры)
+    try:
+        level49_config = EngineerConfig.objects.get(level=49)
+        white_percent = level49_config.saved_percent_on_lose or 0
+    except EngineerConfig.DoesNotExist:
+        white_percent = 0
+    
+    # Определяем общий уровень для расчета золотых инженеров
+    total_level = 0
+    if engineer_level <= 49 and engineer_level < past_engineer_level:
+        # Случай 1: engineer_level <= 49 и < past_engineer_level
+        total_level = past_engineer_level
+    elif engineer_level > 49 and engineer_level < past_engineer_level:
+        # Случай 2: engineer_level > 49 но < past_engineer_level
+        total_level = engineer_level
+    elif engineer_level > 49 and engineer_level >= past_engineer_level:
+        # Случай 3: engineer_level > 49 и >= past_engineer_level
+        total_level = engineer_level
+    else:
+        # Остальные случаи - только белые инженеры
+        return min(white_percent + (2 if user_profile.electrics_expires and user_profile.electrics_expires > now else 0), 100)
+    
+    # Получаем процент для общего уровня (золотые инженеры)
+    try:
+        total_level_config = EngineerConfig.objects.get(level=total_level)
+        total_percent = total_level_config.saved_percent_on_lose or 0
+    except EngineerConfig.DoesNotExist:
+        total_percent = white_percent
+    
+    # Золотые инженеры дают разницу между общим процентом и процентом уровня 49
+    gold_percent = max(0, total_percent - white_percent)
+    
+    # Общий процент = белые + золотые
+    saved_percent = white_percent + gold_percent
+    
+    # Бонус +2% если есть активные синие электрики
+    if user_profile.electrics_expires and user_profile.electrics_expires > now:
+        saved_percent += 2
+    
+    # Ограничиваем процент максимумом 100%
+    return min(saved_percent, 100)
+
+
 class GameRunCompleteView(APIView):
     """Завершение забега и начисление энергии"""
     
@@ -2355,21 +2424,8 @@ class GameRunCompleteView(APIView):
                 final_energy = energy_collected
             else:
                 # При проигрыше применяем процент сохранения от уровня инженера
-                # Используем get_real_engs() который правильно учитывает все уровни (включая gold и electrics)
-                engineer_level = user_profile.get_real_engs()
-                try:
-                    eng_config = EngineerConfig.objects.get(level=engineer_level)
-                    saved_percent = eng_config.saved_percent_on_lose or 0
-                except EngineerConfig.DoesNotExist:
-                    saved_percent = 0
-                
-                # Бонус +2% если есть активные синие электрики
-                # Проверяем напрямую electrics_expires вместо несуществующего метода get_active_boosts()
-                if user_profile.electrics_expires and user_profile.electrics_expires > now:
-                    saved_percent += 2
-                
-                # Ограничиваем процент максимумом 100%
-                saved_percent = min(saved_percent, 100)
+                # Используем новую логику с разделением на белых и золотых инженеров
+                saved_percent = calculate_saved_percent_on_lose(user_profile, now)
                 
                 final_energy = energy_collected * (saved_percent / 100)
                 
@@ -2533,18 +2589,9 @@ class GameRunClaimView(APIView):
                 final_energy = energy_collected
             else:
                 # При проигрыше применяем процент сохранения от уровня инженера
-                engineer_level = user_profile.get_real_engs()
-                try:
-                    eng_config = EngineerConfig.objects.get(level=engineer_level)
-                    saved_percent = eng_config.saved_percent_on_lose or 0
-                except EngineerConfig.DoesNotExist:
-                    saved_percent = 0
+                # Используем новую логику с разделением на белых и золотых инженеров
+                saved_percent = calculate_saved_percent_on_lose(user_profile, now)
                 
-                # Бонус +2% если есть активные синие электрики
-                if user_profile.electrics_expires and user_profile.electrics_expires > now:
-                    saved_percent += 2
-                
-                saved_percent = min(saved_percent, 100)
                 final_energy = energy_collected * (saved_percent / 100)
             
             # Преобразуем final_energy в Decimal
