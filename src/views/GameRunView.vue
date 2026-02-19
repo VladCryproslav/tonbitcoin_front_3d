@@ -53,7 +53,7 @@
         <div class="game-over-subtitle">
           {{ t('game.run_start_subtitle') }}
         </div>
-        
+
         <!-- Индикатор загрузки моделей -->
         <div v-if="(isLoadingModels || loadingProgress < 100) && !showLoadingSuccess" class="models-loading-container">
           <div class="loading-progress-container">
@@ -64,13 +64,13 @@
           </div>
           <div class="loading-text">{{ t('game.loading_models') }}</div>
         </div>
-        
+
         <!-- Сообщение об успешной загрузке -->
         <div v-else-if="showLoadingSuccess" class="models-loading-success">
           <div class="success-icon">✓</div>
           <div class="success-text">{{ t('game.models_loaded_success') }}</div>
         </div>
-        
+
         <!-- Кнопки действий (показываются после успешной загрузки) -->
         <div v-else class="game-over-actions">
           <button
@@ -244,7 +244,7 @@
               {{ t('game.back_to_main') }}
             </button>
           </div>
-          
+
           <!-- Кнопка покупки дополнительной жизни -->
           <button
             v-if="canBuyExtraLife && extraLifePrice > 0"
@@ -383,10 +383,10 @@ const savedStartStorageForExtraLife = ref(0)
 const getWorkers = computed(() => {
   const engineerLevel = app?.user?.engineer_level ?? 0
   const pastEngineerLevel = app?.user?.past_engineer_level ?? 0
-  
+
   let simple = 0
   let gold = 0
-  
+
   // Логика согласно требованиям:
   if (engineerLevel <= 49 && engineerLevel < pastEngineerLevel) {
     // Случай 1: engineer_level <= 49 и < past_engineer_level
@@ -412,7 +412,7 @@ const getWorkers = computed(() => {
     simple = engineerLevel <= 49 ? engineerLevel : 49
     gold = 0
   }
-  
+
   return { simple, gold, all: simple + gold }
 })
 
@@ -434,10 +434,10 @@ const whiteEngineerSavedPercent = computed(() => {
 const goldEngineerBonusPercent = computed(() => {
   const engineerLevel = app?.user?.engineer_level ?? 0
   const pastEngineerLevel = app?.user?.past_engineer_level ?? 0
-  
+
   let goldLevel = 0
   let totalLevel = 0 // Общий уровень для расчета процента
-  
+
   // Определяем уровень золотых инженеров и общий уровень согласно логике
   if (engineerLevel <= 49 && engineerLevel < pastEngineerLevel) {
     // Случай 1: engineer_level <= 49 и < past_engineer_level
@@ -458,18 +458,18 @@ const goldEngineerBonusPercent = computed(() => {
     // Нет золотых инженеров
     return 0
   }
-  
+
   if (goldLevel === 0) return 0
-  
+
   // Получаем процент для общего уровня (past_engineer_level или engineer_level)
   const totalLevelCfg = app.stations?.eng_configs?.find((el) => el?.level === totalLevel)
   const totalLevelPercent = Number(totalLevelCfg?.saved_percent_on_lose ?? 0)
-  
+
   // Для случая 1: вычитаем процент уровня 49
   // Для случаев 2 и 3: также вычитаем процент уровня 49
   const level49Cfg = app.stations?.eng_configs?.find((el) => el?.level === 49)
   const level49Percent = Number(level49Cfg?.saved_percent_on_lose ?? 0)
-  
+
   // Бонус золотых = процент общего уровня - процент уровня 49
   return Math.max(0, totalLevelPercent - level49Percent)
 })
@@ -778,15 +778,15 @@ const preloadAllModels = async () => {
     loadingProgress.value = 100
 
     console.log('All runner models preloaded successfully (including player)')
-    
+
     // Устанавливаем isLoadingModels в false перед показом сообщения об успехе
     isLoadingModels.value = false
-    
+
     // Показываем сообщение об успешной загрузке на 2 секунды
     showLoadingSuccess.value = true
     await new Promise(resolve => setTimeout(resolve, 2000))
     showLoadingSuccess.value = false
-    
+
   } catch (error) {
     console.error('Error preloading models:', error)
     // Продолжаем работу даже при ошибке загрузки моделей
@@ -821,7 +821,7 @@ const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: 
 
   // Инициализация физики (нужна для предзагрузки персонажа)
   gamePhysics.value = useGamePhysics(scene)
-  
+
   // Предзагрузка всех моделей (барьеры, токены, забор, персонаж)
   await preloadAllModels()
 
@@ -1450,8 +1450,8 @@ const activateOverheat = (serverData) => {
       // Вычисляем целевую скорость на основе текущего прогресса дистанции
       // НАСТРОЙКА СКОРОСТИ - можно менять эти значения:
       const BASE_SPEED = 0.15        // Минимальная скорость (старт)
-      const MID_SPEED = 0.30         // Скорость на 60% дистанции
-      const MAX_SPEED = 0.36         // Максимальная скорость (с 90%)
+      const MID_SPEED = 0.25         // Скорость на 60% дистанции
+      const MAX_SPEED = 0.32       // Максимальная скорость (с 90%)
       const FIRST_RAMP_END = 60      // Процент дистанции, до которого идет первый набор (0% -> 60%)
       const SECOND_RAMP_END = 90     // Процент дистанции, до которого идет второй набор (60% -> 90%)
 
@@ -2333,12 +2333,12 @@ const handleTrainingClick = async () => {
     showTrainingLimitModal.value = true
     return
   }
-  
+
   try {
     // Вызываем API для записи старта тренировочного забега
     const response = await host.post('training-run-start/')
     console.log('training-run-start response:', response.data)
-    
+
     if (response.data.user) {
       // Обновляем данные пользователя если нужно
       if (response.data.user.training_run_count_this_hour !== undefined) {
@@ -2348,11 +2348,11 @@ const handleTrainingClick = async () => {
         app.user.training_run_last_started_at = response.data.user.training_run_last_started_at
       }
     }
-    
+
     // Обновляем счетчик доступных забегов
     trainingRunsAvailable.value = response.data.available_runs || 0
     trainingRunsUsedThisHour.value = response.data.runs_used_this_hour || 0
-    
+
     // Запускаем тренировочный забег
     startGame(true)
   } catch (error) {
@@ -2594,26 +2594,26 @@ const canBuyExtraLife = computed(() => {
   if (!showGameOver.value || gameOverType.value !== 'lose') {
     return false
   }
-  
+
   if (livesLeft.value > 0) {
     return false
   }
-  
+
   if (app.user?.energy_run_extra_life_used) {
     return false
   }
-  
+
   // В тренировочном забеге не показываем кнопку покупки жизни
   if (isTrainingRun.value) {
     return false
   }
-  
+
   // Проверяем сохраненное значение или текущее значение startStorage
   const startStorage = savedStartStorageForExtraLife.value || gameRun.startStorage?.value || 0
   if (startStorage <= 0) {
     return false
   }
-  
+
   return true
 })
 
@@ -2623,24 +2623,24 @@ const calculateExtraLifePrice = async () => {
     extraLifePrice.value = 0
     return
   }
-  
+
   try {
     // Остаток = начальный storage - собранная энергия
     // Используем сохраненное значение startStorage, так как оно может быть очищено
     const startStorage = savedStartStorageForExtraLife.value || gameRun.startStorage?.value || 0
     const collectedEnergy = savedEnergyCollectedForModal.value || 0
     const remainingEnergy = Math.max(0, startStorage - collectedEnergy)
-    
+
     if (remainingEnergy <= 0) {
       extraLifePrice.value = 0
       return
     }
-    
+
     // Запрашиваем цену с сервера
     const response = await host.post('runner-extra-life-stars/', {
       remaining_energy: remainingEnergy
     })
-    
+
     if (response.status === 200 && response.data?.price) {
       extraLifePrice.value = response.data.price
     } else {
@@ -2657,34 +2657,34 @@ const handleBuyExtraLife = async () => {
   if (isBuyingExtraLife.value || !canBuyExtraLife.value) {
     return
   }
-  
+
   // Проверка флага активности функционала
   if (!runnerExtraLifeStarsEnabled) {
     alert(t('game.extra_life_unavailable'))
     return
   }
-  
+
   isBuyingExtraLife.value = true
-  
+
   try {
     // Расчет остатка энергии
     // Используем сохраненное значение startStorage, так как оно может быть очищено
     const startStorage = savedStartStorageForExtraLife.value || gameRun.startStorage?.value || 0
     const collectedEnergy = savedEnergyCollectedForModal.value || 0
     const remainingEnergy = Math.max(0, startStorage - collectedEnergy)
-    
+
     // Получаем invoice ссылку
     const response = await host.post('runner-extra-life-stars/', {
       remaining_energy: remainingEnergy
     })
-    
+
     if (response.status === 200 && response.data?.link) {
       const invoiceLink = response.data.link
-      
+
       // Сохраняем флаг что мы ожидаем оплату (чтобы не закрывать модалку)
       let paymentInProgress = true
       let paymentProcessed = false
-      
+
       // Функция активации жизни после оплаты
       // ВАЖНО: Согласно документации Telegram, мы должны начислять жизнь ТОЛЬКО после получения
       // successful_payment от Telegram Bot. Эта функция вызывается только когда мы УЖЕ знаем,
@@ -2695,24 +2695,24 @@ const handleBuyExtraLife = async () => {
         }
         paymentProcessed = true
         paymentInProgress = false
-        
+
         try {
           // Проверяем что Telegram Bot действительно обработал платеж
           await app.initUser()
-          
+
           if (!app.user?.energy_run_extra_life_used) {
             // Если Telegram Bot еще не обработал платеж, ждем еще немного
             await new Promise(resolve => setTimeout(resolve, 2000))
             await app.initUser()
-            
+
             if (!app.user?.energy_run_extra_life_used) {
               throw new Error('Telegram Bot has not processed the payment. Please wait or contact support.')
             }
           }
-          
+
           // Telegram Bot обработал платеж, восстанавливаем забег
           await restoreRunAfterExtraLife()
-          
+
           isBuyingExtraLife.value = false
         } catch (error) {
           console.error('[handleBuyExtraLife] Error activating extra life:', error)
@@ -2723,7 +2723,7 @@ const handleBuyExtraLife = async () => {
           paymentInProgress = true // Продолжаем polling на случай если платеж обработается позже
         }
       }
-      
+
       tg.openInvoice(invoiceLink, async (status) => {
         // Проверяем статус (может быть 'paid' или другие значения)
         if (status === 'paid' || status === 'PAID' || status === true || status === 'success') {
@@ -2733,16 +2733,16 @@ const handleBuyExtraLife = async () => {
           isBuyingExtraLife.value = false
         }
       })
-      
+
       // Polling для проверки статуса оплаты (на случай если callback не вызывается)
       let pollingStartTime = Date.now()
       const checkPaymentStatus = async () => {
         if (!paymentInProgress || paymentProcessed) return
-        
+
         try {
           // Обновляем данные пользователя чтобы проверить статус
           await app.initUser()
-          
+
           if (app.user?.energy_run_extra_life_used) {
             await activateExtraLife()
           }
@@ -2750,21 +2750,21 @@ const handleBuyExtraLife = async () => {
           console.error('[handleBuyExtraLife] Error checking payment status:', error)
         }
       }
-      
+
       // Проверяем статус каждые 2 секунды в течение 60 секунд
       let pollingAttempts = 0
       const maxPollingAttempts = 30 // 60 секунд / 2 секунды
-      
+
       const pollingInterval = setInterval(() => {
         pollingAttempts++
-        
+
         if (!paymentInProgress || paymentProcessed) {
           clearInterval(pollingInterval)
           return
         }
         checkPaymentStatus()
       }, 2000)
-      
+
       // Останавливаем polling через 60 секунд
       setTimeout(() => {
         clearInterval(pollingInterval)
@@ -2790,19 +2790,19 @@ const restoreRunAfterExtraLife = async () => {
   if (!savedSpeed.value || savedSpeed.value === 0.15) {
     savedSpeed.value = gameSpeed.value || 0.15
   }
-  
+
   // Закрываем модалку проигрыша
   showGameOver.value = false
   gameOverType.value = null
-  
+
   // Сбрасываем состояние смерти
   isDead.value = false
   hitCount.value = 0 // Восстанавливаем жизни (теперь у нас 1 жизнь)
-  
+
   // Показываем таймер обратного отсчета 3-2-1 (как при выходе из перегрева)
   showCountdown.value = true
   countdownNumber.value = 3
-  
+
   // Вибрация при каждом числе
   const triggerVibration = () => {
     if (vibrationEnabled.value) {
@@ -2817,17 +2817,17 @@ const restoreRunAfterExtraLife = async () => {
       }
     }
   }
-  
+
   triggerVibration()
-  
+
   // Очищаем предыдущий интервал если есть
   if (countdownInterval) {
     clearInterval(countdownInterval)
   }
-  
+
   countdownInterval = setInterval(() => {
     countdownNumber.value--
-    
+
     if (countdownNumber.value > 0) {
       triggerVibration()
     } else {
@@ -2835,30 +2835,30 @@ const restoreRunAfterExtraLife = async () => {
       clearInterval(countdownInterval)
       countdownInterval = null
       showCountdown.value = false
-      
+
       // Устанавливаем время окончания защиты от коллизий (2 секунды)
       overheatProtectionActive.value = true
       overheatProtectionEndTime = performance.now() + 2000
-      
+
       // Включаем мигание персонажа
       if (gamePhysics.value?.setBlinking) {
         gamePhysics.value.setBlinking(true)
       }
-      
+
       // Возобновляем забег
       gameRun.resumeRun()
       lastUpdateTime = 0
       launcherOverlayMode.value = 'none'
-      
+
       // Восстанавливаем скорость на основе текущего прогресса
       const BASE_SPEED = 0.15
       const MID_SPEED = 0.30
       const MAX_SPEED = 0.36
       const FIRST_RAMP_END = 60
       const SECOND_RAMP_END = 90
-      
+
       const progress = (gameRun.distanceProgress?.value ?? 0) / 100
-      
+
       if (progress <= FIRST_RAMP_END / 100) {
         const rampProgress = progress / (FIRST_RAMP_END / 100)
         targetSpeed.value = BASE_SPEED + (MID_SPEED - BASE_SPEED) * rampProgress
@@ -2868,7 +2868,7 @@ const restoreRunAfterExtraLife = async () => {
       } else {
         targetSpeed.value = MAX_SPEED
       }
-      
+
       // Начинаем плавное ускорение
       const MIN_START_SPEED = 0.15
       const currentSavedSpeed = savedSpeed.value || 0.15
@@ -2879,12 +2879,12 @@ const restoreRunAfterExtraLife = async () => {
       }
       accelerationStartTime.value = performance.now()
       isAccelerating.value = true
-      
+
       // Активируем анимацию бега
       if (gamePhysics.value?.setAnimationState) {
         gamePhysics.value.setAnimationState('running')
       }
-      
+
       // Выключаем мигание через 2 секунды
       setTimeout(() => {
         if (gamePhysics.value?.setBlinking) {
@@ -2892,7 +2892,7 @@ const restoreRunAfterExtraLife = async () => {
         }
         overheatProtectionActive.value = false
       }, 2000)
-      
+
       // Финальная вибрация
       if (vibrationEnabled.value) {
         try {
@@ -3311,16 +3311,16 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  
+
   &:hover:not(:disabled) {
     opacity: 0.9;
   }
-  
+
   &:active:not(:disabled) {
     transform: scale(0.96);
     box-shadow: 0 6px 18px rgba(102, 126, 234, 0.35);
   }
-  
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
