@@ -210,6 +210,37 @@ export function useGameWorld(scene) {
     })
   }
 
+  // Загрузка модели забора (возвращает Promise)
+  const loadFenceModel = () => {
+    // Если забор уже загружен, возвращаем resolved Promise
+    if (fenceTemplate) {
+      return Promise.resolve()
+    }
+    
+    return new Promise((resolve) => {
+      const fenceLoader = new GLTFLoader()
+      fenceLoader.load(
+        FENCE_MODEL_PATH,
+        (gltf) => {
+          fenceTemplate = gltf.scene
+          fenceTemplate.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = false
+              child.receiveShadow = false
+            }
+          })
+          resolve()
+        },
+        undefined,
+        (err) => {
+          console.warn('Fence GLB load failed:', err)
+          // Не отклоняем Promise, так как забор не критичен (есть fallback)
+          resolve()
+        }
+      )
+    })
+  }
+
   // Предзаполнение пулов — меньше clone() при разгоне
   const PREWARM_OBSTACLES_PER_KIND = 4
   const PREWARM_COLLECTIBLES = 6
@@ -966,6 +997,7 @@ export function useGameWorld(scene) {
   return {
     createRoad,
     loadBarrierModels,
+    loadFenceModel,
     spawnObjects,
     updateRoad,
     updateObstacles,

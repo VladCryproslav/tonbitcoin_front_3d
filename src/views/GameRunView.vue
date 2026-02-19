@@ -53,7 +53,15 @@
         <div class="game-over-subtitle">
           {{ t('game.run_start_subtitle') }}
         </div>
-        <div class="game-over-actions">
+        
+        <!-- Индикатор загрузки моделей -->
+        <div v-if="isLoadingModels" class="models-loading-container">
+          <div class="loading-spinner"></div>
+          <div class="loading-text">{{ t('game.loading_models') }}</div>
+        </div>
+        
+        <!-- Кнопки действий (показываются после загрузки) -->
+        <div v-else class="game-over-actions">
           <button
             class="btn-primary btn-primary--wide"
             @click.stop.prevent="handleStartClick"
@@ -567,6 +575,9 @@ const formatPercent = (value) => {
 // 'idle' — до первого старта, 'pause' — пауза, 'none' — нет оверлея.
 const launcherOverlayMode = ref('idle')
 
+// Состояние загрузки моделей раннера
+const isLoadingModels = ref(true)
+
 // Состояние перегрева
 const showOverheatModal = ref(false)
 const showStartRunWarning = ref(false)
@@ -684,6 +695,63 @@ const controlModeLabel = computed(() => (controlMode.value === 'swipes' ? t('gam
 
 let directionalLight = null
 
+// Предзагрузка всех моделей раннера
+const preloadAllModels = async () => {
+  if (!scene) {
+    console.warn('Scene not ready for model preloading')
+    isLoadingModels.value = false
+    return
+  }
+
+  // Если модели уже загружены, пропускаем загрузку
+  if (!isLoadingModels.value && gameWorld.value && gamePhysics.value?.playerMesh) {
+    return
+  }
+
+  try {
+    isLoadingModels.value = true
+
+    // Инициализация игрового мира (если еще не инициализирован)
+    if (!gameWorld.value) {
+      gameWorld.value = useGameWorld(scene)
+      gameWorld.value.createRoad()
+    }
+
+    // Инициализация физики (если еще не инициализирована)
+    if (!gamePhysics.value) {
+      gamePhysics.value = useGamePhysics(scene)
+    }
+
+    // Загружаем все модели параллельно для ускорения
+    await Promise.all([
+      // Барьеры и токены
+      gameWorld.value.loadBarrierModels(),
+      // Забор
+      gameWorld.value.loadFenceModel(),
+      // Модель игрока (загружаем и добавляем в сцену, но скрываем до начала забега)
+      (async () => {
+        // Загружаем модель игрока только если еще не загружена
+        if (!gamePhysics.value.playerMesh) {
+          const model = await gamePhysics.value.loadPlayerModel(scene, '/models/main.glb')
+          // Скрываем модель до начала забега
+          if (model) {
+            model.visible = false
+          }
+          return model
+        }
+        return gamePhysics.value.playerMesh
+      })()
+    ])
+
+    console.log('All runner models preloaded successfully')
+  } catch (error) {
+    console.error('Error preloading models:', error)
+    // Продолжаем работу даже при ошибке загрузки моделей
+  } finally {
+    isLoadingModels.value = false
+  }
+}
+
 const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: threeRenderer }) => {
   scene = threeScene
   camera = threeCamera
@@ -706,12 +774,9 @@ const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: 
   // Инициализация игрового мира
   gameWorld.value = useGameWorld(scene)
   gameWorld.value.createRoad()
-  await gameWorld.value.loadBarrierModels()
 
-  // Инициализация физики и создание игрока
+  // Инициализация физики
   gamePhysics.value = useGamePhysics(scene)
-  // Загружаем основную модель с полным набором анимаций (standing/running/jump/roll/fall)
-  gamePhysics.value.createPlayer(scene, '/models/main.glb')
 
   // Инициализация эффектов
   gameEffects.value = useGameEffects(scene, graphicsQuality.value)
@@ -720,6 +785,9 @@ const onSceneReady = async ({ scene: threeScene, camera: threeCamera, renderer: 
   startThreeLoop()
 
   applyGraphicsQuality()
+
+  // Предзагрузка всех моделей раннера после инициализации сцены
+  await preloadAllModels()
 }
 
 // Очень плавное следование камеры: без рывков, незаметный дрейф от центра при смене полосы
@@ -1143,6 +1211,11 @@ const startGame = (training = false, initialStorage = null) => {
   hitCount.value = 0
   isDead.value = false
   winTriggered = false
+  
+  // Показываем модель игрока при старте забега (если была скрыта при предзагрузке)
+  if (gamePhysics.value?.playerMesh) {
+    gamePhysics.value.playerMesh.visible = true
+  }
   winDecelerating = false
   winAnimationStartTime = 0
   obstaclesHidden = false
@@ -3207,6 +3280,37 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.models-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 40px 20px;
+  min-height: 200px;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(148, 163, 184, 0.2);
+  border-top-color: #22d3ee;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .training-warning-container {

@@ -507,6 +507,7 @@
     "start_run_warning_dont_show": "Don't show this warning again",
     "start_run_warning_confirm": "Confirm",
     "buy_extra_life": "Extra life",
+    "loading_models": "Loading models...",
     "extra_life_activation_error": "Error activating extra life",
     "extra_life_unavailable": "This feature is currently unavailable",
     "processing": "Processing..."
