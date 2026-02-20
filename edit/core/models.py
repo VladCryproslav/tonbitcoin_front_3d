@@ -1283,11 +1283,11 @@ class RunnerConfig(models.Model):
         help_text="Минимальная скорость (старт)"
     )
     run_mid_speed = models.FloatField(
-        default=0.30,
+        default=0.25,
         help_text="Скорость на 60% дистанции"
     )
     run_max_speed = models.FloatField(
-        default=0.36,
+        default=0.32,
         help_text="Максимальная скорость (с 90%)"
     )
     run_first_ramp_end = models.IntegerField(

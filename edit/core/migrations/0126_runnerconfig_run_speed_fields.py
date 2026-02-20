@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
             model_name='runnerconfig',
             name='run_mid_speed',
             field=models.FloatField(
-                default=0.30,
+                default=0.25,
                 help_text='Скорость на 60% дистанции',
             ),
         ),
@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
             model_name='runnerconfig',
             name='run_max_speed',
             field=models.FloatField(
-                default=0.36,
+                default=0.32,
                 help_text='Максимальная скорость (с 90%)',
             ),
         ),

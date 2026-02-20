@@ -1922,8 +1922,8 @@ class EnergyRunStartView(APIView):
                     energy_points_reserve_percent=20,
                     energy_run_max_hours=4,
                     run_base_speed=0.15,
-                    run_mid_speed=0.30,
-                    run_max_speed=0.36,
+                    run_mid_speed=0.25,
+                    run_max_speed=0.32,
                     run_first_ramp_end=60,
                     run_second_ramp_end=90,
                 )
@@ -1935,8 +1935,8 @@ class EnergyRunStartView(APIView):
             
             # Параметры скорости забега
             run_base_speed = getattr(runner_config, 'run_base_speed', 0.15)
-            run_mid_speed = getattr(runner_config, 'run_mid_speed', 0.30)
-            run_max_speed = getattr(runner_config, 'run_max_speed', 0.36)
+            run_mid_speed = getattr(runner_config, 'run_mid_speed', 0.25)
+            run_max_speed = getattr(runner_config, 'run_max_speed', 0.32)
             run_first_ramp_end = getattr(runner_config, 'run_first_ramp_end', 60)
             run_second_ramp_end = getattr(runner_config, 'run_second_ramp_end', 90)
 
@@ -2032,8 +2032,8 @@ class TrainingRunCheckView(APIView):
                     energy_points_reserve_percent=20,
                     energy_run_max_hours=4,
                     run_base_speed=0.15,
-                    run_mid_speed=0.30,
-                    run_max_speed=0.36,
+                    run_mid_speed=0.25,
+                    run_max_speed=0.32,
                     run_first_ramp_end=60,
                     run_second_ramp_end=90,
                 )
@@ -2090,8 +2090,8 @@ class TrainingRunStartView(APIView):
                     energy_points_reserve_percent=20,
                     energy_run_max_hours=4,
                     run_base_speed=0.15,
-                    run_mid_speed=0.30,
-                    run_max_speed=0.36,
+                    run_mid_speed=0.25,
+                    run_max_speed=0.32,
                     run_first_ramp_end=60,
                     run_second_ramp_end=90,
                 )
@@ -2130,8 +2130,8 @@ class TrainingRunStartView(APIView):
             
             # Параметры скорости забега
             run_base_speed = getattr(runner_config, 'run_base_speed', 0.15)
-            run_mid_speed = getattr(runner_config, 'run_mid_speed', 0.30)
-            run_max_speed = getattr(runner_config, 'run_max_speed', 0.36)
+            run_mid_speed = getattr(runner_config, 'run_mid_speed', 0.25)
+            run_max_speed = getattr(runner_config, 'run_max_speed', 0.32)
             run_first_ramp_end = getattr(runner_config, 'run_first_ramp_end', 60)
             run_second_ramp_end = getattr(runner_config, 'run_second_ramp_end', 90)
             
