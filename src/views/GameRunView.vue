@@ -2258,6 +2258,14 @@ const startRun = async () => {
       }
       basePoints = response.data.energy_run_base_points ?? null
       reservePercent = response.data.energy_run_reserve_percent ?? null
+      const totalPoints = (basePoints != null && reservePercent != null)
+        ? Math.ceil(basePoints * (1 + reservePercent / 100))
+        : null
+      console.log('[Energy run] Server points:', {
+        energy_run_base_points: basePoints,
+        energy_run_reserve_percent: reservePercent,
+        total_points_for_run: totalPoints
+      })
     }
     startGame(false, initialStorage, basePoints, reservePercent)
   } catch (error) {
