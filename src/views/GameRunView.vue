@@ -622,7 +622,7 @@ let overheatProtectionEndTime = 0 // Время окончания защиты 
 
 // Плавное ускорение после паузы/перегрева
 const isAccelerating = ref(false) // Флаг плавного разгона после таймера
-const targetSpeed = ref(0.15) // Целевая скорость для разгона
+const targetSpeed = ref(0.15) // Целевая скорость для разгона (инициализируется из runBaseSpeed при старте)
 const savedSpeed = ref(0.15) // Сохраненная скорость перед остановкой
 const accelerationStartTime = ref(0) // Время начала ускорения
 const ACCELERATION_DURATION_MS = 3000 // Длительность разгона (3 секунды)
@@ -654,6 +654,12 @@ const MAX_STEPS = 3
 const ROLL_IMMUNE_MS = 950
 const gameSpeed = ref(0.15)
 const playerZ = ref(0)
+// Параметры скорости забега из RunnerConfig (обновляются при старте забега из API)
+const runBaseSpeed = ref(0.15)
+const runMidSpeed = ref(0.30)
+const runMaxSpeed = ref(0.36)
+const runFirstRampEnd = ref(60)
+const runSecondRampEnd = ref(90)
 const hitCount = ref(0)
 const MAX_LIVES = 3
 const livesLeft = computed(() => Math.max(0, MAX_LIVES - hitCount.value))
@@ -989,26 +995,26 @@ const startThreeLoop = () => {
         // Плавный набор скорости на основе прогресса дистанции (один раз на кадр, не на шаг)
         // Не применяем если идет плавное ускорение после паузы/перегрева
 
-        // НАСТРОЙКА СКОРОСТИ - можно менять эти значения:
-        const BASE_SPEED = 0.15        // Минимальная скорость (старт)
-        const MID_SPEED = 0.30         // Скорость на 60% дистанции
-        const MAX_SPEED = 0.36         // Максимальная скорость (с 90%)
-        const FIRST_RAMP_END = 60      // Процент дистанции, до которого идет первый набор (0% -> 60%)
-        const SECOND_RAMP_END = 90     // Процент дистанции, до которого идет второй набор (60% -> 90%)
+        // Параметры скорости из RunnerConfig (обновляются при старте забега)
+        const BASE_SPEED = runBaseSpeed.value
+        const MID_SPEED = runMidSpeed.value
+        const MAX_SPEED = runMaxSpeed.value
+        const FIRST_RAMP_END = runFirstRampEnd.value
+        const SECOND_RAMP_END = runSecondRampEnd.value
 
         const progress = (gameRun.distanceProgress?.value ?? 0) / 100
 
         let targetSpeed
         if (progress <= FIRST_RAMP_END / 100) {
-          // Этап 1: от 0% до 60% - набор с BASE_SPEED до MID_SPEED
+          // Этап 1: от 0% до FIRST_RAMP_END% - набор с BASE_SPEED до MID_SPEED
           const rampProgress = progress / (FIRST_RAMP_END / 100)
           targetSpeed = BASE_SPEED + (MID_SPEED - BASE_SPEED) * rampProgress
         } else if (progress <= SECOND_RAMP_END / 100) {
-          // Этап 2: от 60% до 90% - набор с MID_SPEED до MAX_SPEED
+          // Этап 2: от FIRST_RAMP_END% до SECOND_RAMP_END% - набор с MID_SPEED до MAX_SPEED
           const rampProgress = (progress - FIRST_RAMP_END / 100) / ((SECOND_RAMP_END - FIRST_RAMP_END) / 100)
           targetSpeed = MID_SPEED + (MAX_SPEED - MID_SPEED) * rampProgress
         } else {
-          // Этап 3: с 90% и далее - постоянная MAX_SPEED
+          // Этап 3: с SECOND_RAMP_END% и далее - постоянная MAX_SPEED
           targetSpeed = MAX_SPEED
         }
 
@@ -1022,7 +1028,7 @@ const startThreeLoop = () => {
       if (hitCount.value >= 3 && !isDead.value) {
         isDead.value = true
         // Сохраняем скорость перед смертью (для восстановления после покупки жизни)
-        savedSpeed.value = gameSpeed.value || 0.15
+        savedSpeed.value = gameSpeed.value || runBaseSpeed.value
         // Сохраняем начальный storage для расчета цены дополнительной жизни
         if (gameRun.startStorage?.value) {
           savedStartStorageForExtraLife.value = gameRun.startStorage.value
@@ -1225,8 +1231,8 @@ const startGame = (training = false, initialStorage = null, basePoints = null, r
 
   isTrainingRun.value = training
   playerZ.value = 0
-  gameSpeed.value = 0.15
-  savedSpeed.value = 0.15 // Инициализируем сохраненную скорость
+  gameSpeed.value = runBaseSpeed.value
+  savedSpeed.value = runBaseSpeed.value // Инициализируем сохраненную скорость
   isAccelerating.value = false // Сбрасываем флаг ускорения при новом старте
   overheatProtectionActive.value = false // Сбрасываем флаг защиты при новом старте
   overheatProtectionEndTime = 0 // Сбрасываем время окончания защиты
@@ -1447,11 +1453,11 @@ const activateOverheat = (serverData) => {
       // Скорость уже сохранена на 2 секунде (перед началом замедления)
       // Вычисляем целевую скорость на основе текущего прогресса дистанции
       // НАСТРОЙКА СКОРОСТИ - можно менять эти значения:
-      const BASE_SPEED = 0.15        // Минимальная скорость (старт)
-      const MID_SPEED = 0.25         // Скорость на 60% дистанции
-      const MAX_SPEED = 0.32       // Максимальная скорость (с 90%)
-      const FIRST_RAMP_END = 60      // Процент дистанции, до которого идет первый набор (0% -> 60%)
-      const SECOND_RAMP_END = 90     // Процент дистанции, до которого идет второй набор (60% -> 90%)
+      const BASE_SPEED = runBaseSpeed.value
+      const MID_SPEED = runMidSpeed.value
+      const MAX_SPEED = runMaxSpeed.value
+      const FIRST_RAMP_END = runFirstRampEnd.value
+      const SECOND_RAMP_END = runSecondRampEnd.value
 
       const progress = (gameRun.distanceProgress?.value ?? 0) / 100
 
@@ -1588,11 +1594,11 @@ const pauseGame = () => {
 
   // Вычисляем целевую скорость на основе текущего прогресса дистанции
   // НАСТРОЙКА СКОРОСТИ - можно менять эти значения:
-  const BASE_SPEED = 0.15        // Минимальная скорость (старт)
-  const MID_SPEED = 0.30         // Скорость на 60% дистанции
-  const MAX_SPEED = 0.36         // Максимальная скорость (с 90%)
-  const FIRST_RAMP_END = 60      // Процент дистанции, до которого идет первый набор (0% -> 60%)
-  const SECOND_RAMP_END = 90     // Процент дистанции, до которого идет второй набор (60% -> 90%)
+  const BASE_SPEED = runBaseSpeed.value
+  const MID_SPEED = runMidSpeed.value
+  const MAX_SPEED = runMaxSpeed.value
+  const FIRST_RAMP_END = runFirstRampEnd.value
+  const SECOND_RAMP_END = runSecondRampEnd.value
 
   const progress = (gameRun.distanceProgress?.value ?? 0) / 100
 
@@ -1717,11 +1723,11 @@ const resumeGame = async () => {
 
       // Вычисляем целевую скорость на основе текущего прогресса дистанции
       // НАСТРОЙКА СКОРОСТИ - можно менять эти значения:
-      const BASE_SPEED = 0.15        // Минимальная скорость (старт)
-      const MID_SPEED = 0.30         // Скорость на 60% дистанции
-      const MAX_SPEED = 0.36         // Максимальная скорость (с 90%)
-      const FIRST_RAMP_END = 60      // Процент дистанции, до которого идет первый набор (0% -> 60%)
-      const SECOND_RAMP_END = 90     // Процент дистанции, до которого идет второй набор (60% -> 90%)
+      const BASE_SPEED = runBaseSpeed.value
+      const MID_SPEED = runMidSpeed.value
+      const MAX_SPEED = runMaxSpeed.value
+      const FIRST_RAMP_END = runFirstRampEnd.value
+      const SECOND_RAMP_END = runSecondRampEnd.value
 
       const progress = (gameRun.distanceProgress?.value ?? 0) / 100
 
@@ -1801,7 +1807,7 @@ function doOneStep(playerBox, inRollImmuneWindow) {
               if (!isDead.value && livesLeft.value <= 0) {
                 isDead.value = true
                 // Сохраняем скорость перед смертью (для восстановления после покупки жизни)
-                savedSpeed.value = gameSpeed.value || 0.15
+                savedSpeed.value = gameSpeed.value || runBaseSpeed.value
                 // Сохраняем начальный storage для расчета цены дополнительной жизни
                 if (gameRun.startStorage?.value) {
                   savedStartStorageForExtraLife.value = gameRun.startStorage.value
@@ -2254,6 +2260,11 @@ const startRun = async () => {
       }
       basePoints = response.data.energy_run_base_points ?? null
       reservePercent = response.data.energy_run_reserve_percent ?? null
+      if (response.data.run_base_speed != null) runBaseSpeed.value = response.data.run_base_speed
+      if (response.data.run_mid_speed != null) runMidSpeed.value = response.data.run_mid_speed
+      if (response.data.run_max_speed != null) runMaxSpeed.value = response.data.run_max_speed
+      if (response.data.run_first_ramp_end != null) runFirstRampEnd.value = response.data.run_first_ramp_end
+      if (response.data.run_second_ramp_end != null) runSecondRampEnd.value = response.data.run_second_ramp_end
       const totalPoints = (basePoints != null && reservePercent != null)
         ? Math.ceil(basePoints * (1 + reservePercent / 100))
         : null
@@ -2261,6 +2272,13 @@ const startRun = async () => {
         energy_run_base_points: basePoints,
         energy_run_reserve_percent: reservePercent,
         total_points_for_run: totalPoints
+      })
+      console.log('[Energy run] Speed settings:', {
+        run_base_speed: runBaseSpeed.value,
+        run_mid_speed: runMidSpeed.value,
+        run_max_speed: runMaxSpeed.value,
+        run_first_ramp_end: runFirstRampEnd.value,
+        run_second_ramp_end: runSecondRampEnd.value
       })
     }
     startGame(false, initialStorage, basePoints, reservePercent)
@@ -2355,6 +2373,11 @@ const handleTrainingClick = async () => {
       }
       basePoints = response.data.energy_run_base_points ?? null
       reservePercent = response.data.energy_run_reserve_percent ?? null
+      if (response.data.run_base_speed != null) runBaseSpeed.value = response.data.run_base_speed
+      if (response.data.run_mid_speed != null) runMidSpeed.value = response.data.run_mid_speed
+      if (response.data.run_max_speed != null) runMaxSpeed.value = response.data.run_max_speed
+      if (response.data.run_first_ramp_end != null) runFirstRampEnd.value = response.data.run_first_ramp_end
+      if (response.data.run_second_ramp_end != null) runSecondRampEnd.value = response.data.run_second_ramp_end
       const totalPoints = (basePoints != null && reservePercent != null)
         ? Math.ceil(basePoints * (1 + reservePercent / 100))
         : null
@@ -2362,6 +2385,13 @@ const handleTrainingClick = async () => {
         energy_run_base_points: basePoints,
         energy_run_reserve_percent: reservePercent,
         total_points_for_run: totalPoints
+      })
+      console.log('[Training run] Speed settings:', {
+        run_base_speed: runBaseSpeed.value,
+        run_mid_speed: runMidSpeed.value,
+        run_max_speed: runMaxSpeed.value,
+        run_first_ramp_end: runFirstRampEnd.value,
+        run_second_ramp_end: runSecondRampEnd.value
       })
     }
 
@@ -2432,11 +2462,11 @@ const handleResumeClick = () => {
 
       // Вычисляем целевую скорость на основе текущего прогресса дистанции
       // НАСТРОЙКА СКОРОСТИ - можно менять эти значения:
-      const BASE_SPEED = 0.15        // Минимальная скорость (старт)
-      const MID_SPEED = 0.28         // Скорость на 60% дистанции
-      const MAX_SPEED = 0.34         // Максимальная скорость (с 90%)
-      const FIRST_RAMP_END = 60      // Процент дистанции, до которого идет первый набор (0% -> 60%)
-      const SECOND_RAMP_END = 90     // Процент дистанции, до которого идет второй набор (60% -> 90%)
+      const BASE_SPEED = runBaseSpeed.value
+      const MID_SPEED = runMidSpeed.value
+      const MAX_SPEED = runMaxSpeed.value
+      const FIRST_RAMP_END = runFirstRampEnd.value
+      const SECOND_RAMP_END = runSecondRampEnd.value
 
       const progress = (gameRun.distanceProgress?.value ?? 0) / 100
 
@@ -2801,8 +2831,8 @@ const handleBuyExtraLife = async () => {
 // Восстановление забега после покупки жизни
 const restoreRunAfterExtraLife = async () => {
   // Сохраняем текущую скорость перед восстановлением (если не сохранена)
-  if (!savedSpeed.value || savedSpeed.value === 0.15) {
-    savedSpeed.value = gameSpeed.value || 0.15
+  if (!savedSpeed.value || savedSpeed.value === runBaseSpeed.value) {
+    savedSpeed.value = gameSpeed.value || runBaseSpeed.value
   }
 
   // Закрываем модалку проигрыша
@@ -2865,11 +2895,11 @@ const restoreRunAfterExtraLife = async () => {
       launcherOverlayMode.value = 'none'
 
       // Восстанавливаем скорость на основе текущего прогресса
-      const BASE_SPEED = 0.15
-      const MID_SPEED = 0.30
-      const MAX_SPEED = 0.36
-      const FIRST_RAMP_END = 60
-      const SECOND_RAMP_END = 90
+      const BASE_SPEED = runBaseSpeed.value
+      const MID_SPEED = runMidSpeed.value
+      const MAX_SPEED = runMaxSpeed.value
+      const FIRST_RAMP_END = runFirstRampEnd.value
+      const SECOND_RAMP_END = runSecondRampEnd.value
 
       const progress = (gameRun.distanceProgress?.value ?? 0) / 100
 
@@ -2885,7 +2915,7 @@ const restoreRunAfterExtraLife = async () => {
 
       // Начинаем плавное ускорение
       const MIN_START_SPEED = 0.15
-      const currentSavedSpeed = savedSpeed.value || 0.15
+      const currentSavedSpeed = savedSpeed.value || runBaseSpeed.value
       const startAccelSpeed = Math.max(currentSavedSpeed * 0.6, MIN_START_SPEED)
       gameSpeed.value = startAccelSpeed
       if (gameWorld.value) {

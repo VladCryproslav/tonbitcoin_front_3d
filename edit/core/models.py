@@ -1277,6 +1277,27 @@ class RunnerConfig(models.Model):
         default=4,
         help_text="Максимум часов для расчёта поинтов (4 ч × 60 × 2 = 480 поинтов)"
     )
+    # Настройки скорости забега
+    run_base_speed = models.FloatField(
+        default=0.15,
+        help_text="Минимальная скорость (старт)"
+    )
+    run_mid_speed = models.FloatField(
+        default=0.30,
+        help_text="Скорость на 60% дистанции"
+    )
+    run_max_speed = models.FloatField(
+        default=0.36,
+        help_text="Максимальная скорость (с 90%)"
+    )
+    run_first_ramp_end = models.IntegerField(
+        default=60,
+        help_text="Процент дистанции, до которого идет первый набор скорости (0% -> 60%)"
+    )
+    run_second_ramp_end = models.IntegerField(
+        default=90,
+        help_text="Процент дистанции, до которого идет второй набор скорости (60% -> 90%)"
+    )
 
     class Meta:
         verbose_name = "Runner Config"

@@ -322,6 +322,11 @@ class RunnerConfigAdmin(admin.ModelAdmin):
         'energy_points_per_minute',
         'energy_points_reserve_percent',
         'energy_run_max_hours',
+        'run_base_speed',
+        'run_mid_speed',
+        'run_max_speed',
+        'run_first_ramp_end',
+        'run_second_ramp_end',
     ]
     list_editable = [
         'stars_per_kw',
@@ -329,6 +334,11 @@ class RunnerConfigAdmin(admin.ModelAdmin):
         'energy_points_per_minute',
         'energy_points_reserve_percent',
         'energy_run_max_hours',
+        'run_base_speed',
+        'run_mid_speed',
+        'run_max_speed',
+        'run_first_ramp_end',
+        'run_second_ramp_end',
     ]
     list_display_links = None
 

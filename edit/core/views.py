@@ -1909,6 +1909,7 @@ class EnergyRunStartView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
             # Расчёт поинтов за этот забег (до обновления energy_run_last_started_at)
+            # Если energy_run_last_started_at пустое (первый забег) — считаем как прошёл 1 час (120 поинтов при 2 поинта/мин)
             prev_started = user_profile.energy_run_last_started_at or (now - timedelta(hours=1))
             elapsed_seconds = (now - prev_started).total_seconds()
             elapsed_minutes = elapsed_seconds / 60.0
@@ -1920,12 +1921,24 @@ class EnergyRunStartView(APIView):
                     energy_points_per_minute=2,
                     energy_points_reserve_percent=20,
                     energy_run_max_hours=4,
+                    run_base_speed=0.15,
+                    run_mid_speed=0.30,
+                    run_max_speed=0.36,
+                    run_first_ramp_end=60,
+                    run_second_ramp_end=90,
                 )
             points_per_minute = getattr(runner_config, 'energy_points_per_minute', 2)
             reserve_percent = getattr(runner_config, 'energy_points_reserve_percent', 20)
             max_hours = getattr(runner_config, 'energy_run_max_hours', 4)
             max_base_points = max_hours * 60 * points_per_minute
             base_points = min(max_base_points, int(elapsed_minutes) * points_per_minute)
+            
+            # Параметры скорости забега
+            run_base_speed = getattr(runner_config, 'run_base_speed', 0.15)
+            run_mid_speed = getattr(runner_config, 'run_mid_speed', 0.30)
+            run_max_speed = getattr(runner_config, 'run_max_speed', 0.36)
+            run_first_ramp_end = getattr(runner_config, 'run_first_ramp_end', 60)
+            run_second_ramp_end = getattr(runner_config, 'run_second_ramp_end', 90)
 
             # Сохраняем текущее значение storage и обнуляем его
             from decimal import Decimal
@@ -1973,6 +1986,11 @@ class EnergyRunStartView(APIView):
                     "user": serializer_data,
                     "energy_run_base_points": base_points,
                     "energy_run_reserve_percent": reserve_percent,
+                    "run_base_speed": run_base_speed,
+                    "run_mid_speed": run_mid_speed,
+                    "run_max_speed": run_max_speed,
+                    "run_first_ramp_end": run_first_ramp_end,
+                    "run_second_ramp_end": run_second_ramp_end,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -2013,8 +2031,13 @@ class TrainingRunCheckView(APIView):
                     energy_points_per_minute=2,
                     energy_points_reserve_percent=20,
                     energy_run_max_hours=4,
+                    run_base_speed=0.15,
+                    run_mid_speed=0.30,
+                    run_max_speed=0.36,
+                    run_first_ramp_end=60,
+                    run_second_ramp_end=90,
                 )
-            
+
             max_runs = runner_config.max_training_runs_per_hour
             
             # Проверяем нужно ли сбросить счетчик (если последний забег был не в текущий час)
@@ -2066,8 +2089,13 @@ class TrainingRunStartView(APIView):
                     energy_points_per_minute=2,
                     energy_points_reserve_percent=20,
                     energy_run_max_hours=4,
+                    run_base_speed=0.15,
+                    run_mid_speed=0.30,
+                    run_max_speed=0.36,
+                    run_first_ramp_end=60,
+                    run_second_ramp_end=90,
                 )
-            
+
             max_runs = runner_config.max_training_runs_per_hour
             
             # Проверяем нужно ли сбросить счетчик (если последний забег был не в текущий час)
@@ -2090,6 +2118,7 @@ class TrainingRunStartView(APIView):
                 )
             
             # Поинты для забега — та же логика, что и для энергозабега (energy_run_last_started_at + RunnerConfig)
+            # Если energy_run_last_started_at пустое (первый забег) — считаем как прошёл 1 час (120 поинтов при 2 поинта/мин)
             prev_started = user_profile.energy_run_last_started_at or (now - timedelta(hours=1))
             elapsed_seconds = (now - prev_started).total_seconds()
             elapsed_minutes = elapsed_seconds / 60.0
@@ -2098,6 +2127,13 @@ class TrainingRunStartView(APIView):
             max_hours = getattr(runner_config, 'energy_run_max_hours', 4)
             max_base_points = max_hours * 60 * points_per_minute
             base_points = min(max_base_points, int(elapsed_minutes) * points_per_minute)
+            
+            # Параметры скорости забега
+            run_base_speed = getattr(runner_config, 'run_base_speed', 0.15)
+            run_mid_speed = getattr(runner_config, 'run_mid_speed', 0.30)
+            run_max_speed = getattr(runner_config, 'run_max_speed', 0.36)
+            run_first_ramp_end = getattr(runner_config, 'run_first_ramp_end', 60)
+            run_second_ramp_end = getattr(runner_config, 'run_second_ramp_end', 90)
             
             # Увеличиваем счетчик тренировочных забегов
             from django.db.models import F
@@ -2117,6 +2153,11 @@ class TrainingRunStartView(APIView):
                     "available_runs": max_runs - user_profile.training_run_count_this_hour,
                     "energy_run_base_points": base_points,
                     "energy_run_reserve_percent": reserve_percent,
+                    "run_base_speed": run_base_speed,
+                    "run_mid_speed": run_mid_speed,
+                    "run_max_speed": run_max_speed,
+                    "run_first_ramp_end": run_first_ramp_end,
+                    "run_second_ramp_end": run_second_ramp_end,
                 },
                 status=status.HTTP_200_OK,
             )
