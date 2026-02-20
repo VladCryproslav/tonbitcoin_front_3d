@@ -1908,6 +1908,25 @@ class EnergyRunStartView(APIView):
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
+            # Расчёт поинтов за этот забег (до обновления energy_run_last_started_at)
+            prev_started = user_profile.energy_run_last_started_at or (now - timedelta(hours=1))
+            elapsed_seconds = (now - prev_started).total_seconds()
+            elapsed_minutes = elapsed_seconds / 60.0
+            runner_config = RunnerConfig.objects.first()
+            if not runner_config:
+                runner_config = RunnerConfig.objects.create(
+                    stars_per_kw=100,
+                    max_training_runs_per_hour=5,
+                    energy_points_per_minute=2,
+                    energy_points_reserve_percent=20,
+                    energy_run_max_hours=4,
+                )
+            points_per_minute = getattr(runner_config, 'energy_points_per_minute', 2)
+            reserve_percent = getattr(runner_config, 'energy_points_reserve_percent', 20)
+            max_hours = getattr(runner_config, 'energy_run_max_hours', 4)
+            max_base_points = max_hours * 60 * points_per_minute
+            base_points = min(max_base_points, int(elapsed_minutes) * points_per_minute)
+
             # Сохраняем текущее значение storage и обнуляем его
             from decimal import Decimal
             current_storage = user_profile.storage
@@ -1952,6 +1971,8 @@ class EnergyRunStartView(APIView):
                 {
                     "message": "Energy run started",
                     "user": serializer_data,
+                    "energy_run_base_points": base_points,
+                    "energy_run_reserve_percent": reserve_percent,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -1988,7 +2009,10 @@ class TrainingRunCheckView(APIView):
             if not runner_config:
                 runner_config = RunnerConfig.objects.create(
                     stars_per_kw=100,
-                    max_training_runs_per_hour=5
+                    max_training_runs_per_hour=5,
+                    energy_points_per_minute=2,
+                    energy_points_reserve_percent=20,
+                    energy_run_max_hours=4,
                 )
             
             max_runs = runner_config.max_training_runs_per_hour
@@ -2038,7 +2062,10 @@ class TrainingRunStartView(APIView):
             if not runner_config:
                 runner_config = RunnerConfig.objects.create(
                     stars_per_kw=100,
-                    max_training_runs_per_hour=5
+                    max_training_runs_per_hour=5,
+                    energy_points_per_minute=2,
+                    energy_points_reserve_percent=20,
+                    energy_run_max_hours=4,
                 )
             
             max_runs = runner_config.max_training_runs_per_hour

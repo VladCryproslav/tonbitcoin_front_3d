@@ -1264,7 +1264,20 @@ class RunnerConfig(models.Model):
         default=5,
         help_text="Максимальное количество тренировочных забегов в час для каждого пользователя"
     )
-    
+    # Энергозабег: поинты в зависимости от времени с последнего забега
+    energy_points_per_minute = models.IntegerField(
+        default=2,
+        help_text="Базовых поинтов за 1 минуту ожидания (1 ч → 120 при 2)"
+    )
+    energy_points_reserve_percent = models.IntegerField(
+        default=20,
+        help_text="Процент запаса поинтов сверх базового количества"
+    )
+    energy_run_max_hours = models.IntegerField(
+        default=4,
+        help_text="Максимум часов для расчёта поинтов (4 ч × 60 × 2 = 480 поинтов)"
+    )
+
     class Meta:
         verbose_name = "Runner Config"
         verbose_name_plural = "Runner Configs"

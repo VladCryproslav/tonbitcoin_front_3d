@@ -316,8 +316,20 @@ class WithdrawalConfigAdmin(admin.ModelAdmin):
 
 @admin.register(RunnerConfig)
 class RunnerConfigAdmin(admin.ModelAdmin):
-    list_display = ['stars_per_kw', 'max_training_runs_per_hour']
-    list_editable = ['stars_per_kw', 'max_training_runs_per_hour']
+    list_display = [
+        'stars_per_kw',
+        'max_training_runs_per_hour',
+        'energy_points_per_minute',
+        'energy_points_reserve_percent',
+        'energy_run_max_hours',
+    ]
+    list_editable = [
+        'stars_per_kw',
+        'max_training_runs_per_hour',
+        'energy_points_per_minute',
+        'energy_points_reserve_percent',
+        'energy_run_max_hours',
+    ]
     list_display_links = None
 
 

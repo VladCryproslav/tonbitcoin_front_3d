@@ -32,21 +32,24 @@ const ENERGY_POINTS_RESERVE_PERCENT = 20
  *
  * Генерируется больше поинтов чем базовое количество (с запасом),
  * чтобы поинты продолжали спавниться даже если некоторые пропущены.
+ * baseCount и reservePercent опциональны — при отсутствии используются константы (fallback для тренировки).
  */
-function generateEnergyPoints(storageKw) {
+function generateEnergyPoints(storageKw, baseCount = null, reservePercent = null) {
   const storage = Math.max(1, Number(storageKw) || 70)
+  const base = baseCount ?? ENERGY_POINTS_BASE_COUNT
+  const reserve = reservePercent ?? ENERGY_POINTS_RESERVE_PERCENT
 
   // Рассчитываем общее количество поинтов с учетом запаса
-  const totalPointsCount = Math.ceil(ENERGY_POINTS_BASE_COUNT * (1 + ENERGY_POINTS_RESERVE_PERCENT / 100))
+  const totalPointsCount = Math.ceil(base * (1 + reserve / 100))
 
   // Масштаб процента: при 100 поинтах 1% = 1%, при 1000 поинтах 1% → 0.1%
-  const pctScale = 100 / ENERGY_POINTS_BASE_COUNT
+  const pctScale = 100 / base
   const pct05 = 0.5 * pctScale
   const pct1 = 1 * pctScale
   const pct2 = 2 * pctScale
 
   // Распределение по типам: 40% средние, 40% мелкие, 20% крупные (от totalPointsCount)
-  const scale = totalPointsCount / ENERGY_POINTS_BASE_COUNT
+  const scale = totalPointsCount / base
   const count1pct = Math.round(40 * scale)
   const count05pct = Math.round(40 * scale)
   const count2pct = Math.round(20 * scale)
@@ -101,13 +104,19 @@ export function useGameRun() {
   const collectedEnergyPoints = ref([]) // [{value: 0.5, timestamp: 1234567890}, ...]
   // Сохраняем начальное значение storage при старте забега (до обнуления на сервере)
   const startStorage = ref(0)
+  // Параметры текущего забега (для энергозабега из API; для тренировки — null, используются константы)
+  const runBasePoints = ref(null)
+  const runReservePercent = ref(null)
 
   // Общее количество сгенерированных поинтов (базовое количество + запас)
   const totalPoints = computed(() => energyPoints.value.length)
 
   // Количество поинтов для 100% дистанции (базовое количество + запас)
-  // Например: 100 + 10% = 110 токенов = 100% дистанции
+  // Для энергозабега берётся из runBasePoints/runReservePercent, иначе константы
   const pointsFor100Percent = computed(() => {
+    if (runBasePoints.value != null && runReservePercent.value != null) {
+      return Math.ceil(runBasePoints.value * (1 + runReservePercent.value / 100))
+    }
     return Math.ceil(ENERGY_POINTS_BASE_COUNT * (1 + ENERGY_POINTS_RESERVE_PERCENT / 100))
   })
 
@@ -119,7 +128,7 @@ export function useGameRun() {
     return Math.min(100, (passedPointsCount.value / total) * 100)
   })
 
-  const startRun = (initialStorage = null) => {
+  const startRun = (initialStorage = null, basePoints = null, reservePercent = null) => {
     isRunning.value = true
     isPaused.value = false
     distance.value = 0
@@ -127,16 +136,20 @@ export function useGameRun() {
     obstaclesHit.value = 0
     runStartTime.value = Date.now()
 
+    runBasePoints.value = basePoints ?? null
+    runReservePercent.value = reservePercent ?? null
+
+    const base = basePoints ?? ENERGY_POINTS_BASE_COUNT
+    const reserve = reservePercent ?? ENERGY_POINTS_RESERVE_PERCENT
+
     // Используем переданное начальное значение storage или текущее значение из app
-    // Если storage уже обнулен на сервере, используем сохраненное значение или fallback
     const storageKw = initialStorage ?? app.storage ?? (startStorage.value || 70)
-    // Сохраняем начальное значение для использования в течение забега
     startStorage.value = storageKw
-    energyPoints.value = generateEnergyPoints(storageKw)
+    energyPoints.value = generateEnergyPoints(storageKw, base, reserve)
     energyPointsIndex.value = 0
     passedPointsCount.value = 0
-    collectedPointsCount.value = 0 // Сбрасываем счетчик собранных токенов
-    collectedEnergyPoints.value = [] // Сбрасываем массив собранных поинтов
+    collectedPointsCount.value = 0
+    collectedEnergyPoints.value = []
   }
 
   const getNextEnergyPoint = () => {
@@ -160,15 +173,14 @@ export function useGameRun() {
       const storageKw = startStorage.value || currentStorage.value
       const remainingPoints = pointsFor100Percent.value - passedPointsCount.value
 
-      // Генерируем порцию дополнительных поинтов (небольшую, чтобы не генерировать слишком много)
-      // Используем минимум из: 20% от базового количества или оставшееся количество + небольшой запас
+      const runBase = runBasePoints.value ?? ENERGY_POINTS_BASE_COUNT
+      const runReserve = runReservePercent.value ?? ENERGY_POINTS_RESERVE_PERCENT
       const additionalBatchSize = Math.min(
-        Math.ceil(ENERGY_POINTS_BASE_COUNT * 0.2),
-        remainingPoints + 5 // +5 для небольшого запаса
+        Math.ceil(runBase * 0.2),
+        remainingPoints + 5
       )
 
-      // Генерируем полный набор поинтов и берем только нужное количество
-      const fullBatch = generateEnergyPoints(storageKw)
+      const fullBatch = generateEnergyPoints(storageKw, runBase, runReserve)
       const additionalPoints = fullBatch.slice(0, additionalBatchSize)
 
       // Добавляем их в очередь
@@ -222,8 +234,9 @@ export function useGameRun() {
   const stopRun = () => {
     isRunning.value = false
     isPaused.value = false
+    runBasePoints.value = null
+    runReservePercent.value = null
     // НЕ сбрасываем startStorage здесь, так как он нужен для completeRun
-    // startStorage будет сброшен после успешного завершения забега в completeRun
   }
 
   const updateDistance = (newDistance) => {

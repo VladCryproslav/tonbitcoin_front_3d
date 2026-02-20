@@ -1220,8 +1220,7 @@ const applyGraphicsQualityAndSave = () => {
   }
 }
 
-const startGame = (training = false, initialStorage = null) => {
-  // Если забег уже идёт — игнорируем повторный старт
+const startGame = (training = false, initialStorage = null, basePoints = null, reservePercent = null) => {
   if (gameRun.isRunning.value && !gameRun.isPaused.value) return
 
   isTrainingRun.value = training
@@ -1261,9 +1260,12 @@ const startGame = (training = false, initialStorage = null) => {
       laneRef.value = 1
     }
   }
-  // Передаем начальное значение storage в startRun, чтобы использовать его для генерации поинтов
-  // даже если сервер уже обнулил storage
-  gameRun.startRun(initialStorage)
+  // Энергозабег: basePoints/reservePercent из API; тренировка — без них (константы в useGameRun)
+  if (training) {
+    gameRun.startRun(initialStorage)
+  } else {
+    gameRun.startRun(initialStorage, basePoints, reservePercent)
+  }
   hitCount.value = 0
   isDead.value = false
   winTriggered = false
@@ -2239,10 +2241,10 @@ const startRun = async () => {
     console.log('Starting energy run, current storage:', initialStorage)
     const response = await host.post('energy-run-start/')
     console.log('energy-run-start response:', response.data)
+    let basePoints = null
+    let reservePercent = null
     if (response.status === 200 && response.data?.user) {
-      // Обновляем данные пользователя
       app.user = response.data.user
-      // Обновляем storage и другие поля из ответа сервера
       if (response.data.user.storage !== undefined) {
         app.setStorage(response.data.user.storage)
         console.log('Storage updated to:', response.data.user.storage)
@@ -2254,9 +2256,10 @@ const startRun = async () => {
         app.user.energy_run_last_started_at = response.data.user.energy_run_last_started_at
         console.log('energy_run_last_started_at updated to:', response.data.user.energy_run_last_started_at)
       }
+      basePoints = response.data.energy_run_base_points ?? null
+      reservePercent = response.data.energy_run_reserve_percent ?? null
     }
-    // Передаем начальное значение storage в startGame, чтобы использовать его для генерации поинтов
-    startGame(false, initialStorage)
+    startGame(false, initialStorage, basePoints, reservePercent)
   } catch (error) {
     // Если ошибка cooldown - показываем сообщение и не запускаем игру
     if (error.response?.status === 400 && error.response?.data?.error === 'energy_run_cooldown') {
