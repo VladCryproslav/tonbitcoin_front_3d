@@ -2089,6 +2089,16 @@ class TrainingRunStartView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             
+            # Поинты для забега — та же логика, что и для энергозабега (energy_run_last_started_at + RunnerConfig)
+            prev_started = user_profile.energy_run_last_started_at or (now - timedelta(hours=1))
+            elapsed_seconds = (now - prev_started).total_seconds()
+            elapsed_minutes = elapsed_seconds / 60.0
+            points_per_minute = getattr(runner_config, 'energy_points_per_minute', 2)
+            reserve_percent = getattr(runner_config, 'energy_points_reserve_percent', 20)
+            max_hours = getattr(runner_config, 'energy_run_max_hours', 4)
+            max_base_points = max_hours * 60 * points_per_minute
+            base_points = min(max_base_points, int(elapsed_minutes) * points_per_minute)
+            
             # Увеличиваем счетчик тренировочных забегов
             from django.db.models import F
             UserProfile.objects.filter(user_id=user_profile.user_id).update(
@@ -2105,6 +2115,8 @@ class TrainingRunStartView(APIView):
                     "user": serializer_data,
                     "runs_used_this_hour": user_profile.training_run_count_this_hour,
                     "available_runs": max_runs - user_profile.training_run_count_this_hour,
+                    "energy_run_base_points": base_points,
+                    "energy_run_reserve_percent": reserve_percent,
                 },
                 status=status.HTTP_200_OK,
             )

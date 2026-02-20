@@ -1260,12 +1260,8 @@ const startGame = (training = false, initialStorage = null, basePoints = null, r
       laneRef.value = 1
     }
   }
-  // Энергозабег: basePoints/reservePercent из API; тренировка — без них (константы в useGameRun)
-  if (training) {
-    gameRun.startRun(initialStorage)
-  } else {
-    gameRun.startRun(initialStorage, basePoints, reservePercent)
-  }
+  // Один расчёт поинтов для энерго- и тренировочного забега (из API по energy_run_last_started_at)
+  gameRun.startRun(initialStorage, basePoints, reservePercent)
   hitCount.value = 0
   isDead.value = false
   winTriggered = false
@@ -2278,9 +2274,8 @@ const startRun = async () => {
       alert(t('energizer.energy_run_cooldown_message', { time: timeStr }))
       return
     }
-    // Другие ошибки - запускаем игру всё равно (fallback)
     console.error('Error starting energy run:', error)
-    startGame(false)
+    startGame(false, initialStorage)
   }
 }
 
@@ -2346,26 +2341,35 @@ const handleTrainingClick = async () => {
   }
 
   try {
-    // Вызываем API для записи старта тренировочного забега
     const response = await host.post('training-run-start/')
     console.log('training-run-start response:', response.data)
 
+    let basePoints = null
+    let reservePercent = null
     if (response.data.user) {
-      // Обновляем данные пользователя если нужно
       if (response.data.user.training_run_count_this_hour !== undefined) {
         app.user.training_run_count_this_hour = response.data.user.training_run_count_this_hour
       }
       if (response.data.user.training_run_last_started_at !== undefined) {
         app.user.training_run_last_started_at = response.data.user.training_run_last_started_at
       }
+      basePoints = response.data.energy_run_base_points ?? null
+      reservePercent = response.data.energy_run_reserve_percent ?? null
+      const totalPoints = (basePoints != null && reservePercent != null)
+        ? Math.ceil(basePoints * (1 + reservePercent / 100))
+        : null
+      console.log('[Training run] Server points:', {
+        energy_run_base_points: basePoints,
+        energy_run_reserve_percent: reservePercent,
+        total_points_for_run: totalPoints
+      })
     }
 
-    // Обновляем счетчик доступных забегов
     trainingRunsAvailable.value = response.data.available_runs || 0
     trainingRunsUsedThisHour.value = response.data.runs_used_this_hour || 0
 
-    // Запускаем тренировочный забег
-    startGame(true)
+    const initialStorage = app.storage ?? 70
+    startGame(true, initialStorage, basePoints, reservePercent)
   } catch (error) {
     // Если ошибка лимита - показываем модалку предупреждения
     if (error.response?.status === 400 && error.response?.data?.error === 'training_run_limit_exceeded') {
@@ -2380,9 +2384,8 @@ const handleTrainingClick = async () => {
       await checkTrainingRunAvailability()
       return
     }
-    // Другие ошибки - запускаем игру всё равно (fallback)
     console.error('Error starting training run:', error)
-    startGame(true)
+    startGame(true, app.storage ?? 70)
   }
 }
 
