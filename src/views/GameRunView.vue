@@ -343,6 +343,7 @@ import { useGamePhysics } from '@/composables/useGamePhysics'
 import { useGameWorld } from '@/composables/useGameWorld'
 import { useGameEffects } from '@/composables/useGameEffects'
 import { useAppStore } from '@/stores/app'
+import { getWallet } from '@/services/user'
 import { host } from '@/../axios.config'
 import { useTelegram } from '@/services/telegram'
 import { runnerExtraLifeStarsEnabled } from '@/services/data'
@@ -2591,12 +2592,25 @@ const handleClaim = async () => {
       // Обновляем состояние приложения после успешного начисления
       if (response.data.total_energy !== undefined) {
         app.setScore(response.data.total_energy)
+        // Energy в профиле берётся из app.user.energy, не из app.score
+        if (app.user) {
+          app.user.energy = response.data.total_energy
+        }
       }
       if (response.data.storage !== undefined) {
         app.setStorage(response.data.storage)
       }
       if (response.data.power !== undefined) {
         app.setPower(response.data.power)
+      }
+      // Kw amount в wallet info — обновляем из бэкенда после начисления
+      try {
+        const walletData = await getWallet()
+        if (walletData) {
+          app.wallet_info = walletData
+        }
+      } catch (e) {
+        console.error('handleClaim: failed to refresh wallet_info', e)
       }
 
       // Очищаем данные забега только после успешного начисления
