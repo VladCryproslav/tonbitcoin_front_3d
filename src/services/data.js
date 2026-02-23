@@ -212,7 +212,7 @@ const gemsSheet = [
     shop: true,
     name: 'Buy DAO',
     type: 'DAO Owner',
-    price: 960,
+    price: 1480,
     rarity: 'special',
     description: 'You buy 1% project',
     buttonColor: 'gold',
