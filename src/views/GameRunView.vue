@@ -346,7 +346,7 @@ import { useAppStore } from '@/stores/app'
 import { getWallet } from '@/services/user'
 import { host } from '@/../axios.config'
 import { useTelegram } from '@/services/telegram'
-import { runnerExtraLifeStarsEnabled } from '@/services/data'
+import { runnerExtraLifeStarsEnabled, runnerOverheatEnabled } from '@/services/data'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -1297,6 +1297,25 @@ const startGame = (training = false, initialStorage = null, basePoints = null, r
 
 // Инициализация перегрева при старте забега
 const initializeOverheat = () => {
+  // Перегревы отключены флагом в data.js
+  if (!runnerOverheatEnabled) {
+    isOverheated.value = false
+    overheatEnergyCollected.value = 0
+    overheatGoal.value = null
+    wasOverheated.value = false
+    overheatedUntil.value = null
+    showOverheatModal.value = false
+    overheatDecelerating.value = false
+    overheatCountdown.value = null
+    isAccelerating.value = false
+    overheatProtectionActive.value = false
+    overheatProtectionEndTime = 0
+    if (gamePhysics.value?.setBlinking) {
+      gamePhysics.value.setBlinking(false)
+    }
+    return
+  }
+
   const stationType = app.user?.station_type
   const neededHours = OVERHEAT_HOURS_BY_TYPE[stationType]
   const isCryoActive = app.user?.cryo_expires && new Date(app.user.cryo_expires) > new Date()
@@ -1354,6 +1373,8 @@ const initializeOverheat = () => {
 
 // Проверка триггера перегрева через API
 const checkOverheatTrigger = async (amount) => {
+  if (!runnerOverheatEnabled) return false
+
   const stationType = app.user?.station_type
   const neededHours = OVERHEAT_HOURS_BY_TYPE[stationType]
   const isCryoActive = app.user?.cryo_expires && new Date(app.user.cryo_expires) > new Date()
@@ -1883,8 +1904,8 @@ function doOneStep(playerBox, inRollImmuneWindow) {
             gameRun.collectEnergy(energy)
             gameRun.markPointPassed()
 
-            // Проверяем перегрев через API (только если перегрев еще не активен)
-            if (!isOverheated.value) {
+            // Проверяем перегрев через API (только если перегревы включены и перегрев еще не активен)
+            if (runnerOverheatEnabled && !isOverheated.value) {
               const overheated = await checkOverheatTrigger(energy)
               if (overheated) {
                 // Перегрев активирован, забег уже остановлен в activateOverheat()
