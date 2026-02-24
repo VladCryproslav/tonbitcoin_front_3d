@@ -401,7 +401,7 @@ const CLAIM_TIMEOUT_MS = 25000
 const showConnectionUnstableModal = ref(false)
 const PING_ATTEMPTS = 3
 const PING_TIMEOUT_MS = 5000
-const PING_MAX_AVG_MS = 800
+const PING_MAX_AVG_MS = 200
 const CLAIM_RETRY_ATTEMPTS = 3
 const CLAIM_RETRY_DELAY_MS = 2000
 // Сохраненное значение начального storage для расчета цены дополнительной жизни
