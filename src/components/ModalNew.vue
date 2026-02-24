@@ -10,6 +10,8 @@ const props = defineProps({
   status: String,
   title: String,
   body: String,
+  /** Если true, модалка не закрывается автоматически через 2 сек (например, предупреждение о соединении) */
+  noAutoClose: Boolean,
 })
 
 const emit = defineEmits(['close'])
@@ -19,9 +21,11 @@ const emitClose = () => {
 }
 
 onMounted(() => {
-  setTimeout(() => {
-    emit('close')
-  }, 2000)
+  if (!props.noAutoClose) {
+    setTimeout(() => {
+      emit('close')
+    }, 2000)
+  }
 })
 </script>
 

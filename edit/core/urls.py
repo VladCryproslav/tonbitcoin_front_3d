@@ -258,5 +258,5 @@ urlpatterns = [
     path("switch-orbital/", SwitchOrbitalView.as_view(), name="switch_orbital"),
     path("craft-nft/", views.CraftNFTView.as_view(), name="craft_nft"),
     path("switch-orbital-station/", views.SwitchOrbitalStationView.as_view(), name="switch_orbital_station"),
-    # path("health/", health, name="test_endpoint"),
+    path("health/", health, name="health"),
 ]

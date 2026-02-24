@@ -297,6 +297,16 @@
       @close="showClaimErrorModal = false"
     />
 
+    <!-- Предупреждение о нестабильном соединении после загрузки моделей -->
+    <ModalNew
+      v-if="showConnectionUnstableModal"
+      status="warning"
+      :title="t('notification.st_attention')"
+      :body="t('notification.connection_unstable_pre_run')"
+      :no-auto-close="true"
+      @close="showConnectionUnstableModal = false"
+    />
+
     <!-- Красная вспышка по краям экрана при ударе (CSS-анимация, без JS-таймеров) -->
     <div
       v-if="hitFlashEnabled && hitFlashTick"
@@ -382,6 +392,11 @@ const claimErrorTitle = ref('')
 const claimErrorBody = ref('')
 const isClaiming = ref(false)
 const CLAIM_TIMEOUT_MS = 25000
+// Проверка соединения после загрузки моделей
+const showConnectionUnstableModal = ref(false)
+const PING_ATTEMPTS = 3
+const PING_TIMEOUT_MS = 5000
+const PING_MAX_AVG_MS = 800
 const CLAIM_RETRY_ATTEMPTS = 3
 const CLAIM_RETRY_DELAY_MS = 2000
 // Сохраненное значение начального storage для расчета цены дополнительной жизни
@@ -722,6 +737,27 @@ const controlModeLabel = computed(() => (controlMode.value === 'swipes' ? t('gam
 
 let directionalLight = null
 
+/** Проверка стабильности соединения: несколько запросов к API, замер RTT. Возвращает true если ок, false если нестабильно. */
+const checkConnectionStability = async () => {
+  const times = []
+  for (let i = 0; i < PING_ATTEMPTS; i++) {
+    const start = performance.now()
+    try {
+      await host.get('health/', { timeout: PING_TIMEOUT_MS })
+      times.push(performance.now() - start)
+    } catch {
+      times.push(PING_TIMEOUT_MS + 1)
+    }
+  }
+  const successCount = times.filter(t => t <= PING_TIMEOUT_MS).length
+  const avgMs = times.reduce((a, b) => a + b, 0) / times.length
+  const unstable = successCount < 2 || avgMs > PING_MAX_AVG_MS
+  if (unstable) {
+    console.warn('[Runner] Connection check: unstable', { times, avgMs: Math.round(avgMs), successCount })
+  }
+  return !unstable
+}
+
 // Предзагрузка всех моделей раннера (включая персонажа)
 const preloadAllModels = async () => {
   if (!scene) {
@@ -800,6 +836,17 @@ const preloadAllModels = async () => {
     showLoadingSuccess.value = true
     await new Promise(resolve => setTimeout(resolve, 2000))
     showLoadingSuccess.value = false
+
+    // Проверка соединения: при нестабильном пинге показываем предупреждение (модалка в стиле приложения)
+    try {
+      const stable = await checkConnectionStability()
+      if (!stable) {
+        showConnectionUnstableModal.value = true
+      }
+    } catch (e) {
+      console.warn('[Runner] Connection check failed:', e)
+      showConnectionUnstableModal.value = true
+    }
 
   } catch (error) {
     console.error('Error preloading models:', error)
@@ -2071,14 +2118,19 @@ const endGame = async (isWinByState = false) => {
     }
     // Иначе оставляем сохраненное значение без изменений
 
-    console.log('endGame called, isWinByState:', isWinByState, 'energyCollected BEFORE completeRun:', savedEnergyBeforeComplete, 'startStorage BEFORE completeRun:', savedStartStorageBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'isRunning:', gameRun.isRunning.value, 'runStartTime:', gameRun.runStartTime?.value)
+    console.log('endGame called, isWinByState:', isWinByState, 'isTrainingRun:', isTrainingRun.value, 'energyCollected BEFORE completeRun:', savedEnergyBeforeComplete, 'startStorage BEFORE completeRun:', savedStartStorageBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'isRunning:', gameRun.isRunning.value, 'runStartTime:', gameRun.runStartTime?.value)
 
-    // Вызываем completeRun для сохранения данных забега на сервере (без начисления энергии)
-    const result = await gameRun.completeRun(isWinByState).catch((e) => {
-      console.error('Ошибка завершения забега:', e)
-      console.error('Error details:', e.response?.data, e.message)
-      return null
-    })
+    // Тренировочный забег: не отправляем game-run-complete (сервер не стартует run для тренировки, энергия не начисляется)
+    let result = null
+    if (isTrainingRun.value) {
+      gameRun.stopRun()
+    } else {
+      result = await gameRun.completeRun(isWinByState).catch((e) => {
+        console.error('Ошибка завершения забега:', e)
+        console.error('Error details:', e.response?.data, e.message)
+        return null
+      })
+    }
     console.log('endGame completeRun result:', result)
 
     // Сохраняем данные завершенного забега для последующего начисления при нажатии "Забрать"
