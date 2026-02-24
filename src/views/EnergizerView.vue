@@ -2160,7 +2160,7 @@ onUnmounted(() => {
             ref="factory" />
           <!-- Кнопка "Собрать энергию": скрыта при активном перегреве (docs/OVERHEAT_SYSTEM_ANALYSIS.md) -->
           <button
-            v-if="!energyRunCooldown.isActive && unlockedWallet.bool && (!app?.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !hydroStation.lock && !orbitalStation.lock && !isJarvis.active && !(app?.user?.overheated_until && new Date(app.user.overheated_until) > new Date())"
+            v-if="!energyRunCooldown.isActive && unlockedWallet.bool && (!app?.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !hydroStation.lock && !orbitalStation.lock && !isJarvis.active && !app?.user?.overheated_until && !openAfterHeat"
             class="energy-run-btn"
             @click.stop="handleEnergyRunClick"
           >
