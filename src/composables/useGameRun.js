@@ -293,13 +293,25 @@ export function useGameRun() {
       const collectedPointsSum = collectedEnergyPoints.value.reduce((sum, point) => sum + point.value, 0)
       console.log('completeRun: collectedPointsSum=', collectedPointsSum, 'limitedEnergyCollected=', limitedEnergyCollected, 'collectedPointsCount=', collectedPointsCount.value, 'collectedEnergyPoints.length=', collectedEnergyPoints.value.length)
 
-      // ОПТИМИЗАЦИЯ: Ограничиваем количество поинтов до разумного максимума (200)
-      // и отправляем только значения (без timestamp) для уменьшения размера данных
-      // Timestamp нужен только для дополнительной проверки, основная проверка - сумма значений
-      const pointsToSend = collectedEnergyPoints.value.slice(0, 200).map(point => ({
-        value: Number(point.value.toFixed(2)) // Округляем до 2 знаков для точности
-        // timestamp_ms убран для оптимизации размера данных - основная проверка по сумме значений
-      }))
+      // Нормализуем поинты так, чтобы сумма равнялась limitedEnergyCollected (сервер проверяет 4c2: sum === energy_collected).
+      // Иначе при накоплении float (например 889.51) при energy_collected=875 (cap по storage) приходит 400.
+      const rawPoints = collectedEnergyPoints.value.slice(0, 200)
+      let pointsToSend
+      if (rawPoints.length === 0 || collectedPointsSum <= 0) {
+        pointsToSend = []
+      } else if (Math.abs(collectedPointsSum - limitedEnergyCollected) <= 0.02) {
+        pointsToSend = rawPoints.map(point => ({ value: Number(point.value.toFixed(2)) }))
+      } else {
+        const scale = limitedEnergyCollected / collectedPointsSum
+        pointsToSend = rawPoints.map((point, i) => ({
+          value: i < rawPoints.length - 1
+            ? Math.round(point.value * scale * 100) / 100
+            : 0
+        }))
+        const sumSoFar = pointsToSend.slice(0, -1).reduce((s, p) => s + p.value, 0)
+        const lastVal = Math.round((limitedEnergyCollected - sumSoFar) * 100) / 100
+        pointsToSend[pointsToSend.length - 1].value = Math.max(0.01, lastVal)
+      }
 
       const runData = {
         distance: distance.value,
