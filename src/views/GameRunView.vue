@@ -293,13 +293,7 @@
       class="hit-flash-overlay"
     />
 
-    <!-- Модальное окно перегрева -->
-    <OverheatGameRunModal
-      v-if="showOverheatModal"
-      :overheated-until="overheatedUntil"
-      @continue="handleOverheatContinue"
-      @close="handleOverheatModalClose"
-    />
+    <!-- Раннер не участвует в перегреве. Перегрев только при генерации энергии (см. docs/OVERHEAT_SYSTEM_ANALYSIS.md). -->
 
     <!-- Модальное окно предупреждения перед стартом забега -->
     <StartRunWarningModal
@@ -308,12 +302,6 @@
       @update:control-mode="handleStartRunControlModeUpdate"
       @confirm="handleStartRunWarningConfirm"
       @cancel="handleStartRunWarningCancel"
-    />
-
-    <!-- Пульсация экрана красным цветом во время перегрева -->
-    <div
-      v-if="isOverheated && showOverheatModal"
-      class="overheat-screen-pulse"
     />
 
     <!-- Таймер обратного отсчета перед началом забега -->
@@ -335,7 +323,6 @@ import GameUI from '@/components/game/GameUI.vue'
 import GameControls from '@/components/game/GameControls.vue'
 import VirtualControls from '@/components/game/VirtualControls.vue'
 import InfoModal from '@/components/InfoModal.vue'
-import OverheatGameRunModal from '@/components/OverheatGameRunModal.vue'
 import StartRunWarningModal from '@/components/StartRunWarningModal.vue'
 import ModalNew from '@/components/ModalNew.vue'
 import { useGameRun } from '@/composables/useGameRun'
@@ -1286,8 +1273,7 @@ const startGame = (training = false, initialStorage = null, basePoints = null, r
     endGame._isProcessing = false
   }
 
-  // Инициализируем перегрев при старте забега
-  initializeOverheat()
+  // Раннер не участвует в перегреве (см. docs/OVERHEAT_SYSTEM_ANALYSIS.md).
 
   if (gamePhysics.value?.setAnimationState) {
     gamePhysics.value.setAnimationState('running')
@@ -1295,7 +1281,8 @@ const startGame = (training = false, initialStorage = null, basePoints = null, r
   lastUpdateTime = 0
 }
 
-// Инициализация перегрева при старте забега
+// Инициализация перегрева при старте забега (не вызывается: раннер не участвует в перегреве)
+/* eslint-disable no-unused-vars */
 const initializeOverheat = () => {
   // Перегревы отключены флагом в data.js
   if (!runnerOverheatEnabled) {
@@ -1606,6 +1593,7 @@ const handleOverheatModalClose = () => {
   }
   // Если перегрев еще активен, не закрываем модалку
 }
+/* eslint-enable no-unused-vars */
 
 const pauseGame = () => {
   gameRun.pauseRun()
@@ -1904,14 +1892,7 @@ function doOneStep(playerBox, inRollImmuneWindow) {
             gameRun.collectEnergy(energy)
             gameRun.markPointPassed()
 
-            // Проверяем перегрев через API (только если перегревы включены и перегрев еще не активен)
-            if (runnerOverheatEnabled && !isOverheated.value) {
-              const overheated = await checkOverheatTrigger(energy)
-              if (overheated) {
-                // Перегрев активирован, забег уже остановлен в activateOverheat()
-                return
-              }
-            }
+            // Перегрев только при генерации энергии, не в раннере (docs/OVERHEAT_SYSTEM_ANALYSIS.md).
           },
           () => {
             // Когда токен проходит мимо без сбора: только помечаем как пройденный
@@ -3100,51 +3081,7 @@ onMounted(() => {
     })
   }, 100)
 
-  // Периодическая проверка состояния перегрева (каждую секунду)
-  overheatCheckInterval = setInterval(async () => {
-    if (showOverheatModal.value && overheatedUntil.value) {
-      const now = new Date()
-      const until = new Date(overheatedUntil.value)
-
-      // Если перегрев закончился, обновляем состояние (но не закрываем модалку)
-      if (until <= now) {
-        isOverheated.value = false
-
-        // Обновляем данные пользователя с сервера для подтверждения
-        try {
-          await app.initUser()
-          // Обновляем overheatedUntil из серверных данных
-          if (app.user?.overheated_until) {
-            const serverUntil = new Date(app.user.overheated_until)
-            if (serverUntil > now) {
-              // На сервере перегрев еще активен (возможна рассинхронизация времени)
-              overheatedUntil.value = serverUntil
-              isOverheated.value = true
-            } else {
-              // На сервере перегрев закончился
-              overheatedUntil.value = null
-              isOverheated.value = false
-              // Обновляем модалку, но НЕ закрываем её и НЕ переключаем на паузу
-              launcherOverlayMode.value = 'none'
-            }
-          } else {
-            // На сервере нет перегрева
-            overheatedUntil.value = null
-            isOverheated.value = false
-            // Обновляем модалку, но НЕ закрываем её и НЕ переключаем на паузу
-            launcherOverlayMode.value = 'none'
-          }
-        } catch (error) {
-          console.error('[GameRunView] Ошибка при обновлении состояния перегрева:', error)
-        }
-        // НЕ закрываем модалку автоматически - она остается открытой с зеленой подсветкой
-        // НЕ переключаем на паузу - модалка перегрева остается активной
-        // Пользователь должен нажать кнопку "Продолжить"
-      } else {
-        // Убрана отладочная информация о времени
-      }
-    }
-  }, 1000)
+  // Раннер не участвует в перегреве — интервал проверки перегрева не используется.
 })
 
 onUnmounted(() => {

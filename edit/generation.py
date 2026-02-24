@@ -5,7 +5,6 @@ import django, os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tonbtc.settings")
 django.setup()
 
-from core.models import UserProfile
 import logging
 
 
@@ -49,15 +48,37 @@ def setup_logging(log_file):
 
 logger = setup_logging("logs/gen.log")
 
+import random
+from datetime import timedelta
+
 from django.db import transaction
 from django.db.models import F, Q
 from django.db.models.functions import Greatest
 from django.utils import timezone
 
+from core.models import OverheatConfig, UserProfile
+from tgbot.views import bot
+
 # ОПЦИОНАЛЬНО: Переключение логики снижения power
 # False (по умолчанию): power снижается ВСЕГДА, даже когда storage = storage_limit
 # True: power снижается ТОЛЬКО пока storage < storage_limit
 POWER_REDUCTION_ONLY_WHEN_STORAGE_NOT_FULL = True
+
+# Типы станций с перегревом при заполнении Storage до лимита (docs/OVERHEAT_SYSTEM_ANALYSIS.md)
+OVERHEAT_HOURS_BY_TYPE = {
+    "Thermal power plant": 4,
+    "Geothermal power plant": 2,
+    "Nuclear power plant": 2,
+    "Thermonuclear power plant": 1,
+    "Dyson Sphere": 1,
+    "Neutron star": 1,
+    "Antimatter": 1,
+    "Galactic core": 1,
+}
+
+OVERHEAT_TELEGRAM_MESSAGE = (
+    "📢 Ваша электростанция перегрелась. Зайдите в приложение, дождитесь окончания охлаждения и нажмите кнопку включения станции."
+)
 
 while True:
     start_time = time.time()
@@ -80,7 +101,33 @@ while True:
                 storage=F("storage_limit")
             )
         )
-        
+
+        # Перегрев при заполнении Storage до storage_limit (docs/OVERHEAT_SYSTEM_ANALYSIS.md)
+        users_full_storage = UserProfile.objects.filter(
+            overheated_until__isnull=True,
+        ).exclude(storage__lt=F("storage_limit"))
+        overheat_config = OverheatConfig.objects.first()
+        min_dur = getattr(overheat_config, "min_duration", 30) if overheat_config else 30
+        max_dur = getattr(overheat_config, "max_duration", 300) if overheat_config else 300
+        for u in users_full_storage:
+            if float(u.storage) < float(u.storage_limit):
+                continue
+            if u.station_type not in OVERHEAT_HOURS_BY_TYPE:
+                continue
+            is_cryo_active = u.cryo_expires and now < u.cryo_expires
+            if is_cryo_active:
+                continue
+            duration_sec = random.randint(min_dur, max_dur)
+            overheated_until = now + timedelta(seconds=duration_sec)
+            UserProfile.objects.filter(id=u.id).update(
+                overheated_until=overheated_until,
+                was_overheated=True,
+            )
+            try:
+                bot.send_message(u.user_id, OVERHEAT_TELEGRAM_MESSAGE)
+            except Exception:
+                pass
+
         # НОВАЯ ЛОГИКА: Снижение power при генерации
         # Получаем пользователей для снижения power (те же условия что и для генерации)
         users_for_power_reduction = UserProfile.objects.filter(
