@@ -229,9 +229,11 @@
           <button
             v-if="!isTrainingRun"
             class="btn-primary btn-primary--wide"
+            :disabled="isClaiming"
             @click.stop.prevent="handleClaim"
           >
-            {{ t('game.run_claim') }}
+            <span v-if="!isClaiming">{{ claimError ? t('notification.energy_claim_retry_btn') : t('game.run_claim') }}</span>
+            <span v-else>{{ t('game.processing') }}</span>
           </button>
           <div v-else class="training-warning-container">
             <p class="training-warning-text">
@@ -284,6 +286,15 @@
       :title="t('notification.st_attention')"
       :body="t('game.training_run_limit_exceeded', { used: trainingRunsUsedThisHour, max: maxTrainingRunsPerHour })"
       @close="showTrainingLimitModal = false"
+    />
+
+    <!-- Модалка ошибки начисления энергии (остаёмся на экране результатов, кнопка «Повторить» доступна) -->
+    <ModalNew
+      v-if="showClaimErrorModal"
+      status="error"
+      :title="claimErrorTitle"
+      :body="claimErrorBody"
+      @close="showClaimErrorModal = false"
     />
 
     <!-- Красная вспышка по краям экрана при ударе (CSS-анимация, без JS-таймеров) -->
@@ -364,6 +375,15 @@ const showTrainingLimitModal = ref(false)
 const completedRunData = ref(null) // { energy_collected, is_win, energy_gained }
 // Сохраненное значение собранной энергии для отображения в модалке (не обнуляется до нажатия "Забрать")
 const savedEnergyCollectedForModal = ref(0)
+// Ошибка начисления: при true показываем кнопку «Повторить» вместо «Забрать», не выходим с экрана результатов
+const claimError = ref(false)
+const showClaimErrorModal = ref(false)
+const claimErrorTitle = ref('')
+const claimErrorBody = ref('')
+const isClaiming = ref(false)
+const CLAIM_TIMEOUT_MS = 25000
+const CLAIM_RETRY_ATTEMPTS = 3
+const CLAIM_RETRY_DELAY_MS = 2000
 // Сохраненное значение начального storage для расчета цены дополнительной жизни
 const savedStartStorageForExtraLife = ref(0)
 // Логика расчета уровней инженеров для модалки проигрыша
@@ -2572,7 +2592,32 @@ const handleTap = () => {
   }
 }
 
-// Забрать: начисление энергии через отдельный эндпоинт
+// Возвращает текст ошибки для отображения по типу ошибки (см. docs/RUNNER_ENERGY_CLAIM_ANALYSIS.md)
+const getClaimErrorMessage = (error) => {
+  if (!error.response) {
+    if (error.code === 'ECONNABORTED') {
+      return t('notification.energy_claim_network_error')
+    }
+    return t('notification.energy_claim_network_error')
+  }
+  const status = error.response.status
+  const serverError = error.response?.data?.error || ''
+  if (status >= 500) {
+    return t('notification.energy_claim_server_error')
+  }
+  if (status === 400) {
+    if (typeof serverError === 'string') {
+      if (serverError.toLowerCase().includes('expired')) return t('notification.energy_claim_run_expired')
+      if (serverError.toLowerCase().includes('not started')) return t('notification.energy_claim_run_not_started')
+      if (serverError.toLowerCase().includes('not found') || serverError.toLowerCase().includes('complete a run')) return t('notification.energy_claim_run_data_not_found')
+      if (serverError.toLowerCase().includes('invalid') || serverError.toLowerCase().includes('exceeds maximum')) return t('notification.energy_claim_invalid_energy')
+    }
+    return serverError || t('notification.energy_claim_error')
+  }
+  return serverError || t('notification.energy_claim_error')
+}
+
+// Забрать: начисление энергии через отдельный эндпоинт (таймаут, retry, без выхода при ошибке, кнопка «Повторить»)
 const handleClaim = async () => {
   if (!completedRunData.value) {
     console.error('handleClaim: completedRunData is null')
@@ -2580,62 +2625,68 @@ const handleClaim = async () => {
     return
   }
 
-  try {
-    console.log('handleClaim: calling game-run-claim with data:', completedRunData.value)
+  claimError.value = false
+  showClaimErrorModal.value = false
+  isClaiming.value = true
 
-    const response = await host.post('game-run-claim/', {
-      energy_collected: completedRunData.value.energy_collected,
-      is_win: completedRunData.value.is_win
-    })
-
-    console.log('handleClaim: response:', response.data)
-
-    if (response.status === 200 && response.data.success) {
-      // Обновляем состояние приложения после успешного начисления
-      if (response.data.total_energy !== undefined) {
-        app.setScore(response.data.total_energy)
-        // Energy в профиле берётся из app.user.energy, не из app.score
-        if (app.user) {
-          app.user.energy = response.data.total_energy
-        }
-      }
-      if (response.data.storage !== undefined) {
-        app.setStorage(response.data.storage)
-      }
-      if (response.data.power !== undefined) {
-        app.setPower(response.data.power)
-      }
-      // Kw amount в wallet info — обновляем из бэкенда после начисления
-      try {
-        const walletData = await getWallet()
-        if (walletData) {
-          app.wallet_info = walletData
-        }
-      } catch (e) {
-        console.error('handleClaim: failed to refresh wallet_info', e)
-      }
-
-      // Очищаем данные забега только после успешного начисления
-      completedRunData.value = null
-      savedEnergyCollectedForModal.value = 0
-      savedStartStorageForExtraLife.value = 0
-      // Очищаем startStorage и energyCollected только после успешного начисления
-      if (gameRun.startStorage) {
-        gameRun.startStorage.value = 0
-      }
-      if (gameRun.energyCollected) {
-        gameRun.energyCollected.value = 0
-      }
-    }
-  } catch (error) {
-    console.error('Ошибка при начислении энергии:', error)
-    console.error('Error response:', error.response?.data)
-    // Показываем сообщение об ошибке пользователю
-    alert(error.response?.data?.error || 'Ошибка при начислении энергии')
+  const payload = {
+    energy_collected: completedRunData.value.energy_collected,
+    is_win: completedRunData.value.is_win
   }
 
-  // Выходим из игры после начисления (или ошибки)
-  exitToMain()
+  let lastError = null
+  for (let attempt = 1; attempt <= CLAIM_RETRY_ATTEMPTS; attempt++) {
+    try {
+      const response = await host.post('game-run-claim/', payload, { timeout: CLAIM_TIMEOUT_MS })
+
+      if (response.status === 200 && response.data.success) {
+        isClaiming.value = false
+        // Обновляем состояние приложения (первое начисление или идемпотентный ответ already_claimed)
+        if (response.data.total_energy !== undefined) {
+          app.setScore(response.data.total_energy)
+          if (app.user) {
+            app.user.energy = response.data.total_energy
+          }
+        }
+        if (response.data.storage !== undefined) {
+          app.setStorage(response.data.storage)
+        }
+        if (response.data.power !== undefined) {
+          app.setPower(response.data.power)
+        }
+        try {
+          const walletData = await getWallet()
+          if (walletData) app.wallet_info = walletData
+        } catch (e) {
+          console.error('handleClaim: failed to refresh wallet_info', e)
+        }
+        completedRunData.value = null
+        savedEnergyCollectedForModal.value = 0
+        savedStartStorageForExtraLife.value = 0
+        if (gameRun.startStorage) gameRun.startStorage.value = 0
+        if (gameRun.energyCollected) gameRun.energyCollected.value = 0
+        exitToMain()
+        return
+      }
+    } catch (error) {
+      lastError = error
+      const isNetworkOrTimeout = !error.response || error.code === 'ECONNABORTED'
+      if (isNetworkOrTimeout && attempt < CLAIM_RETRY_ATTEMPTS) {
+        await new Promise(r => setTimeout(r, CLAIM_RETRY_DELAY_MS))
+        continue
+      }
+      break
+    }
+  }
+
+  isClaiming.value = false
+  if (lastError) {
+    console.error('Ошибка при начислении энергии:', lastError)
+    claimError.value = true
+    claimErrorTitle.value = t('notification.st_error')
+    claimErrorBody.value = getClaimErrorMessage(lastError)
+    showClaimErrorModal.value = true
+  }
 }
 
 // Состояние покупки дополнительной жизни

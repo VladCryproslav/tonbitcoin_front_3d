@@ -335,6 +335,11 @@ class UserProfile(models.Model):
         default=False,
         help_text="Использована ли 4-я жизнь в текущем забеге"
     )
+    energy_run_claimed_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Время последнего успешного начисления за забег (для идемпотентности claim)"
+    )
 
     # Training Run (Тренировочные забеги)
     training_run_last_started_at = models.DateTimeField(

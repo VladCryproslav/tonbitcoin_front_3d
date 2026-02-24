@@ -429,7 +429,21 @@
     "spend_kw_discl": "kW tokens in User wallet can be spent on:\n1. Mining fBTC token\n2. Paying for power station repairs\n3. Coming soon in v.3.1\n4. Coming soon in v.3.1",
     "imposible_activate_booster": "The booster cannot be activated.",
     "insufficient_funds": "Insufficient funds in your balance",
-    "min_withdraw_fbtc": "To withdraw fBTC, your balance must be at least {min} fBTC"
+    "min_withdraw_fbtc": "To withdraw fBTC, your balance must be at least {min} fBTC",
+    "wallet_not_connected": "Wallet not connected",
+    "insufficient_funds_upgrade": "Insufficient funds for upgrade",
+    "energy_claim_error": "Error crediting energy",
+    "energy_claim_network_error": "Network issue. Check your connection and tap «Retry».",
+    "energy_claim_run_expired": "Run expired. Please start a new run.",
+    "energy_claim_server_error": "Temporary server error. Try tapping «Retry» in a few seconds.",
+    "energy_claim_already_claimed": "Energy has already been credited to your balance.",
+    "energy_claim_run_not_started": "Run not started. Please start a run first.",
+    "energy_claim_run_data_not_found": "Run data not found. Complete a run and tap «Claim».",
+    "energy_claim_invalid_energy": "Invalid energy data. Please contact support.",
+    "energy_claim_retry_btn": "Retry",
+    "connection_unstable_pre_run": "Connection unstable. For reliable energy crediting we recommend using stable internet (Wi‑Fi or good mobile signal).",
+    "connection_unstable_before_claim": "Connection unstable. Check your internet and tap «Claim» again.",
+    "energy_claim_success": "Energy successfully credited to your balance!"
   },
   "games": {
     "title": "Games",

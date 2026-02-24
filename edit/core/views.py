@@ -2629,7 +2629,25 @@ class GameRunClaimView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             
+            # Идемпотентность: если забег уже был начислен (ответ не дошёл до клиента), возвращаем 200 без повторного начисления
             if user_profile.energy_run_start_storage is None:
+                claimed_at = getattr(user_profile, 'energy_run_claimed_at', None)
+                if claimed_at is not None:
+                    time_since_claimed = (now - claimed_at).total_seconds()
+                    if time_since_claimed <= 7200:  # 2 часа
+                        user_profile = UserProfile.objects.get(user_id=user_profile.user_id)
+                        return Response(
+                            {
+                                "success": True,
+                                "message": "Energy already claimed for this run.",
+                                "already_claimed": True,
+                                "energy_gained": 0,
+                                "total_energy": float(user_profile.energy),
+                                "storage": float(user_profile.storage),
+                                "power": float(user_profile.power),
+                            },
+                            status=status.HTTP_200_OK,
+                        )
                 action_logger.warning(
                     f"GameRunClaimView validation FAILED: Run data not found for user {user_profile.user_id}"
                 )
@@ -2736,10 +2754,10 @@ class GameRunClaimView(APIView):
             
             # Очистка данных забега после успешного начисления
             # НЕ обнуляем energy_run_last_started_at - он нужен для cooldown таймера
-            # Обнуляем только energy_run_start_storage, так как забег завершен и энергия начислена
+            # Обнуляем energy_run_start_storage и фиксируем время начисления для идемпотентности (повторный claim вернёт 200 без двойного начисления)
             UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                energy_run_start_storage=None
-                # energy_run_last_started_at остается для cooldown таймера (60 минут)
+                energy_run_start_storage=None,
+                energy_run_claimed_at=now,
             )
             
             # Получаем обновленный объект пользователя
