@@ -2062,9 +2062,9 @@ onUnmounted(() => {
               <span class="time">{{ getTimeRemaining(unlockedWallet.time).time }}</span>
             </div>
           </div>
-          <!-- Cooldown для сбора энергии (60 минут): серая станция (через .onbuild на img ниже) + таймер по центру, без строительных кранов -->
+          <!-- Cooldown для сбора энергии (60 минут): серая станция (через .onbuild на img ниже) + таймер по центру; при перегреве таймер скрыт, станция остаётся серой -->
           <div
-            v-if="energyRunCooldown.isActive && unlockedWallet.bool && (!app?.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !hydroStation.lock && !orbitalStation.lock"
+            v-if="energyRunCooldown.isActive && unlockedWallet.bool && (!app?.user?.building_until || getTimeRemaining(app.user?.building_until).remain <= 0) && !hydroStation.lock && !orbitalStation.lock && !app?.user?.overheated_until"
             class="energy-run-cooldown-overlay">
             <div class="energy-run-cooldown-timer">
               <span class="energy-run-cooldown-label">{{ t('energizer.energy_collection_available_at') }}</span>
@@ -2156,7 +2156,7 @@ onUnmounted(() => {
             </div>
           </div>
           <img :src="imagePath" rel="preload" class="factory lightup"
-            :class="{ heated: app?.user?.overheated_until, onbuild: (app.user?.building_until && getTimeRemaining(app.user?.building_until).remain > 0) || energyRunCooldown.isActive, locked: (hydroStation.lock || orbitalStation.lock) && !unlockedWallet.bool }"
+            :class="{ onbuild: (app.user?.building_until && getTimeRemaining(app.user?.building_until).remain > 0) || energyRunCooldown.isActive || !!app?.user?.overheated_until, locked: (hydroStation.lock || orbitalStation.lock) && !unlockedWallet.bool }"
             ref="factory" />
           <!-- Кнопка "Собрать энергию": скрыта при активном перегреве (docs/OVERHEAT_SYSTEM_ANALYSIS.md) -->
           <button
