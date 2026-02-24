@@ -19,6 +19,7 @@ import { halloweenActive } from '@/services/data'
 import ModalNew from '@/components/ModalNew.vue'
 import MintModal from '@/components/MintModal.vue'
 import UpgradeModal from '@/components/UpgradeModal.vue'
+import AfterHeatModal from '@/components/AfterHeatModal.vue'
 import HeatSwitch from '@/components/HeatSwitch.vue'
 import CraftStationModal from '@/components/CraftStationModal.vue'
 import { useI18n } from 'vue-i18n'
@@ -154,8 +155,8 @@ const showMeModal = (status, title, body) => {
   openModal.value = true
 }
 
+const openAfterHeat = ref(false)
 const openHeatSwitch = ref(false)
-
 const openHeatCheck = ref(false)
 
 const unlockedWallet = computed(() => {
@@ -396,6 +397,13 @@ function showModal(val) {
   }
 }
 
+
+const responseAfterHeat = (res) => {
+  openAfterHeat.value = false
+  if (res?.showSwitch) {
+    openHeatSwitch.value = true
+  }
+}
 
 const responseHeatSwitch = async () => {
   openHeatSwitch.value = false
@@ -1004,7 +1012,16 @@ watch(
     if (openHeatCheck.value) {
       return
     }
-    // Убрана логика показа перегрева
+    if (app?.user?.overheated_until) {
+      const curr_date = new Date()
+      const overheat_date = new Date(app.user.overheated_until)
+      if (overheat_date <= curr_date) {
+        openHeatCheck.value = true
+        setTimeout(() => {
+          openAfterHeat.value = true
+        }, 1000)
+      }
+    }
     if (isJarvis.value.active && !animationStarted) {
       animationStarted = true
       startAnimation()
@@ -1078,6 +1095,7 @@ onUnmounted(() => {
       }
     }
   " />
+  <AfterHeatModal v-if="openAfterHeat" @close="responseAfterHeat" />
   <HeatSwitch v-if="openHeatSwitch" @close="responseHeatSwitch" />
   <CraftStationModal v-if="openCraftStation" v-bind="craftParams" @close="craftResponse" />
 
@@ -2030,6 +2048,11 @@ onUnmounted(() => {
               <span>{{ t('general.main.jarvis_desc') }}</span>
             </div>
           </div>
+          <div v-if="app?.user?.overheated_until" class="overheat">
+            <img src="@/assets/warning.png" width="74px" />
+            <span>{{ t('general.main.overheat_title') }}</span>
+            <div class="overheat-message" v-html="t('general.main.overheat_desc')"></div>
+          </div>
           <div v-if="!unlockedWallet.bool" class="wallet-lock">
             <img src="@/assets/maintenance.webp" ref="jarvisImg" width="190px" />
             <div class="wallet-lock-message">
@@ -2133,7 +2156,7 @@ onUnmounted(() => {
             </div>
           </div>
           <img :src="imagePath" rel="preload" class="factory lightup"
-            :class="{ onbuild: (app.user?.building_until && getTimeRemaining(app.user?.building_until).remain > 0) || energyRunCooldown.isActive, locked: (hydroStation.lock || orbitalStation.lock) && !unlockedWallet.bool }"
+            :class="{ heated: app?.user?.overheated_until, onbuild: (app.user?.building_until && getTimeRemaining(app.user?.building_until).remain > 0) || energyRunCooldown.isActive, locked: (hydroStation.lock || orbitalStation.lock) && !unlockedWallet.bool }"
             ref="factory" />
           <!-- Кнопка "Собрать энергию": скрыта при активном перегреве (docs/OVERHEAT_SYSTEM_ANALYSIS.md) -->
           <button
@@ -2419,6 +2442,42 @@ onUnmounted(() => {
       letter-spacing: 0%;
       line-height: auto;
     }
+  }
+}
+
+.overheat {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  background: #ff3b5999;
+  border-radius: 1rem;
+  transform: translate(-50%, -50%);
+  width: 70vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem 0 0.5rem 0;
+  z-index: 100;
+
+  span {
+    text-align: center;
+    font-family: 'Inter' !important;
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .overheat-message {
+    width: 95%;
+    text-align: center;
+    font-family: 'Inter' !important;
+    font-size: 9px;
+    font-weight: 500;
+    color: #fff;
+    padding: 0.4rem;
+    background: #2e080875;
+    border-radius: 1rem;
   }
 }
 
@@ -3964,6 +4023,9 @@ onUnmounted(() => {
   // animation: fadeOut 1.5s ease-in-out infinite;
 }
 
+.heated {
+  filter: drop-shadow(0 5px 30px #ff3b5980) grayscale(0) contrast(1);
+}
 
 .onbuild {
   filter: grayscale(1) contrast(1.75);

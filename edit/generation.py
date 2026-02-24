@@ -85,15 +85,18 @@ while True:
     with transaction.atomic():
         now = timezone.now()
         
-        # ОРИГИНАЛЬНАЯ ЛОГИКА ГЕНЕРАЦИИ ЭНЕРГИИ (не изменена)
+        # Генерация энергии: прибавляем к storage и к overheat_energy_collected (для цели перегрева)
+        generation_delta = F("generation_rate") * F("power") / 100 / 60
+        same_filter = (
+            ~Q(storage=F("storage_limit"))
+            & Q(overheated_until=None)
+            & (Q(jarvis_expires__lt=now) | Q(jarvis_expires__isnull=True))
+            & (Q(building_until__lt=now) | Q(building_until__isnull=True))
+        )
         logger.info(
-            UserProfile.objects.filter(
-                ~Q(storage=F("storage_limit"))
-                & Q(overheated_until=None)
-                & (Q(jarvis_expires__lt=now) | Q(jarvis_expires__isnull=True))
-                & (Q(building_until__lt=now) | Q(building_until__isnull=True))
-            ).update(
-                storage=F("storage") + F("generation_rate") * F("power") / 100 / 60
+            UserProfile.objects.filter(same_filter).update(
+                storage=F("storage") + generation_delta,
+                overheat_energy_collected=F("overheat_energy_collected") + generation_delta,
             )
         )
         logger.info(
@@ -102,26 +105,56 @@ while True:
             )
         )
 
-        # Перегрев при заполнении Storage до storage_limit (docs/OVERHEAT_SYSTEM_ANALYSIS.md)
-        users_full_storage = UserProfile.objects.filter(
-            overheated_until__isnull=True,
-        ).exclude(storage__lt=F("storage_limit"))
+        # Перегрев по цели (overheat_goal), а не при storage=limit (docs/OVERHEAT_SYSTEM_ANALYSIS.md)
+        # Пример: первый перегрев при 245 kW, второй при +450 kW (695 всего) за период для атомки
         overheat_config = OverheatConfig.objects.first()
         min_dur = getattr(overheat_config, "min_duration", 30) if overheat_config else 30
         max_dur = getattr(overheat_config, "max_duration", 300) if overheat_config else 300
-        for u in users_full_storage:
-            if float(u.storage) < float(u.storage_limit):
+
+        # Выставить случайный goal тем, у кого его ещё нет (первый перегрев в периоде)
+        users_need_goal = UserProfile.objects.filter(
+            overheated_until__isnull=True,
+            overheat_goal__isnull=True,
+            station_type__in=list(OVERHEAT_HOURS_BY_TYPE.keys()),
+        ).exclude(
+            Q(cryo_expires__gt=now) & Q(cryo_expires__isnull=False)
+        )
+        for u in users_need_goal:
+            if u.cryo_expires and now < u.cryo_expires:
                 continue
-            if u.station_type not in OVERHEAT_HOURS_BY_TYPE:
+            needed_hours = OVERHEAT_HOURS_BY_TYPE.get(u.station_type)
+            if not needed_hours:
                 continue
-            is_cryo_active = u.cryo_expires and now < u.cryo_expires
-            if is_cryo_active:
+            max_goal = (
+                float(u.generation_rate)
+                * needed_hours
+                * (float(u.power) / 100)
+            )
+            if max_goal <= 0:
+                continue
+            goal = random.uniform(0, max_goal)
+            UserProfile.objects.filter(id=u.id).update(overheat_goal=goal)
+
+        # Срабатывание перегрева при достижении цели (overheat_energy_collected >= overheat_goal)
+        users_overheated = UserProfile.objects.filter(
+            overheated_until__isnull=True,
+            overheat_goal__isnull=False,
+            station_type__in=list(OVERHEAT_HOURS_BY_TYPE.keys()),
+        ).exclude(
+            Q(cryo_expires__gt=now) & Q(cryo_expires__isnull=False)
+        )
+        for u in users_overheated:
+            if u.cryo_expires and now < u.cryo_expires:
+                continue
+            if float(u.overheat_energy_collected) < float(u.overheat_goal):
                 continue
             duration_sec = random.randint(min_dur, max_dur)
             overheated_until = now + timedelta(seconds=duration_sec)
             UserProfile.objects.filter(id=u.id).update(
                 overheated_until=overheated_until,
                 was_overheated=True,
+                overheat_energy_collected=0,
+                overheat_goal=None,
             )
             try:
                 bot.send_message(u.user_id, OVERHEAT_TELEGRAM_MESSAGE)

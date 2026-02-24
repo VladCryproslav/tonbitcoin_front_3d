@@ -3630,13 +3630,31 @@ class EnableStationView(APIView):
     def post(self, request):
         try:
             user_profile = request.user_profile
-            if user_profile.overheated_until > timezone.now():
+            if (
+                user_profile.overheated_until is not None
+                and user_profile.overheated_until > timezone.now()
+            ):
                 return Response(
                     {"error": "Station is overheated"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            # Сброс перегрева и установка следующей цели (docs/OVERHEAT_SYSTEM_ANALYSIS.md)
+            # После первого перегрева следующая цель фиксированная: generation_rate * needed_hours
+            needed_hours = overheat_hours_by_type.get(user_profile.station_type)
+            update_data = {
+                "overheated_until": None,
+                "tap_count_since_overheat": 0,
+                "was_overheated": False,
+                "overheat_energy_collected": 0,
+            }
+            if user_profile.was_overheated and needed_hours:
+                update_data["overheat_goal"] = (
+                    float(user_profile.generation_rate) * needed_hours
+                )
+            else:
+                update_data["overheat_goal"] = None
             UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                overheated_until=None, tap_count_since_overheat=0
+                **update_data
             )
             return Response(
                 {"message": "Station enabled successfully"},
