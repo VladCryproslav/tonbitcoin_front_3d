@@ -2442,8 +2442,8 @@ class GameRunCompleteView(APIView):
                 points_sum_rounded = round(points_sum, 2)
                 energy_collected_rounded = round(float(energy_collected), 2)
                 
-                # Допускаем небольшую погрешность из-за округления (0.01 kW)
-                tolerance = 0.01
+                # Допускаем погрешность из-за округления и float на клиенте (0.1 kW)
+                tolerance = 0.1
                 difference = abs(points_sum_rounded - energy_collected_rounded)
                 
                 # Логирование убрано для оптимизации - логируем только ошибки

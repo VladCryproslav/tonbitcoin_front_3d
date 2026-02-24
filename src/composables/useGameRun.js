@@ -293,24 +293,32 @@ export function useGameRun() {
       const collectedPointsSum = collectedEnergyPoints.value.reduce((sum, point) => sum + point.value, 0)
       console.log('completeRun: collectedPointsSum=', collectedPointsSum, 'limitedEnergyCollected=', limitedEnergyCollected, 'collectedPointsCount=', collectedPointsCount.value, 'collectedEnergyPoints.length=', collectedEnergyPoints.value.length)
 
-      // Нормализуем поинты так, чтобы сумма равнялась limitedEnergyCollected (сервер проверяет 4c2: sum === energy_collected).
-      // Иначе при накоплении float (например 889.51) при energy_collected=875 (cap по storage) приходит 400.
+      // Нормализуем поинты так, чтобы сумма в точности равнялась limitedEnergyCollected (сервер 4c2).
+      // Целочисленная арифметика в «центах» (0.01 kW), чтобы не было дрейфа из-за округления.
       const rawPoints = collectedEnergyPoints.value.slice(0, 200)
       let pointsToSend
       if (rawPoints.length === 0 || collectedPointsSum <= 0) {
         pointsToSend = []
-      } else if (Math.abs(collectedPointsSum - limitedEnergyCollected) <= 0.02) {
-        pointsToSend = rawPoints.map(point => ({ value: Number(point.value.toFixed(2)) }))
       } else {
-        const scale = limitedEnergyCollected / collectedPointsSum
-        pointsToSend = rawPoints.map((point, i) => ({
-          value: i < rawPoints.length - 1
-            ? Math.round(point.value * scale * 100) / 100
-            : 0
-        }))
-        const sumSoFar = pointsToSend.slice(0, -1).reduce((s, p) => s + p.value, 0)
-        const lastVal = Math.round((limitedEnergyCollected - sumSoFar) * 100) / 100
-        pointsToSend[pointsToSend.length - 1].value = Math.max(0.01, lastVal)
+        const targetCents = Math.round(limitedEnergyCollected * 100)
+        const needScale = Math.abs(collectedPointsSum - limitedEnergyCollected) > 0.02
+        if (!needScale) {
+          pointsToSend = rawPoints.map(point => ({ value: Number(point.value.toFixed(2)) }))
+        } else {
+          const scale = targetCents / (collectedPointsSum * 100)
+          const cents = rawPoints.map((point, i) => {
+            if (i === rawPoints.length - 1) return 0
+            return Math.max(1, Math.floor(point.value * 100 * scale))
+          })
+          const sumCents = cents.reduce((s, c) => s + c, 0)
+          cents[cents.length - 1] = Math.max(1, targetCents - sumCents)
+          pointsToSend = cents.map(c => ({ value: c / 100 }))
+        }
+        const actualSum = pointsToSend.reduce((s, p) => s + p.value, 0)
+        if (Math.abs(actualSum - limitedEnergyCollected) > 0.01) {
+          pointsToSend[pointsToSend.length - 1].value += (limitedEnergyCollected - actualSum)
+          pointsToSend[pointsToSend.length - 1].value = Math.round(pointsToSend[pointsToSend.length - 1].value * 100) / 100
+        }
       }
 
       const runData = {
