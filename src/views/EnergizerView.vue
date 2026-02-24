@@ -2156,7 +2156,7 @@ onUnmounted(() => {
             </div>
           </div>
           <img :src="imagePath" rel="preload" class="factory lightup"
-            :class="{ onbuild: (app.user?.building_until && getTimeRemaining(app.user?.building_until).remain > 0) || energyRunCooldown.isActive || !!app?.user?.overheated_until, locked: (hydroStation.lock || orbitalStation.lock) && !unlockedWallet.bool }"
+            :class="{ onbuild: (app.user?.building_until && getTimeRemaining(app.user?.building_until).remain > 0) || energyRunCooldown.isActive, locked: (hydroStation.lock || orbitalStation.lock) && !unlockedWallet.bool }"
             ref="factory" />
           <!-- Кнопка "Собрать энергию": скрыта при активном перегреве (docs/OVERHEAT_SYSTEM_ANALYSIS.md) -->
           <button
