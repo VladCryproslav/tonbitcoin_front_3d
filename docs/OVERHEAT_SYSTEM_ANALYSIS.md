@@ -82,7 +82,8 @@
 
 - Генерация идёт по `generation_rate`; каждую минуту к `storage` и к `overheat_energy_collected` прибавляется одна и та же величина (generation_rate × power/100 / 60).
 - **Первый перегрев в периоде:** случайная цель `overheat_goal = random(0, generation_rate × needed_hours × (power/100))` (кВт). Когда `overheat_energy_collected >= overheat_goal`, срабатывает перегрев (пример: 245 кВт для атомки).
-- **Следующий перегрев:** после enable-station выставляется фиксированная цель `overheat_goal = generation_rate × needed_hours`. При достижении — снова перегрев (пример: ещё 440 кВт — второй перегрев за период для Nuclear).
+- **Следующий перегрев:** после enable-station выставляется фиксированная цель `overheat_goal = generation_rate × needed_hours × (power/100)` — энергия за needed_hours при текущем power. При достижении — снова перегрев.
+- **Частота:** Nuclear (needed_hours=2) → не более 1 перегрева за 2 ч генерации → макс. 12 перегревов в день. Thermonuclear и др. (needed_hours=1) → 1 перегрев за 1 ч → макс. 24 в день.
 - Если пользователь снимает энергию и storage не доходит до лимита — перегрев всё равно срабатывает по достижении цели по `overheat_energy_collected`. При storage = storage_limit перегрев **не** привязан к лимиту.
 - Бэкенд при каждом тике генерации обновляет `overheat_energy_collected` и при `overheat_energy_collected >= overheat_goal` выставляет `overheated_until`, отправляет уведомление в Telegram.
 - Фронт отображает состояние из `app.user.overheated_until` и после окончания перегрева показывает кнопку включения станции (AfterHeatModal → HeatSwitch → `enable-station/`).
@@ -187,6 +188,12 @@
 - **Отключить только:** вызов триггера перегрева в GameRunView (оставить `runnerOverheatEnabled = false` и не вызывать проверку при сборе энергии в забеге).
 - **Реализовано:** триггер перегрева по цели (`overheat_energy_collected >= overheat_goal`) при начислении энергии в generation.py; при установке `overheated_until` — отправка сообщения в бот. Тапов нет.
 
+### 5.7 Проверка логики: частота и защита от повторного триггера
+
+- **Nuclear (needed_hours=2):** цель = энергия за 2 ч при текущем power → не более 1 перегрева за 2 ч генерации → **макс. 12 перегревов в день**. Thermonuclear и остальные (needed_hours=1): цель = энергия за 1 ч → **макс. 24 перегрева в день**.
+- **Фиксированная цель после enable-station:** `overheat_goal = generation_rate × needed_hours × (power/100)` — так интервал в реальном времени всегда равен needed_hours при любом power.
+- **Повторный триггер во время перегрева невозможен:** в generation.py генерация (прирост storage и overheat_energy_collected) идёт только при `overheated_until=None`; выборка для срабатывания перегрева тоже `overheated_until__isnull=True`. Пока перегрев активен, пользователь не попадает ни в начисление, ни в список на срабатывание.
+
 ---
 
 ## 6. Краткий чеклист для внедрения
@@ -194,7 +201,7 @@
 | Задача | Действие |
 |--------|----------|
 | Отключить перегревы в забеге | Оставить `runnerOverheatEnabled = false`; при необходимости добавить комментарий/ссылку на этот документ. |
-| Перегревы при генерации | Триггер по цели (overheat_energy_collected >= overheat_goal) в generation.py; первый goal случайный, следующий фиксированный (generation_rate × needed_hours); при установке `overheated_until` — отправка в бот; клиент показывает UI из EnergizerView. |
+| Перегревы при генерации | Триггер по цели (overheat_energy_collected >= overheat_goal) в generation.py; первый goal случайный, следующий фиксированный (generation_rate × needed_hours × power/100); при установке `overheated_until` — отправка в бот; клиент показывает UI из EnergizerView. |
 | UI генерации | Блок перегрева + **при активном перегреве кнопки «Собрать энергию» нет** + после охлаждения AfterHeatModal → HeatSwitch → enable-station. |
 | Раннер | Не участвует в перегреве: не показывать модалку, не ставить на паузу, не читать overheated_until. |
 | Telegram | Использовать ту же логику, что при отключении интернета в MinerView: бэкенд при установке перегрева отправляет сообщение в бот пользователю; текст — см. п. 3.2. |

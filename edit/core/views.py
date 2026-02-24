@@ -3648,8 +3648,11 @@ class EnableStationView(APIView):
                 "overheat_energy_collected": 0,
             }
             if user_profile.was_overheated and needed_hours:
+                # Цель = энергия за needed_hours при текущем power (как в generation.py)
                 update_data["overheat_goal"] = (
-                    float(user_profile.generation_rate) * needed_hours
+                    float(user_profile.generation_rate)
+                    * needed_hours
+                    * (float(user_profile.power) / 100)
                 )
             else:
                 update_data["overheat_goal"] = None
