@@ -1012,6 +1012,13 @@ watch(
     if (openHeatCheck.value) {
       return
     }
+    if (isJarvis.value.active) {
+      if (!animationStarted) {
+        animationStarted = true
+        startAnimation()
+      }
+      return
+    }
     if (app?.user?.overheated_until) {
       const curr_date = new Date()
       const overheat_date = new Date(app.user.overheated_until)
@@ -1021,10 +1028,6 @@ watch(
           openAfterHeat.value = true
         }, 1000)
       }
-    }
-    if (isJarvis.value.active && !animationStarted) {
-      animationStarted = true
-      startAnimation()
     }
   },
   { immediate: true },
@@ -2048,7 +2051,7 @@ onUnmounted(() => {
               <span>{{ t('general.main.jarvis_desc') }}</span>
             </div>
           </div>
-          <div v-if="app?.user?.overheated_until" class="overheat">
+          <div v-if="app?.user?.overheated_until && !isJarvis.active" class="overheat">
             <img src="@/assets/warning.png" width="74px" />
             <span>{{ t('general.main.overheat_title') }}</span>
             <div class="overheat-message" v-html="t('general.main.overheat_desc')"></div>

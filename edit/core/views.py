@@ -453,7 +453,10 @@ class TapEnergyView(APIView):
             is_cryo_active = (
                 user_profile.cryo_expires and timezone.now() < user_profile.cryo_expires
             )
-            if needed_hours and not is_cryo_active:
+            is_jarvis_active = (
+                user_profile.jarvis_expires and timezone.now() < user_profile.jarvis_expires
+            )
+            if needed_hours and not is_cryo_active and not is_jarvis_active:
                 if user_profile.was_overheated:
                     if (
                         user_profile.overheat_energy_collected
@@ -527,10 +530,14 @@ class GameRunUpdateOverheatView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Проверяем активность Cryo (перегрев невозможен если Cryo активен)
+        # Перегрев невозможен при активной криокамере или Jarvis
         is_cryo_active = (
             user_profile.cryo_expires and
             timezone.now() < user_profile.cryo_expires
+        )
+        is_jarvis_active = (
+            user_profile.jarvis_expires and
+            timezone.now() < user_profile.jarvis_expires
         )
         
         # Получаем конфигурацию перегрева
@@ -568,8 +575,8 @@ class GameRunUpdateOverheatView(APIView):
         # Обновляем накопленную энергию для перегрева
         needed_hours = overheat_hours_by_type.get(user_profile.station_type, None)
         
-        # ВАЖНО: Если криокамера активна, перегрев не может активироваться
-        if needed_hours and not is_cryo_active:
+        # ВАЖНО: Если криокамера или Jarvis активны, перегрев не может активироваться
+        if needed_hours and not is_cryo_active and not is_jarvis_active:
             # Обновляем overheat_energy_collected
             UserProfile.objects.filter(user_id=user_profile.user_id).update(
                 overheat_energy_collected=F("overheat_energy_collected") + collected_amount
