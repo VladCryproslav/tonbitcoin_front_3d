@@ -442,6 +442,9 @@
     "energy_claim_invalid_energy": "Invalid energy data. Please contact support.",
     "energy_claim_retry_btn": "Retry",
     "connection_unstable_pre_run": "Connection unstable. For reliable energy crediting we recommend using stable internet (Wi‑Fi or good mobile signal).",
+    "connection_unstable_risk": "By tapping «Confirm», you accept the risks: the run may end incorrectly and energy may be lost.",
+    "connection_unstable_confirm": "Confirm",
+    "connection_unstable_exit": "Exit",
     "connection_unstable_before_claim": "Connection unstable. Check your internet and tap «Claim» again.",
     "energy_claim_success": "Energy successfully credited to your balance!"
   },

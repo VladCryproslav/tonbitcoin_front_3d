@@ -10,6 +10,10 @@ const props = defineProps({
   confirmLabel: {
     type: String,
     default: ''
+  },
+  cancelLabel: {
+    type: String,
+    default: ''
   }
 })
 
@@ -37,7 +41,7 @@ const emitConfirm = () => {
           </div>
           <div class="buttons-group">
             <button class="confirm" @click="emitConfirm">{{ props.confirmLabel || t('modals.info_modal.confirm') }}</button>
-            <button class="cancel" @click="emitClose">{{ t('modals.info_modal.cancel') }}</button>
+            <button class="cancel" @click="emitClose">{{ props.cancelLabel || t('modals.info_modal.cancel') }}</button>
           </div>
         </div>
       </div>

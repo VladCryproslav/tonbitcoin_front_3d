@@ -297,15 +297,20 @@
       @close="showClaimErrorModal = false"
     />
 
-    <!-- Предупреждение о нестабильном соединении после загрузки моделей -->
-    <ModalNew
+    <!-- Предупреждение о нестабильном соединении после загрузки моделей (стиль инфо-модалки: Подтвердить / Выйти) -->
+    <InfoModal
       v-if="showConnectionUnstableModal"
-      status="warning"
-      :title="t('notification.st_attention')"
-      :body="t('notification.connection_unstable_pre_run')"
-      :no-auto-close="true"
-      @close="showConnectionUnstableModal = false"
-    />
+      :confirm-label="t('notification.connection_unstable_confirm')"
+      :cancel-label="t('notification.connection_unstable_exit')"
+      @close="handleConnectionUnstableClose"
+    >
+      <template #header>
+        {{ t('notification.st_attention') }}
+      </template>
+      <template #modal-body>
+        {{ connectionUnstableModalBody }}
+      </template>
+    </InfoModal>
 
     <!-- Красная вспышка по краям экрана при ударе (CSS-анимация, без JS-таймеров) -->
     <div
@@ -3090,6 +3095,19 @@ watch([showGameOver, gameOverType, livesLeft, savedEnergyCollectedForModal, () =
     extraLifePrice.value = 0
   }
 }, { immediate: true })
+
+// Текст модалки нестабильного соединения: два абзаца (pre-wrap в InfoModal сохраняет переносы).
+const connectionUnstableModalBody = computed(() =>
+  `${t('notification.connection_unstable_pre_run')}\n\n${t('notification.connection_unstable_risk')}`
+)
+
+// Закрытие модалки нестабильного соединения: «Подтвердить» — остаёмся, «Выйти» — выход в главное меню.
+const handleConnectionUnstableClose = (e) => {
+  showConnectionUnstableModal.value = false
+  if (e?.check === false) {
+    exitToMain()
+  }
+}
 
 // Выход из лаунчера обратно в основное приложение.
 const exitToMain = () => {
