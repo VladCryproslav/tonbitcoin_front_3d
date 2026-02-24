@@ -18,7 +18,7 @@
       :max-lives="MAX_LIVES"
       :compact-distance="controlMode === 'buttons'"
       :show-pause="gameRun.isRunning && !gameRun.isPaused && !showGameOver"
-      :is-cryo-active="app.user?.cryo_expires && new Date(app.user.cryo_expires) > new Date()"
+      :is-cryo-active="false"
       @pause="openPauseOverlay"
     />
 

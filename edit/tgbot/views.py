@@ -251,6 +251,7 @@ def got_payment(message: Message):
                     azot_counts=F("azot_counts") + 1,
                     overheated_until=None,
                     tap_count_since_overheat=0,
+                    was_overheated=False,
                 )
                 action_logger.info(
                     f"user {user_id} | bought booster {payload} | {payment_info.total_amount} stars | {payment_info.telegram_payment_charge_id}"
