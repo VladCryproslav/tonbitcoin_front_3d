@@ -40,6 +40,10 @@ export const useAppStore = defineStore('app', {
     hashrate: [],
     miningTime: new Date(),
     pauseUpdate: false,
+    /** true пока пользователь в забеге (game-run); модалка «доступно обновление» не показывается и страница не перезагружается */
+    runInProgress: false,
+    /** обновление обнаружено во время забега; показать модалку после возврата на главную (EnergizerView) */
+    pendingUpdate: false,
     showTutorial: false,
     blocked: false,
     kwPerTbtc: null,
@@ -298,6 +302,12 @@ export const useAppStore = defineStore('app', {
     },
     setPauseUpdate(bool) {
       this.pauseUpdate = bool
+    },
+    setRunInProgress(bool) {
+      this.runInProgress = bool
+    },
+    setPendingUpdate(bool) {
+      this.pendingUpdate = bool
     },
     setScore(score) {
       if (this.score !== score) {

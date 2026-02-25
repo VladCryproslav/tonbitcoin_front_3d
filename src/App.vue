@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, watch, onUnmounted, onBeforeMount } from 'vue'
-import { RouterView } from 'vue-router'
+import { RouterView, useRoute } from 'vue-router'
 import MainNav from '@/components/MainNav.vue'
 import PreLoader from '@/views/PreLoader.vue'
 import { useAppStore } from './stores/app'
@@ -41,6 +41,7 @@ if (!tonProofPayload) {
   });
 }
 const { tg, initUpdate, setUpdate } = useTelegram()
+const route = useRoute()
 const connectedAddressString = useTonAddress(false)
 const connectionRestored = useIsConnectionRestored()
 const wallet = useTonWallet()
@@ -78,6 +79,12 @@ async function checkForUpdates() {
 
     // Перевіряємо, чи існує lastModified і чи він не співпадає зі збереженим
     if (lastModified && lastModified !== localStorage.getItem('updDate')) {
+      // Під час забегу не показуємо модалку і не перезавантажуємо — відкладемо до повернення на головну (EnergizerView)
+      if (app.runInProgress) {
+        setUpdate(lastModified) // зберігаємо, щоб після перезагрузки не показувати знову
+        app.setPendingUpdate(true)
+        return
+      }
       setUpdate(lastModified); // Оновлюємо значення в localStorage через composable
       app.clearAsicsCache()
       isUpdateModalOpen.value = true
@@ -272,6 +279,21 @@ async function loadInitialData() {
 onBeforeMount(() => {
   initUpdate()
 })
+
+// Показати відкладене оновлення після повернення з забегу на головну (EnergizerView — це home з табом energizer)
+watch(
+  () => [route.name, app.pendingUpdate],
+  ([name, pending]) => {
+    if (name === 'home' && pending) {
+      app.setPendingUpdate(false)
+      isUpdateModalOpen.value = true
+      setTimeout(() => {
+        window.location.reload()
+      }, 5000)
+    }
+  },
+  { immediate: true }
+)
 
 onMounted(async () => {
   const updateChecker = usePeriodicCheck(checkForUpdates, 7500);

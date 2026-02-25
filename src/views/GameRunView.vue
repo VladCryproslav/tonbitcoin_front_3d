@@ -1367,6 +1367,7 @@ const startGame = (training = false, initialStorage = null, basePoints = null, r
   }
   // Один расчёт поинтов для энерго- и тренировочного забега (из API по energy_run_last_started_at)
   gameRun.startRun(initialStorage, basePoints, reservePercent)
+  app.setRunInProgress(true) // модалка «доступно обновление» не показывается и страница не перезагружается до конца забега
   hitCount.value = 0
   isDead.value = false
   winTriggered = false
@@ -3195,6 +3196,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  app.setRunInProgress(false) // забег завершён (победа/проигрыш/выход) — можно показывать отложенное «доступно обновление»
   stopGameLoop()
   if (threeLoop) {
     cancelAnimationFrame(threeLoop)
