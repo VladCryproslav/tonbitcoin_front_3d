@@ -953,64 +953,72 @@ const startThreeLoop = () => {
 
     // 2) Игровая логика в том же rAF (фикс. шаг). playerBox один раз за кадр — меньше setFromObject при наборе скорости.
     if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value) {
+      // ИСПРАВЛЕНИЕ: Используем аккумулятор времени для фиксированного шага
+      // Это гарантирует одинаковую скорость независимо от FPS (60Hz на iPhone vs 120Hz на Android)
+      // На Android с 120 FPS frameTime будет ~8ms, но мы накапливаем время и выполняем шаги только когда накопилось достаточно
+      timeAccumulator += frameTime
+
       const nowMs = now
       const slideStartTime = gamePhysics.value?.getSlideStartTime?.() ?? 0
       const inRollImmuneWindow = slideStartTime > 0 && nowMs - slideStartTime < ROLL_IMMUNE_MS
+
+      // Выполняем фиксированные шаги только когда накопилось достаточно времени
+      // Это гарантирует одинаковую скорость на всех платформах независимо от FPS
       let stepsCount = 0
+      while (timeAccumulator >= FIXED_STEP_MS && stepsCount < MAX_STEPS) {
+        timeAccumulator -= FIXED_STEP_MS
+        stepsCount++
+      }
 
-      // Во время анимации победы не выполняем шаги — дорога и персонаж стоят; блок победы/перегрева ниже выполняется каждый кадр
-      if (winAnimationStartTime === 0) {
-        // ИСПРАВЛЕНИЕ: Используем аккумулятор времени для фиксированного шага
-        // Это гарантирует одинаковую скорость независимо от FPS (60Hz на iPhone vs 120Hz на Android)
-        timeAccumulator += frameTime
-
-        // Выполняем фиксированные шаги только когда накопилось достаточно времени
-        while (timeAccumulator >= FIXED_STEP_MS && stepsCount < MAX_STEPS) {
-          timeAccumulator -= FIXED_STEP_MS
-          stepsCount++
-        }
-
-        // ОПТИМИЗАЦИЯ: На iPhone с 60Hz предотвращаем микрофризы
-        if (stepsCount === 0 && frameTime >= FIXED_STEP_MS * 0.85) {
-          stepsCount = 1
-          timeAccumulator -= FIXED_STEP_MS
-          if (timeAccumulator < -FIXED_STEP_MS * 0.3) {
-            timeAccumulator = -FIXED_STEP_MS * 0.3
-          }
-        }
-        if (timeAccumulator < -FIXED_STEP_MS * 2) {
-          timeAccumulator = -FIXED_STEP_MS * 2
-        }
-
-        if (stepsCount > 0) {
-          const framePlayerBox = gamePhysics.value?.getPlayerBox?.() ?? null
-          const frameContext = { nowMs, deltaMs: FIXED_STEP_MS * stepsCount, fixedSteps: stepsCount }
-
-          let distanceDelta = 0
-          let accumulatedSpeed = 0
-          for (let i = 0; i < stepsCount; i++) {
-            const s = gameSpeed.value
-            accumulatedSpeed += s
-            distanceDelta += s * 10
-            doOneStep(framePlayerBox, inRollImmuneWindow)
-          }
-          if (gameWorld.value && accumulatedSpeed !== 0) {
-            const avgSpeed = accumulatedSpeed / stepsCount
-            gameWorld.value.setRoadSpeed(avgSpeed)
-          }
-          if (distanceDelta !== 0) {
-            gameRun.updateDistance(gameRun.distance.value + distanceDelta)
-          }
-
-          if (gameEffects.value) {
-            const q = graphicsQuality.value
-            if (q === 'normal' || q === 'medium') {
-              gameEffects.value.updateEffects(frameContext)
-            }
-          }
+      // ОПТИМИЗАЦИЯ: На iPhone с 60Hz предотвращаем микрофризы
+      // Если frameTime близок к фиксированному шагу (нормальный 60Hz), всегда выполняем минимум 1 шаг
+      // Это гарантирует плавность - на iPhone frameTime ≈ 16.67ms, что равно FIXED_STEP_MS
+      // На Android с 120Hz frameTime будет ~8ms, поэтому это условие не сработает и аккумулятор будет работать правильно
+      if (stepsCount === 0 && frameTime >= FIXED_STEP_MS * 0.85) {
+        // Выполняем 1 шаг, вычитая из аккумулятора (может уйти в небольшой минус, но компенсируется в следующих кадрах)
+        stepsCount = 1
+        timeAccumulator -= FIXED_STEP_MS
+        // Ограничиваем аккумулятор снизу, чтобы не накапливать слишком большой долг
+        // Используем более мягкое ограничение для плавности
+        if (timeAccumulator < -FIXED_STEP_MS * 0.3) {
+          timeAccumulator = -FIXED_STEP_MS * 0.3
         }
       }
 
+      // Защита от накопления слишком большого долга в аккумуляторе
+      // Если аккумулятор ушел слишком далеко в минус, постепенно компенсируем
+      if (timeAccumulator < -FIXED_STEP_MS * 2) {
+        timeAccumulator = -FIXED_STEP_MS * 2
+      }
+
+      // Выполняем шаги только если они есть (оптимизация: не вызываем getPlayerBox лишний раз)
+      if (stepsCount > 0) {
+        const framePlayerBox = gamePhysics.value?.getPlayerBox?.() ?? null
+        const frameContext = { nowMs, deltaMs: FIXED_STEP_MS * stepsCount, fixedSteps: stepsCount }
+
+        let distanceDelta = 0
+        let accumulatedSpeed = 0
+        for (let i = 0; i < stepsCount; i++) {
+          const s = gameSpeed.value
+          accumulatedSpeed += s
+          distanceDelta += s * 10
+          doOneStep(framePlayerBox, inRollImmuneWindow)
+        }
+        if (gameWorld.value && accumulatedSpeed !== 0) {
+          const avgSpeed = accumulatedSpeed / stepsCount
+          gameWorld.value.setRoadSpeed(avgSpeed)
+        }
+        if (distanceDelta !== 0) {
+          gameRun.updateDistance(gameRun.distance.value + distanceDelta)
+        }
+
+        if (gameEffects.value) {
+          const q = graphicsQuality.value
+          if (q === 'normal' || q === 'medium') {
+            gameEffects.value.updateEffects(frameContext)
+          }
+        }
+      }
       // Плавное ускорение после паузы/перегрева (за 3 секунды до целевой скорости)
       // Обновляем скорость один раз за кадр (не в фиксированных шагах)
       // Скорость дороги и дистанция обновляются автоматически в фиксированных шагах выше
@@ -1123,51 +1131,6 @@ const startThreeLoop = () => {
             endGame(false)
           }
         }, 2000) // Увеличиваем задержку до 2 секунд для завершения анимации падения
-      }
-    }
-
-    // Плавная остановка при перегреве (с 2 до 1 секунды, как при победе)
-    if (overheatDecelerating.value) {
-      gameSpeed.value *= WIN_DECEL_RATE
-      if (gameWorld.value) gameWorld.value.setRoadSpeed(gameSpeed.value)
-      if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value) {
-        const distanceDelta = gameSpeed.value * 10
-        if (distanceDelta > 0) {
-          gameRun.updateDistance(gameRun.distance.value + distanceDelta)
-        }
-      }
-    }
-
-    // Плавная остановка при победе — в animate() каждый кадр, чтобы модалка показывалась после 4 сек анимации (doOneStep при победе не вызывается)
-    if (winDecelerating) {
-      gameSpeed.value *= WIN_DECEL_RATE
-      if (gameWorld.value) gameWorld.value.setRoadSpeed(gameSpeed.value)
-      if (gameSpeed.value < WIN_SPEED_THRESHOLD) {
-        gameSpeed.value = 0
-        if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
-        winDecelerating = false
-        if (gamePhysics.value?.setAnimationState) gamePhysics.value.setAnimationState('win')
-        if (gamePhysics.value?.onWin) {
-          gamePhysics.value.onWin()
-        }
-        winAnimationStartTime = performance.now()
-      }
-    } else if (winAnimationStartTime > 0) {
-      if (performance.now() - winAnimationStartTime >= WIN_ANIMATION_DURATION_MS) {
-        if (!endGame._isProcessing) {
-          const winEnergy = Math.min(
-            gameRun.energyCollected?.value ?? 0,
-            gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0
-          )
-          if (savedEnergyCollectedForModal.value === 0 || winEnergy > savedEnergyCollectedForModal.value) {
-            savedEnergyCollectedForModal.value = winEnergy
-          }
-          gameOverType.value = 'win'
-          showGameOver.value = true
-          launcherOverlayMode.value = 'none'
-          endGame(true)
-        }
-        winAnimationStartTime = 0
       }
     }
 
@@ -2017,7 +1980,57 @@ function doOneStep(playerBox, inRollImmuneWindow) {
         winDecelerating = true
       }
     }
-  }
+
+    // Плавная остановка при перегреве (с 2 до 1 секунды, как при победе)
+    if (overheatDecelerating.value) {
+      gameSpeed.value *= WIN_DECEL_RATE
+      if (gameWorld.value) gameWorld.value.setRoadSpeed(gameSpeed.value)
+
+      // Обновляем дистанцию даже во время замедления, если игра еще работает
+      if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value) {
+        const distanceDelta = gameSpeed.value * 10
+        if (distanceDelta > 0) {
+          gameRun.updateDistance(gameRun.distance.value + distanceDelta)
+        }
+      }
+    }
+
+    // Плавная остановка при победе
+    if (winDecelerating) {
+      gameSpeed.value *= WIN_DECEL_RATE
+      if (gameWorld.value) gameWorld.value.setRoadSpeed(gameSpeed.value)
+      if (gameSpeed.value < WIN_SPEED_THRESHOLD) {
+        gameSpeed.value = 0
+        if (gameWorld.value) gameWorld.value.setRoadSpeed(0)
+        winDecelerating = false
+        if (gamePhysics.value?.setAnimationState) gamePhysics.value.setAnimationState('win')
+        if (gamePhysics.value?.onWin) {
+          gamePhysics.value.onWin()
+        }
+        winAnimationStartTime = performance.now()
+      }
+    } else if (winAnimationStartTime > 0) {
+        if (performance.now() - winAnimationStartTime >= WIN_ANIMATION_DURATION_MS) {
+          if (!endGame._isProcessing) {
+            // Сохраняем значение энергии перед показом модалки выигрыша
+            // Ограничиваем значение максимумом storage (та же логика, что в счетчике энергии)
+            const winEnergy = Math.min(
+              gameRun.energyCollected?.value ?? 0,
+              gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0
+            )
+            // Всегда обновляем значение при выигрыше, если оно больше сохраненного или сохраненное равно 0
+            if (savedEnergyCollectedForModal.value === 0 || winEnergy > savedEnergyCollectedForModal.value) {
+              savedEnergyCollectedForModal.value = winEnergy
+            }
+          gameOverType.value = 'win'
+          showGameOver.value = true
+          launcherOverlayMode.value = 'none'
+          endGame(true)
+        }
+        winAnimationStartTime = 0
+      }
+    }
+}
 
 const stopGameLoop = () => {
   lastUpdateTime = 0
