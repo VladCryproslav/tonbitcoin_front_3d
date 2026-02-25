@@ -952,7 +952,8 @@ const startThreeLoop = () => {
     }
 
     // 2) Игровая логика в том же rAF (фикс. шаг). playerBox один раз за кадр — меньше setFromObject при наборе скорости.
-    if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value) {
+    // Во время анимации победы (winAnimationStartTime > 0) не выполняем шаги — дорога и персонаж должны стоять
+    if (gameRun.isRunning.value && !gameRun.isPaused.value && !isDead.value && winAnimationStartTime === 0) {
       // ИСПРАВЛЕНИЕ: Используем аккумулятор времени для фиксированного шага
       // Это гарантирует одинаковую скорость независимо от FPS (60Hz на iPhone vs 120Hz на Android)
       // На Android с 120 FPS frameTime будет ~8ms, но мы накапливаем время и выполняем шаги только когда накопилось достаточно
