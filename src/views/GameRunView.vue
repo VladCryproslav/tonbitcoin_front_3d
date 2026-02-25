@@ -229,11 +229,12 @@
           <button
             v-if="!isTrainingRun"
             class="btn-primary btn-primary--wide"
-            :disabled="isClaiming"
+            :disabled="isClaiming || !completedRunData"
             @click.stop.prevent="handleClaim"
           >
-            <span v-if="!isClaiming">{{ claimError ? t('notification.energy_claim_retry_btn') : t('game.run_claim') }}</span>
-            <span v-else>{{ t('game.processing') }}</span>
+            <span v-if="isClaiming">{{ t('game.processing') }}</span>
+            <span v-else-if="!completedRunData">{{ t('game.preparing_results') }}</span>
+            <span v-else>{{ claimError ? t('notification.energy_claim_retry_btn') : t('game.run_claim') }}</span>
           </button>
           <div v-else class="training-warning-container">
             <p class="training-warning-text">
@@ -698,7 +699,8 @@ let winAnimationStartTime = 0
 let obstaclesHidden = false
 const WIN_DECEL_RATE = 0.88
 const WIN_SPEED_THRESHOLD = 0.04
-const WIN_ANIMATION_DURATION_MS = 1700
+// Увеличена длительность, чтобы completeRun успел завершиться до показа модалки и установки completedRunData (см. docs/RUNNER_CLAIM_NO_ENERGY_ON_WIN_ANALYSIS.md)
+const WIN_ANIMATION_DURATION_MS = 4000
 
 // Адаптивный DPR: целевое и текущее значение, регулируем по средней длительности кадра
 let targetPixelRatio = 1

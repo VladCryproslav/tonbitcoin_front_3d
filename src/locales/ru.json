@@ -528,7 +528,8 @@
     "models_loaded_success": "Все ресурсы загружены. Удачи в забеге!",
     "extra_life_activation_error": "Ошибка активации дополнительной жизни",
     "extra_life_unavailable": "На данный момент функционал недоступен",
-    "processing": "Обработка..."
+    "processing": "Обработка...",
+    "preparing_results": "Подготовка результатов..."
   },
   "common": {
     "lvl": "ур.",

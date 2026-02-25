@@ -528,7 +528,8 @@
     "models_loaded_success": "All resources loaded. Good luck!",
     "extra_life_activation_error": "Error activating extra life",
     "extra_life_unavailable": "This feature is currently unavailable",
-    "processing": "Processing..."
+    "processing": "Processing...",
+    "preparing_results": "Preparing results..."
   },
   "energizer": {
     "collect_energy": "Collect Energy",
