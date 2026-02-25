@@ -234,8 +234,9 @@ export function useGameRun() {
   const stopRun = () => {
     isRunning.value = false
     isPaused.value = false
-    runBasePoints.value = null
-    runReservePercent.value = null
+    // Не обнуляем runBasePoints/runReservePercent: они нужны для distanceProgress (полоска дистанции).
+    // Иначе pointsFor100Percent переключается на дефолт (150+20%) и прогресс после победы падает с 100% до ~40%.
+    // startRun() заново выставит их при следующем забеге.
     // НЕ сбрасываем startStorage здесь, так как он нужен для completeRun
   }
 
