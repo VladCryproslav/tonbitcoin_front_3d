@@ -197,34 +197,41 @@ onUnmounted(() => {
       <div class="special-offers-header">
         <h2 class="special-offers-title">{{ t('market.limited_offers') }}</h2>
       </div>
-      <div v-if="starterPack" class="starter-pack-item has-purple-stroke">
-        <div class="starter-pack-picture">
-          <img src="@/assets/gems/Starter_pack.webp" class="starter-pack-image" alt="Starter Pack" />
+      <div v-if="starterPack" class="gem-item has-purple-stroke">
+        <div class="gem-info-icon-top" @click="openStarterPackInfo = true">i</div>
+        <div class="gem-picture">
+          <img src="@/assets/market/Starter_pack.webp" class="gem-image" alt="Starter Pack" />
         </div>
-        <div class="starter-pack-info">
-          <span class="starter-pack-type">{{ starterPack.type }}</span>
-          <span class="starter-pack-description">{{ t('gems.starter_pack_benefit_1') }}</span>
-          <span class="starter-pack-description">{{ t('gems.starter_pack_benefit_2') }}</span>
-          <span class="starter-pack-description">{{ t('gems.starter_pack_benefit_3') }}</span>
-          <span class="starter-pack-description">{{ t('gems.starter_pack_benefit_4') }}</span>
+        <div class="gem-info">
+          <span class="gem-type">{{ starterPack.type }}</span>
+          <span v-for="(benefit, idx) in starterPack.benefits" :key="idx" class="gem-description">
+            {{ t(`gems.${benefit}`) }}
+          </span>
         </div>
         <button
-          class="starter-pack-buy-btn btn-purple"
+          class="gem-buy-btn btn-purple"
           :disabled="isProcessing"
           @click="openStarterPackInfo = true"
         >
           <span>{{ t('common.buy') }}</span>
-          <span class="starter-pack-price">
+          <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && starterPack.enableSale !== false }">
             <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
-            {{ getStarterPackPriceDisplay() }}
+            {{ starterPack.price }}
           </span>
+          <template v-if="gemsSaleActive && starterPack.enableSale !== false">
+            <div class="gem-sale-perc">-{{ starterPack.salePercent || 10 }}%</div>
+            <div class="gem-sale-newprice">
+              <img src="@/assets/TON.png" width="12" height="12" alt="TON" />
+              {{ getStarterPackPriceDisplay() }}
+            </div>
+          </template>
         </button>
-        <span class="starter-pack-tag">Special</span>
+        <span class="gem-tag" style="background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);">{{ t('gems.special') }}</span>
       </div>
 
       <h2 class="section-title">{{ t('market.nft_assets') }}</h2>
       <div class="assets-item">
-        <img src="@/assets/gems_shop_icon.png" class="assets-icon" alt="" />
+        <img src="@/assets/market/mining_equip_market_icon.webp" class="assets-icon" alt="" />
         <div class="assets-content">
           <h3 class="assets-item-title">{{ t('market.assets_mining_equipment') }}</h3>
           <p class="assets-item-desc">{{ t('market.assets_mining_equipment_desc') }}</p>
@@ -232,7 +239,7 @@ onUnmounted(() => {
         </div>
       </div>
       <div class="assets-item">
-        <img src="@/assets/gems_shop_icon.png" class="assets-icon" alt="" />
+        <img src="@/assets/market/power_plant_market_icon.webp" class="assets-icon" alt="" />
         <div class="assets-content">
           <h3 class="assets-item-title">{{ t('market.assets_power_plants') }}</h3>
           <p class="assets-item-desc">{{ t('market.assets_power_plants_desc') }}</p>
@@ -240,7 +247,7 @@ onUnmounted(() => {
         </div>
       </div>
       <div class="assets-item">
-        <img src="@/assets/boost_disk.svg" class="assets-icon" alt="" />
+        <img src="@/assets/market/booster_market_icon.webp" class="assets-icon" alt="" />
         <div class="assets-content">
           <h3 class="assets-item-title">{{ t('market.assets_boosters') }}</h3>
           <p class="assets-item-desc">{{ t('market.assets_boosters_desc') }}</p>
@@ -446,13 +453,13 @@ onUnmounted(() => {
     }
   }
 
-  .starter-pack-item {
+  .gem-item {
     grid-column: 1 / -1;
     position: relative;
     display: flex;
     align-items: center;
     width: 100%;
-    background: #151408;
+    background: #08150a50;
     backdrop-filter: blur(5px);
     box-shadow: inset 0 0 0 1px #ffffff25;
     border-radius: 1rem;
@@ -462,6 +469,7 @@ onUnmounted(() => {
 
     &.has-purple-stroke {
       padding: calc(0.7rem - 2px) calc(1rem - 2px);
+      position: relative;
       &::after {
         content: '';
         position: absolute;
@@ -474,70 +482,99 @@ onUnmounted(() => {
         mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
         mask-composite: exclude;
         pointer-events: none;
-        z-index: 0;
+        z-index: -20;
       }
     }
 
-    .starter-pack-picture {
-      position: relative;
+    .gem-info-icon-top {
+      position: absolute;
+      top: 5px;
+      right: 8px;
+      width: 18px;
+      height: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
+      background: #fff;
+      border-radius: 50%;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 9px;
+      color: #000;
+      z-index: 10;
+    }
+
+    .gem-picture {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       max-width: 95px;
-      .starter-pack-image {
-        min-width: 75px;
-        width: 75px;
+      gap: 0;
+      .gem-image {
+        min-width: 115px;
+        margin: -25px 0 -10px;
         height: auto;
       }
     }
 
-    .starter-pack-info {
+    .gem-info {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
       justify-content: center;
-      flex: 1;
-      min-width: 0;
-      line-height: 1.2;
-      .starter-pack-type {
+      width: 100%;
+      min-width: 110px;
+      line-height: 95%;
+      margin-bottom: 10px;
+      .gem-type {
         color: #fff;
         font-family: 'Inter' !important;
         font-weight: 700;
         font-size: 1rem;
-        margin-bottom: 4px;
+        margin-bottom: 3px;
+        white-space: pre-line;
       }
-      .starter-pack-description {
+      .gem-description {
         color: #ffffff70;
         font-family: 'Inter' !important;
         font-weight: 400;
         font-size: 10px;
+        text-wrap: nowrap;
       }
     }
 
-    .starter-pack-buy-btn {
+    .gem-buy-btn {
       position: absolute;
       top: 50%;
-      right: 0.5rem;
+      right: 5px;
       transform: translateY(-50%);
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-width: 70px;
-      padding: 0.3rem 0.5rem;
+      min-width: 75px;
+      width: 75px;
+      padding: 0.2rem 0.7rem;
+      margin-right: 0.2rem;
+      margin-left: auto;
       border: none;
       border-radius: 0.7rem;
+      overflow: visible;
       background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent),
-        linear-gradient(180deg, #FCD909 0%, #FEA400 100%);
+        linear-gradient(to bottom, #e2f974, #009600);
       cursor: pointer;
-      transition: all 0.2s ease;
-      z-index: 1;
+      transition: all 0.3s ease;
+      z-index: 100;
 
       &.btn-purple {
         background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent),
           linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);
       }
       &:disabled {
-        opacity: 0.7;
+        background: radial-gradient(ellipse 80% 20% at top, #ffffff50, transparent),
+          linear-gradient(to bottom, #e2e2e2, #646464);
         cursor: not-allowed;
       }
       > span:first-child {
@@ -545,69 +582,123 @@ onUnmounted(() => {
         font-family: 'Inter' !important;
         font-weight: 700;
         font-size: 10px;
+        text-align: center;
+        width: 100%;
       }
-      .starter-pack-price {
+      .gem-price {
+        position: relative;
         display: flex;
-        align-items: center;
         justify-content: center;
-        gap: 0.25rem;
+        align-items: center;
+        gap: 0.3rem;
         font-size: 12px;
+        line-height: 16pt;
         font-weight: 700;
         font-family: 'Inter' !important;
         color: #000;
+        &.gem-saleprice::before {
+          content: '';
+          position: absolute;
+          left: -5%;
+          right: 0;
+          bottom: 40%;
+          height: 2px;
+          width: 110%;
+          background: linear-gradient(to right, #7a060690, #e00b0b 40%, #e00b0b);
+          border-radius: 1rem;
+          z-index: 1;
+          pointer-events: none;
+        }
+      }
+      .gem-sale-perc {
+        position: absolute;
+        left: -10px;
+        top: -15px;
+        padding: 0.1rem 0.2rem;
+        transform: rotate(-10deg);
+        border-radius: 0.3rem;
+        font-family: 'Inter' !important;
+        font-size: 12px;
+        font-weight: bold;
+        box-shadow: 0 0 15px 2px #fccd0835, 0 0 2px 2px #00000020;
+        background: radial-gradient(ellipse 100% 30% at bottom center, #ffffff70, transparent),
+          linear-gradient(to bottom, #fcd909, #fea400);
+      }
+      .gem-sale-newprice {
+        position: absolute;
+        bottom: -12px;
+        right: -8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.2rem;
+        font-family: 'Inter' !important;
+        font-size: 10px;
+        font-weight: bold;
+        padding: 0.1rem 0.2rem;
+        border-radius: 0.3rem;
+        box-shadow: 0 0 15px 2px #fccd0835, -1px -1px 2px 2px #00000020;
+        background: radial-gradient(ellipse 100% 30% at bottom center, #ffffff70, transparent),
+          linear-gradient(to bottom, #fcd909, #fea400);
       }
     }
 
-    .starter-pack-tag {
+    .gem-tag {
       position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
-      font-family: 'Inter' !important;
-      font-size: 10px;
-      font-weight: 700;
+      bottom: -1px;
+      left: -1px;
+      right: -1px;
+      text-align: center;
       color: #fff;
-      background: rgba(152, 81, 236, 0.9);
-      padding: 2px 6px;
-      border-radius: 4px;
-      z-index: 1;
+      font-family: 'Inter' !important;
+      text-transform: uppercase;
+      font-weight: 600;
+      font-size: 0.55rem;
+      padding: 0.2rem 0;
+      z-index: -10;
+      border-radius: 0 0 1rem 1rem;
     }
   }
 
   .assets-item {
     grid-column: 1 / -1;
+    position: relative;
     display: flex;
     align-items: center;
     width: 100%;
     background: rgba(21, 20, 8, 0.5);
+    backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 15px;
     padding: 0;
-    min-height: 90px;
-    overflow: hidden;
+    overflow: visible;
+    min-height: 124px;
 
     .assets-icon {
-      width: 90px;
-      min-width: 90px;
-      height: 90px;
+      width: 133px;
+      height: 124px;
       object-fit: cover;
+      flex-shrink: 0;
     }
 
     .assets-content {
       flex: 1;
       display: flex;
       flex-direction: column;
-      padding: 12px 16px;
-      gap: 6px;
-      justify-content: center;
-      min-width: 0;
+      padding: 15px 20px;
+      gap: 8px;
+      min-height: 124px;
+      justify-content: space-between;
     }
 
     .assets-item-title {
       color: #fff;
       font-family: 'Inter' !important;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 15px;
+      line-height: 1.21em;
       margin: 0;
+      text-align: center;
     }
 
     .assets-item-desc {
@@ -615,8 +706,10 @@ onUnmounted(() => {
       font-family: 'Inter' !important;
       font-weight: 400;
       font-size: 10px;
+      line-height: 1.21em;
       margin: 0;
-      line-height: 1.2;
+      flex: 1;
+      text-align: center;
     }
 
     .assets-buy-btn {
@@ -624,8 +717,9 @@ onUnmounted(() => {
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 5px 16px;
-      height: 28px;
+      padding: 5px 20px;
+      height: 30px;
+      min-width: 184px;
       border: none;
       border-radius: 5px;
       background: radial-gradient(ellipse 100% 30% at bottom center, #ffffff70, transparent),
@@ -633,11 +727,14 @@ onUnmounted(() => {
       color: #000;
       font-family: 'Inter' !important;
       font-weight: 600;
-      font-size: 13px;
+      font-size: 16px;
+      line-height: 1.21em;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
+      text-align: center;
+      white-space: nowrap;
 
-      &:active {
+      &:active:not(:disabled) {
         background: radial-gradient(ellipse 100% 30% at bottom center, #ffffff70, transparent),
           linear-gradient(to bottom, #fcd90990, #fea40090);
       }
