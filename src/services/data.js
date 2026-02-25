@@ -272,9 +272,9 @@ const gemsSheet = [
   },
   {
     shop: true,
-    name: 'Craft',
+    name: 'Buy NFT',
     type: 'Orbital Power Plant',
-    price: 'NFT',
+    price: 199,
     rarity: 'special',
     description: 'Storage: 2320 kW',
     buttonColor: 'gold',
@@ -289,6 +289,27 @@ const gemsSheet = [
       'orbital_benefit_1',
       'orbital_benefit_2',
       'orbital_benefit_3'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
+    type: 'Singularity Reactor',
+    price: 399,
+    rarity: 'special',
+    description: "Storage: 2690 kW",
+    buttonColor: 'gold',
+    hasGoldStroke: true,
+    hasBlueStroke: false,
+    enableSale: false,
+    salePercent: 10,
+    imagePath: '@/assets/gems/singularity_power_plant.webp',
+    link: 'https://getgems.io/collection/EQB-pBhnWEYPbIu25uM1Yp5MqGFjQ-8Jes5CT2Dr-OVd705u?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQASp_CpNEoFI-HvTurh74NTxdV_vuXGGd1PzsJsinnJjUkp%22%7D%2C%22attributes%22%3A%7B%22Level%22%3A%5B%22Special%22%5D%7D%7D',
+    info: 'singularity_power_plant_modal',
+    benefits: [
+      'singularity_benefit_1',
+      'singularity_benefit_2',
+      'singularity_benefit_3'
     ]
   },
   {
