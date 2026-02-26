@@ -200,7 +200,7 @@ onUnmounted(() => {
       <div v-if="starterPack" class="gem-item has-purple-stroke">
         <div class="gem-info-icon-top" @click="openStarterPackInfo = true">i</div>
         <div class="gem-picture">
-          <img src="@/assets/market/Starter_pack.webp" class="gem-image" alt="Starter Pack" />
+          <img src="@/assets/gems/Starter_pack.webp" class="gem-image" alt="Starter Pack" />
         </div>
         <div class="gem-info">
           <span class="gem-type">{{ starterPack.type }}</span>
