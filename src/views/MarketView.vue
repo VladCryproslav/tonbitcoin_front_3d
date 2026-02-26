@@ -2,25 +2,37 @@
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from 'vue'
 const DeDust = defineAsyncComponent(() => import('@/assets/dedust.svg'))
 const Stonfi = defineAsyncComponent(() => import('@/assets/stonfi.svg'))
+const Exit = defineAsyncComponent(() => import('@/assets/exit.svg'))
 import { useTelegram } from '@/services/telegram'
 import axios from 'axios'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
-import { useTabsStore } from '@/stores/tabs'
-import { useRouter } from 'vue-router'
 import { useTonAddress, useTonConnectUI } from '@townsquarelabs/ui-vue'
 import { beginCell, toNano } from '@ton/core'
 import InfoModal from '@/components/InfoModal.vue'
 import ModalNew from '@/components/ModalNew.vue'
-import { gemsSheet, gemsSaleActive, getGemPrice } from '@/services/data'
+import RedirectModal from '@/components/RedirectModal.vue'
+import SpecialPriceModal from '@/components/SpecialPriceModal.vue'
+import { gemsSheet, gemsSaleActive, gemsSalePercent, getGemPrice, sortGemsBySale, asicsSheet, asicsSalePercent, getAsicPrice, isAsicInSale } from '@/services/data'
+import { useScreen } from '@/composables/useScreen'
 
 const app = useAppStore()
-const tabs = useTabsStore()
-const router = useRouter()
 const { tg } = useTelegram()
 const { t } = useI18n()
+const { width } = useScreen()
 const ton_address = useTonAddress()
 const { tonConnectUI } = useTonConnectUI()
+
+const showAsicsShop = ref(false)
+const showPowerPlantsShop = ref(false)
+const showBoostersShop = ref(false)
+
+const openRedirectModal = ref(false)
+const redirectLink = ref(null)
+const redirectItemName = ref(null)
+const redirectItemClass = ref(null)
+const openSpecialModal = ref(false)
+const currBuyAsic = ref(null)
 
 const starterPack = computed(() => gemsSheet.find(g => g.type === 'Starter Pack'))
 const openStarterPackInfo = ref(false)
@@ -87,25 +99,109 @@ const buyStarterPack = async () => {
   }
 }
 
-const openAsicsShop = () => {
-  tabs.setTab('home')
-  tabs.setCategory('miner')
-  tabs.setOpenAsicsShop(true)
-  router.push('/')
+const openAsicsShop = () => { showAsicsShop.value = true }
+const openBoostersShop = () => { showBoostersShop.value = true }
+const openPowerPlantsShop = () => { showPowerPlantsShop.value = true }
+const closeAsicsShop = () => { showAsicsShop.value = false }
+const closePowerPlantsShop = () => { showPowerPlantsShop.value = false }
+const closeBoostersShop = () => { showBoostersShop.value = false }
+
+const POWER_PLANT_TYPES = ['Hydroelectric Power Plant', 'Orbital Power Plant', 'Singularity Reactor']
+const BOOSTER_TYPES = ['Repair Kit', 'Jarvis Bot', 'Cryochamber']
+const powerPlantsGems = computed(() =>
+  sortGemsBySale(gemsSheet.filter(el => el.shop && POWER_PLANT_TYPES.includes(el.type)))
+)
+const boostersGems = computed(() =>
+  sortGemsBySale(gemsSheet.filter(el => el.shop && BOOSTER_TYPES.includes(el.type)))
+)
+
+const imagePathAsics = (asic) =>
+  computed(() => new URL(`../assets/asics/${asic?.toString().toUpperCase()}.webp`, import.meta.url).href)
+const imagePathGems = (path) => {
+  if (!path) return computed(() => '')
+  const fileName = (path || '').replace('@/assets/gems/', '')
+  return computed(() => new URL(`../assets/gems/${fileName}`, import.meta.url).href)
 }
 
-const openBoostersShop = () => {
-  tabs.setTab('home')
-  tabs.setCategory('boost')
-  tabs.setBoost(true)
-  router.push('/')
+const specialModalResponse = async (res) => {
+  openSpecialModal.value = false
+  if (res?.check && currBuyAsic.value) {
+    const asicIndex = asicsSheet.findIndex(el => el.name === currBuyAsic.value.name)
+    const asicItem = asicsSheet[asicIndex]
+    const finalPrice = asicItem?.price
+    await buyAsics(asicIndex, finalPrice, asicItem?.link, false, asicItem?.shop)
+  }
 }
 
-const openPowerPlantsShop = () => {
-  tabs.setTab('home')
-  tabs.setCategory('miner')
-  tabs.setOpenAsicsShop(true)
-  router.push('/')
+const buyAsics = async (item, price, link, sale, shop = true) => {
+  if (!shop) return
+  if (link) {
+    redirectLink.value = link
+    redirectItemName.value = asicsSheet[item]?.name || null
+    redirectItemClass.value = null
+    openRedirectModal.value = true
+    return
+  }
+  if (sale) {
+    currBuyAsic.value = {
+      ...asicsSheet[item],
+      new_price: getAsicPrice(asicsSheet[item]),
+      perc: asicsSalePercent
+    }
+    openSpecialModal.value = true
+    return
+  }
+  if (isProcessing.value) return
+  isProcessing.value = true
+  if (!ton_address.value) {
+    openModal.value = true
+    modalStatus.value = 'warning'
+    modalTitle.value = t('notification.st_attention')
+    modalBody.value = t('notification.unconnected')
+    isProcessing.value = false
+    return
+  }
+  try {
+    const mainCell = beginCell()
+      .storeUint(1, 32)
+      .storeUint(1, 64)
+      .storeUint(+item, 4)
+      .endCell()
+    const transactionData = {
+      validUntil: Math.floor(Date.now() / 1000) + 600,
+      messages: [{
+        address: 'EQAGKlyJq1BJ0h-ACkt9fNH3OYpNZNhcg8GxVvLw6ESy2C2n',
+        amount: toNano(price + 0.1).toString(),
+        payload: mainCell.toBoc().toString('base64'),
+      }],
+    }
+    await tonConnectUI.sendTransaction(transactionData, { modals: ['before', 'success'], notifications: [] })
+    await app.initUser()
+  } catch (err) {
+    console.error(err)
+  } finally {
+    isProcessing.value = false
+  }
+}
+
+const buyGem = (gemItem) => {
+  if (!gemItem?.shop) return
+  if (gemItem?.type === 'Orbital Power Plant') {
+    redirectLink.value = gemItem?.link || 'https://getgems.io'
+    redirectItemName.value = gemItem?.type
+    redirectItemClass.value = ''
+    openRedirectModal.value = true
+    return
+  }
+  if (gemItem?.type === 'Starter Pack') {
+    openStarterPackInfo.value = true
+    return
+  }
+  const link = gemItem?.link || 'https://getgems.io'
+  redirectLink.value = link
+  redirectItemName.value = gemItem?.type || gemItem?.name
+  redirectItemClass.value = (gemItem?.type !== 'DAO Owner' && gemItem?.rarity) ? t(`gems.${gemItem.rarity}`) : ''
+  openRedirectModal.value = true
 }
 
 const stonfiFBTCPrice = ref(0)
@@ -114,13 +210,6 @@ let controller = null
 
 const direct = (link) => {
   return link.includes('t.me') ? tg?.openTelegramLink(link) : tg?.openLink(link)
-}
-
-function roundToFirstSignificantDecimal(num) {
-  if (num === 0) return 0 // Для 0 возвращаем 0
-
-  const magnitude = Math.pow(10, -Math.floor(Math.log10(Math.abs(num))))
-  return Math.round(num * magnitude) / magnitude
 }
 
 let intervalId
@@ -190,7 +279,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="screen-box">
+  <div v-if="!showAsicsShop && !showPowerPlantsShop && !showBoostersShop" class="screen-box">
     <h1 class="title">{{ t('market.title') }}</h1>
 
     <div class="market-grid">
@@ -376,6 +465,129 @@ onUnmounted(() => {
   </InfoModal>
 
   <ModalNew v-if="openModal" :status="modalStatus" :title="modalTitle" :body="modalBody" @close="openModal = false" />
+  <RedirectModal v-if="openRedirectModal" :link="redirectLink" :itemName="redirectItemName" :itemClass="redirectItemClass" @close="openRedirectModal = false" />
+  <SpecialPriceModal v-if="openSpecialModal" :saleAsic="currBuyAsic" @close="specialModalResponse" />
+
+  <!-- ASICs Shop page -->
+  <div v-if="showAsicsShop" class="market-shop-page asics-shop-page">
+    <div class="market-shop-top-panel">
+      <div class="market-shop-balance">
+        <img src="@/assets/TON.png" width="22" height="22" alt="TON" />
+        <span class="market-shop-amount">{{ (app?.tonBalance / 1e9).toFixed(3) || 0 }}</span>
+      </div>
+      <h1>{{ t('asic_shop.title') }}</h1>
+      <button class="market-shop-close" @click="closeAsicsShop">
+        <Exit :width="16" style="color: #fff" />
+      </button>
+    </div>
+    <div class="market-shop-list asics-list">
+      <div class="item" v-for="(asicItem, index) in asicsSheet.filter(el => el.shop)" :key="asicItem.name">
+        <div class="picture">
+          <img :src="imagePathAsics(asicItem?.name)?.value" :style="asicItem?.rarity === 'Epic' || asicItem?.rarity === 'Legendary' ? 'min-width: 125px; margin: -30px 0 -10px' : asicItem?.rarity === 'Mythic' ? 'min-width: 140px; margin: -30px 0 -10px' : 'min-width: 115px'" alt="" />
+        </div>
+        <div class="info">
+          <span v-if="asicItem?.name === 'ASIC S7+'" class="label">{{ t('asic_shop.recommend') }}</span>
+          <span class="name">{{ asicItem?.name }}</span>
+          <span>{{ width > 345 ? t('asic_shop.speed') : t('asic_shop.speed').slice(0, 1) + t('asic_shop.speed').slice(-2, -1) }} {{ asicItem?.hash_rate >= 1000 ? asicItem?.hash_rate / 1000 + ` ${t('common.per_s', { value: 'Gh' })}` : asicItem?.hash_rate + ` ${t('common.per_s', { value: 'Mh' })}` }}</span>
+          <span>{{ width > 345 ? t('asic_shop.mining') : t('asic_shop.mining').slice(0, 1) + t('asic_shop.mining').slice(-2, -1) }} {{ asicItem?.speed }} {{ t('common.per_d', { value: 'fBTC' }) }}</span>
+          <span>{{ width > 345 ? t('asic_shop.consumption') : t('asic_shop.consumption').slice(0, 1) + t('asic_shop.consumption').slice(-2, -1) }} {{ asicItem?.consumption }} {{ t('common.per_h', { value: 'kW' }) }}</span>
+        </div>
+        <button
+          @click="buyAsics(index, isAsicInSale(asicItem) ? getAsicPrice(asicItem) : asicItem?.price, asicItem?.link, isAsicInSale(asicItem) || asicItem?.sale, asicItem?.shop)"
+          :disabled="asicItem?.sold_out">
+          <span>{{ asicItem?.sold_out ? t('common.sold_out') : t('asic_shop.buy_asic') }}</span>
+          <span class="price" :class="{ saleprice: isAsicInSale(asicItem) || asicItem?.new_price }">
+            <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
+            {{ asicItem?.price }}
+          </span>
+          <div v-if="isAsicInSale(asicItem) || asicItem?.perc" class="sale-perc">-{{ isAsicInSale(asicItem) ? asicsSalePercent : asicItem?.perc }}%</div>
+          <div v-if="isAsicInSale(asicItem) || asicItem?.new_price" class="sale-newprice">
+            <img src="@/assets/TON.png" width="12" height="12" alt="TON" />
+            {{ isAsicInSale(asicItem) ? getAsicPrice(asicItem) : asicItem?.new_price }}
+          </div>
+        </button>
+        <span class="tag" :style="asicItem?.rarity === 'Common' ? 'background-color: #5D625E' : asicItem?.rarity === 'Rare' ? 'background-color: #009600' : asicItem?.rarity === 'Epic' ? 'background-color: #0918E9' : asicItem?.rarity === 'Legendary' ? 'background-color: #E98509' : 'background-color: #6B25A1'">{{ t(`asic_shop.${asicItem?.rarity?.toLowerCase()}`) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Power Plants Shop page -->
+  <div v-if="showPowerPlantsShop" class="market-shop-page boosters-shop-page">
+    <div class="market-shop-top-panel">
+      <div class="market-shop-balance">
+        <img src="@/assets/TON.png" width="22" height="22" alt="TON" />
+        <span class="market-shop-amount">{{ (app?.tonBalance / 1e9).toFixed(3) || 0 }}</span>
+      </div>
+      <h1>{{ t('market.assets_power_plants') }}</h1>
+      <button class="market-shop-close" @click="closePowerPlantsShop">
+        <Exit :width="16" style="color: #fff" />
+      </button>
+    </div>
+    <div class="market-shop-list gems-list">
+      <div class="gem-item" :class="{ 'has-gold-stroke': g?.hasGoldStroke, 'has-purple-stroke': g?.hasPurpleStroke, 'has-blue-stroke': g?.hasBlueStroke }" v-for="g in powerPlantsGems" :key="g.type">
+        <div class="gem-picture">
+          <img v-if="g?.imagePath" :src="imagePathGems(g.imagePath)?.value" class="gem-image" alt="" />
+          <div v-else class="gem-icon">💎</div>
+        </div>
+        <div class="gem-info">
+          <span class="gem-type">{{ g.type === 'Hydroelectric Power Plant' ? 'Hydroelectric\nPower Plant' : g.type }}</span>
+          <span class="gem-description" v-for="(benefit, idx) in g.benefits" :key="idx">{{ t(`gems.${benefit}`) }}</span>
+        </div>
+        <button class="gem-buy-btn" :class="{ 'btn-gold': g?.buttonColor === 'gold', 'btn-purple': g?.buttonColor === 'purple', 'btn-blue': g?.buttonColor === 'blue' }" :disabled="!g?.shop" @click="buyGem(g)">
+          <span>{{ g.name }}</span>
+          <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && g?.enableSale !== false }">
+            <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
+            {{ g.price }}
+          </span>
+          <div v-if="gemsSaleActive && g?.enableSale !== false" class="gem-sale-perc">-{{ g.salePercent || gemsSalePercent }}%</div>
+          <div v-if="gemsSaleActive && g?.enableSale !== false" class="gem-sale-newprice">
+            <img src="@/assets/TON.png" width="12" height="12" alt="TON" />
+            {{ getGemPrice(g) }}
+          </div>
+        </button>
+        <span class="gem-tag" :style="g?.rarity === 'special' ? 'background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%)' : 'background-color: #5D625E'">{{ t('gems.special') }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boosters Shop page -->
+  <div v-if="showBoostersShop" class="market-shop-page boosters-shop-page">
+    <div class="market-shop-top-panel">
+      <div class="market-shop-balance">
+        <img src="@/assets/TON.png" width="22" height="22" alt="TON" />
+        <span class="market-shop-amount">{{ (app?.tonBalance / 1e9).toFixed(3) || 0 }}</span>
+      </div>
+      <h1>{{ t('market.assets_boosters') }}</h1>
+      <button class="market-shop-close" @click="closeBoostersShop">
+        <Exit :width="16" style="color: #fff" />
+      </button>
+    </div>
+    <div class="market-shop-list gems-list">
+      <div class="gem-item" :class="{ 'has-gold-stroke': g?.hasGoldStroke, 'has-purple-stroke': g?.hasPurpleStroke, 'has-blue-stroke': g?.hasBlueStroke }" v-for="g in boostersGems" :key="g.type + (g.rarity || '')">
+        <div class="gem-picture">
+          <img v-if="g?.imagePath" :src="imagePathGems(g.imagePath)?.value" class="gem-image" alt="" />
+          <div v-else class="gem-icon">💎</div>
+        </div>
+        <div class="gem-info">
+          <span class="gem-type">{{ g.type }}</span>
+          <span class="gem-description" v-for="(benefit, idx) in g.benefits" :key="idx">{{ t(`gems.${benefit}`) }}</span>
+        </div>
+        <button class="gem-buy-btn" :class="{ 'btn-gold': g?.buttonColor === 'gold', 'btn-purple': g?.buttonColor === 'purple', 'btn-blue': g?.buttonColor === 'blue' }" :disabled="!g?.shop" @click="buyGem(g)">
+          <span>{{ g.name }}</span>
+          <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && g?.enableSale !== false }">
+            <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
+            {{ g.price }}
+          </span>
+          <div v-if="gemsSaleActive && g?.enableSale !== false" class="gem-sale-perc">-{{ g.salePercent || gemsSalePercent }}%</div>
+          <div v-if="gemsSaleActive && g?.enableSale !== false" class="gem-sale-newprice">
+            <img src="@/assets/TON.png" width="12" height="12" alt="TON" />
+            {{ getGemPrice(g) }}
+          </div>
+        </button>
+        <span class="gem-tag" :style="g?.rarity ? (g.rarity.includes('class') ? 'background-color: #5D625E' : 'background-color: #009600') : 'background-color: #5D625E'">{{ g?.rarity ? t(`gems.${g.rarity}`) : '' }}</span>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -899,6 +1111,314 @@ onUnmounted(() => {
         url('@/assets/btn-paper.png') no-repeat left,
         radial-gradient(ellipse 100% 30% at bottom center, #ffffff70, transparent),
         linear-gradient(to bottom, #fcd90990, #fea40090);
+    }
+  }
+}
+
+/* Shop pages (ASICs, Power Plants, Boosters) */
+.market-shop-page {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  background: url('@/assets/asics-shop-bg.webp') no-repeat top center, radial-gradient(ellipse 45% 50% at top center, #31ff8080, transparent), #08150a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  padding-bottom: 80px;
+}
+
+.market-shop-top-panel {
+  display: flex;
+  width: 90%;
+  padding: 1rem 0 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+
+  .market-shop-balance {
+    display: flex;
+    align-items: center;
+    min-width: 70px;
+    gap: 0.3rem;
+    background: linear-gradient(to right, transparent, #00000050);
+    border-radius: 1rem;
+    padding: 0 0.5rem 0 0;
+
+    .market-shop-amount {
+      color: #fff;
+      font-family: 'Inter' !important;
+      font-weight: 600;
+      font-size: 13px;
+    }
+  }
+
+  h1 {
+    text-align: center;
+    color: #fff;
+    flex: 1;
+    font-family: 'Inter' !important;
+    font-weight: 600;
+    font-size: clamp(14px, 5.5dvw, 24px);
+    margin: 0;
+  }
+
+  .market-shop-close {
+    width: 20%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+  }
+}
+
+.market-shop-list {
+  display: flex;
+  width: 90%;
+  flex-direction: column;
+  padding: 10px 0;
+  align-items: center;
+  gap: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  &.asics-list .item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background: #08150a50;
+    backdrop-filter: blur(5px);
+    box-shadow: inset 0 0 0 1px #ffffff25;
+    border-radius: 1rem;
+    padding: 0.7rem 1rem;
+    gap: 1rem;
+    overflow: visible;
+
+    .picture {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      max-width: 95px;
+      gap: 0;
+
+      img {
+        min-width: 115px;
+        margin: -25px 0 -10px;
+        height: auto;
+      }
+    }
+
+    .tag {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      text-align: center;
+      color: #fff;
+      font-family: 'Inter' !important;
+      text-transform: uppercase;
+      font-weight: 600;
+      font-size: 0.55rem;
+      border-radius: 0 0 1rem 1rem;
+      padding: 0.2rem 0;
+      margin: 0 -1rem;
+      z-index: -10;
+    }
+
+    .info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      width: 100%;
+      min-width: 110px;
+      line-height: 95%;
+      margin-bottom: 10px;
+
+      .label {
+        color: #000;
+        font-family: 'Inter' !important;
+        font-weight: 600;
+        font-size: 0.5rem;
+        padding: 0 0.5rem;
+        border-radius: 1rem;
+        margin: -0.4rem 0 0.1rem;
+        background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent), linear-gradient(to bottom, #e2f974, #009600);
+      }
+
+      .name {
+        color: #fff;
+        font-family: 'Inter' !important;
+        font-weight: 700;
+        font-size: 1rem;
+        margin-bottom: 3px;
+      }
+
+      span {
+        color: #ffffff70;
+        font-family: 'Inter' !important;
+        font-weight: 400;
+        font-size: 10px;
+        text-wrap: nowrap;
+      }
+    }
+
+    button {
+      position: absolute;
+      top: 50%;
+      right: 5px;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: max-content;
+      padding: 0.2rem 0.7rem;
+      margin-right: 0.2rem;
+      margin-left: auto;
+      border-radius: 0.7rem;
+      overflow: visible;
+      background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent), linear-gradient(to bottom, #e2f974, #009600);
+      border: none;
+      cursor: pointer;
+
+      &:active:not(:disabled) {
+        background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent), linear-gradient(to bottom, #e2f97490, #00960090);
+      }
+
+      &:disabled {
+        background: radial-gradient(ellipse 80% 20% at top, #ffffff50, transparent), linear-gradient(to bottom, #e2e2e2, #646464);
+      }
+
+      span {
+        color: #000;
+        font-family: 'Inter' !important;
+        font-weight: 700;
+        font-size: 10px;
+      }
+
+      .price {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 12px;
+        line-height: 16pt;
+        color: #000;
+
+        &.saleprice::before {
+          content: '';
+          position: absolute;
+          left: -5%;
+          right: 0;
+          bottom: 40%;
+          height: 3px;
+          width: 110%;
+          background: linear-gradient(to right, #7a060690, #e00b0b 40%, #e00b0b);
+          border-radius: 1rem;
+          z-index: 1;
+          pointer-events: none;
+        }
+      }
+
+      .sale-perc {
+        position: absolute;
+        left: -10px;
+        top: -15px;
+        padding: 0.1rem 0.2rem;
+        transform: rotate(-10deg);
+        border-radius: 0.3rem;
+        font-family: 'Inter' !important;
+        font-size: 12px;
+        font-weight: bold;
+        background: radial-gradient(ellipse 100% 30% at bottom center, #ffffff70, transparent), linear-gradient(to bottom, #fcd909, #fea400);
+      }
+
+      .sale-newprice {
+        position: absolute;
+        bottom: -12px;
+        right: -8px;
+        display: flex;
+        align-items: center;
+        gap: 0.2rem;
+        font-family: 'Inter' !important;
+        font-size: 10px;
+        font-weight: bold;
+        padding: 0.1rem 0.2rem;
+        border-radius: 0.3rem;
+        background: radial-gradient(ellipse 100% 30% at bottom center, #ffffff70, transparent), linear-gradient(to bottom, #fcd909, #fea400);
+      }
+    }
+  }
+
+  &.gems-list .gem-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background: #08150a50;
+    backdrop-filter: blur(5px);
+    box-shadow: inset 0 0 0 1px #ffffff25;
+    border-radius: 1rem;
+    padding: 0.7rem 1rem;
+    gap: 1rem;
+    overflow: visible;
+
+    &.has-purple-stroke::after,
+    &.has-gold-stroke::after,
+    &.has-blue-stroke::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 1rem;
+      padding: 2px;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+      z-index: -20;
+    }
+    &.has-purple-stroke::after { background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%); }
+    &.has-gold-stroke::after { background: linear-gradient(180deg, #FEA400 0%, #FCD909 100%); }
+    &.has-blue-stroke::after { background: linear-gradient(270deg, rgba(49, 207, 255, 1) 0%, rgba(31, 255, 255, 1) 100%); }
+
+    .gem-picture { position: relative; display: flex; align-items: center; justify-content: center; max-width: 95px; gap: 0; }
+    .gem-image { min-width: 115px; margin: -25px 0 -10px; height: auto; }
+    .gem-icon { font-size: 40px; }
+    .gem-info { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; flex: 1; min-width: 110px; line-height: 95%; margin-bottom: 10px; }
+    .gem-type { color: #fff; font-family: 'Inter' !important; font-weight: 700; font-size: 1rem; margin-bottom: 3px; white-space: pre-line; }
+    .gem-description { color: #ffffff70; font-family: 'Inter' !important; font-weight: 400; font-size: 10px; text-wrap: nowrap; }
+    .gem-buy-btn {
+      position: absolute; top: 50%; right: 5px; transform: translateY(-50%);
+      display: flex; flex-direction: column; align-items: center; min-width: 75px; width: 75px; padding: 0.2rem 0.7rem;
+      border: none; border-radius: 0.7rem; overflow: visible; cursor: pointer; z-index: 100;
+      background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent), linear-gradient(to bottom, #e2f974, #009600);
+      &.btn-purple { background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent), linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%); }
+      &.btn-gold { background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent), linear-gradient(180deg, #FCD909 0%, #FEA400 100%); }
+      &.btn-blue { background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent), linear-gradient(270deg, rgba(49, 207, 255, 1) 0%, rgba(31, 255, 255, 1) 100%); }
+      &:disabled { background: radial-gradient(ellipse 80% 20% at top, #ffffff50, transparent), linear-gradient(to bottom, #e2e2e2, #646464); cursor: not-allowed; }
+      > span:first-child { color: #000; font-family: 'Inter' !important; font-weight: 700; font-size: 10px; text-align: center; width: 100%; }
+      .gem-price { position: relative; display: flex; justify-content: center; align-items: center; gap: 0.3rem; font-size: 12px; font-weight: 700; font-family: 'Inter' !important; color: #000; }
+      .gem-saleprice::before { content: ''; position: absolute; left: -5%; right: 0; bottom: 40%; height: 2px; width: 110%; background: linear-gradient(to right, #7a060690, #e00b0b 40%, #e00b0b); border-radius: 1rem; z-index: 1; pointer-events: none; }
+      .gem-sale-perc { position: absolute; left: -10px; top: -15px; padding: 0.1rem 0.2rem; transform: rotate(-10deg); border-radius: 0.3rem; font-size: 12px; font-weight: bold; background: radial-gradient(ellipse 100% 30% at bottom center, #ffffff70, transparent), linear-gradient(to bottom, #fcd909, #fea400); }
+      .gem-sale-newprice { position: absolute; bottom: -12px; right: -8px; display: flex; align-items: center; gap: 0.2rem; font-size: 10px; font-weight: bold; padding: 0.1rem 0.2rem; border-radius: 0.3rem; background: radial-gradient(ellipse 100% 30% at bottom center, #ffffff70, transparent), linear-gradient(to bottom, #fcd909, #fea400); }
+    }
+    .gem-tag {
+      position: absolute; bottom: -1px; left: -1px; right: -1px; text-align: center; color: #fff; font-family: 'Inter' !important; text-transform: uppercase; font-weight: 600; font-size: 0.55rem; padding: 0.2rem 0; z-index: -10; border-radius: 0 0 1rem 1rem;
     }
   }
 }
