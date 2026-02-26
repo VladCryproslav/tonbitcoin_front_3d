@@ -715,7 +715,7 @@ onUnmounted(() => {
           <span class="gem-type">{{ g.type === 'Hydroelectric Power Plant' ? 'Hydroelectric\nPower Plant' : g.type }}</span>
           <span class="gem-description" v-for="(benefit, idx) in g.benefits" :key="idx">{{ t(`gems.${benefit}`) }}</span>
         </div>
-        <button class="gem-buy-btn" :class="{ 'btn-gold': g?.buttonColor === 'gold', 'btn-purple': g?.buttonColor === 'purple', 'btn-blue': g?.buttonColor === 'blue' }" :disabled="!g?.shop" @click="buyGem(g)">
+        <button class="gem-buy-btn" :disabled="!g?.shop" @click="buyGem(g)">
           <span>{{ g.name }}</span>
           <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && g?.enableSale !== false }">
             <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
@@ -755,7 +755,7 @@ onUnmounted(() => {
           <span class="gem-type">{{ g.type }}</span>
           <span class="gem-description" v-for="(benefit, idx) in g.benefits" :key="idx">{{ t(`gems.${benefit}`) }}</span>
         </div>
-        <button class="gem-buy-btn" :class="{ 'btn-gold': g?.buttonColor === 'gold', 'btn-purple': g?.buttonColor === 'purple', 'btn-blue': g?.buttonColor === 'blue' }" :disabled="!g?.shop" @click="buyGem(g)">
+        <button class="gem-buy-btn" :disabled="!g?.shop" @click="buyGem(g)">
           <span>{{ g.name }}</span>
           <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && g?.enableSale !== false }">
             <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
