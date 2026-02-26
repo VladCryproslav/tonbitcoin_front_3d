@@ -413,9 +413,10 @@ const responseHeatSwitch = async () => {
   openHeatCheck.value = false
 }
 
-function openAsics() {
-  asicsIsOpen.setCategory('miner')
-  asicsIsOpen.setOpenAsicsShop(true)
+/** Gems shop: открыть страницу Электростанции в MarketView */
+function openGemsShop() {
+  asicsIsOpen.setTab('market')
+  router.push({ path: '/market', query: { shop: 'powerplants' } })
 }
 
 function openUpgrade() {
@@ -2024,7 +2025,7 @@ onUnmounted(() => {
         </div>
         <button class="claim-btn" @click="claim">{{ t('general.top_nav.mint_btn').toUpperCase() }}</button>
       </div>
-      <div class="shop" :class="{ 'gems-shop-active': !halloweenActive }" @click="openAsics">
+      <div class="shop" :class="{ 'gems-shop-active': !halloweenActive }" @click="openGemsShop">
         <img v-if="halloweenActive" src="@/assets/Halloween.png" class="asic-image halloween-image" />
         <img v-else src="@/assets/gems_shop_icon.png" class="asic-image" />
         <p>

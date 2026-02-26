@@ -12,7 +12,7 @@ import { useTelegram } from '@/services/telegram'
 import { host, tonapi } from '../../axios.config'
 import { useTonAddress, useTonConnectUI } from '@townsquarelabs/ui-vue'
 import { beginCell, toNano } from '@ton/core'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import ModalNew from '@/components/ModalNew.vue'
 import RedirectModal from '@/components/RedirectModal.vue'
 import SpecialPriceModal from '@/components/SpecialPriceModal.vue'
@@ -28,6 +28,7 @@ import { useScreen } from '@/composables/useScreen'
 import SpeedUpModal from '@/components/SpeedUpModal.vue'
 
 const app = useAppStore()
+const router = useRouter()
 const all_asics = computed(() => app.getAsicsFromStorage())
 const tabs = useTabsStore()
 const { width } = useScreen()
@@ -584,6 +585,12 @@ function openEquip(side = true) {
   } else {
     tg.HapticFeedback.impactOccurred('medium');
   }
+}
+
+/** Открыть ASICs Shop в MarketView */
+function openMarketAsicsShop() {
+  asicsIsOpen.setTab('market')
+  router.push({ path: '/market', query: { shop: 'asics' } })
 }
 
 const cachedAsicNfts = ref(_.concat(app?.nfts?.filter(el => !app?.rentOutNfts?.some(item => item?.nft == el?.address) && (el?.metadata?.name?.toLowerCase()?.includes('asic') || el?.metadata?.name?.toLowerCase()?.includes('sbt'))), app?.rentedNfts))
@@ -1675,7 +1682,7 @@ onUnmounted(() => {
             <span class="desc">{{ t('miner.asics') }}</span>
           </div>
         </div>
-        <button @click="openAsics(true)" class="plus">
+        <button @click="openMarketAsicsShop" class="plus">
           <Cart :width="15" :height="17" style="color: #000" />
           <!-- {{ t('miner.asics_btn') }} -->
         </button>

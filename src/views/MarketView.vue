@@ -15,8 +15,10 @@ import RedirectModal from '@/components/RedirectModal.vue'
 import SpecialPriceModal from '@/components/SpecialPriceModal.vue'
 import { gemsSheet, gemsSaleActive, gemsSalePercent, getGemPrice, sortGemsBySale, asicsSheet, asicsSalePercent, getAsicPrice, isAsicInSale } from '@/services/data'
 import { useScreen } from '@/composables/useScreen'
+import { useRoute } from 'vue-router'
 
 const app = useAppStore()
+const route = useRoute()
 const { tg } = useTelegram()
 const { t } = useI18n()
 const { width } = useScreen()
@@ -138,6 +140,14 @@ const openBoostersShop = () => { showBoostersShop.value = true }
 const openPowerPlantsShop = () => { showPowerPlantsShop.value = true }
 const closeAsicsShop = () => { showAsicsShop.value = false }
 const closePowerPlantsShop = () => { showPowerPlantsShop.value = false }
+
+// Открытие магазина по query при переходе с EnergizerView (Gems shop) или MinerView (ASICs)
+function openShopFromQuery() {
+  const shop = route.query?.shop
+  if (shop === 'asics') showAsicsShop.value = true
+  else if (shop === 'powerplants') showPowerPlantsShop.value = true
+}
+onMounted(openShopFromQuery)
 const closeBoostersShop = () => { showBoostersShop.value = false }
 
 const POWER_PLANT_TYPES = ['Hydroelectric Power Plant', 'Orbital Power Plant', 'Singularity Reactor']
