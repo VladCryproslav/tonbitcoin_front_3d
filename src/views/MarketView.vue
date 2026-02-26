@@ -1117,18 +1117,41 @@ onUnmounted(() => {
 
 /* Shop pages (ASICs, Power Plants, Boosters) */
 .market-shop-page {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 50;
-  background: url('@/assets/asics-shop-bg.webp') no-repeat top center, radial-gradient(ellipse 45% 50% at top center, #31ff8080, transparent), #08150a;
+  width: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  overflow: hidden;
-  padding-bottom: 80px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  &.asics-shop-page {
+    background:
+      url('@/assets/asics-shop-bg.webp') no-repeat top center,
+      radial-gradient(ellipse 45% 50% at top center, #31ff8080, transparent),
+      #08150a;
+    background-attachment: fixed, scroll, scroll;
+  }
+
+  &.boosters-shop-page {
+    background:
+      url('@/assets/asics-shop-bg.webp') no-repeat top center,
+      radial-gradient(ellipse 45% 50% at top center, rgba(49, 207, 255, 0.5), transparent),
+      #0a1a2a;
+    background-attachment: fixed, scroll, scroll;
+  }
 }
 
 .market-shop-top-panel {
@@ -1182,20 +1205,27 @@ onUnmounted(() => {
   display: flex;
   width: 90%;
   flex-direction: column;
-  padding: 10px 0;
   align-items: center;
   gap: 1.5rem;
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: visible;
   -ms-overflow-style: none;
   scrollbar-width: none;
 
   &::-webkit-scrollbar {
     display: none;
   }
+}
 
-  &.asics-list .item {
+.asics-shop-page .market-shop-list {
+  padding: 10px 0 100px;
+}
+
+.boosters-shop-page .market-shop-list {
+  padding: 10px 0 120px;
+}
+
+.market-shop-list.asics-list .item {
     position: relative;
     display: flex;
     align-items: center;
@@ -1364,7 +1394,7 @@ onUnmounted(() => {
     }
   }
 
-  &.gems-list .gem-item {
+.market-shop-list.gems-list .gem-item {
     position: relative;
     display: flex;
     align-items: center;
@@ -1421,5 +1451,4 @@ onUnmounted(() => {
       position: absolute; bottom: -1px; left: -1px; right: -1px; text-align: center; color: #fff; font-family: 'Inter' !important; text-transform: uppercase; font-weight: 600; font-size: 0.55rem; padding: 0.2rem 0; z-index: -10; border-radius: 0 0 1rem 1rem;
     }
   }
-}
 </style>
