@@ -38,6 +38,12 @@ const daoGem = computed(() => gemsSheet.find(g => g.type === 'DAO Owner'))
 const starterPack = computed(() => gemsSheet.find(g => g.type === 'Starter Pack'))
 const openStarterPackInfo = ref(false)
 const openDaoOwnerInfo = ref(false)
+const openHydroelectricInfo = ref(false)
+const openOrbitalInfo = ref(false)
+const openOrbitalCraftInfo = ref(false)
+const openGemInfo = ref(false)
+const gemInfoText = ref('')
+const currentGemItem = ref(null)
 const isProcessing = ref(false)
 const openModal = ref(false)
 const modalStatus = ref('')
@@ -71,6 +77,44 @@ const showModal = (status, title, body) => {
 const buyStarterPack = () => {
   if (starterPack.value) buyGem(starterPack.value)
   openStarterPackInfo.value = false
+}
+
+const handleGemInfoClick = (gemItem) => {
+  if (gemItem?.info === 'hydroelectric_power_plant_modal') {
+    openHydroelectricInfo.value = true
+  } else if (gemItem?.info === 'orbital_power_plant_modal') {
+    openOrbitalInfo.value = true
+  } else if (gemItem?.info) {
+    gemInfoText.value = gemItem.info
+    currentGemItem.value = gemItem
+    openGemInfo.value = true
+  }
+}
+
+const buyHydroelectric = () => {
+  const hydroelectric = gemsSheet.find(gem => gem.type === 'Hydroelectric Power Plant')
+  if (hydroelectric) buyGem(hydroelectric)
+  openHydroelectricInfo.value = false
+}
+
+const buyCurrentGem = () => {
+  if (currentGemItem.value) buyGem(currentGemItem.value)
+  openGemInfo.value = false
+}
+
+const buyHydroelectricFromCraft = () => {
+  openOrbitalCraftInfo.value = false
+  setTimeout(() => buyHydroelectric(), 300)
+}
+
+const confirmOrbitalInfo = () => {
+  openOrbitalCraftInfo.value = true
+  openOrbitalInfo.value = false
+}
+
+const copyAddress = async (address) => {
+  await navigator.clipboard.writeText(address)
+  showModal('success', t('notification.st_success'), t('notification.address_copied'))
 }
 
 const openAsicsShop = () => { showAsicsShop.value = true }
@@ -521,6 +565,86 @@ onUnmounted(() => {
     </template>
   </InfoModal>
 
+  <InfoModal v-if="openGemInfo" :confirm-label="t('common.buy')" @close="(e) => { if (e?.check) buyCurrentGem(); openGemInfo = false }">
+    <template #header>
+      {{ t('asic_shop.information') }}
+    </template>
+    <template #modal-body>
+      {{ t(gemInfoText) }}
+    </template>
+  </InfoModal>
+  <InfoModal v-if="openOrbitalInfo" :confirm-label="t('gems.orbital_instruction_btn')" @close="(e) => { if (e?.check) confirmOrbitalInfo(); openOrbitalInfo.value = false }">
+    <template #header>
+      {{ t('asic_shop.information') }}
+    </template>
+    <template #modal-body>
+      <div class="hydroelectric-content">
+        <div class="hydroelectric-text">
+          {{ t('gems.orbital_description') }}<br><br>
+          • {{ t('gems.orbital_item_1') }}<br>
+          • {{ t('gems.orbital_item_2') }}<br>
+          • {{ t('gems.orbital_item_3') }}<br>
+          • {{ t('gems.orbital_item_4') }}<br><br>
+          {{ t('gems.orbital_income') }}<br><br>
+          {{ t('gems.orbital_unique') }}<br><br>
+          {{ t('gems.orbital_progress') }}
+        </div>
+      </div>
+    </template>
+  </InfoModal>
+  <InfoModal v-if="openOrbitalCraftInfo" :confirm-label="t('gems.buy_hydroelectric_btn')" @close="(e) => { if (e?.check) buyHydroelectric(); openOrbitalCraftInfo = false }">
+    <template #header>
+      {{ t('gems.orbital_instruction_title') }}
+    </template>
+    <template #modal-body>
+      <div class="hydroelectric-content">
+        <div class="hydroelectric-text">
+          {{ t('gems.orbital_instruction_intro') }}<br><br>
+          1. {{ t('gems.orbital_step_1_part1') }}
+          <span class="link-hydro" @click="buyHydroelectricFromCraft()">Hydroelectric Power Station</span>
+          {{ t('gems.orbital_step_1_part2') }}<br>
+          <span class="copyable-address" @click="copyAddress(t('gems.orbital_burn_address'))">
+            <b class="address-text">{{ t('gems.orbital_burn_address') }}</b>
+            <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 1H4C2.895 1 2 1.895 2 3V15H4V3H16V1Z" fill="#ffc300"/>
+              <path d="M20 5H8C6.895 5 6 5.895 6 7V21C6 22.105 6.895 23 8 23H20C21.105 23 22 22.105 22 21V7C22 5.895 21.105 5 20 5ZM20 21H8V7H20V21Z" fill="#ffc300"/>
+            </svg>
+          </span><br><br>
+          2. {{ t('gems.orbital_step_2') }}<br>
+          <span class="copyable-address" @click="copyAddress(t('gems.orbital_fund_address'))">
+            <b class="address-text">{{ t('gems.orbital_fund_address') }}</b>
+            <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 1H4C2.895 1 2 1.895 2 3V15H4V3H16V1Z" fill="#ffc300"/>
+              <path d="M20 5H8C6.895 5 6 5.895 6 7V21C6 22.105 6.895 23 8 23H20C21.105 23 22 22.105 22 21V7C22 5.895 21.105 5 20 5ZM20 21H8V7H20V21Z" fill="#ffc300"/>
+            </svg>
+          </span><br><br>
+          {{ t('gems.orbital_note') }}
+        </div>
+      </div>
+    </template>
+  </InfoModal>
+  <InfoModal v-if="openHydroelectricInfo" :confirm-label="t('common.buy')" @close="(e) => { if (e?.check) buyHydroelectric(); openHydroelectricInfo = false }">
+    <template #header>
+      {{ t('asic_shop.information') }}
+    </template>
+    <template #modal-body>
+      <div class="hydroelectric-content">
+        <div class="hydroelectric-text">
+          {{ t('gems.hydroelectric_description') }}<br><br>
+          {{ t('gems.hydroelecrtic_characteristics') }}<br>
+          • {{ t('gems.hydroelectric_item_1') }}<br>
+          • {{ t('gems.hydroelectric_item_2') }}<br>
+          • {{ t('gems.hydroelectric_item_3') }}<br>
+          • {{ t('gems.hydroelectric_item_4') }}<br><br>
+          {{ t('gems.hydroelectric_important') }}<br>
+          • {{ t('gems.hydroelectric_item_5') }}<br>
+          • {{ t('gems.hydroelectric_info_1') }}<br>
+          • {{ t('gems.hydroelectric_info_2') }}
+        </div>
+      </div>
+    </template>
+  </InfoModal>
+
   <ModalNew v-if="openModal" :status="modalStatus" :title="modalTitle" :body="modalBody" @close="openModal = false" />
   <RedirectModal v-if="openRedirectModal" :link="redirectLink" :itemName="redirectItemName" :itemClass="redirectItemClass" @close="openRedirectModal = false" />
   <SpecialPriceModal v-if="openSpecialModal" :saleAsic="currBuyAsic" @close="specialModalResponse" />
@@ -582,6 +706,7 @@ onUnmounted(() => {
     </div>
     <div class="market-shop-list gems-list">
       <div class="gem-item" :class="{ 'has-gold-stroke': g?.hasGoldStroke, 'has-purple-stroke': g?.hasPurpleStroke, 'has-blue-stroke': g?.hasBlueStroke }" v-for="g in powerPlantsGems" :key="g.type">
+        <div v-if="g?.info" class="gem-info-icon-top" @click="handleGemInfoClick(g)">i</div>
         <div class="gem-picture">
           <img v-if="g?.imagePath" :src="imagePathGems(g.imagePath)?.value" class="gem-image" alt="" />
           <div v-else class="gem-icon">💎</div>
@@ -621,6 +746,7 @@ onUnmounted(() => {
     </div>
     <div class="market-shop-list gems-list">
       <div class="gem-item" :class="{ 'has-gold-stroke': g?.hasGoldStroke, 'has-purple-stroke': g?.hasPurpleStroke, 'has-blue-stroke': g?.hasBlueStroke }" v-for="g in boostersGems" :key="g.type + (g.rarity || '')">
+        <div v-if="g?.info" class="gem-info-icon-top" @click="handleGemInfoClick(g)">i</div>
         <div class="gem-picture">
           <img v-if="g?.imagePath" :src="imagePathGems(g.imagePath)?.value" class="gem-image" alt="" />
           <div v-else class="gem-icon">💎</div>
@@ -670,6 +796,48 @@ onUnmounted(() => {
   text-align: left;
   word-wrap: break-word;
   overflow-wrap: break-word;
+}
+
+.hydroelectric-content {
+  text-align: left;
+  width: 100%;
+}
+.hydroelectric-text {
+  font-family: 'Inter' !important;
+  font-weight: 500;
+  font-size: 13.5px;
+  line-height: 1.2;
+  color: #8b898b;
+  text-align: left;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.copyable-address {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  transition: opacity 0.2s;
+  color: #ffc300;
+  gap: 6px;
+  flex-wrap: wrap;
+  &:hover { opacity: 0.8; }
+  &:active { opacity: 0.6; }
+}
+.address-text {
+  word-break: break-all;
+  flex: 1;
+  min-width: 0;
+}
+.copy-icon {
+  flex-shrink: 0;
+  align-self: center;
+}
+.link-hydro {
+  color: #2eb5de;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .screen-box {
