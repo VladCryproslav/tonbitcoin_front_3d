@@ -107,8 +107,14 @@ const buyHydroelectricFromCraft = () => {
   setTimeout(() => buyHydroelectric(), 300)
 }
 
-const confirmOrbitalInfo = () => {
-  openOrbitalCraftInfo.value = true
+const orbitalGem = computed(() => gemsSheet.find(g => g.type === 'Orbital Power Plant'))
+
+const closeOrbitalInfo = () => {
+  openOrbitalInfo.value = false
+}
+
+const buyOrbital = () => {
+  if (orbitalGem.value) buyGem(orbitalGem.value)
   openOrbitalInfo.value = false
 }
 
@@ -614,7 +620,7 @@ onUnmounted(() => {
       {{ t(gemInfoText) }}
     </template>
   </InfoModal>
-  <InfoModal v-if="openOrbitalInfo" :confirm-label="t('gems.orbital_instruction_btn')" @close="(e) => { if (e?.check) confirmOrbitalInfo(); openOrbitalInfo.value = false }">
+  <InfoModal v-if="openOrbitalInfo" :confirm-label="t('common.buy')" @close="(e) => { if (e?.check) buyOrbital(); closeOrbitalInfo() }">
     <template #header>
       {{ t('asic_shop.information') }}
     </template>
