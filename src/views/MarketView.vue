@@ -748,7 +748,7 @@ onUnmounted(() => {
       <div class="gem-item" :class="{ 'has-gold-stroke': g?.hasGoldStroke, 'has-purple-stroke': g?.hasPurpleStroke, 'has-blue-stroke': g?.hasBlueStroke }" v-for="g in boostersGems" :key="g.type + (g.rarity || '')">
         <div v-if="g?.info" class="gem-info-icon-top" @click="handleGemInfoClick(g)">i</div>
         <div class="gem-picture">
-          <img v-if="g?.imagePath" :src="imagePathGems(g.imagePath)?.value" class="gem-image" alt="" />
+          <img v-if="g?.imagePath" :src="imagePathGems(g.imagePath)?.value" class="gem-image" :class="{ 'hide-under-tag': g?.type === 'Jarvis Bot' }" alt="" />
           <div v-else class="gem-icon">💎</div>
         </div>
         <div class="gem-info">
@@ -767,7 +767,7 @@ onUnmounted(() => {
             {{ getGemPrice(g) }}
           </div>
         </button>
-        <span class="gem-tag" :style="g?.rarity ? (g.rarity.includes('class') ? 'background-color: #5D625E' : 'background-color: #009600') : 'background-color: #5D625E'">{{ g?.rarity ? t(`gems.${g.rarity}`) : '' }}</span>
+        <span class="gem-tag" :style="g?.rarity === 'class_4' ? 'background-color: #5D625E' : g?.rarity === 'class_3' ? 'background-color: #009600' : g?.rarity === 'class_2' ? 'background-color: #0918E9' : 'background-color: #6B25A1'">{{ g?.rarity ? t(`gems.${g.rarity}`) : '' }}</span>
       </div>
     </div>
   </div>
@@ -1700,7 +1700,7 @@ onUnmounted(() => {
     &.has-blue-stroke::after { background: linear-gradient(270deg, rgba(49, 207, 255, 1) 0%, rgba(31, 255, 255, 1) 100%); }
 
     .gem-picture { position: relative; display: flex; align-items: center; justify-content: center; max-width: 95px; gap: 0; }
-    .gem-image { min-width: 115px; margin: -25px 0 -10px; height: auto; }
+    .gem-image { min-width: 115px; margin: -25px 0 -10px; height: auto; &.hide-under-tag { z-index: -15; } }
     .gem-icon { font-size: 40px; }
     .gem-info { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; flex: 1; min-width: 110px; line-height: 95%; margin-bottom: 10px; }
     .gem-type { color: #fff; font-family: 'Inter' !important; font-weight: 700; font-size: 1rem; margin-bottom: 3px; white-space: pre-line; }
