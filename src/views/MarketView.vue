@@ -933,7 +933,10 @@ onUnmounted(() => {
     }
   }
 
-  /* Gems Shop modals (DAO, Starter Pack) — перенесено из MinerView */
+  /* Модалки "i": как в MinerView — заголовок по центру (в InfoModal), описание слева */
+  :deep(.modal-body) {
+    text-align: left;
+  }
   .starter-pack-content {
     text-align: left;
     width: 100%;
