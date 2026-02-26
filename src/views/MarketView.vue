@@ -51,54 +51,26 @@ const getStarterPackPriceDisplay = () => {
     : starterPack.value.price
 }
 
-const buyStarterPack = async () => {
-  if (!starterPack.value || isProcessing.value) return
+/** Как в MinerView: для отображения цены в модалке (округление до десятых) */
+const getStarterPackPrice = () => {
+  if (!starterPack.value) return 99
+  if (gemsSaleActive && starterPack.value.enableSale !== false) {
+    const discountedPrice = getGemPrice(starterPack.value)
+    return Math.round(discountedPrice * 10) / 10
+  }
+  return starterPack.value.price
+}
+
+const showModal = (status, title, body) => {
+  modalStatus.value = status
+  modalTitle.value = title
+  modalBody.value = body
+  openModal.value = true
+}
+
+const buyStarterPack = () => {
+  if (starterPack.value) buyGem(starterPack.value)
   openStarterPackInfo.value = false
-  isProcessing.value = true
-  if (!ton_address.value) {
-    openModal.value = true
-    modalStatus.value = 'warning'
-    modalTitle.value = t('notification.st_attention')
-    modalBody.value = t('notification.unconnected')
-    isProcessing.value = false
-    return
-  }
-  try {
-    await tonConnectUI.closeModal().catch(() => {})
-    const transferAmount = getStarterPackPriceDisplay()
-    const receiveAddress = 'UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl'
-    const simplePayload = beginCell()
-      .storeUint(0, 32)
-      .storeUint(0, 64)
-      .endCell()
-    const transactionData = {
-      validUntil: Date.now() + 1000 * 60 * 5,
-      messages: [{
-        address: receiveAddress,
-        amount: toNano(transferAmount).toString(),
-        payload: simplePayload.toBoc().toString('base64'),
-      }],
-    }
-    const result = await tonConnectUI.sendTransaction(transactionData, {
-      modals: ['before', 'success'],
-      notifications: [],
-    })
-    if (result?.boc) {
-      openModal.value = true
-      modalStatus.value = 'success'
-      modalTitle.value = t('notification.st_success')
-      modalBody.value = t('gems.starter_pack_price_offer', { price: transferAmount })
-      await app.initUser()
-    }
-  } catch (err) {
-    console.error('buyStarterPack:', err)
-    openModal.value = true
-    modalStatus.value = 'error'
-    modalTitle.value = t('notification.st_error')
-    modalBody.value = t('notification.failed_transaction')
-  } finally {
-    isProcessing.value = false
-  }
 }
 
 const openAsicsShop = () => { showAsicsShop.value = true }
@@ -186,8 +158,9 @@ const buyAsics = async (item, price, link, sale, shop = true) => {
   }
 }
 
-const buyGem = (gemItem) => {
-  if (!gemItem?.shop) return
+const buyGem = async (gemItem) => {
+  if (!gemItem?.shop && gemItem?.type !== 'Starter Pack') return
+
   if (gemItem?.type === 'Orbital Power Plant') {
     redirectLink.value = gemItem?.link || 'https://getgems.io'
     redirectItemName.value = gemItem?.type
@@ -195,10 +168,51 @@ const buyGem = (gemItem) => {
     openRedirectModal.value = true
     return
   }
+
+  // Starter Pack — как в MinerView: отправка TON
   if (gemItem?.type === 'Starter Pack') {
-    openStarterPackInfo.value = true
+    if (isProcessing.value) return
+    isProcessing.value = true
+    if (!ton_address.value) {
+      showModal('warning', t('notification.st_attention'), t('notification.unconnected'))
+      isProcessing.value = false
+      return
+    }
+    try {
+      await tonConnectUI.closeModal().catch(() => {})
+    } catch { /* ignore */ }
+    try {
+      const transferAmount = gemsSaleActive && gemItem.enableSale !== false ? getGemPrice(gemItem) : gemItem.price
+      const receiveAddress = 'UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl'
+      const simplePayload = beginCell()
+        .storeUint(0, 32)
+        .storeUint(0, 64)
+        .endCell()
+      const transactionData = {
+        validUntil: Date.now() + 1000 * 60 * 5,
+        messages: [{
+          address: receiveAddress,
+          amount: toNano(transferAmount).toString(),
+          payload: simplePayload.toBoc().toString('base64'),
+        }],
+      }
+      const result = await tonConnectUI.sendTransaction(transactionData, {
+        modals: ['before', 'success'],
+        notifications: [],
+      })
+      if (result?.boc) {
+        showModal('success', t('notification.st_success'), t('gems.starter_pack_price_offer', { price: transferAmount }))
+        await app.initUser()
+      }
+    } catch (err) {
+      console.error('buyGem Starter Pack:', err)
+      showModal('error', t('notification.st_error'), t('notification.failed_transaction'))
+    } finally {
+      isProcessing.value = false
+    }
     return
   }
+
   const link = gemItem?.link || 'https://getgems.io'
   redirectLink.value = link
   redirectItemName.value = gemItem?.type || gemItem?.name
@@ -318,7 +332,7 @@ onUnmounted(() => {
           <span class="gem-type">{{ starterPack.type }}</span>
           <span v-for="(benefit, idx) in starterPack.benefits" :key="idx" class="gem-description">{{ t(`gems.${benefit}`) }}</span>
         </div>
-        <button class="gem-buy-btn btn-purple" :disabled="isProcessing" @click="buyStarterPack()">
+        <button class="gem-buy-btn btn-purple" :disabled="isProcessing" @click="buyGem(starterPack)">
           <span>{{ t('common.buy') }}</span>
           <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && starterPack.enableSale !== false }">
             <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
@@ -476,7 +490,7 @@ onUnmounted(() => {
           • {{ t('gems.starter_pack_item_6') }}<br>
           • {{ t('gems.starter_pack_item_7') }}<br><br>
           {{ t('gems.starter_pack_price_info') }}<br>
-          {{ t('gems.starter_pack_price_offer', { price: getStarterPackPriceDisplay() }) }}<br><br>
+          {{ t('gems.starter_pack_price_offer', { price: getStarterPackPrice() }) }}<br><br>
           <span style="color: #ffc300;">{{ t('gems.starter_pack_item_8') }}</span>
         </div>
       </div>
