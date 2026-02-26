@@ -648,6 +648,30 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
+/* Модалки DAO и Starter Pack: заголовок по центру, текст слева (как в MinerView gems shop) */
+:deep(.modal-header) {
+  text-align: center;
+}
+:deep(.modal-body) {
+  text-align: left;
+}
+.starter-pack-content,
+.dao-owner-content {
+  text-align: left;
+  width: 100%;
+}
+.starter-pack-text,
+.dao-owner-text {
+  font-family: 'Inter' !important;
+  font-weight: 500;
+  font-size: 13.5px;
+  line-height: 1.2;
+  color: #8b898b;
+  text-align: left;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
 .screen-box {
   position: absolute;
   top: 0;
@@ -931,39 +955,6 @@ onUnmounted(() => {
       z-index: -10;
       border-radius: 0 0 1rem 1rem;
     }
-  }
-
-  /* Модалки "i": как в MinerView — заголовок по центру (в InfoModal), описание слева */
-  :deep(.modal-body) {
-    text-align: left;
-  }
-  .starter-pack-content {
-    text-align: left;
-    width: 100%;
-  }
-  .starter-pack-text {
-    font-family: 'Inter' !important;
-    font-weight: 500;
-    font-size: 13.5px;
-    line-height: 1.2;
-    color: #8b898b;
-    text-align: left;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-  }
-  .dao-owner-content {
-    text-align: left;
-    width: 100%;
-  }
-  .dao-owner-text {
-    font-family: 'Inter' !important;
-    font-weight: 500;
-    font-size: 13.5px;
-    line-height: 1.2;
-    color: #8b898b;
-    text-align: left;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
   }
 
   .assets-item {
