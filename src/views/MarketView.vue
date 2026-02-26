@@ -205,14 +205,6 @@ const buyAsics = async (item, price, link, sale, shop = true) => {
 const buyGem = async (gemItem) => {
   if (!gemItem?.shop && gemItem?.type !== 'Starter Pack') return
 
-  if (gemItem?.type === 'Orbital Power Plant') {
-    redirectLink.value = gemItem?.link || 'https://getgems.io'
-    redirectItemName.value = gemItem?.type
-    redirectItemClass.value = ''
-    openRedirectModal.value = true
-    return
-  }
-
   // Starter Pack — как в MinerView: отправка TON
   if (gemItem?.type === 'Starter Pack') {
     if (isProcessing.value) return
