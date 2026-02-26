@@ -685,6 +685,8 @@
     "singularity_benefit_1": "Сховище: 2690 kW",
     "singularity_benefit_2": "Генерація: 800 kW/год",
     "singularity_benefit_3": "Інженери: 45 рівень",
+    "singularity_description": "Унікальний реактор сингулярності має такі характеристики:",
+    "singularity_info_important": "Придбаних інженерів буде списано при продажу станції.",
     "for_energizers": "Енергія",
     "your_power_plant_lvl": "Ваш рівень станції",
     "your_asics_hashrate": "Ваш хешрейт ASIC",

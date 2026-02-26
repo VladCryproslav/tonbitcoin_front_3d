@@ -691,6 +691,8 @@
     "singularity_benefit_1": "Storage: 2690 kW",
     "singularity_benefit_2": "Generation: 800 kW/h",
     "singularity_benefit_3": "Engineers: Level 45",
+    "singularity_description": "A unique Singularity Reactor has the following characteristics:",
+    "singularity_info_important": "Purchased engineers will be written off when selling the station.",
     "for_energizers": "Energy",
     "your_power_plant_lvl": "Your Power Plant lvl",
     "your_asics_hashrate": "Your ASICs hashrate",

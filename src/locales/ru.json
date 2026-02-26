@@ -685,6 +685,8 @@
     "singularity_benefit_1": "Хранилище: 2690 kW",
     "singularity_benefit_2": "Генерация: 800 kW/h",
     "singularity_benefit_3": "Инженеры: 45 уровень",
+    "singularity_description": "Уникальный реактор сингулярности имеет следующие характеристики:",
+    "singularity_info_important": "Приобретённые инженеры списываются при продаже станции.",
     "for_energizers": "Энергия",
     "your_power_plant_lvl": "Ваш уровень станции",
     "your_asics_hashrate": "Ваш хешрейт ASIC",

@@ -40,6 +40,7 @@ const openStarterPackInfo = ref(false)
 const openDaoOwnerInfo = ref(false)
 const openHydroelectricInfo = ref(false)
 const openOrbitalInfo = ref(false)
+const openSingularityInfo = ref(false)
 const openOrbitalCraftInfo = ref(false)
 const openGemInfo = ref(false)
 const gemInfoText = ref('')
@@ -84,6 +85,8 @@ const handleGemInfoClick = (gemItem) => {
     openHydroelectricInfo.value = true
   } else if (gemItem?.info === 'orbital_power_plant_modal') {
     openOrbitalInfo.value = true
+  } else if (gemItem?.info === 'singularity_power_plant_modal') {
+    openSingularityInfo.value = true
   } else if (gemItem?.info) {
     gemInfoText.value = gemItem.info
     currentGemItem.value = gemItem
@@ -116,6 +119,13 @@ const closeOrbitalInfo = () => {
 const buyOrbital = () => {
   if (orbitalGem.value) buyGem(orbitalGem.value)
   openOrbitalInfo.value = false
+}
+
+const singularityGem = computed(() => gemsSheet.find(g => g.type === 'Singularity Reactor'))
+
+const buySingularity = () => {
+  if (singularityGem.value) buyGem(singularityGem.value)
+  openSingularityInfo.value = false
 }
 
 const copyAddress = async (address) => {
@@ -633,8 +643,8 @@ onUnmounted(() => {
           • {{ t('gems.orbital_item_3') }}<br>
           • {{ t('gems.orbital_item_4') }}<br><br>
           {{ t('gems.orbital_income') }}<br><br>
-          {{ t('gems.orbital_info_important') }}<br><br>
-          {{ t('gems.orbital_unique') }}
+          {{ t('gems.orbital_unique') }}<br><br>
+          {{ t('gems.orbital_info_important') }}
         </div>
       </div>
     </template>
@@ -688,6 +698,23 @@ onUnmounted(() => {
           • {{ t('gems.hydroelectric_info_1') }}<br>
           • {{ t('gems.hydroelectric_info_important') }}<br>
           • {{ t('gems.hydroelectric_info_2') }}
+        </div>
+      </div>
+    </template>
+  </InfoModal>
+
+  <InfoModal v-if="openSingularityInfo" :confirm-label="t('common.buy')" @close="(e) => { if (e?.check) buySingularity(); openSingularityInfo = false }">
+    <template #header>
+      {{ t('asic_shop.information') }}
+    </template>
+    <template #modal-body>
+      <div class="hydroelectric-content">
+        <div class="hydroelectric-text">
+          {{ t('gems.singularity_description') }}<br><br>
+          • {{ t('gems.singularity_benefit_1') }}<br>
+          • {{ t('gems.singularity_benefit_2') }}<br>
+          • {{ t('gems.singularity_benefit_3') }}<br><br>
+          {{ t('gems.singularity_info_important') }}
         </div>
       </div>
     </template>
