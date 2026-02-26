@@ -1218,7 +1218,7 @@ onUnmounted(() => {
 }
 
 .asics-shop-page .market-shop-list {
-  padding: 10px 0 100px;
+  padding: 10px 0 120px;
 }
 
 .boosters-shop-page .market-shop-list {
