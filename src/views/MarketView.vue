@@ -37,6 +37,7 @@ const currBuyAsic = ref(null)
 const daoGem = computed(() => gemsSheet.find(g => g.type === 'DAO Owner'))
 const starterPack = computed(() => gemsSheet.find(g => g.type === 'Starter Pack'))
 const openStarterPackInfo = ref(false)
+const openDaoOwnerInfo = ref(false)
 const isProcessing = ref(false)
 const openModal = ref(false)
 const modalStatus = ref('')
@@ -289,7 +290,7 @@ onUnmounted(() => {
       </div>
       <!-- DAO first, then Starter Pack - both gem-item (gems shop style) -->
       <div v-if="daoGem" class="gem-item has-gold-stroke">
-        <div class="gem-info-icon-top" @click="buyGem(daoGem)">i</div>
+        <div class="gem-info-icon-top" @click="openDaoOwnerInfo = true">i</div>
         <div class="gem-picture">
           <img v-if="daoGem.imagePath" :src="imagePathGems(daoGem.imagePath)?.value" class="gem-image" alt="" />
           <div v-else class="gem-icon">💎</div>
@@ -461,12 +462,14 @@ onUnmounted(() => {
     @close="(e) => { if (e?.check) buyStarterPack(); openStarterPackInfo = false }"
   >
     <template #header>
-      <div style="text-align: center;" v-html="t('gems.starter_pack_title')"></div>
+      {{ t('asic_shop.information') }}
     </template>
     <template #modal-body>
-      <div class="starter-pack-modal-content">
+      <div class="starter-pack-content">
         <div class="starter-pack-text">
+          {{ t('gems.starter_pack_title') }}<br><br>
           • {{ t('gems.starter_pack_item_1') }}<br>
+          • {{ t('gems.starter_pack_item_2') }}<br>
           • {{ t('gems.starter_pack_item_3') }}<br>
           • {{ t('gems.starter_pack_item_4') }}<br>
           • {{ t('gems.starter_pack_item_5') }}<br>
@@ -475,6 +478,30 @@ onUnmounted(() => {
           {{ t('gems.starter_pack_price_info') }}<br>
           {{ t('gems.starter_pack_price_offer', { price: getStarterPackPriceDisplay() }) }}<br><br>
           <span style="color: #ffc300;">{{ t('gems.starter_pack_item_8') }}</span>
+        </div>
+      </div>
+    </template>
+  </InfoModal>
+
+  <InfoModal
+    v-if="openDaoOwnerInfo"
+    :confirm-label="t('common.buy')"
+    @close="(e) => { if (e?.check) buyGem(daoGem); openDaoOwnerInfo = false }"
+  >
+    <template #header>
+      {{ t('asic_shop.information') }}
+    </template>
+    <template #modal-body>
+      <div class="dao-owner-content">
+        <div class="dao-owner-text">
+          {{ t('gems.dao_owner_title') }}<br><br>
+          • {{ t('gems.dao_owner_item_1') }}<br>
+          • {{ t('gems.dao_owner_item_2') }}<br>
+          • {{ t('gems.dao_owner_item_3') }}<br>
+          • {{ t('gems.dao_owner_item_4') }}<br>
+          • {{ t('gems.dao_owner_item_5') }}<br>
+          • {{ t('gems.dao_owner_item_6') }}<br>
+          • {{ t('gems.dao_owner_item_7') }}
         </div>
       </div>
     </template>
@@ -796,6 +823,10 @@ onUnmounted(() => {
       transition: all 0.3s ease;
       z-index: 100;
 
+      &.btn-gold {
+        background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent),
+          linear-gradient(180deg, #FCD909 0%, #FEA400 100%);
+      }
       &.btn-purple {
         background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent),
           linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);
@@ -886,6 +917,32 @@ onUnmounted(() => {
       z-index: -10;
       border-radius: 0 0 1rem 1rem;
     }
+  }
+
+  /* Gems Shop modals (DAO, Starter Pack) — same as MinerView */
+  .starter-pack-content {
+    text-align: left;
+    width: 100%;
+  }
+  .starter-pack-text {
+    font-family: 'Inter' !important;
+    font-weight: 500;
+    font-size: 13.5px;
+    line-height: 1.2;
+    color: #8b898b;
+    text-align: left;
+  }
+  .dao-owner-content {
+    text-align: left;
+    width: 100%;
+  }
+  .dao-owner-text {
+    font-family: 'Inter' !important;
+    font-weight: 500;
+    font-size: 13.5px;
+    line-height: 1.2;
+    color: #8b898b;
+    text-align: left;
   }
 
   .assets-item {
