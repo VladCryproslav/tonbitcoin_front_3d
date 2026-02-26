@@ -633,8 +633,7 @@ onUnmounted(() => {
           • {{ t('gems.orbital_item_3') }}<br>
           • {{ t('gems.orbital_item_4') }}<br><br>
           {{ t('gems.orbital_income') }}<br><br>
-          {{ t('gems.orbital_unique') }}<br><br>
-          {{ t('gems.orbital_progress') }}
+          {{ t('gems.orbital_unique') }}
         </div>
       </div>
     </template>
