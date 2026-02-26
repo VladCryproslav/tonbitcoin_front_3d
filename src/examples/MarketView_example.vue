@@ -2359,32 +2359,6 @@ onUnmounted(() => {
         <h2 class="special-offers-title">Limited Offers</h2>
         <span class="special-offers-count">Only 10 left</span>
       </div>
-      <div class="starter-pack-item has-purple-stroke">
-        <!-- <div class="starter-pack-info-icon" @click="showStarterPackModal = true">i</div> -->
-          <div class="starter-pack-picture">
-            <img :src="imagePathGems('@/assets/market/Starter_pack.webp')?.value" class="starter-pack-image" alt="Starter Pack" />
-          </div>
-          <div class="starter-pack-info">
-            <span class="starter-pack-type">Starter Pack</span>
-            <span class="starter-pack-description">{{ t('gems.starter_pack_benefit_1') }}</span>
-            <span class="starter-pack-description">{{ t('gems.starter_pack_benefit_2') }}</span>
-            <span class="starter-pack-description">{{ t('gems.starter_pack_benefit_3') }}</span>
-            <span class="starter-pack-description">{{ t('gems.starter_pack_benefit_4') }}</span>
-          </div>
-          <button class="starter-pack-buy-btn btn-purple" @click="openStarterPackInfo = true" :disabled="isProcessing">
-            <span>{{ t('common.buy') }}</span>
-            <span class="starter-pack-price" :class="{ saleprice: starterPackSaleActive }">
-              <img src="@/assets/SOL.png" width="14px" height="14px" />
-              {{ getStarterPackOriginalPrice() }}
-            </span>
-            <div v-if="starterPackSaleActive" class="starter-pack-sale-perc">-{{ starterPackSalePercent }}%</div>
-            <div v-if="starterPackSaleActive" class="starter-pack-sale-newprice">
-              <img src="@/assets/SOL.png" width="12px" height="12px" />
-              {{ getStarterPackPriceDisplay() }}
-            </div>
-          </button>
-          <span class="starter-pack-tag">Special</span>
-      </div>
       <h2 class="assets-title">In-App Assets</h2>
       <div class="assets-item" :class="{ 'has-sale-stroke': asicsSaleActive }">
         <img :src="imagePathGems('@/assets/market/mining_equip_market_icon.webp')?.value" class="assets-icon" alt="Mining Equipment" />

@@ -34,6 +34,7 @@ const redirectItemClass = ref(null)
 const openSpecialModal = ref(false)
 const currBuyAsic = ref(null)
 
+const daoGem = computed(() => gemsSheet.find(g => g.type === 'DAO Owner'))
 const starterPack = computed(() => gemsSheet.find(g => g.type === 'Starter Pack'))
 const openStarterPackInfo = ref(false)
 const isProcessing = ref(false)
@@ -286,22 +287,37 @@ onUnmounted(() => {
       <div class="special-offers-header">
         <h2 class="special-offers-title">{{ t('market.limited_offers') }}</h2>
       </div>
+      <!-- DAO first, then Starter Pack - both gem-item (gems shop style) -->
+      <div v-if="daoGem" class="gem-item has-gold-stroke">
+        <div class="gem-info-icon-top" @click="buyGem(daoGem)">i</div>
+        <div class="gem-picture">
+          <img v-if="daoGem.imagePath" :src="imagePathGems(daoGem.imagePath)?.value" class="gem-image" alt="" />
+          <div v-else class="gem-icon">💎</div>
+        </div>
+        <div class="gem-info">
+          <span class="gem-type">{{ daoGem.type }}</span>
+          <span v-for="(benefit, idx) in daoGem.benefits" :key="idx" class="gem-description">{{ t(`gems.${benefit}`) }}</span>
+        </div>
+        <button class="gem-buy-btn btn-gold" :disabled="isProcessing" @click="buyGem(daoGem)">
+          <span>{{ daoGem.name || t('common.buy') }}</span>
+          <span class="gem-price">
+            <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
+            {{ daoGem.price }}
+          </span>
+        </button>
+        <span class="gem-tag" style="background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%); color: #000;">{{ t('gems.special') }}</span>
+      </div>
       <div v-if="starterPack" class="gem-item has-purple-stroke">
         <div class="gem-info-icon-top" @click="openStarterPackInfo = true">i</div>
         <div class="gem-picture">
-          <img src="@/assets/gems/Starter_pack.webp" class="gem-image" alt="Starter Pack" />
+          <img v-if="starterPack.imagePath" :src="imagePathGems(starterPack.imagePath)?.value" class="gem-image" alt="Starter Pack" />
+          <div v-else class="gem-icon">💎</div>
         </div>
         <div class="gem-info">
           <span class="gem-type">{{ starterPack.type }}</span>
-          <span v-for="(benefit, idx) in starterPack.benefits" :key="idx" class="gem-description">
-            {{ t(`gems.${benefit}`) }}
-          </span>
+          <span v-for="(benefit, idx) in starterPack.benefits" :key="idx" class="gem-description">{{ t(`gems.${benefit}`) }}</span>
         </div>
-        <button
-          class="gem-buy-btn btn-purple"
-          :disabled="isProcessing"
-          @click="openStarterPackInfo = true"
-        >
+        <button class="gem-buy-btn btn-purple" :disabled="isProcessing" @click="openStarterPackInfo = true">
           <span>{{ t('common.buy') }}</span>
           <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && starterPack.enableSale !== false }">
             <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
