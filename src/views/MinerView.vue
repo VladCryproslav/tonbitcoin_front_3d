@@ -894,8 +894,8 @@ const toggleShopTab = async () => {
   // Двойной requestAnimationFrame для гарантированного обновления после всех анимаций
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      const list = activeShopTab.value === 'asics' 
-        ? asicsList.value 
+      const list = activeShopTab.value === 'asics'
+        ? asicsList.value
         : document.querySelector('.gems-list')
       if (list) {
         list.scrollTo({ top: list.scrollTop })
@@ -1217,6 +1217,7 @@ onUnmounted(() => {
           {{ t('gems.hydroelectric_important') }}<br>
           • {{ t('gems.hydroelectric_item_5') }}<br>
           • {{ t('gems.hydroelectric_info_1') }}<br>
+          • {{ t('gems.hydroelectric_info_important') }}<br>
           • {{ t('gems.hydroelectric_info_2') }}
         </div>
       </div>
@@ -1320,8 +1321,8 @@ onUnmounted(() => {
       </div>
 
       <!-- Единый баннер для обеих вкладок -->
-      <div v-show="((activeShopTab === 'asics' && asicsSaleActive && !promoBannerClosed) || (activeShopTab === 'gems' && gemsSaleActive && !gemsPromoBannerClosed))" 
-           class="promo-banner promo-banner-unified-enter-to" 
+      <div v-show="((activeShopTab === 'asics' && asicsSaleActive && !promoBannerClosed) || (activeShopTab === 'gems' && gemsSaleActive && !gemsPromoBannerClosed))"
+           class="promo-banner promo-banner-unified-enter-to"
            :class="{ 'gems-promo-banner': activeShopTab === 'gems' }">
           <div class="promo-banner-shine-wrapper">
             <div class="promo-banner-shine"></div>
@@ -2492,7 +2493,7 @@ onUnmounted(() => {
   // Единая анимация для баннера (один Transition для обеих вкладок)
   .promo-banner-unified-enter-active {
     transition: opacity 0.3s ease-out, transform 0.3s ease-out;
-    
+
     .promo-banner {
       animation: promoPulse 4s ease-in-out infinite;
     }
@@ -2501,7 +2502,7 @@ onUnmounted(() => {
   .promo-banner-unified-leave-active {
     transition: none !important;
     pointer-events: none;
-    
+
     .promo-banner {
       display: none !important;
       margin-bottom: 0 !important;

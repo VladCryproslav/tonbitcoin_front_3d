@@ -686,6 +686,7 @@ onUnmounted(() => {
           {{ t('gems.hydroelectric_important') }}<br>
           • {{ t('gems.hydroelectric_item_5') }}<br>
           • {{ t('gems.hydroelectric_info_1') }}<br>
+          • {{ t('gems.hydroelectric_info_important') }}<br>
           • {{ t('gems.hydroelectric_info_2') }}
         </div>
       </div>
