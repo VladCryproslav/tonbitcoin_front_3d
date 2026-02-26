@@ -125,13 +125,57 @@ const closePowerPlantsShop = () => { showPowerPlantsShop.value = false }
 const closeBoostersShop = () => { showBoostersShop.value = false }
 
 const POWER_PLANT_TYPES = ['Hydroelectric Power Plant', 'Orbital Power Plant', 'Singularity Reactor']
-const BOOSTER_TYPES = ['Repair Kit', 'Jarvis Bot', 'Cryochamber']
+const BOOSTER_TYPES = ['Repair Kit', 'Jarvis Bot', 'Cryochamber', 'ASIC Manager', 'Magnetic ring']
+const boostersCategory = ref('energizers') // 'energizers' | 'miners'
 const powerPlantsGems = computed(() =>
   sortGemsBySale(gemsSheet.filter(el => el.shop && POWER_PLANT_TYPES.includes(el.type)))
 )
-const boostersGems = computed(() =>
-  sortGemsBySale(gemsSheet.filter(el => el.shop && BOOSTER_TYPES.includes(el.type)))
-)
+const boostersGems = computed(() => {
+  const base = gemsSheet.filter(el => el.shop && BOOSTER_TYPES.includes(el.type))
+  const benefitsKey = boostersCategory.value === 'energizers' ? 'for_energizers' : 'for_miners'
+  return sortGemsBySale(base.filter(el => el.benefits?.includes(benefitsKey)))
+})
+
+const STATION_LEVELS = ['Boiler house', 'Coal power plant', 'Thermal power plant', 'Geothermal power plant', 'Nuclear power plant', 'Thermonuclear power plant', 'Dyson Sphere', 'Neutron star', 'Antimatter', 'Galactic core']
+const userStationLevel = computed(() => {
+  if (!app.user?.station_type) return null
+  let stationTypeToCheck = app.user.station_type
+  if (app.user.premium_station_type) {
+    const premiumMapping = { 'Hydroelectric Power Plant': 'Nuclear power plant', 'Orbital Power Plant': 'Thermonuclear power plant' }
+    const mapped = premiumMapping[app.user.premium_station_type]
+    if (mapped) stationTypeToCheck = mapped
+  }
+  const idx = STATION_LEVELS.indexOf(stationTypeToCheck)
+  return idx === -1 ? null : idx + 1
+})
+const userHashrate = computed(() => {
+  if (app.user?.mining_farm_speed == null) return null
+  return app.user.mining_farm_speed
+})
+const checkPowerPlantLevelMatch = (benefit) => {
+  if (!benefit || typeof benefit !== 'string') return false
+  if (!benefit.includes('power_plant_lvl:')) return false
+  if (userStationLevel.value === null) return false
+  const match = benefit.match(/power_plant_lvl:\s*(\d+)-(\d+)/)
+  if (!match) return false
+  const minLevel = parseInt(match[1])
+  const maxLevel = parseInt(match[2])
+  return userStationLevel.value >= minLevel && userStationLevel.value <= maxLevel
+}
+const checkHashrateMatch = (benefit) => {
+  if (!benefit || typeof benefit !== 'string') return false
+  if (!benefit.includes('gh_s:')) return false
+  if (userHashrate.value === null) return false
+  const plusMatch = benefit.match(/gh_s:\s*(\d+)\+/)
+  if (plusMatch) return userHashrate.value >= parseFloat(plusMatch[1])
+  const rangeMatch = benefit.match(/gh_s:\s*(\d+)-(\d+)/)
+  if (rangeMatch) {
+    const minH = parseFloat(rangeMatch[1])
+    const maxH = parseFloat(rangeMatch[2])
+    return userHashrate.value >= minH && userHashrate.value <= maxH
+  }
+  return false
+}
 
 const imagePathAsics = (asic) =>
   computed(() => new URL(`../assets/asics/${asic?.toString().toUpperCase()}.webp`, import.meta.url).href)
@@ -741,16 +785,46 @@ onUnmounted(() => {
         <Exit :width="16" style="color: #fff" />
       </button>
     </div>
+    <div class="boosters-shop-toggle-panel">
+      <div class="boosters-shop-toggle-panel-spacer"></div>
+      <div class="boosters-shop-toggle-container">
+        <button class="boosters-shop-toggle-btn" :class="{ active: boostersCategory === 'energizers' }" @click="boostersCategory = 'energizers'">
+          {{ t('gems.for_energizers') }}
+        </button>
+        <button class="boosters-shop-toggle-btn" :class="{ active: boostersCategory === 'miners' }" @click="boostersCategory = 'miners'">
+          {{ t('gems.for_miners') }}
+        </button>
+      </div>
+      <div class="boosters-shop-toggle-panel-spacer"></div>
+    </div>
+    <div class="boosters-shop-user-info">
+      <div class="boosters-shop-user-info-item">
+        <span class="boosters-shop-user-info-label">{{ t('gems.your_power_plant_lvl') || 'Your Power Plant lvl' }}</span>
+        <span class="boosters-shop-user-info-value">{{ userStationLevel != null ? userStationLevel : '—' }}</span>
+      </div>
+      <div class="boosters-shop-user-info-item">
+        <span class="boosters-shop-user-info-label">{{ t('gems.your_asics_hashrate') || 'Your ASICs hashrate' }}</span>
+        <span class="boosters-shop-user-info-value">{{ userHashrate != null ? `${userHashrate.toFixed(1)} Gh/s` : '—' }}</span>
+      </div>
+    </div>
     <div class="market-shop-list gems-list">
       <div class="gem-item" :class="{ 'has-gold-stroke': g?.hasGoldStroke, 'has-purple-stroke': g?.hasPurpleStroke, 'has-blue-stroke': g?.hasBlueStroke }" v-for="g in boostersGems" :key="g.type + (g.rarity || '')">
         <div v-if="g?.info" class="gem-info-icon-top" @click="handleGemInfoClick(g)">i</div>
         <div class="gem-picture">
-          <img v-if="g?.imagePath" :src="imagePathGems(g.imagePath)?.value" class="gem-image" :class="{ 'hide-under-tag': g?.type === 'Jarvis Bot' }" alt="" />
+          <img v-if="g?.imagePath" :src="imagePathGems(g.imagePath)?.value" class="gem-image" :class="{ 'hide-under-tag': g?.type === 'Jarvis Bot' || g?.type === 'ASIC Manager' || g?.type === 'Magnetic ring' }" alt="" />
           <div v-else class="gem-icon">💎</div>
         </div>
         <div class="gem-info">
           <span class="gem-type">{{ g.type }}</span>
-          <span class="gem-description" v-for="(benefit, idx) in g.benefits" :key="idx">{{ t(`gems.${benefit}`) }}</span>
+          <span
+            class="gem-description"
+            v-for="(benefit, idx) in g.benefits"
+            :key="idx"
+            :class="{ 'boosters-benefit-match': checkPowerPlantLevelMatch(benefit) || checkHashrateMatch(benefit) }"
+          >
+            <span v-if="checkPowerPlantLevelMatch(benefit) || checkHashrateMatch(benefit)" class="boosters-check-icon">✓</span>
+            {{ t(`gems.${benefit}`) || benefit }}
+          </span>
         </div>
         <button class="gem-buy-btn" :disabled="!g?.shop" @click="buyGem(g)">
           <span>{{ g.name }}</span>
@@ -1495,6 +1569,75 @@ onUnmounted(() => {
   padding: 10px 0 130px;
 }
 
+.boosters-shop-toggle-panel {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  width: 90%;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  .boosters-shop-toggle-panel-spacer { min-width: 24px; }
+  .boosters-shop-toggle-container {
+    display: flex;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 20px;
+    padding: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    grid-column: 2;
+    justify-self: center;
+    .boosters-shop-toggle-btn {
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: none;
+      background: transparent;
+      color: #fff;
+      font-family: 'Inter' !important;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      &.active {
+        background: linear-gradient(180deg, rgba(49, 207, 255, 0.8) 0%, #31CFFF 100%);
+        color: #000;
+      }
+      &:hover:not(.active) { background: rgba(255, 255, 255, 0.1); }
+    }
+  }
+}
+
+.boosters-shop-user-info {
+  display: flex;
+  width: 90%;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  justify-content: center;
+  .boosters-shop-user-info-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    .boosters-shop-user-info-label {
+      font-family: 'Inter' !important;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.7);
+      text-align: center;
+      line-height: 1.2;
+    }
+    .boosters-shop-user-info-value {
+      font-family: 'Inter' !important;
+      font-size: 16px;
+      font-weight: 600;
+      color: #31CFFF;
+      text-align: center;
+    }
+  }
+}
+
 .market-shop-list.asics-list .item {
     position: relative;
     display: flex;
@@ -1701,7 +1844,30 @@ onUnmounted(() => {
     .gem-icon { font-size: 40px; }
     .gem-info { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; flex: 1; min-width: 110px; line-height: 95%; margin-bottom: 10px; }
     .gem-type { color: #fff; font-family: 'Inter' !important; font-weight: 700; font-size: 1rem; margin-bottom: 3px; white-space: pre-line; }
-    .gem-description { color: #ffffff70; font-family: 'Inter' !important; font-weight: 400; font-size: 10px; text-wrap: nowrap; }
+    .gem-description {
+      color: #ffffff70;
+      font-family: 'Inter' !important;
+      font-weight: 400;
+      font-size: 10px;
+      text-wrap: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      &.boosters-benefit-match { color: #51cf66; font-weight: 600; }
+      .boosters-check-icon {
+        color: #51cf66;
+        font-weight: bold;
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        background: rgba(81, 207, 102, 0.2);
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+    }
     .gem-buy-btn {
       position: absolute; top: 50%; right: 5px; transform: translateY(-50%);
       display: flex; flex-direction: column; align-items: center; min-width: 75px; width: 75px; padding: 0.2rem 0.7rem;

@@ -686,6 +686,8 @@
     "singularity_benefit_2": "Генерація: 800 kW/год",
     "singularity_benefit_3": "Інженери: 45 рівень",
     "for_energizers": "Для Енерджайзерів",
+    "your_power_plant_lvl": "Ваш рівень станції",
+    "your_asics_hashrate": "Ваш хешрейт ASIC",
     "power_plant_lvl": "Рівень станції",
     "duration": "Тривалість",
     "duration_eternal": "Тривалість: Вічний",
