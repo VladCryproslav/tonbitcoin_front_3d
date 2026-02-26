@@ -315,6 +315,24 @@ const gemsSheet = [
   {
     shop: true,
     name: 'Buy NFT',
+    type: 'Cryochamber',
+    price: 99,
+    rarity: 'class_1',
+    enableSale: true,
+    salePercent: 50,
+    description: 'For Energizers',
+    imagePath: '@/assets/gems/Cryo_NFT.webp',
+    link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%22All+stations%22%5D%7D%7D',
+    info: 'gems.cryochamber_info',
+    benefits: [
+      'for_energizers',
+      'power_plant_lvl: 1-10',
+      'duration_eternal'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
     type: 'Repair Kit',
     price: 49,
     rarity: 'class_3',
@@ -435,24 +453,6 @@ const gemsSheet = [
     benefits: [
       'for_energizers',
       'power_plant_lvl: 8-9',
-      'duration_eternal'
-    ]
-  },
-  {
-    shop: true,
-    name: 'Buy NFT',
-    type: 'Cryochamber',
-    price: 99,
-    rarity: 'class_1',
-    enableSale: true,
-    salePercent: 50,
-    description: 'For Energizers',
-    imagePath: '@/assets/gems/Cryo_NFT.webp',
-    link: 'https://getgems.io/tbtc?filter=%7B%22ownership%22%3A%7B%22owner%22%3A%22UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl%22%7D%2C%22attributes%22%3A%7B%22Station+levels%22%3A%5B%22All+stations%22%5D%7D%7D',
-    info: 'gems.cryochamber_info',
-    benefits: [
-      'for_energizers',
-      'power_plant_lvl: 1-10',
       'duration_eternal'
     ]
   },
