@@ -840,6 +840,26 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
+/* "i" на карточках: и в .market-grid, и в .market-shop-list */
+.gem-item .gem-info-icon-top {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 9px;
+  color: #000;
+  z-index: 10;
+}
+
 .screen-box {
   position: absolute;
   top: 0;
