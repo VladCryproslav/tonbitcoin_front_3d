@@ -1562,11 +1562,11 @@ onUnmounted(() => {
 }
 
 .asics-shop-page .market-shop-list {
-  padding: 10px 0 130px;
+  padding: 10px 0 140px;
 }
 
 .boosters-shop-page .market-shop-list {
-  padding: 10px 0 130px;
+  padding: 10px 0 140px;
 }
 
 .boosters-shop-toggle-panel {
