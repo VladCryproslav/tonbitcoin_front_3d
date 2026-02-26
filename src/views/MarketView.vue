@@ -318,7 +318,7 @@ onUnmounted(() => {
           <span class="gem-type">{{ starterPack.type }}</span>
           <span v-for="(benefit, idx) in starterPack.benefits" :key="idx" class="gem-description">{{ t(`gems.${benefit}`) }}</span>
         </div>
-        <button class="gem-buy-btn btn-purple" :disabled="isProcessing" @click="openStarterPackInfo = true">
+        <button class="gem-buy-btn btn-purple" :disabled="isProcessing" @click="buyStarterPack()">
           <span>{{ t('common.buy') }}</span>
           <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && starterPack.enableSale !== false }">
             <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
@@ -919,7 +919,7 @@ onUnmounted(() => {
     }
   }
 
-  /* Gems Shop modals (DAO, Starter Pack) — same as MinerView */
+  /* Gems Shop modals (DAO, Starter Pack) — перенесено из MinerView */
   .starter-pack-content {
     text-align: left;
     width: 100%;
@@ -931,6 +931,8 @@ onUnmounted(() => {
     line-height: 1.2;
     color: #8b898b;
     text-align: left;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   .dao-owner-content {
     text-align: left;
@@ -943,6 +945,8 @@ onUnmounted(() => {
     line-height: 1.2;
     color: #8b898b;
     text-align: left;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   .assets-item {
