@@ -705,7 +705,7 @@ onUnmounted(() => {
       </button>
     </div>
     <div class="market-shop-list gems-list">
-      <div class="gem-item" :class="{ 'has-gold-stroke': g?.hasGoldStroke, 'has-purple-stroke': g?.hasPurpleStroke, 'has-blue-stroke': g?.hasBlueStroke }" v-for="g in powerPlantsGems" :key="g.type">
+      <div class="gem-item" v-for="g in powerPlantsGems" :key="g.type">
         <div v-if="g?.info" class="gem-info-icon-top" @click="handleGemInfoClick(g)">i</div>
         <div class="gem-picture">
           <img v-if="g?.imagePath" :src="imagePathGems(g.imagePath)?.value" class="gem-image" alt="" />
@@ -727,7 +727,7 @@ onUnmounted(() => {
             {{ getGemPrice(g) }}
           </div>
         </button>
-        <span class="gem-tag" :style="g?.rarity === 'special' ? 'background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%)' : 'background-color: #5D625E'">{{ t('gems.special') }}</span>
+        <span class="gem-tag" :style="g?.type === 'Hydroelectric Power Plant' ? 'background-color: #5D625E' : g?.type === 'Orbital Power Plant' ? 'background-color: #009600' : 'background-color: #0918E9'">{{ g?.type === 'Hydroelectric Power Plant' ? t('asic_shop.common') : g?.type === 'Orbital Power Plant' ? t('asic_shop.rare') : t('asic_shop.epic') }}</span>
       </div>
     </div>
   </div>
