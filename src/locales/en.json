@@ -761,6 +761,7 @@
     "orbital_item_4": "Equipped with level 35 engineers for maximum efficiency and comfort.",
     "orbital_income": "Income from energy sales (at the current kW rate) — over 70 TON per month.",
     "orbital_unique": "You cannot build other stations using the resources mined by this station; however, you can purchase engineers.",
+    "orbital_info_important": "Purchased engineers will be written off when selling the station.",
     "orbital_progress": "With this station, you can easily reach level 7 in Dyson Sphere power plant development.",
     "orbital_instruction_btn": "Instruction",
     "copy_instruction_btn": "Copy",
