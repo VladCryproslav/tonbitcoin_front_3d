@@ -260,7 +260,12 @@ const buyGem = async (gemItem) => {
   const link = gemItem?.link || 'https://getgems.io'
   redirectLink.value = link
   redirectItemName.value = gemItem?.type || gemItem?.name
-  redirectItemClass.value = (gemItem?.type !== 'DAO Owner' && gemItem?.rarity) ? t(`gems.${gemItem.rarity}`) : ''
+  // Электростанции: бейдж по типу (как на карточках), не gems.special
+  if (POWER_PLANT_TYPES.includes(gemItem?.type)) {
+    redirectItemClass.value = gemItem?.type === 'Hydroelectric Power Plant' ? t('asic_shop.common') : gemItem?.type === 'Orbital Power Plant' ? t('asic_shop.rare') : t('asic_shop.epic')
+  } else {
+    redirectItemClass.value = (gemItem?.type !== 'DAO Owner' && gemItem?.rarity) ? t(`gems.${gemItem.rarity}`) : ''
+  }
   openRedirectModal.value = true
 }
 
