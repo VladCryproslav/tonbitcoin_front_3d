@@ -420,6 +420,9 @@ function openGemsShop() {
 }
 
 function openUpgrade() {
+  if (!activeStation.value) {
+    activeStation.value = displayStationName.value
+  }
   upgradeIsOpen.value = true
 }
 
@@ -1017,8 +1020,6 @@ onMounted(() => {
   document.body.style.background = asicsIsOpen.background
   tg?.setHeaderColor(asicsIsOpen.background)
   startInfoUpdate()
-
-  activeStation.value = displayStationName.value
 })
 
 watch(
