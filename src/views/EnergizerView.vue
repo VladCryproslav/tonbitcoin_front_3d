@@ -1754,7 +1754,7 @@ onUnmounted(() => {
                 <img v-if="app.user.engineer_level >= 50" src="@/assets/stars_eng.png" width="10px" height="10px" />
                 <span class="from">{{ app.user.engineer_level }}</span>
                 <ArrowRight
-                  v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs) && !app.user.has_hydro_station && !app.user.has_singularity_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)"
+                  v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs)"
                   :width="10" class="mx-[.2rem]" />
                 <!-- <Engineer v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs)" :width="10" /> -->
                 <img v-if="
@@ -1770,7 +1770,7 @@ onUnmounted(() => {
                   app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs)
                 " src="@/assets/stars_eng.png" width="10px" height="10px" />
                 <span
-                  v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs) && !app.user.has_hydro_station && !app.user.has_singularity_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)"
+                  v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs)"
                   class="to">{{
                     app.stations?.eng_configs?.find(
                       (el) => el?.level == app.user?.engineer_level + 1,
