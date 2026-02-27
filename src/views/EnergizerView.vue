@@ -419,12 +419,21 @@ function openGemsShop() {
   router.push({ path: '/market', query: { shop: 'powerplants' } })
 }
 
-function openUpgrade() {
+async function openUpgrade() {
+  if (!isAppReadyForUpgrade.value) {
+    await app.initUser()
+  }
   if (!activeStation.value) {
     activeStation.value = displayStationName.value
   }
   upgradeIsOpen.value = true
 }
+
+const isAppReadyForUpgrade = computed(() => {
+  return !!app.user?.station_type &&
+    Array.isArray(app.stations?.storage_configs) &&
+    app.stations?.storage_configs?.length > 0
+})
 
 const imagePath = computed(() => {
   if (app.user?.has_orbital_station && !app.user?.orbital_force_basic) {
