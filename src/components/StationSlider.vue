@@ -66,15 +66,26 @@ let center, leftEndBack, leftEnd, leftMid, rightMid, rightEnd, rightEndBack
 
 function initializePositions() {
   sliders.value = sliderContent.value?.querySelectorAll('.slide');
-  center = Math.floor(sliders.value.length / 2);
-  activeSlide.value = slides.value[center];
-  leftEndBack = center - 3 >= 0 ? center - 3 : undefined;
-  leftEnd = center - 2 >= 0 ? center - 2 : undefined;
-  leftMid = center - 1 >= 0 ? center - 1 : undefined;
-  rightMid = center + 1 < sliders.value.length ? center + 1 : undefined;
-  rightEnd = center + 2 < sliders.value.length ? center + 2 : undefined;
-  rightEndBack = center + 3 < sliders.value.length ? center + 3 : undefined;
-  updateSliderClasses();
+  if (!sliders.value || !sliders.value.length) return
+
+  const userStation = app.user?.station_type
+
+  if (userStation && slides.value?.includes(userStation)) {
+    center = slides.value.indexOf(userStation)
+  } else {
+    center = Math.floor(sliders.value.length / 2)
+  }
+
+  activeSlide.value = slides.value[center]
+
+  leftEndBack = center - 3 >= 0 ? center - 3 : undefined
+  leftEnd = center - 2 >= 0 ? center - 2 : undefined
+  leftMid = center - 1 >= 0 ? center - 1 : undefined
+  rightMid = center + 1 < sliders.value.length ? center + 1 : undefined
+  rightEnd = center + 2 < sliders.value.length ? center + 2 : undefined
+  rightEndBack = center + 3 < sliders.value.length ? center + 3 : undefined
+
+  updateSliderClasses()
 }
 
 function updateSliderClasses() {
