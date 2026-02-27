@@ -1795,7 +1795,7 @@ onUnmounted(() => {
                   )?.hire_cost > 0
                 " width="10px" height="10px" />
                 <span class="energy" v-if="
-                  !app.user.has_orbital_station &&
+                  (!app.user.has_orbital_station || app.user.orbital_force_basic) &&
                   !app.user.has_hydro_station &&
                   app.stations?.eng_configs?.find(
                     (el) => el?.level == app.user?.engineer_level + 1,
@@ -1804,7 +1804,7 @@ onUnmounted(() => {
                       ?.hire_cost || ''
                   }}</span>
                 <span class="energy" v-if="
-                  !app.user.has_orbital_station &&
+                  (!app.user.has_orbital_station || app.user.orbital_force_basic) &&
                   !app.user.has_hydro_station &&
                   app.stations?.eng_configs?.find(
                     (el) => el?.level == app.user?.engineer_level + 1,
