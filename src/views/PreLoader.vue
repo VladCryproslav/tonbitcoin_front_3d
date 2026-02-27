@@ -207,7 +207,7 @@ onMounted(async () => {
       </Transition>
       <h1 v-show="app.loadingProgress < 100 && !app?.blocked && !TECH_MAINTENANCE">{{ t('preloader.loading') }}</h1>
       <h1 v-show="app?.blocked || TECH_MAINTENANCE">{{ t('preloader.unpossible') }}</h1>
-      <span>TonBitcoin Ver. 3.0</span>
+      <span>TonBitcoin Ver. 3.2</span>
     </footer>
   </div>
 </template>
