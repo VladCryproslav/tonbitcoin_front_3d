@@ -20,11 +20,11 @@ const app = useAppStore()
 
 const { tg } = useTelegram()
 
-const onlyStarsEngineer = computed(
-  () =>
-    app.user?.has_hydro_station ||
-    app.user?.has_orbital_station ||
-    app.user?.has_singularity_station,
+// Премиум-станции: инженера улучшаем только за звезды
+const onlyStarsEngineer = computed(() =>
+  app.user?.has_hydro_station ||
+  app.user?.has_singularity_station ||
+  (app.user?.has_orbital_station && !app.user?.orbital_force_basic),
 )
 
 const modalStatus = ref(null)
@@ -173,7 +173,7 @@ const emitClose = () => {
                 <img src="@/assets/kW.png" width="16px" height="16px" />
                 <span>{{ props?.price?.kw }}</span>
               </div>
-              <div class="stars-side" :class="{ disabled: !props.price.stars && !onlyStarsEngineer }">
+              <div class="stars-side" :class="{ disabled: !onlyStarsEngineer && !props.price.stars }">
                 <img src="@/assets/stars.png" width="16px" height="16px" />
                 <span>{{ props?.price?.stars }}</span>
               </div>
@@ -198,9 +198,9 @@ const emitClose = () => {
             <button
               v-if="props.kind == 'engineer'"
               class="eng-stars"
-              :class="{ disabled: !props.price.stars && !onlyStarsEngineer }"
+              :class="{ disabled: !onlyStarsEngineer && !props.price.stars }"
               @click="upgrade('engineer')"
-              :disabled="!props.price.stars && !onlyStarsEngineer"
+              :disabled="!onlyStarsEngineer && !props.price.stars"
             >
               Stars
             </button>
