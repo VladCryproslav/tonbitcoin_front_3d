@@ -1,7 +1,7 @@
 <script setup>
 import Exit from '@/assets/upg-modal-close.svg'
 import { useAppStore } from '@/stores/app'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { host } from '../../axios.config'
 import ModalNew from './ModalNew.vue'
 import { useTelegram } from '@/services/telegram'
@@ -19,6 +19,13 @@ const props = defineProps({
 const app = useAppStore()
 
 const { tg } = useTelegram()
+
+const onlyStarsEngineer = computed(
+  () =>
+    app.user?.has_hydro_station ||
+    app.user?.has_orbital_station ||
+    app.user?.has_singularity_station,
+)
 
 const modalStatus = ref(null)
 const modalTitle = ref(null)
@@ -162,25 +169,41 @@ const emitClose = () => {
                 }}<img class="ml-1" src="@/assets/fBTC.webp" width="16px" height="16px" /></span>
             </div>
             <div v-if="props.kind == 'engineer'" class="eng-container">
-              <div class="energy-side" :class="{ disabled: !props.price.kw }">
+              <div class="energy-side" :class="{ disabled: !props.price.kw || onlyStarsEngineer }">
                 <img src="@/assets/kW.png" width="16px" height="16px" />
                 <span>{{ props?.price?.kw }}</span>
               </div>
-              <div class="stars-side" :class="{ disabled: !props.price.stars }">
+              <div class="stars-side" :class="{ disabled: !props.price.stars && !onlyStarsEngineer }">
                 <img src="@/assets/stars.png" width="16px" height="16px" />
                 <span>{{ props?.price?.stars }}</span>
               </div>
             </div>
           </div>
           <div class="buttons-group">
-            <button v-if="props.kind !== 'engineer'" class="confirm" @click="confirm">{{
-              t('modals.upgrade_modal.confirm') }}</button>
-            <button v-if="props.kind !== 'engineer'" class="cancel" @click="emitClose">{{
-              t('modals.upgrade_modal.cancel') }}</button>
-            <button v-if="props.kind == 'engineer'" class="eng-energy" :class="{ disabled: !props.price.kw }"
-              @click="upgrade('engineer', 1)" :disabled="!props.price.kw">kW</button>
-            <button v-if="props.kind == 'engineer'" class="eng-stars" :class="{ disabled: !props.price.stars }"
-              @click="upgrade('engineer')" :disabled="!props.price.stars">Stars</button>
+            <button v-if="props.kind !== 'engineer'" class="confirm" @click="confirm">
+              {{ t('modals.upgrade_modal.confirm') }}
+            </button>
+            <button v-if="props.kind !== 'engineer'" class="cancel" @click="emitClose">
+              {{ t('modals.upgrade_modal.cancel') }}
+            </button>
+            <button
+              v-if="props.kind == 'engineer' && !onlyStarsEngineer"
+              class="eng-energy"
+              :class="{ disabled: !props.price.kw || onlyStarsEngineer }"
+              @click="upgrade('engineer', 1)"
+              :disabled="!props.price.kw || onlyStarsEngineer"
+            >
+              kW
+            </button>
+            <button
+              v-if="props.kind == 'engineer'"
+              class="eng-stars"
+              :class="{ disabled: !props.price.stars && !onlyStarsEngineer }"
+              @click="upgrade('engineer')"
+              :disabled="!props.price.stars && !onlyStarsEngineer"
+            >
+              Stars
+            </button>
           </div>
         </div>
       </div>
