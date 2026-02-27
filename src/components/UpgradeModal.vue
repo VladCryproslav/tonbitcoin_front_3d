@@ -1,8 +1,7 @@
 <script setup>
-const Exit = defineAsyncComponent(() => import('@/assets/upg-modal-close.svg'))
-
+import Exit from '@/assets/upg-modal-close.svg'
 import { useAppStore } from '@/stores/app'
-import { defineAsyncComponent, ref, computed } from 'vue'
+import { ref } from 'vue'
 import { host } from '../../axios.config'
 import ModalNew from './ModalNew.vue'
 import { useTelegram } from '@/services/telegram'
@@ -15,15 +14,9 @@ const props = defineProps({
   body: String,
   price: Object,
   kind: String,
-  /** Готовое название станции для заголовка (передаёт родитель — без задержки) */
-  stationTitle: String,
-  /** Готовый URL картинки станции (передаёт родитель — картинка уже в кэше) */
-  stationImageUrl: String,
 })
 
 const app = useAppStore()
-
-const showStationHeader = computed(() => props.kind === 'station' && !!props.stationTitle)
 
 const { tg } = useTelegram()
 
@@ -143,11 +136,7 @@ const emitClose = () => {
           <Exit style="color: #fff" />
         </button>
         <div class="grouping">
-          <div v-if="showStationHeader" class="station-modal-header">
-            <img v-if="stationImageUrl" :src="stationImageUrl" alt="" class="station-modal-img" />
-            <div class="modal-header">{{ t(`stations.${stationTitle}`) }}</div>
-          </div>
-          <div v-else class="modal-header">
+          <div class="modal-header">
             <slot name="header">{{ props.title }}</slot>
           </div>
           <div v-if="props.body" class="modal-body">
@@ -381,20 +370,6 @@ $bar-height: 8px;
         }
       }
     }
-  }
-}
-
-.station-modal-header {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-
-  .station-modal-img {
-    width: 80px;
-    height: 80px;
-    object-fit: contain;
   }
 }
 
