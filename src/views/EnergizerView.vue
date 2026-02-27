@@ -1128,10 +1128,10 @@ onUnmounted(() => {
   <CraftStationModal v-if="openCraftStation" v-bind="craftParams" @close="craftResponse" />
 
   <Transition name="fade">
-    <div v-if="upgradeIsOpen" class="overlay" @click="upgradeIsOpen = false"></div>
+    <div v-if="upgradeIsOpen && isAppReadyForUpgrade" class="overlay" @click="upgradeIsOpen = false"></div>
   </Transition>
   <Transition name="slide-up">
-    <div v-if="upgradeIsOpen" class="upgrades">
+    <div v-if="upgradeIsOpen && isAppReadyForUpgrade" class="upgrades">
       <div class="scrollable">
         <div class="top-panel">
           <h1>{{
