@@ -833,10 +833,10 @@ onUnmounted(() => {
       <div class="boosters-shop-toggle-panel-spacer"></div>
       <div class="boosters-shop-toggle-container">
         <button class="boosters-shop-toggle-btn" :class="{ active: boostersCategory === 'energizers' }" @click="boostersCategory = 'energizers'">
-          {{ t('gems.for_energizers') }}
+          {{ t('gems.for_energizers_button') }}
         </button>
         <button class="boosters-shop-toggle-btn" :class="{ active: boostersCategory === 'miners' }" @click="boostersCategory = 'miners'">
-          {{ t('gems.for_miners') }}
+          {{ t('gems.for_miners_button') }}
         </button>
       </div>
       <div class="boosters-shop-toggle-panel-spacer"></div>
