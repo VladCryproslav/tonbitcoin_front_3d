@@ -523,7 +523,8 @@ def main_mint():
     nfts_info: dict[str, NftItem] = {}
     hydro_owners = dict()
     orbital_owners = dict()
-    
+    singularity_owners = dict()
+
     # КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: При использовании кэша НЕ строим hydro_owners/orbital_owners из кэша
     # Вместо этого используем данные из БД, чтобы избежать ложных откатов из-за устаревшего/неполного кэша
     # При использовании кэша data_is_complete = False, поэтому отключения не произойдет
@@ -535,12 +536,20 @@ def main_mint():
         # НЕ проверяем кэш, так как он может быть неполным/устаревшим
         # При использовании кэша data_is_complete = False, поэтому отключения не произойдет в любом случае
         hydro_linked = LinkedUserNFT.objects.select_related("user").filter(
-            nft_address__in=[nft.address.root for nft in all_nfts 
+            nft_address__in=[nft.address.root for nft in all_nfts
                             if nft.metadata and nft.metadata.get("name", "").split("(")[0].strip() == "Hydroelectric Power Station"]
         )
         for linked in hydro_linked:
             if linked.user:
                 hydro_owners[linked.user.user_id] = {"nft_address": linked.nft_address}
+
+        singularity_linked = LinkedUserNFT.objects.select_related("user").filter(
+            nft_address__in=[nft.address.root for nft in all_nfts
+                            if nft.metadata and nft.metadata.get("name", "").split("(")[0].strip() == "Singularity Reactor"]
+        )
+        for linked in singularity_linked:
+            if linked.user:
+                singularity_owners[linked.user.user_id] = {"nft_address": linked.nft_address}
         
         # Получаем orbital owners из OrbitalOwner
         orbital_db = OrbitalOwner.objects.select_related("user").all()
@@ -548,7 +557,7 @@ def main_mint():
             if orbital.user:
                 orbital_owners[orbital.user.user_id] = {"nft_address": orbital.nft_address}
         
-        logger.info(f"Loaded from DB: {len(hydro_owners)} hydro owners, {len(orbital_owners)} orbital owners")
+        logger.info(f"Loaded from DB: {len(hydro_owners)} hydro, {len(orbital_owners)} orbital, {len(singularity_owners)} singularity owners")
     else:
         # При полных данных строим из API ответа (существующий код)
         # Process default NFTs
@@ -561,7 +570,7 @@ def main_mint():
             
             name = name.split("(")[0].strip()
             
-            if name in ["Hydroelectric Power Station", "Orbital Power Station"]:
+            if name in ["Hydroelectric Power Station", "Orbital Power Station", "Singularity Reactor"]:
                 full_name = meta.get("name")
                 linked = LinkedUserNFT.objects.select_related("user").filter(nft_address=nft_address).first()
                     
@@ -594,14 +603,12 @@ def main_mint():
                 # JARVIS
                 if name == "Hydroelectric Power Station":
                     hydro_owners[user.user_id] = {"nft_address": nft_address}
-                if name == "Orbital Power Station":
+                elif name == "Orbital Power Station":
                     if not OrbitalOwner.objects.filter(nft_address=nft_address).exists():
-                        # if this is new orbital station, assign it to the first owner
-                        OrbitalOwner.objects.create(
-                            user=user,
-                            nft_address=nft_address
-                        )
+                        OrbitalOwner.objects.create(user=user, nft_address=nft_address)
                     orbital_owners[user.user_id] = {"nft_address": nft_address}
+                elif name == "Singularity Reactor":
+                    singularity_owners[user.user_id] = {"nft_address": nft_address}
                 continue
 
         users.setdefault(
@@ -637,6 +644,7 @@ def main_mint():
             for u in UserProfile.objects.filter(
                 has_hydro_station=True,
                 has_orbital_station=False,
+                has_singularity_station=False,
             ).exclude(user_id__in=list(hydro_owners.keys())):
                 try:
                     # Обновляем объект для получения актуальных значений
@@ -710,8 +718,10 @@ def main_mint():
     
     for u in UserProfile.objects.filter(
         user_id__in=list(hydro_owners.keys())
-    ).exclude(has_hydro_station=True).exclude(has_orbital_station=True):
+    ).exclude(has_hydro_station=True).exclude(has_orbital_station=True).exclude(has_singularity_station=True):
         with transaction.atomic():
+            u.refresh_from_db()
+            hydro_eng_level = 30 if getattr(u, "prem_power_plant_old_owner", True) else 25
             UserProfile.objects.filter(user_id=u.user_id).update(
                 current_station_nft=hydro_owners[u.user_id]["nft_address"],
                 has_hydro_station=True,
@@ -725,17 +735,13 @@ def main_mint():
                 station_type="Nuclear power plant",
                 storage_level=3,
                 generation_level=3,
-                engineer_level=30,
+                engineer_level=hydro_eng_level,
                 energy=0,
                 storage=1000,
                 storage_limit=1000,
-            generation_rate=278,
-            kw_per_tap=EngineerConfig.objects.get(
-                level=30
-            ).tap_power
+                generation_rate=250,
+                kw_per_tap=EngineerConfig.objects.get(level=hydro_eng_level).tap_power,
             )
-            
-            # u.check_storage_generation()
 
     # Отключаем orbital только при полных данных API (иначе возможны ложные откаты)
     if data_is_complete:
@@ -750,6 +756,7 @@ def main_mint():
             for u in UserProfile.objects.filter(
                 has_orbital_station=True,
                 has_hydro_station=False,
+                has_singularity_station=False,
             ).exclude(user_id__in=list(orbital_owners.keys())):
                 try:
                     # Обновляем объект для получения актуальных значений
@@ -831,8 +838,14 @@ def main_mint():
     
     for u in UserProfile.objects.filter(
         user_id__in=list(orbital_owners.keys())
-    ).exclude(has_orbital_station=True).exclude(has_hydro_station=True):
+    ).exclude(has_orbital_station=True).exclude(has_hydro_station=True).exclude(has_singularity_station=True):
         with transaction.atomic():
+            u.refresh_from_db()
+            old_owner = getattr(u, "prem_power_plant_old_owner", True)
+            if old_owner:
+                orb_storage, orb_gen, orb_eng = 2320, (290 if u.orbital_first_owner else 580), 45
+            else:
+                orb_storage, orb_gen, orb_eng = 1840, 460, 35
             UserProfile.objects.filter(user_id=u.user_id).update(
                 current_station_nft=orbital_owners[u.user_id]["nft_address"],
                 orbital_force_basic=False,
@@ -845,14 +858,103 @@ def main_mint():
                 station_type="Dyson Sphere",
                 storage_level=3,
                 generation_level=3,
+                engineer_level=orb_eng,
+                energy=0,
+                storage=orb_storage,
+                storage_limit=orb_storage,
+                generation_rate=orb_gen,
+                kw_per_tap=EngineerConfig.objects.get(level=orb_eng).tap_power,
+            )
+
+    # Singularity Reactor: отключение при потере NFT
+    if data_is_complete:
+        if len(singularity_owners) == 0:
+            logger.warning(
+                "singularity_owners is empty despite data_is_complete=True, "
+                "skipping singularity disconnect"
+            )
+        else:
+            for u in UserProfile.objects.filter(
+                has_singularity_station=True,
+            ).exclude(user_id__in=list(singularity_owners.keys())):
+                try:
+                    u.refresh_from_db()
+                    if u.current_station_nft and u.ton_wallet:
+                        current_owner = async_to_sync(get_nft_owner_by_address)(u.current_station_nft)
+                        time.sleep(0.5)
+                        if current_owner is None:
+                            logger.warning(
+                                f"Skipping singularity disconnect for user_id={u.user_id}: "
+                                "direct NFT owner check failed, keeping station"
+                            )
+                            continue
+                        if (current_owner or "").strip() == (u.ton_wallet or "").strip():
+                            logger.warning(
+                                f"Skipping singularity disconnect for user_id={u.user_id}: "
+                                "NFT still owned by user, keeping station"
+                            )
+                            continue
+                    with transaction.atomic():
+                        StationRollbackLog.objects.create(
+                            user=u,
+                            from_station=u.station_type,
+                            generation_level=u.generation_level,
+                            storage_level=u.storage_level,
+                            engineer_level=u.engineer_level,
+                            energy=u.energy,
+                            nft_address=u.current_station_nft or "",
+                        )
+                        _stor_cfg = StoragePowerStationConfig.objects.filter(
+                            station_type=u.hydro_prev_station_type or "",
+                            level=u.hydro_prev_storage_level,
+                        ).first()
+                        _gen_cfg = GenPowerStationConfig.objects.filter(
+                            station_type=u.hydro_prev_station_type or "",
+                            level=u.hydro_prev_generation_level,
+                        ).first()
+                        _eng_level = u.hydro_prev_engineer_level or 1
+                        UserProfile.objects.filter(user_id=u.user_id).update(
+                            current_station_nft="",
+                            has_singularity_station=False,
+                            energy=F("hydro_prev_energy"),
+                            power=F("hydro_prev_power"),
+                            station_type=F("hydro_prev_station_type"),
+                            storage_level=F("hydro_prev_storage_level"),
+                            generation_level=F("hydro_prev_generation_level"),
+                            engineer_level=F("hydro_prev_engineer_level"),
+                            storage=0,
+                            storage_limit=_stor_cfg.storage_limit if _stor_cfg else 10,
+                            generation_rate=_gen_cfg.generation_rate if _gen_cfg else 5,
+                            kw_per_tap=EngineerConfig.objects.get(level=_eng_level).tap_power,
+                        )
+                except Exception:
+                    print("user_id", u.user_id)
+                    continue
+    else:
+        logger.info("Skipping singularity disconnect: data_is_complete=False")
+
+    for u in UserProfile.objects.filter(
+        user_id__in=list(singularity_owners.keys())
+    ).exclude(has_singularity_station=True).exclude(has_hydro_station=True).exclude(has_orbital_station=True):
+        with transaction.atomic():
+            UserProfile.objects.filter(user_id=u.user_id).update(
+                current_station_nft=singularity_owners[u.user_id]["nft_address"],
+                has_singularity_station=True,
+                hydro_prev_energy=F("energy"),
+                hydro_prev_power=F("power"),
+                hydro_prev_station_type=F("station_type"),
+                hydro_prev_storage_level=F("storage_level"),
+                hydro_prev_generation_level=F("generation_level"),
+                hydro_prev_engineer_level=F("engineer_level"),
+                station_type="Dyson Sphere",
+                storage_level=3,
+                generation_level=3,
                 engineer_level=45,
                 energy=0,
-                storage=2320,
-                storage_limit=2320,
-            generation_rate=290 if u.orbital_first_owner else 580,
-            kw_per_tap=EngineerConfig.objects.get(
-                level=45
-            ).tap_power
+                storage=3200,
+                storage_limit=3200,
+                generation_rate=800,
+                kw_per_tap=EngineerConfig.objects.get(level=45).tap_power,
             )
 
     # КРИТИЧЕСКАЯ ЗАЩИТА: Проверка полноты данных перед проверкой станций

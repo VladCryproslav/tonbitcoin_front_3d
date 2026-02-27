@@ -11,7 +11,8 @@
     "Antimatter": "Antimatter",
     "Galactic core": "Galactic core",
     "Hydroelectric power plant": "Hydroelectric power plant",
-    "Orbital power plant": "Orbital power plant"
+    "Orbital power plant": "Orbital power plant",
+    "Singularity reactor": "Singularity reactor"
   },
   "modals": {
     "swap_token": "After confirmation, the power plant will begin producing {energyType} energy. Please note: changing the asset being produced will reset the previous balance.",

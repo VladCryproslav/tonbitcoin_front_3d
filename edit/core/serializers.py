@@ -32,6 +32,7 @@ from .models import UserProfile
 class UserProfileSerializer(serializers.ModelSerializer):
     last_withdrawal_date = serializers.SerializerMethodField()
     last_withdrawal_date_tbtc = serializers.SerializerMethodField()
+    premium_station_type = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
@@ -64,6 +65,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
             .first()
         )
         return last_request_tbtc.claimed_at if last_request_tbtc else None
+
+    def get_premium_station_type(self, obj):
+        if getattr(obj, "has_singularity_station", False):
+            return "Singularity Reactor"
+        if obj.has_orbital_station:
+            return "Orbital Power Plant"
+        if obj.has_hydro_station:
+            return "Hydroelectric Power Plant"
+        return None
 
 
 from .models import (

@@ -729,7 +729,7 @@ def main_mint():
                 energy=0,
                 storage=1000,
                 storage_limit=1000,
-            generation_rate=278,
+            generation_rate=250,
             kw_per_tap=EngineerConfig.objects.get(
                 level=30
             ).tap_power

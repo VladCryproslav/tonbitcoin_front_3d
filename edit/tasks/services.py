@@ -241,13 +241,14 @@ def apply_booster_reward(user: UserProfile, reward: UserReward):
         return True, "Павер банк додано до балансу"
     
     elif reward.asset_type == "electrics":
-        # Блокируем забор приза инженеров, если активна орбитальная (Special) или гидростанция
+        # Блокируем забор приза инженеров, если активна орбитальная (Special), гидро или Singularity
         is_blocked = (
             (user.has_orbital_station and not user.orbital_force_basic) or
-            user.has_hydro_station
+            user.has_hydro_station or
+            getattr(user, "has_singularity_station", False)
         )
         if is_blocked:
-            return False, "Engineers reward cannot be claimed with active orbital (Special) or hydro station"
+            return False, "Engineers reward cannot be claimed with active orbital (Special), hydro or singularity station"
         
         count = int(reward.asset_quantity or 1)
         if user.engineer_level + count > 49:

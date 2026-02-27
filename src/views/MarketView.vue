@@ -167,7 +167,7 @@ const userStationLevel = computed(() => {
   if (!app.user?.station_type) return null
   let stationTypeToCheck = app.user.station_type
   if (app.user.premium_station_type) {
-    const premiumMapping = { 'Hydroelectric Power Plant': 'Nuclear power plant', 'Orbital Power Plant': 'Thermonuclear power plant' }
+    const premiumMapping = { 'Hydroelectric Power Plant': 'Nuclear power plant', 'Orbital Power Plant': 'Thermonuclear power plant', 'Singularity Reactor': 'Dyson Sphere' }
     const mapped = premiumMapping[app.user.premium_station_type]
     if (mapped) stationTypeToCheck = mapped
   }

@@ -4201,28 +4201,31 @@ class SwitchOrbitalStationView(APIView):
 
         if is_basic_now:
             # відключаєм базову, включаєм НФТ
+            old_owner = getattr(user_profile, "prem_power_plant_old_owner", True)
+            if old_owner:
+                orb_storage, orb_gen, orb_eng = 2320, (290 if user_profile.orbital_first_owner else 580), 45
+            else:
+                orb_storage, orb_gen, orb_eng = 1840, 460, 35
             with transaction.atomic():
                 UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                orbital_force_basic=False,
-                hydro_prev_energy=F("energy"),
-                power=F("hydro_prev_power"),
-                hydro_prev_power=F("power"),
-                hydro_prev_station_type=F("station_type"),
-                hydro_prev_storage_level=F("storage_level"),
-                hydro_prev_generation_level=F("generation_level"),
-                hydro_prev_engineer_level=F("engineer_level"),
-                station_type="Dyson Sphere",
-                storage_level=3,
-                generation_level=3,
-                engineer_level=45,
-                energy=0,
-                storage=0,
-                storage_limit=2320,
-            generation_rate=290 if user_profile.orbital_first_owner else 580,
-            kw_per_tap=EngineerConfig.objects.get(
-                level=45
-            ).tap_power
-            )
+                    orbital_force_basic=False,
+                    hydro_prev_energy=F("energy"),
+                    power=F("hydro_prev_power"),
+                    hydro_prev_power=F("power"),
+                    hydro_prev_station_type=F("station_type"),
+                    hydro_prev_storage_level=F("storage_level"),
+                    hydro_prev_generation_level=F("generation_level"),
+                    hydro_prev_engineer_level=F("engineer_level"),
+                    station_type="Dyson Sphere",
+                    storage_level=3,
+                    generation_level=3,
+                    engineer_level=orb_eng,
+                    energy=0,
+                    storage=0,
+                    storage_limit=orb_storage,
+                    generation_rate=orb_gen,
+                    kw_per_tap=EngineerConfig.objects.get(level=orb_eng).tap_power,
+                )
         else:
             # відключаєм НФТ, включаєм базову
             with transaction.atomic():

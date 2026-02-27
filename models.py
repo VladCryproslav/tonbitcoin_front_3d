@@ -157,8 +157,11 @@ class UserProfile(models.Model):
     hydro_prev_storage_level = models.IntegerField(default=None, blank=True, null=True)
     hydro_prev_generation_level = models.IntegerField(default=None, blank=True, null=True)
     hydro_prev_engineer_level = models.IntegerField(default=None, blank=True, null=True)  # Рівень інженера
+    prem_power_plant_old_owner = models.BooleanField(default=True)  # True = старі характеристики преміальних станцій
+    has_singularity_station = models.BooleanField(default=False)
+    # Singularity при откате использует те же hydro_prev_* что и орбитальная/гидра
     # ============
-    
+
     past_engineer_level = models.IntegerField(default=0)  # Рівень інженера
     kw_per_tap = models.FloatField(default=0.025)  # Кількість кВ на тап
     storage = models.DecimalField(max_digits=36, decimal_places=16, default=10)
@@ -966,7 +969,9 @@ ASIC возвращён в раздел “Оборудование”, чтоб
 
     def calc_storage_limit(self):
         if self.has_orbital_station:
-            return 2320
+            return 2320 if getattr(self, "prem_power_plant_old_owner", True) else 1840
+        if self.has_singularity_station:
+            return 3200
         if self.has_hydro_station:
             return 1000
         return StoragePowerStationConfig.objects.filter(
@@ -976,15 +981,17 @@ ASIC возвращён в раздел “Оборудование”, чтоб
 
     def calc_generation_rate(self):
         if self.has_orbital_station:
-            if self.orbital_first_owner:
-                if self.orbital_is_blue:
-                    return 580
-                else:
+            if getattr(self, "prem_power_plant_old_owner", True):
+                if self.orbital_first_owner:
+                    if self.orbital_is_blue:
+                        return 580
                     return 290
-            else:
                 return 580
+            return 460
+        if self.has_singularity_station:
+            return 800
         if self.has_hydro_station:
-            return 278
+            return 250
         return GenPowerStationConfig.objects.filter(
             station_type=self.station_type,
             level=self.generation_level,

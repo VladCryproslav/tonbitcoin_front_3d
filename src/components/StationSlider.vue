@@ -8,8 +8,10 @@ const { t } = useI18n()
 const app = useAppStore()
 // const CurrBase = defineAsyncComponent(() => import(`@/assets/${app.user.station_type}-${app.user.storage_level}.png`))
 const currBase = computed(() => {
-  // Если есть орбитальная станция и она активна (не в режиме Regular)
   if (app?.user?.has_orbital_station && !app?.user?.orbital_force_basic) {
+    return new URL(`../assets/Orbital Power Plant.webp`, import.meta.url).href
+  }
+  if (app?.user?.has_singularity_station) {
     return new URL(`../assets/Orbital Power Plant.webp`, import.meta.url).href
   }
   if (app?.user?.has_hydro_station) {
@@ -24,7 +26,12 @@ const otherBasePath = (base, lvl) => {
   return com
 }
 
-const allStations = [...new Set(app.stations?.storage_configs?.filter(el => !app.user.has_hydro_station ? el?.station_type !== 'Hydroelectric power plant' : !app.user.has_orbital_station ? el?.station_type !== 'Orbital power plant' : el)?.map((el) => el?.station_type))]
+const allStations = [...new Set(app.stations?.storage_configs?.filter(el => {
+  if (app.user.has_hydro_station) return el?.station_type !== 'Hydroelectric power plant'
+  if (app.user.has_orbital_station) return el?.station_type !== 'Orbital power plant'
+  if (app.user.has_singularity_station) return el?.station_type !== 'Dyson Sphere'
+  return true
+})?.map((el) => el?.station_type))]
 
 const currStation = ref(app.user?.station_type)
 

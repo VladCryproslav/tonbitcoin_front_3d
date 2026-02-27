@@ -297,7 +297,7 @@ const gemsSheet = [
     type: 'Singularity Reactor',
     price: 399,
     rarity: 'special',
-    description: "Storage: 2690 kW",
+    description: "Storage: 3200 kW",
     buttonColor: 'gold',
     hasGoldStroke: true,
     hasBlueStroke: false,

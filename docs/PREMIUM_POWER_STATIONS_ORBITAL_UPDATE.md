@@ -85,7 +85,7 @@
 |-------------------|--------------------|----------------------|-------------------------------|
 | **Hydro**         | storage 1000, gen **250**, eng 30  | storage 1000, gen **250**, eng **25**  | Остаётся Nuclear в UI; в коде сейчас gen=278 — привести к 250 при необходимости |
 | **Orbital**       | storage 2320, gen 290/580, eng 45 | storage **1840**, gen **460**, eng **35** | В игре — Thermonuclear       |
-| **Singularity**   | —                  | storage **3200**, gen **800**, eng **45** | Новая станция, парс по имени NFT |
+| **Singularity**   | —                  | storage **3200**, gen **800**, eng **45** | Новая станция, парс по имени NFT; в игре = **Dyson Sphere** (station_type) |
 
 ---
 
@@ -98,4 +98,4 @@
 - **Инженеры (tasks):** при необходимости учесть активную Singularity так же, как hydro/orbital (запрет на награду инженеров при активной премиальной).
 - **Фронт:** `premium_station_type` / отображение типа станции — добавить Singularity; маппинг «Orbital Power Plant» → «Thermonuclear power plant»; фон космоса для Singularity по аналогии с Orbital; обновить локали и benefits под новые цифры (в т.ч. orbital 1840/460/35, hydro 250/25, singularity 3200/800/45).
 
-Правки в коде по этому плану пока не вносились.
+**Реализация выполнена.** Singularity Reactor в игре привязан к типу станции **Dyson Sphere** (station_type, маппинг на фронте, отображение с космическим фоном).
