@@ -1792,7 +1792,7 @@ onUnmounted(() => {
               </div>
             </div>
             <button
-              v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs) && !app.user.has_hydro_station && !app.user.has_singularity_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)"
+              v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs)"
               class="upg-btn" :class="{ 'stars-btn': app.user.engineer_level >= 49 }" @click="
                 getUpgModal(
                   t('modals.upgrade.hire_eng'),
@@ -1825,12 +1825,9 @@ onUnmounted(() => {
               {{ t('common.upg') }}
             </button>
             <button
-              v-if="app.user?.engineer_level == findMaxLevel(app.stations?.eng_configs) && !app.user.has_hydro_station && !app.user.has_singularity_station && (!app.user.has_orbital_station || app.user.orbital_force_basic)"
+              v-if="app.user?.engineer_level == findMaxLevel(app.stations?.eng_configs)"
               class="upg-btn-max">
               {{ t('common.maximum') }}
-            </button>
-            <button v-if="app.user.has_hydro_station || (app.user.has_orbital_station && !app.user.orbital_force_basic)" class="upg-btn-unactive">
-              {{ t('common.unavailable') }}
             </button>
           </div>
         </div>
