@@ -2759,6 +2759,31 @@ class GameRunClaimView(APIView):
             # Добавление в график
             add_chart_kw(float(final_energy))
             
+            # Реферальные бонусы (kW): та же логика, что в TapEnergyView — от final_energy
+            try:
+                if user_profile.referrer:
+                    UserProfile.objects.filter(
+                        user_id=user_profile.referrer.user_id
+                    ).update(bonus_kw_level_1=F("bonus_kw_level_1") + float(final_energy) * 0.1)
+                    UserProfile.objects.filter(user_id=user_profile.user_id).update(
+                        bring_bonus_kw_level_1=F("bring_bonus_kw_level_1") + float(final_energy) * 0.1
+                    )
+                    if user_profile.referrer_level_2:
+                        UserProfile.objects.filter(
+                            user_id=user_profile.referrer_level_2.user_id
+                        ).update(
+                            bonus_kw_level_2=F("bonus_kw_level_2") + float(final_energy) * 0.05
+                        )
+                        UserProfile.objects.filter(
+                            user_id=user_profile.referrer.user_id
+                        ).update(
+                            bring_bonus_kw_level_2=F("bring_bonus_kw_level_2") + float(final_energy) * 0.05
+                        )
+            except Exception as e:
+                action_logger.warning(
+                    f"GameRunClaimView referral bonus error: user_id={user_profile.user_id}, {e}"
+                )
+            
             # Очистка данных забега после успешного начисления
             # НЕ обнуляем energy_run_last_started_at - он нужен для cooldown таймера
             # Обнуляем energy_run_start_storage и фиксируем время начисления для идемпотентности (повторный claim вернёт 200 без двойного начисления)
