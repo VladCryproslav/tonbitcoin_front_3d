@@ -855,7 +855,7 @@ def main_mint():
                 hydro_prev_storage_level=F("storage_level"),
                 hydro_prev_generation_level=F("generation_level"),
                 hydro_prev_engineer_level=F("engineer_level"),
-                station_type="Dyson Sphere",
+                station_type="Thermonuclear power plant",
                 storage_level=3,
                 generation_level=3,
                 engineer_level=orb_eng,

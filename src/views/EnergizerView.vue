@@ -1758,14 +1758,10 @@ onUnmounted(() => {
                   :width="10" class="mx-[.2rem]" />
                 <!-- <Engineer v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs)" :width="10" /> -->
                 <img v-if="
-                  (!app.user.has_orbital_station || app.user.orbital_force_basic) &&
-                  !app.user.has_hydro_station &&
                   app.user.engineer_level < 49 &&
                   app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs)
                 " src="@/assets/engineer.webp" width="10px" height="10px" />
                 <img v-if="
-                  (!app.user.has_orbital_station || app.user.orbital_force_basic) &&
-                  !app.user.has_hydro_station &&
                   app.user.engineer_level >= 49 &&
                   app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs)
                 " src="@/assets/stars_eng.png" width="10px" height="10px" />
