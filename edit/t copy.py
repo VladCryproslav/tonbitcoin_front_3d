@@ -883,12 +883,6 @@ def main_mint():
             logger.error("No valid cached data available. ABORTING station check.")
             return
 
-    # При used_cache словарь nfts_info не заполнялся — заполняем из all_nfts для проверки станций (в т.ч. «на продаже»)
-    for nft in all_nfts:
-        nft_address = nft.address.root
-        if nft_address not in nfts_info:
-            nfts_info[nft_address] = {"nft": nft}
-
     logging.info("")
     logging.info("checking nfts")
     for station_nft in StationNFTOwner.objects.filter(nft__isnull=False).exclude(
@@ -897,42 +891,26 @@ def main_mint():
         try:
             user = users.get(station_nft.wallet or "")
             if user is None:
-                # КРИТИЧЕСКАЯ ПРОВЕРКА: массовый abort только при неполных данных API.
-                # При полных данных много "missing" — это NFT на продаже (owner=маркетплейс), не баг API.
+                # КРИТИЧЕСКАЯ ПРОВЕРКА: Если пользователь не найден, это может быть из-за ошибки API
+                # Проверяем, не является ли это массовой проблемой
                 missing_users_count = StationNFTOwner.objects.filter(
                     nft__isnull=False
                 ).exclude(nft="").exclude(wallet__in=users.keys()).count()
                 
-                if not data_is_complete and missing_users_count > 50:
+                if missing_users_count > 50:  # Порог массовой проблемы
                     logger.error(
-                        f"CRITICAL: {missing_users_count} station owners not found, data incomplete. "
-                        f"ABORTING station check."
+                        f"CRITICAL: {missing_users_count} station owners not found in users dict. "
+                        f"This indicates API data incompleteness. ABORTING station check."
                     )
-                    break
+                    break  # Прерываем проверку, чтобы не откатить все станции
                 
-                # NFT на продаже: в API owner = маркетплейс, поэтому wallet юзера не в users.
-                # Откатываем, если NFT есть в nfts_info и выставлен на продажу (sale is not None).
-                # data_is_complete не требуем: факт sale is not None достаточен для отката.
-                if (
-                    station_nft.nft in nfts_info
-                    and nfts_info[station_nft.nft]["nft"].sale is not None
-                ):
-                    Notification.objects.create(
-                        user=station_nft.user, notif_type="nft_not_found"
-                    )
-                    station_nft.user.reset_station()
-                    logger.info(
-                        f"Rolled back station for user {station_nft.user.user_id}: "
-                        f"NFT {station_nft.nft} on sale (wallet not in users dict)"
-                    )
-                    continue
-                
-                # Иначе — кошелёк не найден, не откатываем (защита от неполных данных API)
+                # ✅ ИЗМЕНЕНИЕ: Если кошелек не найден - НЕ откатывать, а пропустить
+                # Это может быть из-за неполных данных API, а не реального отсутствия NFT
                 logger.warning(
                     f"Station NFT {station_nft.nft} owner wallet {station_nft.wallet} not found in users dict. "
                     f"Skipping to prevent false rollback. Data complete: {data_is_complete}"
                 )
-                continue
+                continue  # ✅ Пропускаем, НЕ откатываем
             
             mint_string = ";".join(user["mint_string"])
             
