@@ -15,36 +15,15 @@ const props = defineProps({
   body: String,
   price: Object,
   kind: String,
+  /** Готовое название станции для заголовка (передаёт родитель — без задержки) */
+  stationTitle: String,
+  /** Готовый URL картинки станции (передаёт родитель — картинка уже в кэше) */
+  stationImageUrl: String,
 })
 
 const app = useAppStore()
 
-const stationDisplayName = computed(() => {
-  if (!app.user) return ''
-  if (app.user.has_orbital_station && !app.user.orbital_force_basic) return 'Orbital power plant'
-  if (app.user.has_singularity_station) return 'Singularity reactor'
-  if (app.user.has_hydro_station) return 'Hydroelectric power plant'
-  return app.user.station_type || ''
-})
-
-const stationImageUrl = computed(() => {
-  if (!app.user) return ''
-  if (app.user.has_orbital_station && !app.user.orbital_force_basic) {
-    return new URL(`../assets/Orbital Power Plant.webp`, import.meta.url).href
-  }
-  if (app.user.has_singularity_station) {
-    return new URL(`../assets/gems/singularity_power_plant.webp`, import.meta.url).href
-  }
-  if (app.user.has_hydro_station) {
-    return new URL(`../assets/Hydroelectric power plant.webp`, import.meta.url).href
-  }
-  if (app.user.station_type && app.user.storage_level) {
-    return new URL(`../assets/${app.user.station_type}-${app.user.storage_level}.webp`, import.meta.url).href
-  }
-  return ''
-})
-
-const showStationHeader = computed(() => props.kind === 'station' && !!stationDisplayName.value)
+const showStationHeader = computed(() => props.kind === 'station' && !!props.stationTitle)
 
 const { tg } = useTelegram()
 
@@ -166,7 +145,7 @@ const emitClose = () => {
         <div class="grouping">
           <div v-if="showStationHeader" class="station-modal-header">
             <img v-if="stationImageUrl" :src="stationImageUrl" alt="" class="station-modal-img" />
-            <div class="modal-header">{{ t(`stations.${stationDisplayName}`) }}</div>
+            <div class="modal-header">{{ t(`stations.${stationTitle}`) }}</div>
           </div>
           <div v-else class="modal-header">
             <slot name="header">{{ props.title }}</slot>

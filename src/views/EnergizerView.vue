@@ -1077,7 +1077,7 @@ onUnmounted(() => {
 
 <template>
   <UpgradeModal v-if="openUpgModal" :title="upgModalTitle" :body="upgModalBody" :price="upgModalPrice"
-    :kind="upgModalKind" @close="showModal" />
+    :kind="upgModalKind" :station-title="displayStationName" :station-image-url="imagePath" @close="showModal" />
   <ModalNew v-if="openModal" :status="modalStatus" :title="modalTitle" :body="modalBody" @close="openModal = false" />
   <InfoModal v-if="openWalletChangeInfo" @close="openWalletChangeInfo = false">
     <template #modal-body>
