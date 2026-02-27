@@ -428,7 +428,7 @@ const imagePath = computed(() => {
     return new URL(`../assets/Orbital Power Plant.webp`, import.meta.url).href
   }
   if (app?.user?.has_singularity_station) {
-    return new URL(`../assets/Orbital Power Plant.webp`, import.meta.url).href
+    return new URL(`../assets/gems/singularity_power_plant.webp`, import.meta.url).href
   }
   if (app?.user?.has_hydro_station) {
     return new URL(`../assets/Hydroelectric power plant.webp`, import.meta.url).href
@@ -444,7 +444,7 @@ const imagePathCard = computed(() => {
     return new URL(`../assets/Orbital Power Plant.webp`, import.meta.url).href
   }
   if (app.user.has_singularity_station) {
-    return new URL(`../assets/Orbital Power Plant.webp`, import.meta.url).href
+    return new URL(`../assets/gems/singularity_power_plant.webp`, import.meta.url).href
   }
   if (app.user.has_hydro_station) {
     return new URL(`../assets/Hydroelectric power plant.webp`, import.meta.url).href
@@ -468,6 +468,13 @@ const imagePathCard = computed(() => {
 })
 
 const allStations = app.stations?.storage_configs ? [...new Set(app.stations?.storage_configs?.sort((a, b) => a.id - b.id)?.map((el) => el?.station_type))] : []
+
+const displayStationName = computed(() => {
+  if (app.user?.has_orbital_station && !app.user?.orbital_force_basic) return 'Orbital power plant'
+  if (app.user?.has_singularity_station) return 'Singularity reactor'
+  if (app.user?.has_hydro_station) return 'Hydroelectric power plant'
+  return app.user?.station_type || ''
+})
 
 const setActiveStation = (station) => {
   activeStation.value = station
@@ -1326,7 +1333,7 @@ onUnmounted(() => {
                 {{ t('modals.upgrade.spec') }}
               </div>
               <div
-                v-if="app.user?.storage_level !== findMaxLevel(app.stations?.storage_configs) || app.user.has_hydro_station || app.user.has_orbital_station"
+                v-if="app.user?.storage_level !== findMaxLevel(app.stations?.storage_configs) || app.user.has_hydro_station || app.user.has_orbital_station || app.user.has_singularity_station"
                 class="increase-group">
                 <Storage :width="10" />
                 <span class="from">{{ +app.user.storage_limit }}</span>
@@ -1846,7 +1853,7 @@ onUnmounted(() => {
           <div class="card">
             <h1>{{ t('modals.mintable.curr_progress') }}</h1>
             <div class="content">
-              <h1>{{ t(`stations.${app.user.station_type}`) }}</h1>
+              <h1>{{ t(`stations.${displayStationName}`) }}</h1>
               <div class="station-nft">
                 <img :src="imagePath" alt="station" />
                 <span class="level">{{ t('common.lvl').toUpperCase() }} {{ app.user?.storage_level }}</span>
@@ -1867,7 +1874,7 @@ onUnmounted(() => {
           <div class="card">
             <h1>{{ t('modals.mintable.needed_nft') }}</h1>
             <div class="content">
-              <h1>{{ t(`stations.${app.user.station_type}`) }}</h1>
+              <h1>{{ t(`stations.${displayStationName}`) }}</h1>
               <div class="station-nft">
                 <div v-if="!conditionsToMint" class="undefinable">
                   <button class="get-gems" @click="
@@ -2043,7 +2050,7 @@ onUnmounted(() => {
     </div>
   </div>
   <div class="mainarea">
-      <div class="tapzone" :class="{ orbital: app.user?.has_orbital_station && !app.user?.orbital_force_basic }">
+      <div class="tapzone" :class="{ orbital: (app.user?.has_orbital_station && !app.user?.orbital_force_basic) || app.user?.has_singularity_station }">
       <div class="flex flex-col w-full items-center justify-center station-image">
         <div 
           @touchstart="handleStationClick"
@@ -2181,12 +2188,14 @@ onUnmounted(() => {
         </div>
         <div class="station-label-group">
           <span class="station-label">{{ (app?.user?.has_orbital_station && !app?.user?.orbital_force_basic) ? t(`stations.${'Orbital power plant'}`) :
+            app?.user?.has_singularity_station ? t(`stations.${'Singularity reactor'}`) :
             app?.user?.has_hydro_station ? t(`stations.${'Hydroelectric power plant'}`) :
               t(`stations.${app.user?.station_type}`) }} {{ allStations.indexOf(app.user?.station_type)
               > 3 ? "NFT" : '' }}</span>
           <button class="station-label-btn" v-if="
             !app.user.has_orbital_station &&
             !app.user.has_hydro_station &&
+            !app.user.has_singularity_station &&
             !app.stationsNft.length &&
             !app.user?.current_mint &&
             app.user?.station_type !== allStations?.[allStations.length - 1] &&

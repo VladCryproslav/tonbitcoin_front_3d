@@ -12,7 +12,7 @@ const currBase = computed(() => {
     return new URL(`../assets/Orbital Power Plant.webp`, import.meta.url).href
   }
   if (app?.user?.has_singularity_station) {
-    return new URL(`../assets/Orbital Power Plant.webp`, import.meta.url).href
+    return new URL(`../assets/gems/singularity_power_plant.webp`, import.meta.url).href
   }
   if (app?.user?.has_hydro_station) {
     return new URL(`../assets/Hydroelectric power plant.webp`, import.meta.url).href

@@ -2,7 +2,7 @@
 const Exit = defineAsyncComponent(() => import('@/assets/upg-modal-close.svg'))
 
 import { useAppStore } from '@/stores/app'
-import { defineAsyncComponent, ref } from 'vue'
+import { defineAsyncComponent, ref, computed } from 'vue'
 import { host } from '../../axios.config'
 import ModalNew from './ModalNew.vue'
 import { useTelegram } from '@/services/telegram'
@@ -18,6 +18,26 @@ const props = defineProps({
 })
 
 const app = useAppStore()
+
+const stationDisplayName = computed(() => {
+  if (app.user?.has_orbital_station && !app.user?.orbital_force_basic) return 'Orbital power plant'
+  if (app.user?.has_singularity_station) return 'Singularity reactor'
+  if (app.user?.has_hydro_station) return 'Hydroelectric power plant'
+  return app.user?.station_type || ''
+})
+
+const stationImageUrl = computed(() => {
+  if (app.user?.has_orbital_station && !app.user?.orbital_force_basic) {
+    return new URL(`../assets/Orbital Power Plant.webp`, import.meta.url).href
+  }
+  if (app.user?.has_singularity_station) {
+    return new URL(`../assets/gems/singularity_power_plant.webp`, import.meta.url).href
+  }
+  if (app.user?.has_hydro_station) {
+    return new URL(`../assets/Hydroelectric power plant.webp`, import.meta.url).href
+  }
+  return new URL(`../assets/${app?.user?.station_type}-${app?.user?.storage_level}.webp`, import.meta.url).href
+})
 
 const { tg } = useTelegram()
 
@@ -137,7 +157,11 @@ const emitClose = () => {
           <Exit style="color: #fff" />
         </button>
         <div class="grouping">
-          <div class="modal-header">
+          <div v-if="props.kind === 'station'" class="station-modal-header">
+            <img :src="stationImageUrl" alt="" class="station-modal-img" />
+            <div class="modal-header">{{ t(`stations.${stationDisplayName}`) }}</div>
+          </div>
+          <div v-else class="modal-header">
             <slot name="header">{{ props.title }}</slot>
           </div>
           <div v-if="props.body" class="modal-body">
@@ -371,6 +395,20 @@ $bar-height: 8px;
         }
       }
     }
+  }
+}
+
+.station-modal-header {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+
+  .station-modal-img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
   }
 }
 
