@@ -479,7 +479,11 @@ const imagePathCard = computed(() => {
   }
 })
 
-const allStations = app.stations?.storage_configs ? [...new Set(app.stations?.storage_configs?.sort((a, b) => a.id - b.id)?.map((el) => el?.station_type))] : []
+const allStations = app.stations?.storage_configs ? [...new Set(
+  app.stations?.storage_configs
+    ?.sort((a, b) => a.id - b.id)
+    ?.map((el) => el?.station_type),
+)] : []
 
 const displayStationName = computed(() => {
   if (app.user?.has_orbital_station && !app.user?.orbital_force_basic) return 'Orbital power plant'
@@ -487,6 +491,12 @@ const displayStationName = computed(() => {
   if (app.user?.has_hydro_station) return 'Hydroelectric power plant'
   return app.user?.station_type || ''
 })
+
+const engineerStarsOnly = computed(() =>
+  app.user?.has_hydro_station ||
+  app.user?.has_singularity_station ||
+  (app.user?.has_orbital_station && !app.user?.orbital_force_basic),
+)
 
 const setActiveStation = (station) => {
   activeStation.value = station
@@ -596,6 +606,31 @@ function responseSwitchStationConfirm(result) {
   openSwitchStationConfirm.value = false
   if (result?.check) {
     confirmSwitchStation()
+  }
+}
+
+async function upgradeEngineerWithStars() {
+  try {
+    const invoiceLink = await host.post('stars-engineer/')
+    if (invoiceLink.status === 200) {
+      tg.openInvoice(invoiceLink.data?.link, (status) => {
+        if (status === 'paid') {
+          app.initUser()
+          showMeModal(
+            'success',
+            t('notification.st_success'),
+            t('modals.upgrade_modal.engineer_hired'),
+          )
+        }
+      })
+    }
+  } catch (err) {
+    console.log(err)
+    showMeModal(
+      'error',
+      t('notification.st_error'),
+      t('notification.insufficient_funds'),
+    )
   }
 }
 
@@ -1793,22 +1828,26 @@ onUnmounted(() => {
             </div>
             <button
               v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs)"
-              class="upg-btn" :class="{ 'stars-btn': app.user.engineer_level >= 49 }" @click="
-                getUpgModal(
-                  t('modals.upgrade.hire_eng'),
-                  t('modals.upgrade.hire_eng_desc'),
-                  {
-                    kw: app.stations?.eng_configs?.find(
-                      (el) => el?.level == app.user?.engineer_level + 1,
-                    )?.hire_cost,
-                    tbtc: null,
-                    stars: app.stations?.eng_configs?.find(
-                      (el) => el?.level == app.user?.engineer_level + 1,
-                    )?.hire_cost_stars
-                  },
-                  'engineer',
-                )
-                ">
+              class="upg-btn"
+              :class="{ 'stars-btn': app.user.engineer_level >= 49 }"
+              @click="
+                engineerStarsOnly
+                  ? upgradeEngineerWithStars()
+                  : getUpgModal(
+                      t('modals.upgrade.hire_eng'),
+                      t('modals.upgrade.hire_eng_desc'),
+                      {
+                        kw: app.stations?.eng_configs?.find(
+                          (el) => el?.level == app.user?.engineer_level + 1,
+                        )?.hire_cost,
+                        tbtc: null,
+                        stars: app.stations?.eng_configs?.find(
+                          (el) => el?.level == app.user?.engineer_level + 1,
+                        )?.hire_cost_stars
+                      },
+                      'engineer',
+                    )
+              ">
               {{ t('common.upg') }}
             </button>
             <button v-if="
