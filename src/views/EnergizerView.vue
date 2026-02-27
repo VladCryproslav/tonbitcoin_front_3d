@@ -1017,6 +1017,8 @@ onMounted(() => {
   document.body.style.background = asicsIsOpen.background
   tg?.setHeaderColor(asicsIsOpen.background)
   startInfoUpdate()
+
+  activeStation.value = displayStationName.value
 })
 
 watch(
