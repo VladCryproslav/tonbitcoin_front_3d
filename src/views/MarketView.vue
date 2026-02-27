@@ -648,13 +648,16 @@ onUnmounted(() => {
       <div class="hydroelectric-content">
         <div class="hydroelectric-text">
           {{ t('gems.orbital_description') }}<br><br>
+          {{ t('gems.orbital_characteristics') }}<br>
           • {{ t('gems.orbital_item_1') }}<br>
           • {{ t('gems.orbital_item_2') }}<br>
           • {{ t('gems.orbital_item_3') }}<br>
           • {{ t('gems.orbital_item_4') }}<br><br>
-          {{ t('gems.orbital_income') }}<br><br>
-          {{ t('gems.orbital_unique') }}<br><br>
-          {{ t('gems.orbital_info_important') }}
+          {{ t('gems.orbital_important') }}<br>
+          • {{ t('gems.orbital_item_5') }}<br>
+          • {{ t('gems.orbital_info_1') }}<br>
+          • {{ t('gems.orbital_info_important') }}<br>
+          • {{ t('gems.orbital_info_2') }}
         </div>
       </div>
     </template>
@@ -721,10 +724,16 @@ onUnmounted(() => {
       <div class="hydroelectric-content">
         <div class="hydroelectric-text">
           {{ t('gems.singularity_description') }}<br><br>
-          • {{ t('gems.singularity_benefit_1') }}<br>
-          • {{ t('gems.singularity_benefit_2') }}<br>
-          • {{ t('gems.singularity_benefit_3') }}<br><br>
-          {{ t('gems.singularity_info_important') }}
+          {{ t('gems.singularity_characteristics') }}<br>
+          • {{ t('gems.singularity_item_1') }}<br>
+          • {{ t('gems.singularity_item_2') }}<br>
+          • {{ t('gems.singularity_item_3') }}<br>
+          • {{ t('gems.singularity_item_4') }}<br><br>
+          {{ t('gems.singularity_important') }}<br>
+          • {{ t('gems.singularity_item_5') }}<br>
+          • {{ t('gems.singularity_info_1') }}<br>
+          • {{ t('gems.singularity_info_important') }}<br>
+          • {{ t('gems.singularity_info_2') }}
         </div>
       </div>
     </template>
