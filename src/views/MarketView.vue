@@ -882,7 +882,7 @@ onUnmounted(() => {
             {{ getGemPrice(g) }}
           </div>
         </button>
-        <span class="gem-tag" :style="g?.rarity === 'class_4' ? 'background-color: #5D625E' : g?.rarity === 'class_3' ? 'background-color: #009600' : g?.rarity === 'class_2' ? 'background-color: #0918E9' : 'background-color: #6B25A1'">{{ g?.rarity ? t(`gems.${g.rarity}`) : '' }}</span>
+        <span class="gem-tag" :style="g?.rarity === 'class_4' ? 'background-color: #5D625E' : g?.rarity === 'class_3' ? 'background-color: #009600' : g?.rarity === 'class_2' ? 'background-color: #0918E9' : 'background-color: #E98509'">{{ g?.rarity ? t(`gems.${g.rarity}`) : '' }}</span>
       </div>
     </div>
   </div>
