@@ -718,7 +718,11 @@ def main_mint():
     
     for u in UserProfile.objects.filter(
         user_id__in=list(hydro_owners.keys())
-    ).exclude(has_hydro_station=True).exclude(has_orbital_station=True).exclude(has_singularity_station=True):
+    ).exclude(has_hydro_station=True).exclude(has_orbital_station=True).exclude(has_singularity_station=True).exclude(
+        user_id__in=list(orbital_owners.keys())
+    ).exclude(
+        user_id__in=list(singularity_owners.keys())
+    ):
         with transaction.atomic():
             u.refresh_from_db()
             hydro_eng_level = 30 if getattr(u, "prem_power_plant_old_owner", True) else 25
@@ -838,7 +842,9 @@ def main_mint():
     
     for u in UserProfile.objects.filter(
         user_id__in=list(orbital_owners.keys())
-    ).exclude(has_orbital_station=True).exclude(has_hydro_station=True).exclude(has_singularity_station=True):
+    ).exclude(has_orbital_station=True).exclude(has_hydro_station=True).exclude(has_singularity_station=True).exclude(
+        user_id__in=list(singularity_owners.keys())
+    ):
         with transaction.atomic():
             u.refresh_from_db()
             old_owner = getattr(u, "prem_power_plant_old_owner", True)
