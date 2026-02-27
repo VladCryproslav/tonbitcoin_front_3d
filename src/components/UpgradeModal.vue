@@ -20,24 +20,31 @@ const props = defineProps({
 const app = useAppStore()
 
 const stationDisplayName = computed(() => {
-  if (app.user?.has_orbital_station && !app.user?.orbital_force_basic) return 'Orbital power plant'
-  if (app.user?.has_singularity_station) return 'Singularity reactor'
-  if (app.user?.has_hydro_station) return 'Hydroelectric power plant'
-  return app.user?.station_type || ''
+  if (!app.user) return ''
+  if (app.user.has_orbital_station && !app.user.orbital_force_basic) return 'Orbital power plant'
+  if (app.user.has_singularity_station) return 'Singularity reactor'
+  if (app.user.has_hydro_station) return 'Hydroelectric power plant'
+  return app.user.station_type || ''
 })
 
 const stationImageUrl = computed(() => {
-  if (app.user?.has_orbital_station && !app.user?.orbital_force_basic) {
+  if (!app.user) return ''
+  if (app.user.has_orbital_station && !app.user.orbital_force_basic) {
     return new URL(`../assets/Orbital Power Plant.webp`, import.meta.url).href
   }
-  if (app.user?.has_singularity_station) {
+  if (app.user.has_singularity_station) {
     return new URL(`../assets/gems/singularity_power_plant.webp`, import.meta.url).href
   }
-  if (app.user?.has_hydro_station) {
+  if (app.user.has_hydro_station) {
     return new URL(`../assets/Hydroelectric power plant.webp`, import.meta.url).href
   }
-  return new URL(`../assets/${app?.user?.station_type}-${app?.user?.storage_level}.webp`, import.meta.url).href
+  if (app.user.station_type && app.user.storage_level) {
+    return new URL(`../assets/${app.user.station_type}-${app.user.storage_level}.webp`, import.meta.url).href
+  }
+  return ''
 })
+
+const showStationHeader = computed(() => props.kind === 'station' && !!stationDisplayName.value)
 
 const { tg } = useTelegram()
 
@@ -157,8 +164,8 @@ const emitClose = () => {
           <Exit style="color: #fff" />
         </button>
         <div class="grouping">
-          <div v-if="props.kind === 'station'" class="station-modal-header">
-            <img :src="stationImageUrl" alt="" class="station-modal-img" />
+          <div v-if="showStationHeader" class="station-modal-header">
+            <img v-if="stationImageUrl" :src="stationImageUrl" alt="" class="station-modal-img" />
             <div class="modal-header">{{ t(`stations.${stationDisplayName}`) }}</div>
           </div>
           <div v-else class="modal-header">

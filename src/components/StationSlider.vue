@@ -26,24 +26,34 @@ const otherBasePath = (base, lvl) => {
   return com
 }
 
-const allStations = [...new Set(app.stations?.storage_configs?.filter(el => {
-  if (app.user.has_hydro_station) return el?.station_type !== 'Hydroelectric power plant'
-  if (app.user.has_orbital_station) return el?.station_type !== 'Orbital power plant'
-  if (app.user.has_singularity_station) return el?.station_type !== 'Dyson Sphere'
+const allStationsFiltered = computed(() => [...new Set((app.stations?.storage_configs || []).filter(el => {
+  if (app.user?.has_hydro_station) return el?.station_type !== 'Hydroelectric power plant'
+  if (app.user?.has_orbital_station) return el?.station_type !== 'Orbital power plant'
   return true
-})?.map((el) => el?.station_type))]
+}).map((el) => el?.station_type))])
+
+const allStations = computed(() => {
+  const list = allStationsFiltered.value
+  const current = app.user?.station_type
+  if (!current || list.includes(current)) return list
+  return [...list, current]
+})
 
 const currStation = ref(app.user?.station_type)
 
 function makeElementCentral(array, targetElement) {
-  const targetIndex = array.indexOf(targetElement);
-  if (targetIndex === -1) throw new Error('Елемент не знайдено в масиві');
-  const middleIndex = Math.floor(array.length / 2);
-  const offset = (targetIndex - middleIndex + array.length) % array.length;
-  const newArray = [...array.slice(offset), ...array.slice(0, offset)];
-  return newArray;
+  if (!array?.length) return array || []
+  const targetIndex = array.indexOf(targetElement)
+  if (targetIndex === -1) return array
+  const middleIndex = Math.floor(array.length / 2)
+  const offset = (targetIndex - middleIndex + array.length) % array.length
+  return [...array.slice(offset), ...array.slice(0, offset)]
 }
-const slides = ref(makeElementCentral(allStations, app.user?.station_type))
+
+const slides = ref([])
+function updateSlides() {
+  slides.value = makeElementCentral(allStations.value, app.user?.station_type) || []
+}
 
 const sliderContent = ref(null)
 
@@ -208,6 +218,7 @@ class Swipe {
 }
 
 onMounted(() => {
+  updateSlides()
   initializePositions()
   const swipe = new Swipe(sliderContent.value)
   swipe.onRight(() => leftScroll()).onLeft(() => rightScroll())
@@ -215,11 +226,16 @@ onMounted(() => {
 
 watch(app, (newApp) => {
   if (currStation.value !== newApp?.user?.station_type) {
-    slides.value = makeElementCentral(allStations, newApp.user?.station_type)
     currStation.value = newApp?.user?.station_type
+    updateSlides()
     initializePositions()
   }
-})
+}, { deep: true })
+
+watch(allStations, () => {
+  updateSlides()
+  if (sliderContent.value) initializePositions()
+}, { immediate: false })
 
 watch(activeSlide, (newActiveSlide) => {
   emit('input', newActiveSlide)
