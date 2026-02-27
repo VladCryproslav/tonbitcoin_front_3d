@@ -1778,8 +1778,9 @@ onUnmounted(() => {
                   }}</span>
               </div>
             </div>
+            <!-- Обычные станции: показываем и kW, и Stars (как раньше) -->
             <div
-              v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs) && !app.user.has_hydro_station && !app.user.has_orbital_station"
+              v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs) && !engineerStarsOnly"
               class="upgrade-price">
               <div class="upgrade-price-item col-span-2">
                 <img src="@/assets/kW_token.png" v-if="
@@ -1820,6 +1821,19 @@ onUnmounted(() => {
                     (el) => el?.level == app.user?.engineer_level + 1,
                   )?.hire_cost_stars > 0
                 " width="10px" height="10px" />
+                <span class="energy">{{
+                  app.stations?.eng_configs?.find((el) => el?.level == app.user?.engineer_level + 1)
+                    ?.hire_cost_stars || ''
+                }}</span>
+              </div>
+            </div>
+
+            <!-- Премиум-станции (hydro/orbital/singularity): показываем только Stars -->
+            <div
+              v-if="app.user?.engineer_level < findMaxLevel(app.stations?.eng_configs) && engineerStarsOnly"
+              class="upgrade-price">
+              <div class="upgrade-price-item col-span-2">
+                <img src="@/assets/stars.png" width="10px" height="10px" />
                 <span class="energy">{{
                   app.stations?.eng_configs?.find((el) => el?.level == app.user?.engineer_level + 1)
                     ?.hire_cost_stars || ''
