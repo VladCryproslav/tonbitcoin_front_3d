@@ -555,7 +555,6 @@ const engineerSavedPercentTotalOnLose = computed(() => {
 // Флаг: был ли применён станционный бонус (по данным бэка либо по сравнению с инженерным процентом)
 const hasStationBonusOnLose = computed(() => {
   if (gameOverType.value !== 'lose') return false
-  if (isTrainingRun.value) return false
   if (!completedRunData.value) return false
 
   // Если бэк явно сказал, что бонус применён/нет — доверяем ему
