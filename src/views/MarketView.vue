@@ -1314,12 +1314,22 @@ onUnmounted(() => {
     .gem-pro-pill {
       padding: 0 7px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      background:
+        linear-gradient(120deg,
+          rgba(255, 255, 255, 0.12) 0%,
+          rgba(255, 255, 255, 0.12) 35%,
+          rgba(255, 255, 255, 0.9) 50%,
+          rgba(255, 255, 255, 0.12) 65%,
+          rgba(255, 255, 255, 0.12) 100%);
+      background-size: 220% 220%;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow:
+        0 0 4px rgba(255, 255, 255, 0.6),
+        0 0 10px rgba(255, 255, 255, 0.35);
       font-size: 9.5px;
       font-weight: 600;
       letter-spacing: 0.08em;
-      animation: starter-pack-pro-tag-pulse 2.4s ease-in-out infinite;
+      animation: starter-pack-pro-pill-shine 3.2s ease-in-out infinite;
     }
 
     .gem-tag-pro {
@@ -1541,24 +1551,30 @@ onUnmounted(() => {
     }
   }
 
-  @keyframes starter-pack-pro-tag-pulse {
+  @keyframes starter-pack-pro-pill-shine {
     0% {
-      opacity: 0.9;
-      text-shadow:
-        0 0 4px rgba(233, 117, 255, 0.5),
-        0 0 10px rgba(129, 115, 255, 0.6);
+      background-position: -120% 0;
+      box-shadow:
+        0 0 2px rgba(255, 255, 255, 0.2),
+        0 0 4px rgba(255, 255, 255, 0.15);
     }
-    50% {
-      opacity: 1;
-      text-shadow:
-        0 0 10px rgba(233, 117, 255, 0.9),
-        0 0 22px rgba(129, 115, 255, 1);
+    20% {
+      background-position: 0% 0;
+      box-shadow:
+        0 0 6px rgba(255, 255, 255, 0.8),
+        0 0 14px rgba(255, 255, 255, 0.55);
+    }
+    40% {
+      background-position: 120% 0;
+      box-shadow:
+        0 0 4px rgba(255, 255, 255, 0.5),
+        0 0 10px rgba(255, 255, 255, 0.35);
     }
     100% {
-      opacity: 0.9;
-      text-shadow:
-        0 0 4px rgba(233, 117, 255, 0.5),
-        0 0 10px rgba(129, 115, 255, 0.6);
+      background-position: 120% 0;
+      box-shadow:
+        0 0 2px rgba(255, 255, 255, 0.15),
+        0 0 4px rgba(255, 255, 255, 0.1);
     }
   }
 
