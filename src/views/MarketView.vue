@@ -1329,7 +1329,7 @@ onUnmounted(() => {
       font-size: 9.5px;
       font-weight: 600;
       letter-spacing: 0.08em;
-      animation: starter-pack-pro-pill-shine 3.2s ease-in-out infinite;
+      animation: starter-pack-pro-pill-shine 3.2s linear infinite;
     }
 
     .gem-tag-pro {
@@ -1558,23 +1558,17 @@ onUnmounted(() => {
         0 0 2px rgba(255, 255, 255, 0.2),
         0 0 4px rgba(255, 255, 255, 0.15);
     }
-    20% {
-      background-position: 0% 0;
+    50% {
+      background-position: 120% 0;
       box-shadow:
         0 0 6px rgba(255, 255, 255, 0.8),
         0 0 14px rgba(255, 255, 255, 0.55);
     }
-    40% {
-      background-position: 120% 0;
-      box-shadow:
-        0 0 4px rgba(255, 255, 255, 0.5),
-        0 0 10px rgba(255, 255, 255, 0.35);
-    }
     100% {
-      background-position: 120% 0;
+      background-position: -120% 0;
       box-shadow:
-        0 0 2px rgba(255, 255, 255, 0.15),
-        0 0 4px rgba(255, 255, 255, 0.1);
+        0 0 2px rgba(255, 255, 255, 0.2),
+        0 0 4px rgba(255, 255, 255, 0.15);
     }
   }
 
