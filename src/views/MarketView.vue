@@ -1312,7 +1312,7 @@ onUnmounted(() => {
     }
 
     .gem-pro-pill {
-      padding: 0 7px;
+      padding: 1px 9px;
       border-radius: 999px;
       background:
         linear-gradient(120deg,
@@ -1326,7 +1326,7 @@ onUnmounted(() => {
       box-shadow:
         0 0 4px rgba(255, 255, 255, 0.6),
         0 0 10px rgba(255, 255, 255, 0.35);
-      font-size: 9.5px;
+      font-size: 10px;
       font-weight: 600;
       letter-spacing: 0.08em;
       animation: starter-pack-pro-pill-shine 3.2s linear infinite;
