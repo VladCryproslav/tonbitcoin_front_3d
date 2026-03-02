@@ -38,6 +38,7 @@ const currBuyAsic = ref(null)
 
 const daoGem = computed(() => gemsSheet.find(g => g.type === 'DAO Owner'))
 const starterPack = computed(() => gemsSheet.find(g => g.type === 'Starter Pack'))
+const starterPackPro = computed(() => gemsSheet.find(g => g.type === 'Starter Pack Pro'))
 const openStarterPackInfo = ref(false)
 const openDaoOwnerInfo = ref(false)
 const openHydroelectricInfo = ref(false)
@@ -273,10 +274,10 @@ const buyAsics = async (item, price, link, sale, shop = true) => {
 }
 
 const buyGem = async (gemItem) => {
-  if (!gemItem?.shop && gemItem?.type !== 'Starter Pack') return
+  if (!gemItem?.shop && gemItem?.type !== 'Starter Pack' && gemItem?.type !== 'Starter Pack Pro') return
 
   // Starter Pack — как в MinerView: отправка TON
-  if (gemItem?.type === 'Starter Pack') {
+  if (gemItem?.type === 'Starter Pack' || gemItem?.type === 'Starter Pack Pro') {
     if (isProcessing.value) return
     isProcessing.value = true
     if (!ton_address.value) {
@@ -465,31 +466,34 @@ onUnmounted(() => {
         <span class="gem-tag" style="background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);">{{ t('gems.special') }}</span>
       </div>
 
-      <div v-if="starterPack" class="gem-item has-purple-stroke">
+      <div v-if="starterPackPro" class="gem-item has-purple-stroke starter-pack-pro-card">
         <div class="gem-info-icon-top" @click="openStarterPackInfo = true">i</div>
         <div class="gem-picture">
-          <img v-if="starterPack.imagePath" :src="imagePathGems(starterPack.imagePath)?.value" class="gem-image" alt="Starter Pack" />
+          <img v-if="starterPackPro.imagePath" :src="imagePathGems(starterPackPro.imagePath)?.value" class="gem-image" alt="Starter Pack Pro" />
           <div v-else class="gem-icon">💎</div>
         </div>
         <div class="gem-info">
-          <span class="gem-type">{{ starterPack.type }}</span>
-          <span v-for="(benefit, idx) in starterPack.benefits" :key="idx" class="gem-description">{{ t(`gems.${benefit}`) }}</span>
-        </div>
-        <button class="gem-buy-btn btn-purple" :disabled="isProcessing" @click="buyGem(starterPack)">
-          <span>{{ t('common.buy') }}</span>
-          <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && starterPack.enableSale !== false }">
-            <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
-            {{ starterPack.price }}
+          <span class="gem-type">
+            {{ starterPackPro.type }}
+            <span class="gem-pro-pill">PRO</span>
           </span>
-          <template v-if="gemsSaleActive && starterPack.enableSale !== false">
-            <div class="gem-sale-perc">-{{ starterPack.salePercent || 10 }}%</div>
+          <span v-for="(benefit, idx) in starterPackPro.benefits" :key="idx" class="gem-description">{{ t(`gems.${benefit}`) }}</span>
+        </div>
+        <button class="gem-buy-btn btn-purple" :disabled="isProcessing" @click="buyGem(starterPackPro)">
+          <span>{{ t('common.buy') }}</span>
+          <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && starterPackPro.enableSale !== false }">
+            <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
+            {{ starterPackPro.price }}
+          </span>
+          <template v-if="gemsSaleActive && starterPackPro.enableSale !== false">
+            <div class="gem-sale-perc">-{{ starterPackPro.salePercent || 10 }}%</div>
             <div class="gem-sale-newprice">
               <img src="@/assets/TON.png" width="12" height="12" alt="TON" />
               {{ getStarterPackPriceDisplay() }}
             </div>
           </template>
         </button>
-        <span class="gem-tag" style="background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);">{{ t('gems.special') }}</span>
+        <span class="gem-tag gem-tag-pro" style="background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);">{{ t('gems.special') }} PRO</span>
       </div>
 
       <h2 class="section-title">{{ t('market.nft_assets') }}</h2>
@@ -1298,6 +1302,26 @@ onUnmounted(() => {
       padding: 0.2rem 0;
       z-index: -10;
       border-radius: 0 0 1rem 1rem;
+    }
+
+    .starter-pack-pro-card .gem-type {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .gem-pro-pill {
+      padding: 0 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+    }
+
+    .gem-tag-pro {
+      letter-spacing: 0.08em;
     }
   }
 
