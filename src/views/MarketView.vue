@@ -1554,19 +1554,25 @@ onUnmounted(() => {
   @keyframes starter-pack-pro-pill-shine {
     0% {
     background-position: -160% 0;
-      box-shadow:
-        0 0 2px rgba(255, 255, 255, 0.2),
-        0 0 4px rgba(255, 255, 255, 0.15);
-    }
-  25% {
-    background-position: 0% 0;
-      box-shadow:
-        0 0 6px rgba(255, 255, 255, 0.8),
-        0 0 14px rgba(255, 255, 255, 0.55);
-    }
-    100% {
+    box-shadow:
+      0 0 2px rgba(255, 255, 255, 0.15),
+      0 0 4px rgba(255, 255, 255, 0.1);
+  }
+  15% {
+    background-position: -160% 0;
+    box-shadow:
+      0 0 2px rgba(255, 255, 255, 0.15),
+      0 0 4px rgba(255, 255, 255, 0.1);
+  }
+  35% {
     background-position: 160% 0;
-      box-shadow:
+    box-shadow:
+      0 0 6px rgba(255, 255, 255, 0.9),
+      0 0 14px rgba(255, 255, 255, 0.6);
+  }
+  100% {
+    background-position: 160% 0;
+    box-shadow:
       0 0 2px rgba(255, 255, 255, 0.15),
       0 0 4px rgba(255, 255, 255, 0.1);
     }
