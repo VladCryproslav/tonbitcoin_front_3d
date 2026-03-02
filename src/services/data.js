@@ -252,6 +252,27 @@ const gemsSheet = [
   {
     shop: true,
     name: 'Buy NFT',
+    type: 'Starter Pack Pro',
+    price: 599,
+    rarity: 'special',
+    description: 'Singularity Reactor',
+    buttonColor: 'purple',
+    hasPurpleStroke: true,
+    enableSale: false,
+    salePercent: 10, // Кастомная скидка для этого GEMS (50%)
+    imagePath: '@/assets/gems/Starter_pack.webp',
+    link: '', // Not used - uses TON payment instead
+    info: 'starter_pack_modal',
+    benefits: [
+      'starter_pack_pro_benefit_1',
+      'starter_pack_pro_benefit_2',
+      'starter_pack_pro_benefit_3',
+      'starter_pack_pro_benefit_4'
+    ]
+  },
+  {
+    shop: true,
+    name: 'Buy NFT',
     type: 'Hydroelectric Power Plant',
     price: 99,
     rarity: 'special',
