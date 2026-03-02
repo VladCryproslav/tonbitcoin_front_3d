@@ -2188,6 +2188,146 @@ class TrainingRunStartView(APIView):
             )
 
 
+class TrainingRunCompleteView(APIView):
+    """
+    Завершение тренировочного забега.
+
+    ВАЖНО: Энергия НЕ начисляется и данные профиля не изменяются.
+    Эндпоинт нужен только для того, чтобы фронт получил:
+    - сколько энергии было собрано;
+    - сколько БЫ начислилось при боевом забеге (с учётом инженеров и бонуса станции);
+    - фактический процент сохранения и информацию о том, применён ли станционный бонус.
+    """
+
+    @swagger_auto_schema(
+        tags=["game"],
+        operation_description="Завершение тренировочного 3D забега (без начисления энергии)",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["distance", "energy_collected", "run_duration", "is_win"],
+            properties={
+                "distance": openapi.Schema(type=openapi.TYPE_NUMBER, description="Пройденное расстояние"),
+                "energy_collected": openapi.Schema(type=openapi.TYPE_NUMBER, description="Собранная энергия"),
+                "run_duration": openapi.Schema(type=openapi.TYPE_NUMBER, description="Длительность забега в секундах"),
+                "obstacles_hit": openapi.Schema(type=openapi.TYPE_INTEGER, description="Количество препятствий"),
+                "power_used": openapi.Schema(type=openapi.TYPE_NUMBER, description="Использованная мощность"),
+                "is_win": openapi.Schema(type=openapi.TYPE_BOOLEAN, description="Победа (True) или проигрыш (False)"),
+            },
+        ),
+        responses={
+            200: openapi.Response(
+                description="Тренировочный забег обработан",
+                examples={
+                    "application/json": {
+                        "success": True,
+                        "message": "Training run completed",
+                        "energy_collected": 50.0,
+                        "energy_gained": 25.0,
+                        "is_win": False,
+                        "saved_percent_effective": 50.0,
+                        "is_station_bonus_applied": True,
+                    }
+                },
+            ),
+            400: "Ошибка валидации",
+        },
+    )
+    @require_auth
+    def post(self, request):
+        try:
+            user_profile = UserProfile.objects.get(user_id=request.user_profile.user_id)
+            now = timezone.now()
+
+            # Получаем данные из запроса
+            distance = request.data.get("distance", 0)
+            energy_collected = request.data.get("energy_collected", 0)
+            run_duration = request.data.get("run_duration", 0)
+            is_win = request.data.get("is_win", False)
+
+            # Базовые валидации, упрощённые относительно боевого забега
+            try:
+                energy_collected = float(energy_collected)
+            except (TypeError, ValueError):
+                return Response(
+                    {"error": "Invalid energy_collected value"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if energy_collected < 0:
+                return Response(
+                    {"error": "Invalid energy_collected value"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                run_duration = float(run_duration)
+            except (TypeError, ValueError):
+                return Response(
+                    {"error": "Invalid run_duration value"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if run_duration < 0:
+                return Response(
+                    {"error": "Invalid run_duration. Must be non-negative."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                distance = float(distance)
+            except (TypeError, ValueError):
+                return Response(
+                    {"error": "Invalid distance value"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if distance <= 0:
+                return Response(
+                    {"error": "Invalid distance value"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Расчёт процента сохранения — та же логика, что и для боевого забега,
+            # но БЕЗ инкремента счётчиков и без каких-либо изменений в БД.
+            if is_win:
+                final_energy = energy_collected
+                saved_percent = 100.0
+                is_station_bonus_applied = False
+            else:
+                saved_percent, counter_field, max_uses, used_uses = calculate_saved_percent_with_station_bonus(
+                    user_profile, now
+                )
+                is_station_bonus_applied = (
+                    counter_field is not None and max_uses is not None and used_uses is not None
+                )
+                final_energy = energy_collected * (saved_percent / 100)
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Training run completed",
+                    "energy_collected": float(energy_collected),
+                    "energy_gained": float(final_energy),
+                    "is_win": bool(is_win),
+                    "saved_percent_effective": float(saved_percent),
+                    "is_station_bonus_applied": is_station_bonus_applied,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except UserProfile.DoesNotExist:
+            return Response(
+                {"error": "User not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            import traceback
+            action_logger.error(
+                f"TrainingRunCompleteView error: {str(e)}, traceback: {traceback.format_exc()}"
+            )
+            return Response(
+                {"error": f"Internal server error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
 def calculate_saved_percent_on_lose(user_profile, now=None):
     """
     Рассчитывает процент сохранения энергии при проигрыше согласно новой логике:

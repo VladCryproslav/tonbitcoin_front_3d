@@ -2189,17 +2189,13 @@ const endGame = async (isWinByState = false) => {
 
     console.log('endGame called, isWinByState:', isWinByState, 'isTrainingRun:', isTrainingRun.value, 'energyCollected BEFORE completeRun:', savedEnergyBeforeComplete, 'startStorage BEFORE completeRun:', savedStartStorageBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'isRunning:', gameRun.isRunning.value, 'runStartTime:', gameRun.runStartTime?.value)
 
-    // Тренировочный забег: не отправляем game-run-complete (сервер не стартует run для тренировки, энергия не начисляется)
-    let result = null
-    if (isTrainingRun.value) {
-      gameRun.stopRun()
-    } else {
-      result = await gameRun.completeRun(isWinByState).catch((e) => {
-        console.error('Ошибка завершения забега:', e)
-        console.error('Error details:', e.response?.data, e.message)
-        return null
-      })
-    }
+    // Для боевого забега и тренировочного используем один и тот же completeRun,
+    // но для тренировки вызываем отдельный endpoint training-run-complete (без начисления энергии).
+    let result = await gameRun.completeRun(isWinByState, isTrainingRun.value).catch((e) => {
+      console.error('Ошибка завершения забега:', e)
+      console.error('Error details:', e.response?.data, e.message)
+      return null
+    })
     console.log('endGame completeRun result:', result)
 
     // Сохраняем данные завершенного забега для последующего начисления при нажатии "Забрать"

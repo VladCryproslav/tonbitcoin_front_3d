@@ -263,7 +263,7 @@ export function useGameRun() {
     obstaclesHit.value++
   }
 
-  const completeRun = async (isWin = false) => {
+  const completeRun = async (isWin = false, isTraining = false) => {
     // Проверяем что забег был запущен (даже если уже остановлен через stopGameLoop)
     // Не проверяем isRunning.value, так как при проигрыше забег может быть остановлен до вызова completeRun
     if (!runStartTime.value || runStartTime.value === 0) {
@@ -338,7 +338,8 @@ export function useGameRun() {
 
       console.log('Sending game-run-complete request:', runData)
 
-      const response = await host.post('game-run-complete/', runData)
+      const endpoint = isTraining ? 'training-run-complete/' : 'game-run-complete/'
+      const response = await host.post(endpoint, runData)
       console.log('game-run-complete response:', response.data)
 
       if (response.status === 200 && response.data) {
@@ -350,7 +351,9 @@ export function useGameRun() {
           energy_collected: response.data.energy_collected ?? limitedEnergyCollected,
           energy_gained: response.data.energy_gained,
           is_win: response.data.is_win ?? isWin,
-          total_energy: response.data.total_energy,  // Текущий баланс (без начисления)
+          saved_percent_effective: response.data.saved_percent_effective,
+          is_station_bonus_applied: response.data.is_station_bonus_applied,
+          total_energy: response.data.total_energy,  // Текущий баланс (без начисления) — только для боевого забега
           storage: response.data.storage,
           power: response.data.power,
           bonuses: response.data.bonuses,

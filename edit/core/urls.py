@@ -98,6 +98,7 @@ urlpatterns = [
     path("energy-run-start/", EnergyRunStartView.as_view(), name="energy_run_start"),
     path("training-run-check/", TrainingRunCheckView.as_view(), name="training_run_check"),
     path("training-run-start/", TrainingRunStartView.as_view(), name="training_run_start"),
+    path("training-run-complete/", views.TrainingRunCompleteView.as_view(), name="training_run_complete"),
     path("game-run-complete/", GameRunCompleteView.as_view(), name="game_run_complete"),
     path("game-run-claim/", GameRunClaimView.as_view(), name="game_run_claim"),
     path("game-run-update-overheat/", GameRunUpdateOverheatView.as_view(), name="game-run-update-overheat"),
