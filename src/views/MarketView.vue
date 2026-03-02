@@ -1336,15 +1336,15 @@ onUnmounted(() => {
       background: linear-gradient(
         120deg,
         rgba(255, 255, 255, 0) 0%,
-        rgba(255, 255, 255, 0.15) 35%,
-        rgba(255, 255, 255, 0.95) 50%,
-        rgba(255, 255, 255, 0.15) 65%,
+        rgba(255, 255, 255, 0.25) 35%,
+        rgba(255, 255, 255, 1) 50%,
+        rgba(255, 255, 255, 0.25) 65%,
         rgba(255, 255, 255, 0) 100%
       );
       transform: translateX(-140%);
       opacity: 0;
       pointer-events: none;
-      animation: starter-pack-pro-pill-shine 2.4s linear infinite;
+      animation: starter-pack-pro-pill-shine 3.2s linear infinite;
     }
 
     .gem-tag-pro {
