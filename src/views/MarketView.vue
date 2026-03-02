@@ -1316,20 +1316,20 @@ onUnmounted(() => {
       border-radius: 999px;
       background:
         linear-gradient(120deg,
-          rgba(255, 255, 255, 0.12) 0%,
-          rgba(255, 255, 255, 0.12) 35%,
-          rgba(255, 255, 255, 0.9) 50%,
-          rgba(255, 255, 255, 0.12) 65%,
-          rgba(255, 255, 255, 0.12) 100%);
-      background-size: 220% 220%;
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0) 35%,
+          rgba(255, 255, 255, 0.95) 50%,
+          rgba(255, 255, 255, 0) 65%,
+          rgba(255, 255, 255, 0) 100%);
+      background-size: 260% 260%;
       border: 1px solid rgba(255, 255, 255, 0.5);
       box-shadow:
-        0 0 4px rgba(255, 255, 255, 0.6),
-        0 0 10px rgba(255, 255, 255, 0.35);
+        0 0 3px rgba(255, 255, 255, 0.5),
+        0 0 8px rgba(255, 255, 255, 0.25);
       font-size: 10px;
       font-weight: 600;
       letter-spacing: 0.08em;
-      animation: starter-pack-pro-pill-shine 3.2s linear infinite;
+      animation: starter-pack-pro-pill-shine 2s linear infinite;
     }
 
     .gem-tag-pro {
@@ -1553,19 +1553,19 @@ onUnmounted(() => {
 
   @keyframes starter-pack-pro-pill-shine {
     0% {
-      background-position: -120% 0;
+    background-position: -160% 0;
       box-shadow:
         0 0 2px rgba(255, 255, 255, 0.2),
         0 0 4px rgba(255, 255, 255, 0.15);
     }
-  35% {
-      background-position: 120% 0;
+  25% {
+    background-position: 0% 0;
       box-shadow:
         0 0 6px rgba(255, 255, 255, 0.8),
         0 0 14px rgba(255, 255, 255, 0.55);
     }
     100% {
-    background-position: 120% 0;
+    background-position: 160% 0;
       box-shadow:
       0 0 2px rgba(255, 255, 255, 0.15),
       0 0 4px rgba(255, 255, 255, 0.1);
