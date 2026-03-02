@@ -440,7 +440,7 @@ onUnmounted(() => {
         <h2 class="special-offers-title">{{ t('market.starter_pack_offers') }}</h2>
       </div>
 
-      <div v-if="starterPack" class="gem-item has-purple-stroke">
+      <div v-if="starterPack" class="gem-item">
         <div class="gem-info-icon-top" @click="openStarterPackInfo = true">i</div>
         <div class="gem-picture">
           <img v-if="starterPack.imagePath" :src="imagePathGems(starterPack.imagePath)?.value" class="gem-image" alt="Starter Pack" />
@@ -464,10 +464,10 @@ onUnmounted(() => {
             </div>
           </template>
         </button>
-        <span class="gem-tag" style="background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);">{{ t('gems.special') }}</span>
+        <span class="gem-tag" style="background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);">Обычный</span>
       </div>
 
-      <div v-if="starterPackPro" class="gem-item has-purple-stroke starter-pack-pro-card">
+      <div v-if="starterPackPro" class="gem-item starter-pack-pro-card">
         <div class="gem-info-icon-top" @click="openStarterPackInfo = true">i</div>
         <div class="gem-picture">
           <img v-if="starterPackPro.imagePath" :src="imagePathGems(starterPackPro.imagePath)?.value" class="gem-image" alt="Starter Pack Pro" />
@@ -494,7 +494,7 @@ onUnmounted(() => {
             </div>
           </template>
         </button>
-        <span class="gem-tag gem-tag-pro" style="background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);">{{ t('gems.special') }} PRO</span>
+        <span class="gem-tag gem-tag-pro" style="background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);">PRO</span>
       </div>
 
       <h2 class="section-title">{{ t('market.nft_assets') }}</h2>
@@ -1305,17 +1305,6 @@ onUnmounted(() => {
       border-radius: 0 0 1rem 1rem;
     }
 
-    &.starter-pack-pro-card {
-      &.has-purple-stroke::after {
-        padding: 2.5px;
-        box-shadow:
-          0 0 20px rgba(181, 119, 255, 0.4),
-          0 0 40px rgba(181, 119, 255, 0.25);
-      }
-
-      animation: starter-pack-pro-glow 2.4s ease-in-out infinite;
-    }
-
     &.starter-pack-pro-card .gem-type {
       display: flex;
       align-items: center;
@@ -1330,14 +1319,12 @@ onUnmounted(() => {
       font-size: 9.5px;
       font-weight: 600;
       letter-spacing: 0.08em;
+      animation: starter-pack-pro-tag-pulse 2.4s ease-in-out infinite;
     }
 
     .gem-tag-pro {
       letter-spacing: 0.12em;
-      text-shadow:
-        0 0 6px rgba(233, 117, 255, 0.7),
-        0 0 14px rgba(129, 115, 255, 0.85);
-      animation: starter-pack-pro-tag-pulse 2.4s ease-in-out infinite;
+      text-shadow: none;
     }
   }
 
@@ -1551,25 +1538,6 @@ onUnmounted(() => {
       font-family: 'Inter' !important;
       font-size: clamp(11px, 5vw, 24px);
       font-weight: 700;
-    }
-  }
-
-  @keyframes starter-pack-pro-glow {
-    0% {
-      transform: translateZ(0);
-      box-shadow:
-        0 0 0 rgba(181, 119, 255, 0),
-        0 0 0 rgba(181, 119, 255, 0);
-    }
-    50% {
-      box-shadow:
-        0 0 18px rgba(181, 119, 255, 0.45),
-        0 0 32px rgba(120, 195, 255, 0.4);
-    }
-    100% {
-      box-shadow:
-        0 0 0 rgba(181, 119, 255, 0),
-        0 0 0 rgba(181, 119, 255, 0);
     }
   }
 
