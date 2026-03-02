@@ -343,6 +343,19 @@ class UserProfile(models.Model):
         null=True,
         help_text="Время последнего успешного начисления за забег (для идемпотентности claim)"
     )
+    # Льготные проигрыши раннера по уровням станции (1–3)
+    runner_lose_uses_level_1 = models.IntegerField(
+        default=0,
+        help_text="Сколько льготных проигрышей уже было на станции 1 уровня"
+    )
+    runner_lose_uses_level_2 = models.IntegerField(
+        default=0,
+        help_text="Сколько льготных проигрышей уже было на станции 2 уровня"
+    )
+    runner_lose_uses_level_3 = models.IntegerField(
+        default=0,
+        help_text="Сколько льготных проигрышей уже было на станции 3 уровня"
+    )
 
     # Training Run (Тренировочные забеги)
     training_run_last_started_at = models.DateTimeField(
@@ -1288,6 +1301,32 @@ class RunnerConfig(models.Model):
     energy_run_max_hours = models.IntegerField(
         default=4,
         help_text="Максимум часов для расчёта поинтов (4 ч × 60 × 2 = 480 поинтов)"
+    )
+    # Льготный процент сохранения при проигрыше для станций 1–3 уровня
+    lose_percent_station_level_1 = models.FloatField(
+        default=100,
+        help_text="Процент собранной энергии при проигрыше для станции 1 уровня"
+    )
+    lose_percent_station_level_2 = models.FloatField(
+        default=100,
+        help_text="Процент собранной энергии при проигрыше для станции 2 уровня"
+    )
+    lose_percent_station_level_3 = models.FloatField(
+        default=50,
+        help_text="Процент собранной энергии при проигрыше для станции 3 уровня"
+    )
+    # Лимиты количества льготных проигрышей (на пользователя) для уровней 1–3
+    lose_max_uses_station_level_1 = models.IntegerField(
+        default=200,
+        help_text="Сколько раз пользователь может получить льготный процент на 1 уровне станции"
+    )
+    lose_max_uses_station_level_2 = models.IntegerField(
+        default=200,
+        help_text="Сколько раз пользователь может получить льготный процент на 2 уровне станции"
+    )
+    lose_max_uses_station_level_3 = models.IntegerField(
+        default=100,
+        help_text="Сколько раз пользователь может получить льготный процент на 3 уровне станции"
     )
     # Настройки скорости забега
     run_base_speed = models.FloatField(

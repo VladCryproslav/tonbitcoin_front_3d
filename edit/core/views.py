@@ -2273,6 +2273,69 @@ def calculate_saved_percent_on_lose(user_profile, now=None):
     return min(saved_percent, 100)
 
 
+def calculate_saved_percent_with_station_bonus(user_profile, now=None):
+    """
+    Обёртка над calculate_saved_percent_on_lose с учётом уровня станции (1–3) и лимитов льготных проигрышей.
+
+    Возвращает кортеж:
+        (saved_percent, counter_field_name, max_uses, used_uses)
+
+    Где:
+        - saved_percent         — фактический процент сохранения, который надо применить;
+        - counter_field_name    — имя поля в UserProfile для счётчика льготных проигрышей
+                                  ('runner_lose_uses_level_1/2/3') или None, если применяется обычная логика инженеров;
+        - max_uses              — лимит льготных проигрышей для текущего уровня станции (или None);
+        - used_uses             — уже использованное количество льготных проигрышей (или None).
+
+    Инкремент счётчиков делается только в GameRunClaimView, здесь только расчёт.
+    """
+    from django.utils import timezone
+
+    if now is None:
+        now = timezone.now()
+
+    # Пытаемся получить RunnerConfig; при отсутствии — используем только инженеров
+    config = RunnerConfig.objects.first()
+    if not config:
+        return calculate_saved_percent_on_lose(user_profile, now), None, None, None
+
+    # Определяем уровень станции (1..10) по station_type
+    try:
+        station_level = user_profile.get_station_level() + 1  # 1..10
+    except ValueError:
+        # Неизвестный тип станции — безопасно fallback'имся на инженеров
+        return calculate_saved_percent_on_lose(user_profile, now), None, None, None
+
+    # Для уровней 4–10 никакого дополнительного бонуса по станции нет
+    if station_level >= 4:
+        return calculate_saved_percent_on_lose(user_profile, now), None, None, None
+
+    # Для уровней 1–3 пытаемся применить станционный бонус
+    if station_level == 1:
+        max_uses = getattr(config, "lose_max_uses_station_level_1", 0)
+        used_uses = getattr(user_profile, "runner_lose_uses_level_1", 0)
+        bonus_pct = getattr(config, "lose_percent_station_level_1", 100)
+        counter_field = "runner_lose_uses_level_1"
+    elif station_level == 2:
+        max_uses = getattr(config, "lose_max_uses_station_level_2", 0)
+        used_uses = getattr(user_profile, "runner_lose_uses_level_2", 0)
+        bonus_pct = getattr(config, "lose_percent_station_level_2", 100)
+        counter_field = "runner_lose_uses_level_2"
+    else:  # station_level == 3
+        max_uses = getattr(config, "lose_max_uses_station_level_3", 0)
+        used_uses = getattr(user_profile, "runner_lose_uses_level_3", 0)
+        bonus_pct = getattr(config, "lose_percent_station_level_3", 50)
+        counter_field = "runner_lose_uses_level_3"
+
+    # Если лимит отключен или уже исчерпан — используем чисто инженеров
+    if max_uses <= 0 or used_uses >= max_uses:
+        return calculate_saved_percent_on_lose(user_profile, now), None, None, None
+
+    # Применяем льготный процент в пределах [0, 100]
+    saved_percent = max(0, min(float(bonus_pct), 100.0))
+    return saved_percent, counter_field, int(max_uses), int(used_uses)
+
+
 class GameRunCompleteView(APIView):
     """Завершение забега и начисление энергии"""
     
@@ -2526,10 +2589,10 @@ class GameRunCompleteView(APIView):
                 # При победе начисляем всю собранную энергию
                 final_energy = energy_collected
             else:
-                # При проигрыше применяем процент сохранения от уровня инженера
-                # Используем новую логику с разделением на белых и золотых инженеров
-                saved_percent = calculate_saved_percent_on_lose(user_profile, now)
-                
+                # При проигрыше применяем процент сохранения с учётом уровня станции (1–3) и лимитов
+                # calculate_saved_percent_with_station_bonus сам fallback'ится на инженеров при отсутствии бонуса
+                saved_percent, _, _, _ = calculate_saved_percent_with_station_bonus(user_profile, now)
+
                 final_energy = energy_collected * (saved_percent / 100)
                 
                 # Логирование убрано для оптимизации - логируем только финальный результат
@@ -2708,11 +2771,16 @@ class GameRunClaimView(APIView):
             # Расчет финального количества энергии (та же логика что в GameRunCompleteView)
             if is_win:
                 final_energy = energy_collected
+                counter_field = None
+                max_uses = None
+                used_uses = None
             else:
-                # При проигрыше применяем процент сохранения от уровня инженера
-                # Используем новую логику с разделением на белых и золотых инженеров
-                saved_percent = calculate_saved_percent_on_lose(user_profile, now)
-                
+                # При проигрыше применяем процент сохранения с учётом уровня станции (1–3) и лимитов
+                # calculate_saved_percent_with_station_bonus сам fallback'ится на инженеров при отсутствии бонуса
+                saved_percent, counter_field, max_uses, used_uses = calculate_saved_percent_with_station_bonus(
+                    user_profile, now
+                )
+
                 final_energy = energy_collected * (saved_percent / 100)
             
             # Преобразуем final_energy в Decimal
@@ -2726,6 +2794,18 @@ class GameRunClaimView(APIView):
             #     f"final_energy={final_energy}, final_energy_decimal={final_energy_decimal}, "
             #     f"engineer_level={user_profile.get_real_engs() if not is_win else 'N/A'}"
             # )
+            
+            # Если был применён станционный бонус при проигрыше, инкрементируем соответствующий счётчик,
+            # но только если ещё не достигнут лимит (проверка через __lt в фильтре).
+            if (not is_win) and counter_field and max_uses is not None and used_uses is not None:
+                filter_kwargs = {
+                    "user_id": user_profile.user_id,
+                    f"{counter_field}__lt": max_uses,
+                }
+                update_kwargs = {
+                    counter_field: F(counter_field) + 1,
+                }
+                UserProfile.objects.filter(**filter_kwargs).update(**update_kwargs)
             
             # Начисление энергии на баланс
             UserProfile.objects.filter(user_id=user_profile.user_id).update(

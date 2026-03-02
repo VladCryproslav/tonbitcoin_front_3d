@@ -501,6 +501,8 @@
     "run_result_for_claim": "Будет начислено",
     "run_result_saved_total": "Всего сохранено kW",
     "run_result_saved_by_level": "{level} уровень, сохранил",
+    "run_result_saved_by_level_potential": "{level} уровень, мог бы сохранить",
+    "run_result_newbie_help": "Помощь новичкам",
     "run_claim": "Забрать",
     "overheat_title": "Перегрев станции",
     "overheat_desc": "Дождитесь завершения процесса охлаждения, это займет некоторое время. Использование электростанции во время перегрева приведет к её <b>поломке</b>.",

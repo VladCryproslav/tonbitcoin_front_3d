@@ -204,9 +204,20 @@
             <span class="game-over-result-label">{{ t('game.run_result_collected') }}</span>
             <span class="game-over-result-value">{{ formatEnergy(displayedEnergyCollected, true) }} / {{ formatEnergy(gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0) }} kW</span>
           </div>
+          <div v-if="gameOverType !== 'win' && hasStationBonusOnLose" class="game-over-result-row">
+            <img src="@/assets/save.webp" alt="" class="game-over-result-icon" />
+            <span class="game-over-result-label">{{ t('game.run_result_newbie_help') }}</span>
+            <span class="game-over-result-value">{{ formatPercent(effectiveSavedPercentFromBackend) }}</span>
+          </div>
           <div v-if="gameOverType !== 'win'" class="game-over-result-row">
             <img src="@/assets/engineer.webp" alt="" class="game-over-result-icon" />
-            <span class="game-over-result-label">{{ t('game.run_result_saved_by_level', { level: whiteEngineerLevel }) }}</span>
+            <span class="game-over-result-label">
+              {{
+                hasStationBonusOnLose
+                  ? t('game.run_result_saved_by_level_potential', { level: whiteEngineerLevel })
+                  : t('game.run_result_saved_by_level', { level: whiteEngineerLevel })
+              }}
+            </span>
             <span class="game-over-result-value">{{ formatPercent(whiteEngineerSavedPercent) }}</span>
           </div>
           <div v-if="gameOverType !== 'win' && goldEngineerLevel" class="game-over-result-row">
@@ -217,7 +228,13 @@
           <div v-if="gameOverType !== 'win'" class="game-over-result-row">
             <img src="@/assets/save.webp" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_saved_total') }}</span>
-            <span class="game-over-result-value">{{ formatPercent(effectiveSavedPercentOnLose) }}</span>
+            <span class="game-over-result-value">
+              {{
+                hasStationBonusOnLose
+                  ? formatPercent(effectiveSavedPercentFromBackend)
+                  : formatPercent(engineerSavedPercentTotalOnLose)
+              }}
+            </span>
           </div>
           <div class="game-over-result-row">
             <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
@@ -509,6 +526,32 @@ const effectiveSavedPercentOnLose = computed(() => {
   const goldPercent = goldEngineerBonusPercent.value
   return whitePercent + goldPercent
 })
+// Эффективный процент сохранения по данным сервера (energy_gained / energy_collected)
+const effectiveSavedPercentFromBackend = computed(() => {
+  if (!completedRunData.value || !completedRunData.value.energy_collected) return 0
+  const collected = Number(completedRunData.value.energy_collected ?? 0)
+  const gained = Number(completedRunData.value.energy_gained ?? 0)
+  if (!Number.isFinite(collected) || collected <= 0 || !Number.isFinite(gained) || gained <= 0) return 0
+  const pct = (gained / collected) * 100
+  return Math.max(0, Math.min(pct, 100))
+})
+// Общий инженерный процент (белые + золотые + синие электрики), для сравнения с фактическим
+const engineerSavedPercentTotalOnLose = computed(() => {
+  const basePct = effectiveSavedPercentOnLose.value
+  const electricsBonus = app?.user?.electrics_expires && new Date(app.user.electrics_expires) > new Date() ? 2 : 0
+  return basePct + electricsBonus
+})
+// Флаг: был ли применён станционный бонус (фактический процент отличается от инженерного)
+const hasStationBonusOnLose = computed(() => {
+  if (gameOverType.value !== 'lose') return false
+  if (isTrainingRun.value) return false
+  if (!completedRunData.value) return false
+  const backendPct = effectiveSavedPercentFromBackend.value
+  const engineerPct = engineerSavedPercentTotalOnLose.value
+  if (backendPct <= 0) return false
+  // Сравниваем с небольшим допуском по float
+  return Math.abs(backendPct - engineerPct) > 0.1
+})
 // Вычисляем собранную энергию для отображения в модалке - используем ту же логику, что и в счетчике энергии
 const displayedEnergyCollected = computed(() => {
   // Если модалка показана, всегда используем сохраненное значение
@@ -552,7 +595,7 @@ const displayedEnergyCollected = computed(() => {
   return Math.min(gameRun.energyCollected?.value ?? 0, gameRun.startStorage?.value ?? gameRun.currentStorage?.value ?? 0)
 })
 
-// Сколько энергии можно забрать: при победе — всё собранное (но не больше storage), при проигрыше — по проценту уровня
+// Сколько энергии можно забрать: при победе — всё собранное (но не больше storage), при проигрыше — по проценту уровня/станции
 const claimableEnergy = computed(() => {
   const collected = displayedEnergyCollected.value
 

@@ -327,6 +327,12 @@ class RunnerConfigAdmin(admin.ModelAdmin):
         'run_max_speed',
         'run_first_ramp_end',
         'run_second_ramp_end',
+        'lose_percent_station_level_1',
+        'lose_percent_station_level_2',
+        'lose_percent_station_level_3',
+        'lose_max_uses_station_level_1',
+        'lose_max_uses_station_level_2',
+        'lose_max_uses_station_level_3',
     ]
     list_editable = [
         'stars_per_kw',
@@ -339,6 +345,12 @@ class RunnerConfigAdmin(admin.ModelAdmin):
         'run_max_speed',
         'run_first_ramp_end',
         'run_second_ramp_end',
+        'lose_percent_station_level_1',
+        'lose_percent_station_level_2',
+        'lose_percent_station_level_3',
+        'lose_max_uses_station_level_1',
+        'lose_max_uses_station_level_2',
+        'lose_max_uses_station_level_3',
     ]
     list_display_links = None
 

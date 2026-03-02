@@ -501,6 +501,8 @@
     "run_result_for_claim": "Will be added",
     "run_result_saved_total": "Total saved kW",
     "run_result_saved_by_level": "{level} level, saved",
+    "run_result_saved_by_level_potential": "{level} level, could have saved",
+    "run_result_newbie_help": "Newcomer help",
     "run_claim": "Claim",
     "overheat_title": "Station Overheating",
     "overheat_desc": "Wait for the cooling process to complete, which will take some time. Using the power station when overheated will lead to its <b>breakdown</b>.",
