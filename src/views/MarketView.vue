@@ -1312,16 +1312,11 @@ onUnmounted(() => {
     }
 
     .gem-pro-pill {
+      position: relative;
+      overflow: hidden;
       padding: 1px 9px;
       border-radius: 999px;
-      background:
-        linear-gradient(120deg,
-          rgba(255, 255, 255, 0) 0%,
-          rgba(255, 255, 255, 0) 35%,
-          rgba(255, 255, 255, 0.95) 50%,
-          rgba(255, 255, 255, 0) 65%,
-          rgba(255, 255, 255, 0) 100%);
-      background-size: 260% 260%;
+      background: rgba(255, 255, 255, 0.12);
       border: 1px solid rgba(255, 255, 255, 0.5);
       box-shadow:
         0 0 3px rgba(255, 255, 255, 0.5),
@@ -1329,7 +1324,27 @@ onUnmounted(() => {
       font-size: 10px;
       font-weight: 600;
       letter-spacing: 0.08em;
-      animation: starter-pack-pro-pill-shine 2s linear infinite;
+    }
+
+    .gem-pro-pill::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      bottom: -40%;
+      left: -50%;
+      width: 120%;
+      background: linear-gradient(
+        120deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.15) 35%,
+        rgba(255, 255, 255, 0.95) 50%,
+        rgba(255, 255, 255, 0.15) 65%,
+        rgba(255, 255, 255, 0) 100%
+      );
+      transform: translateX(-140%);
+      opacity: 0;
+      pointer-events: none;
+      animation: starter-pack-pro-pill-shine 2.4s linear infinite;
     }
 
     .gem-tag-pro {
@@ -1553,28 +1568,24 @@ onUnmounted(() => {
 
   @keyframes starter-pack-pro-pill-shine {
     0% {
-    background-position: -160% 0;
-    box-shadow:
-      0 0 2px rgba(255, 255, 255, 0.15),
-      0 0 4px rgba(255, 255, 255, 0.1);
-  }
-  15% {
-    background-position: -160% 0;
-    box-shadow:
-      0 0 2px rgba(255, 255, 255, 0.15),
-      0 0 4px rgba(255, 255, 255, 0.1);
-  }
-  35% {
-    background-position: 160% 0;
-    box-shadow:
-      0 0 6px rgba(255, 255, 255, 0.9),
-      0 0 14px rgba(255, 255, 255, 0.6);
-  }
-  100% {
-    background-position: 160% 0;
-    box-shadow:
-      0 0 2px rgba(255, 255, 255, 0.15),
-      0 0 4px rgba(255, 255, 255, 0.1);
+      transform: translateX(-140%);
+      opacity: 0;
+    }
+    20% {
+      transform: translateX(-140%);
+      opacity: 0;
+    }
+    50% {
+      transform: translateX(140%);
+      opacity: 1;
+    }
+    60% {
+      transform: translateX(140%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(140%);
+      opacity: 0;
     }
   }
 
