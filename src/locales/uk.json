@@ -899,7 +899,8 @@
     "trade_btn": "Торгувати",
     "look_chart_btn": "Подивитися графік {pair}",
     "more_dex": "Більше DEX вже найближчим часом",
-    "check_news_btn": "Дивитися новини"
+    "check_news_btn": "Дивитися новини",
+    "starter_pack_offers": "Пакетні пропозиції"
   },
   "friends": {
     "title": "Запросіть друзів!",

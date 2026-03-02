@@ -433,6 +433,38 @@ onUnmounted(() => {
         </button>
         <span class="gem-tag" style="background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%); color: #000;">{{ t('gems.special') }}</span>
       </div>
+
+      <div class="special-offers-header">
+        <h2 class="special-offers-title">{{ t('market.starter_pack_offers') }}</h2>
+      </div>
+
+      <div v-if="starterPack" class="gem-item has-purple-stroke">
+        <div class="gem-info-icon-top" @click="openStarterPackInfo = true">i</div>
+        <div class="gem-picture">
+          <img v-if="starterPack.imagePath" :src="imagePathGems(starterPack.imagePath)?.value" class="gem-image" alt="Starter Pack" />
+          <div v-else class="gem-icon">💎</div>
+        </div>
+        <div class="gem-info">
+          <span class="gem-type">{{ starterPack.type }}</span>
+          <span v-for="(benefit, idx) in starterPack.benefits" :key="idx" class="gem-description">{{ t(`gems.${benefit}`) }}</span>
+        </div>
+        <button class="gem-buy-btn btn-purple" :disabled="isProcessing" @click="buyGem(starterPack)">
+          <span>{{ t('common.buy') }}</span>
+          <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && starterPack.enableSale !== false }">
+            <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
+            {{ starterPack.price }}
+          </span>
+          <template v-if="gemsSaleActive && starterPack.enableSale !== false">
+            <div class="gem-sale-perc">-{{ starterPack.salePercent || 10 }}%</div>
+            <div class="gem-sale-newprice">
+              <img src="@/assets/TON.png" width="12" height="12" alt="TON" />
+              {{ getStarterPackPriceDisplay() }}
+            </div>
+          </template>
+        </button>
+        <span class="gem-tag" style="background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);">{{ t('gems.special') }}</span>
+      </div>
+
       <div v-if="starterPack" class="gem-item has-purple-stroke">
         <div class="gem-info-icon-top" @click="openStarterPackInfo = true">i</div>
         <div class="gem-picture">

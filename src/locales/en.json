@@ -905,7 +905,8 @@
     "trade_btn": "Trade",
     "look_chart_btn": "View {pair} chart",
     "more_dex": "More DEX are coming soon",
-    "check_news_btn": "Check our news"
+    "check_news_btn": "Check our news",
+    "starter_pack_offers": "Starter Pack Offers"
   },
   "friends": {
     "title": "Invite your friends!",
