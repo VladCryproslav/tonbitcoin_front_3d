@@ -239,7 +239,7 @@
           <div class="game-over-result-row">
             <img src="@/assets/kW.png" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_for_claim') }}</span>
-            <span class="game-over-result-value">{{ formatEnergy(claimableEnergy) }} kW</span>
+            <span class="game-over-result-value">{{ formatEnergyClaim(claimableEnergy) }} kW</span>
           </div>
         </div>
         <div class="game-over-actions">
@@ -663,6 +663,20 @@ const formatEnergy = (value, compareWithStorage = false) => {
   const result = v % 1 === 0 ? v.toString() : v.toFixed(1)
   if (showGameOver.value) {
     console.log('formatEnergy: showGameOver=true, value=', value, 'v=', v, 'compareWithStorage=', compareWithStorage, 'storageValue=', storageValue, 'returning', result)
+  }
+  return result
+}
+
+// Формат энергии для строки «Будет начислено»: всегда с двумя знаками после запятой
+const formatEnergyClaim = (value) => {
+  const v = Number(value ?? 0)
+  if (!Number.isFinite(v)) {
+    console.log('formatEnergyClaim: value is not finite, value=', value, 'returning "0.00"')
+    return '0.00'
+  }
+  const result = v.toFixed(2)
+  if (showGameOver.value) {
+    console.log('formatEnergyClaim: showGameOver=true, value=', value, 'v=', v, 'returning', result)
   }
   return result
 }
