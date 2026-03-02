@@ -1558,17 +1558,17 @@ onUnmounted(() => {
         0 0 2px rgba(255, 255, 255, 0.2),
         0 0 4px rgba(255, 255, 255, 0.15);
     }
-    50% {
+  35% {
       background-position: 120% 0;
       box-shadow:
         0 0 6px rgba(255, 255, 255, 0.8),
         0 0 14px rgba(255, 255, 255, 0.55);
     }
     100% {
-      background-position: -120% 0;
+    background-position: 120% 0;
       box-shadow:
-        0 0 2px rgba(255, 255, 255, 0.2),
-        0 0 4px rgba(255, 255, 255, 0.15);
+      0 0 2px rgba(255, 255, 255, 0.15),
+      0 0 4px rgba(255, 255, 255, 0.1);
     }
   }
 
