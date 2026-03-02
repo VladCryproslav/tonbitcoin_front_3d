@@ -1298,30 +1298,45 @@ onUnmounted(() => {
       font-family: 'Inter' !important;
       text-transform: uppercase;
       font-weight: 600;
-      font-size: 0.55rem;
-      padding: 0.2rem 0;
+      font-size: 0.6rem;
+      padding: 0.24rem 0;
       z-index: -10;
       border-radius: 0 0 1rem 1rem;
     }
 
-    .starter-pack-pro-card .gem-type {
+    &.starter-pack-pro-card {
+      &.has-purple-stroke::after {
+        padding: 2.5px;
+        box-shadow:
+          0 0 20px rgba(181, 119, 255, 0.4),
+          0 0 40px rgba(181, 119, 255, 0.25);
+      }
+
+      animation: starter-pack-pro-glow 2.4s ease-in-out infinite;
+    }
+
+    &.starter-pack-pro-card .gem-type {
       display: flex;
       align-items: center;
       gap: 0.25rem;
     }
 
     .gem-pro-pill {
-      padding: 0 6px;
+      padding: 0 7px;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.12);
       border: 1px solid rgba(255, 255, 255, 0.3);
-      font-size: 9px;
+      font-size: 9.5px;
       font-weight: 600;
       letter-spacing: 0.08em;
     }
 
     .gem-tag-pro {
-      letter-spacing: 0.08em;
+      letter-spacing: 0.12em;
+      text-shadow:
+        0 0 6px rgba(233, 117, 255, 0.7),
+        0 0 14px rgba(129, 115, 255, 0.85);
+      animation: starter-pack-pro-tag-pulse 2.4s ease-in-out infinite;
     }
   }
 
@@ -1535,6 +1550,46 @@ onUnmounted(() => {
       font-family: 'Inter' !important;
       font-size: clamp(11px, 5vw, 24px);
       font-weight: 700;
+    }
+  }
+
+  @keyframes starter-pack-pro-glow {
+    0% {
+      transform: translateZ(0);
+      box-shadow:
+        0 0 0 rgba(181, 119, 255, 0),
+        0 0 0 rgba(181, 119, 255, 0);
+    }
+    50% {
+      box-shadow:
+        0 0 18px rgba(181, 119, 255, 0.45),
+        0 0 32px rgba(120, 195, 255, 0.4);
+    }
+    100% {
+      box-shadow:
+        0 0 0 rgba(181, 119, 255, 0),
+        0 0 0 rgba(181, 119, 255, 0);
+    }
+  }
+
+  @keyframes starter-pack-pro-tag-pulse {
+    0% {
+      opacity: 0.9;
+      text-shadow:
+        0 0 4px rgba(233, 117, 255, 0.5),
+        0 0 10px rgba(129, 115, 255, 0.6);
+    }
+    50% {
+      opacity: 1;
+      text-shadow:
+        0 0 10px rgba(233, 117, 255, 0.9),
+        0 0 22px rgba(129, 115, 255, 1);
+    }
+    100% {
+      opacity: 0.9;
+      text-shadow:
+        0 0 4px rgba(233, 117, 255, 0.5),
+        0 0 10px rgba(129, 115, 255, 0.6);
     }
   }
 
