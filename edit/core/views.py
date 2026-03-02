@@ -2588,10 +2588,17 @@ class GameRunCompleteView(APIView):
             if is_win:
                 # При победе начисляем всю собранную энергию
                 final_energy = energy_collected
+                saved_percent = 100.0
+                is_station_bonus_applied = False
             else:
                 # При проигрыше применяем процент сохранения с учётом уровня станции (1–3) и лимитов
                 # calculate_saved_percent_with_station_bonus сам fallback'ится на инженеров при отсутствии бонуса
-                saved_percent, _, _, _ = calculate_saved_percent_with_station_bonus(user_profile, now)
+                saved_percent, counter_field, max_uses, used_uses = calculate_saved_percent_with_station_bonus(
+                    user_profile, now
+                )
+                is_station_bonus_applied = (
+                    counter_field is not None and max_uses is not None and used_uses is not None
+                )
 
                 final_energy = energy_collected * (saved_percent / 100)
                 
@@ -2631,6 +2638,8 @@ class GameRunCompleteView(APIView):
                     "energy_collected": float(energy_collected),
                     "energy_gained": float(final_energy),  # Сколько получит при нажатии "Забрать"
                     "is_win": is_win,
+                    "saved_percent_effective": float(saved_percent),
+                    "is_station_bonus_applied": is_station_bonus_applied,
                     "total_energy": float(user_profile.energy),  # Текущий баланс (без начисления)
                     "storage": float(user_profile.storage),
                     "power": float(user_profile.power),
@@ -2771,6 +2780,7 @@ class GameRunClaimView(APIView):
             # Расчет финального количества энергии (та же логика что в GameRunCompleteView)
             if is_win:
                 final_energy = energy_collected
+                saved_percent = 100.0
                 counter_field = None
                 max_uses = None
                 used_uses = None
@@ -2874,12 +2884,14 @@ class GameRunClaimView(APIView):
             
             # Получаем обновленный объект пользователя
             user_profile = UserProfile.objects.get(user_id=user_profile.user_id)
-            
+
             return Response(
                 {
                     "success": True,
                     "message": "Energy claimed successfully",
                     "energy_gained": float(final_energy),
+                    "saved_percent_effective": float(saved_percent),
+                    "is_station_bonus_applied": bool(counter_field and max_uses is not None and used_uses is not None and not is_win),
                     "total_energy": float(user_profile.energy),
                     "storage": float(user_profile.storage),
                     "power": float(user_profile.power),

@@ -526,9 +526,20 @@ const effectiveSavedPercentOnLose = computed(() => {
   const goldPercent = goldEngineerBonusPercent.value
   return whitePercent + goldPercent
 })
-// Эффективный процент сохранения по данным сервера (energy_gained / energy_collected)
+// Эффективный процент сохранения по данным сервера (saved_percent_effective или energy_gained / energy_collected)
 const effectiveSavedPercentFromBackend = computed(() => {
-  if (!completedRunData.value || !completedRunData.value.energy_collected) return 0
+  if (!completedRunData.value) return 0
+
+  // 1. Если бэк вернул явный процент — используем его
+  if (completedRunData.value.saved_percent_effective !== undefined && completedRunData.value.saved_percent_effective !== null) {
+    const v = Number(completedRunData.value.saved_percent_effective)
+    if (Number.isFinite(v) && v > 0) {
+      return Math.max(0, Math.min(v, 100))
+    }
+  }
+
+  // 2. Fallback: считаем как отношение начисленной энергии к собранной
+  if (!completedRunData.value.energy_collected) return 0
   const collected = Number(completedRunData.value.energy_collected ?? 0)
   const gained = Number(completedRunData.value.energy_gained ?? 0)
   if (!Number.isFinite(collected) || collected <= 0 || !Number.isFinite(gained) || gained <= 0) return 0
@@ -541,11 +552,18 @@ const engineerSavedPercentTotalOnLose = computed(() => {
   const electricsBonus = app?.user?.electrics_expires && new Date(app.user.electrics_expires) > new Date() ? 2 : 0
   return basePct + electricsBonus
 })
-// Флаг: был ли применён станционный бонус (фактический процент отличается от инженерного)
+// Флаг: был ли применён станционный бонус (по данным бэка либо по сравнению с инженерным процентом)
 const hasStationBonusOnLose = computed(() => {
   if (gameOverType.value !== 'lose') return false
   if (isTrainingRun.value) return false
   if (!completedRunData.value) return false
+
+  // Если бэк явно сказал, что бонус применён/нет — доверяем ему
+  if (completedRunData.value.is_station_bonus_applied !== undefined && completedRunData.value.is_station_bonus_applied !== null) {
+    return !!completedRunData.value.is_station_bonus_applied
+  }
+
+  // Иначе используем старую эвристику по процентам
   const backendPct = effectiveSavedPercentFromBackend.value
   const engineerPct = engineerSavedPercentTotalOnLose.value
   if (backendPct <= 0) return false
@@ -2210,7 +2228,9 @@ const endGame = async (isWinByState = false) => {
       completedRunData.value = {
         energy_collected: finalEnergyCollected,
         is_win: result.is_win ?? isWinByState,
-        energy_gained: energyGained
+        energy_gained: energyGained,
+        saved_percent_effective: result.saved_percent_effective,
+        is_station_bonus_applied: result.is_station_bonus_applied
       }
       console.log('endGame: saved completedRunData:', completedRunData.value, 'savedEnergyBeforeComplete=', savedEnergyBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'result.energy_collected=', result.energy_collected)
       // Принудительно обновляем реактивность перед показом модалки
@@ -2227,7 +2247,9 @@ const endGame = async (isWinByState = false) => {
       completedRunData.value = {
         energy_collected: finalEnergyCollected,
         is_win: isWinByState ?? false,
-        energy_gained: energyGainedFallback
+        energy_gained: energyGainedFallback,
+        saved_percent_effective: null,
+        is_station_bonus_applied: false
       }
       // Убеждаемся что savedEnergyCollectedForModal содержит правильное значение
       // НЕ перезаписываем если значение уже было установлено при смерти
