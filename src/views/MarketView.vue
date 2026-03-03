@@ -41,6 +41,7 @@ const starterPackAll = computed(() => gemsSheet.filter(g => g.type === 'Starter 
 const starterPack = computed(() => starterPackAll.value[0] || null)
 const starterPackPro = computed(() => starterPackAll.value[1] || null)
 const openStarterPackInfo = ref(false)
+const starterPackInfoMode = ref('basic') // 'basic' | 'pro'
 const openDaoOwnerInfo = ref(false)
 const openHydroelectricInfo = ref(false)
 const openOrbitalInfo = ref(false)
@@ -441,7 +442,7 @@ onUnmounted(() => {
       </div>
 
       <div v-if="starterPack" class="gem-item">
-        <div class="gem-info-icon-top" @click="openStarterPackInfo = true">i</div>
+        <div class="gem-info-icon-top" @click="starterPackInfoMode = 'basic'; openStarterPackInfo = true">i</div>
         <div class="gem-picture">
           <img v-if="starterPack.imagePath" :src="imagePathGems(starterPack.imagePath)?.value" class="gem-image" alt="Starter Pack" />
           <div v-else class="gem-icon">💎</div>
@@ -471,7 +472,7 @@ onUnmounted(() => {
       </div>
 
       <div v-if="starterPackPro" class="gem-item starter-pack-pro-card">
-        <div class="gem-info-icon-top" @click="openStarterPackInfo = true">i</div>
+        <div class="gem-info-icon-top" @click="starterPackInfoMode = 'pro'; openStarterPackInfo = true">i</div>
         <div class="gem-picture">
           <img v-if="starterPackPro.imagePath" :src="imagePathGems(starterPackPro.imagePath)?.value" class="gem-image" alt="Starter Pack Pro" />
           <div v-else class="gem-icon">💎</div>
@@ -632,7 +633,7 @@ onUnmounted(() => {
   <InfoModal
     v-if="openStarterPackInfo"
     :confirm-label="t('common.buy')"
-    @close="(e) => { if (e?.check) buyStarterPack(); openStarterPackInfo = false }"
+    @close="(e) => { if (e?.check) (starterPackInfoMode === 'pro' ? buyGem(starterPackPro) : buyStarterPack()); openStarterPackInfo = false }"
   >
     <template #header>
       {{ t('asic_shop.information') }}
@@ -640,17 +641,28 @@ onUnmounted(() => {
     <template #modal-body>
       <div class="starter-pack-content">
         <div class="starter-pack-text">
-          {{ t('gems.starter_pack_title') }}<br><br>
-          • {{ t('gems.starter_pack_item_1') }}<br>
-          • {{ t('gems.starter_pack_item_2') }}<br>
-          • {{ t('gems.starter_pack_item_3') }}<br>
-          • {{ t('gems.starter_pack_item_4') }}<br>
-          • {{ t('gems.starter_pack_item_5') }}<br>
-          • {{ t('gems.starter_pack_item_6') }}<br>
-          • {{ t('gems.starter_pack_item_7') }}<br><br>
-          {{ t('gems.starter_pack_price_info') }}<br>
-          {{ t('gems.starter_pack_price_offer', { price: getStarterPackPrice() }) }}<br><br>
-          <span style="color: #ffc300;">{{ t('gems.starter_pack_item_8') }}</span>
+          <template v-if="starterPackInfoMode === 'basic'">
+            {{ t('gems.starter_pack_title') }}<br><br>
+            • {{ t('gems.starter_pack_item_1') }}<br>
+            • {{ t('gems.starter_pack_item_2') }}<br>
+            • {{ t('gems.starter_pack_item_3') }}<br>
+            • {{ t('gems.starter_pack_item_4') }}<br>
+            • {{ t('gems.starter_pack_item_5') }}<br>
+            • {{ t('gems.starter_pack_item_6') }}<br>
+            • {{ t('gems.starter_pack_item_7') }}<br><br>
+            {{ t('gems.starter_pack_price_info') }}<br>
+            {{ t('gems.starter_pack_price_offer', { price: getStarterPackPrice() }) }}<br><br>
+            <span style="color: #ffc300;">{{ t('gems.starter_pack_item_8') }}</span>
+          </template>
+          <template v-else>
+            {{ t('gems.starter_pack_title') }}<br><br>
+            • {{ t('gems.starter_pack_pro_item_1') }}<br>
+            • {{ t('gems.starter_pack_pro_item_2') }}<br>
+            • {{ t('gems.starter_pack_pro_item_3') }}<br><br>
+            {{ t('gems.starter_pack_pro_price_info') }}<br>
+            {{ t('gems.starter_pack_pro_price_offer') }}<br><br>
+            <span style="color: #ffc300;">{{ t('gems.starter_pack_item_8') }}</span>
+          </template>
         </div>
       </div>
     </template>
