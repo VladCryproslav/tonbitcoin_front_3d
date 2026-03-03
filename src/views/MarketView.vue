@@ -480,7 +480,12 @@ onUnmounted(() => {
           </span>
           <span v-for="(benefit, idx) in starterPackPro.benefits" :key="idx" class="gem-description">{{ t(`gems.${benefit}`) }}</span>
         </div>
-        <button class="gem-buy-btn btn-purple" :disabled="isProcessing" @click="buyGem(starterPackPro)">
+        <button
+          class="gem-buy-btn btn-purple"
+          :disabled="isProcessing"
+          @click="buyGem(starterPackPro)"
+          style="background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent), linear-gradient(to bottom, #FCA643, #E98509);"
+        >
           <span>{{ t('common.buy') }}</span>
           <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && starterPackPro.enableSale !== false }">
             <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
