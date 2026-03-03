@@ -353,6 +353,10 @@ export function useGameRun() {
           is_win: response.data.is_win ?? isWin,
           saved_percent_effective: response.data.saved_percent_effective,
           is_station_bonus_applied: response.data.is_station_bonus_applied,
+          station_bonus_remaining_uses: response.data.station_bonus_remaining_uses,
+          station_bonus_percent_level_1: response.data.station_bonus_percent_level_1,
+          station_bonus_percent_level_2: response.data.station_bonus_percent_level_2,
+          station_bonus_percent_level_3: response.data.station_bonus_percent_level_3,
           total_energy: response.data.total_energy,  // Текущий баланс (без начисления) — только для боевого забега
           storage: response.data.storage,
           power: response.data.power,

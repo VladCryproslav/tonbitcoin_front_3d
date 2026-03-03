@@ -504,7 +504,7 @@
     "run_result_saved_by_level_potential": "{level} level, could have saved",
     "run_result_newbie_help": "Newcomer help",
     "newbie_help_modal_title": "Newcomer help",
-    "newbie_help_modal_body": "To make the start easier and help your progression, newcomers temporarily receive an increased energy refund when they lose a run.\n\nRight now you get {percent}% of the collected energy on a loss.\nUse this refunded energy to upgrade your engineers – later, your engineer level will determine what percentage of energy you keep when you lose.\n\nRuns remaining with the current bonus: {runs}.",
+    "newbie_help_modal_body": "To make the start easier and help your progression, newcomers temporarily receive an increased energy refund when they lose a run.\n\nRight now you get {percent}% of the collected energy on a loss.\nFor the first power plant levels, the base refund bonuses on loss are:\n• Level 1 station — {p1}%\n• Level 2 station — {p2}%\n• Level 3 station — {p3}%\n\nUse this refunded energy to upgrade your engineers – later, your engineer level will determine what percentage of energy you keep when you lose.\n\nRuns remaining with the current bonus: {runs}.",
     "run_claim": "Claim",
     "overheat_title": "Station Overheating",
     "overheat_desc": "Wait for the cooling process to complete, which will take some time. Using the power station when overheated will lead to its <b>breakdown</b>.",
