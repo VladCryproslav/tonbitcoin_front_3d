@@ -345,9 +345,9 @@
         {{ t('game.newbie_help_modal_body', {
           percent: effectiveSavedPercentFromBackend.toFixed(1),
           runs: stationBonusRemainingUses ?? 0,
-          p1: completedRunData.value?.station_bonus_percent_level_1 ?? 0,
-          p2: completedRunData.value?.station_bonus_percent_level_2 ?? 0,
-          p3: completedRunData.value?.station_bonus_percent_level_3 ?? 0
+          p1: completedRunData?.station_bonus_percent_level_1 ?? 0,
+          p2: completedRunData?.station_bonus_percent_level_2 ?? 0,
+          p3: completedRunData?.station_bonus_percent_level_3 ?? 0
         }) }}
       </template>
     </InfoModal>
