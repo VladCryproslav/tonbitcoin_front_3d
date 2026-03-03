@@ -464,7 +464,10 @@ onUnmounted(() => {
             </div>
           </template>
         </button>
-        <span class="gem-tag" style="background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);">Обычный</span>
+        <span
+          class="gem-tag"
+          style="background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%); color: #000;"
+        >Обычный</span>
       </div>
 
       <div v-if="starterPackPro" class="gem-item starter-pack-pro-card">
@@ -499,7 +502,7 @@ onUnmounted(() => {
             </div>
           </template>
         </button>
-        <span class="gem-tag gem-tag-pro" style="background-color: #E98509;">PRO</span>
+        <span class="gem-tag gem-tag-pro" style="background-color: #E98509; color: #000;">PRO</span>
       </div>
 
       <h2 class="section-title">{{ t('market.nft_assets') }}</h2>
