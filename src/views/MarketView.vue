@@ -487,7 +487,7 @@ onUnmounted(() => {
           class="gem-buy-btn btn-purple"
           :disabled="isProcessing"
           @click="buyGem(starterPackPro)"
-          style="background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent), linear-gradient(135deg, #E98509 0%, #FCA643 40%, #FCD909 100%);"
+          style="background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent), linear-gradient(135deg, #E98509 0%, #FCA643 100%);"
         >
           <span>{{ t('common.buy') }}</span>
           <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && starterPackPro.enableSale !== false }">
