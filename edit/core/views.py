@@ -1920,7 +1920,7 @@ class EnergyRunStartView(APIView):
             prev_started = user_profile.energy_run_last_started_at or (now - timedelta(hours=1))
             elapsed_seconds = (now - prev_started).total_seconds()
             elapsed_minutes = elapsed_seconds / 60.0
-            runner_config = RunnerConfig.objects.first()
+            runner_config = RunnerConfig.objects.order_by('-id').first()
             if not runner_config:
                 runner_config = RunnerConfig.objects.create(
                     stars_per_kw=100,
@@ -2030,7 +2030,7 @@ class TrainingRunCheckView(APIView):
             current_hour_start = now.replace(minute=0, second=0, microsecond=0)
             
             # Получаем конфигурацию (или создаем дефолтную если нет)
-            runner_config = RunnerConfig.objects.first()
+            runner_config = RunnerConfig.objects.order_by('-id').first()
             if not runner_config:
                 runner_config = RunnerConfig.objects.create(
                     stars_per_kw=100,
@@ -2088,7 +2088,7 @@ class TrainingRunStartView(APIView):
             current_hour_start = now.replace(minute=0, second=0, microsecond=0)
             
             # Получаем конфигурацию
-            runner_config = RunnerConfig.objects.first()
+            runner_config = RunnerConfig.objects.order_by('-id').first()
             if not runner_config:
                 runner_config = RunnerConfig.objects.create(
                     stars_per_kw=100,
@@ -2313,7 +2313,7 @@ class TrainingRunCompleteView(APIView):
             station_bonus_percent_level_2 = None
             station_bonus_percent_level_3 = None
             try:
-                cfg = RunnerConfig.objects.first()
+                cfg = RunnerConfig.objects.order_by('-id').first()
                 if cfg:
                     station_bonus_percent_level_1 = float(getattr(cfg, "lose_percent_station_level_1", 0.0))
                     station_bonus_percent_level_2 = float(getattr(cfg, "lose_percent_station_level_2", 0.0))
@@ -2461,7 +2461,7 @@ def calculate_saved_percent_with_station_bonus(user_profile, now=None):
         now = timezone.now()
 
     # Пытаемся получить RunnerConfig; при отсутствии — используем только инженеров
-    config = RunnerConfig.objects.first()
+    config = RunnerConfig.objects.order_by('-id').first()
     if not config:
         return calculate_saved_percent_on_lose(user_profile, now), None, None, None
 
@@ -2813,7 +2813,7 @@ class GameRunCompleteView(APIView):
             station_bonus_percent_level_2 = None
             station_bonus_percent_level_3 = None
             try:
-                cfg = RunnerConfig.objects.first()
+                cfg = RunnerConfig.objects.order_by('-id').first()
                 if cfg:
                     station_bonus_percent_level_1 = float(getattr(cfg, "lose_percent_station_level_1", 0.0))
                     station_bonus_percent_level_2 = float(getattr(cfg, "lose_percent_station_level_2", 0.0))
