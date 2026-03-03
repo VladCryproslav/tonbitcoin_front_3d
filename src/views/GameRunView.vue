@@ -2271,7 +2271,11 @@ const endGame = async (isWinByState = false) => {
         is_win: result.is_win ?? isWinByState,
         energy_gained: energyGained,
         saved_percent_effective: result.saved_percent_effective,
-        is_station_bonus_applied: result.is_station_bonus_applied
+        is_station_bonus_applied: result.is_station_bonus_applied,
+        station_bonus_remaining_uses: result.station_bonus_remaining_uses,
+        station_bonus_percent_level_1: result.station_bonus_percent_level_1,
+        station_bonus_percent_level_2: result.station_bonus_percent_level_2,
+        station_bonus_percent_level_3: result.station_bonus_percent_level_3
       }
       console.log('endGame: saved completedRunData:', completedRunData.value, 'savedEnergyBeforeComplete=', savedEnergyBeforeComplete, 'savedEnergyCollectedForModal=', savedEnergyCollectedForModal.value, 'result.energy_collected=', result.energy_collected)
       // Принудительно обновляем реактивность перед показом модалки
@@ -2290,7 +2294,11 @@ const endGame = async (isWinByState = false) => {
         is_win: isWinByState ?? false,
         energy_gained: energyGainedFallback,
         saved_percent_effective: null,
-        is_station_bonus_applied: false
+        is_station_bonus_applied: false,
+        station_bonus_remaining_uses: null,
+        station_bonus_percent_level_1: null,
+        station_bonus_percent_level_2: null,
+        station_bonus_percent_level_3: null
       }
       // Убеждаемся что savedEnergyCollectedForModal содержит правильное значение
       // НЕ перезаписываем если значение уже было установлено при смерти
