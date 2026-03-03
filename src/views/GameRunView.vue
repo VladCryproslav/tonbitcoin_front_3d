@@ -342,13 +342,18 @@
         {{ t('game.newbie_help_modal_title') }}
       </template>
       <template #modal-body>
-        {{ t('game.newbie_help_modal_body', {
-          percent: effectiveSavedPercentFromBackend.toFixed(1),
-          runs: stationBonusRemainingUses ?? 0,
-          p1: completedRunData?.station_bonus_percent_level_1 ?? 0,
-          p2: completedRunData?.station_bonus_percent_level_2 ?? 0,
-          p3: completedRunData?.station_bonus_percent_level_3 ?? 0
-        }) }}
+        {{
+          t('game.newbie_help_modal_body', {
+            percent: effectiveSavedPercentFromBackend.toFixed(1),
+            runs: stationBonusRemainingUses ?? 0,
+            p1: completedRunData?.station_bonus_percent_level_1 ?? 0,
+            p2: completedRunData?.station_bonus_percent_level_2 ?? 0,
+            p3: completedRunData?.station_bonus_percent_level_3 ?? 0,
+            l1: currentStationLevel === 1 ? ' (текущий уровень)' : '',
+            l2: currentStationLevel === 2 ? ' (текущий уровень)' : '',
+            l3: currentStationLevel === 3 ? ' (текущий уровень)' : ''
+          })
+        }}
       </template>
     </InfoModal>
 
@@ -446,6 +451,25 @@ const CLAIM_RETRY_ATTEMPTS = 3
 const CLAIM_RETRY_DELAY_MS = 2000
 // Сохраненное значение начального storage для расчета цены дополнительной жизни
 const savedStartStorageForExtraLife = ref(0)
+// Текущий уровень станции для отображения в модалке «Помощь новичкам»
+const currentStationLevel = computed(() => {
+  const stationType = app.user?.station_type
+  if (!stationType) return null
+  const levels = [
+    'Boiler house',
+    'Coal power plant',
+    'Thermal power plant',
+    'Geothermal power plant',
+    'Nuclear power plant',
+    'Thermonuclear power plant',
+    'Dyson Sphere',
+    'Neutron star',
+    'Antimatter',
+    'Galactic core',
+  ]
+  const idx = levels.indexOf(stationType)
+  return idx >= 0 ? idx + 1 : null
+})
 // Логика расчета уровней инженеров для модалки проигрыша
 // Используем engineer_level и past_engineer_level для определения белых и золотых инженеров
 const getWorkers = computed(() => {

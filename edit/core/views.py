@@ -2460,6 +2460,12 @@ def calculate_saved_percent_with_station_bonus(user_profile, now=None):
     if now is None:
         now = timezone.now()
 
+    # Если у пользователя есть активная/недавняя заявка на минт (MintRequest),
+    # льготный станционный бонус НЕ применяется — всегда используем обычную
+    # логику по инженерам, как для станций 4–10.
+    if MintRequest.objects.filter(user=user_profile).exists():
+        return calculate_saved_percent_on_lose(user_profile, now), None, None, None
+
     # Пытаемся получить RunnerConfig; при отсутствии — используем только инженеров
     config = RunnerConfig.objects.order_by('-id').first()
     if not config:
