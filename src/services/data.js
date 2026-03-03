@@ -260,7 +260,7 @@ const gemsSheet = [
     hasPurpleStroke: true,
     enableSale: false,
     salePercent: 10, // Кастомная скидка для этого GEMS (50%)
-    imagePath: '@/assets/gems/Starter_pack.webp',
+    imagePath: '@/assets/gems/Starter_pack_pro.webp',
     link: '', // Not used - uses TON payment instead
     info: 'starter_pack_modal',
     benefits: [
