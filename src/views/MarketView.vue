@@ -435,11 +435,11 @@ onUnmounted(() => {
         </button>
         <span class="gem-tag" style="background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%); color: #000;">{{ t('gems.special') }}</span>
       </div>
-
+      <!--
       <div class="special-offers-header">
         <h2 class="special-offers-title">{{ t('market.starter_pack_offers') }}</h2>
       </div>
-
+      -->
       <div v-if="starterPack" class="gem-item">
         <div class="gem-info-icon-top" @click="openStarterPackInfo = true">i</div>
         <div class="gem-picture">
