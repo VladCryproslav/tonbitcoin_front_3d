@@ -2266,6 +2266,15 @@ const endGame = async (isWinByState = false) => {
         energyGained = 0
       }
 
+      console.log('[DEBUG newbie bonus]', {
+        fromResult: {
+          station_bonus_remaining_uses: result.station_bonus_remaining_uses,
+          station_bonus_percent_level_1: result.station_bonus_percent_level_1,
+          station_bonus_percent_level_2: result.station_bonus_percent_level_2,
+          station_bonus_percent_level_3: result.station_bonus_percent_level_3
+        }
+      })
+
       completedRunData.value = {
         energy_collected: finalEnergyCollected,
         is_win: result.is_win ?? isWinByState,
