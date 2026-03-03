@@ -350,9 +350,9 @@
             p1: completedRunData?.station_bonus_percent_level_1 ?? 0,
             p2: completedRunData?.station_bonus_percent_level_2 ?? 0,
             p3: completedRunData?.station_bonus_percent_level_3 ?? 0,
-            l1: currentStationLevel === 1 ? `<span class='newbie-help-current-level'>(текущий уровень)</span>` : '',
-            l2: currentStationLevel === 2 ? `<span class='newbie-help-current-level'>(текущий уровень)</span>` : '',
-            l3: currentStationLevel === 3 ? `<span class='newbie-help-current-level'>(текущий уровень)</span>` : ''
+            l1: currentStationLevel === 1 ? `<span class='newbie-help-current-level'> (текущий уровень)</span>` : '',
+            l2: currentStationLevel === 2 ? `<span class='newbie-help-current-level'> (текущий уровень)</span>` : '',
+            l3: currentStationLevel === 3 ? `<span class='newbie-help-current-level'> (текущий уровень)</span>` : ''
           })"
         />
       </template>
