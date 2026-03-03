@@ -2286,6 +2286,9 @@ class TrainingRunCompleteView(APIView):
 
             # Расчёт процента сохранения — та же логика, что и для боевого забега,
             # но БЕЗ инкремента счётчиков и без каких-либо изменений в БД.
+            counter_field = None
+            max_uses = None
+            used_uses = None
             if is_win:
                 final_energy = energy_collected
                 saved_percent = 100.0
@@ -2299,6 +2302,13 @@ class TrainingRunCompleteView(APIView):
                 )
                 final_energy = energy_collected * (saved_percent / 100)
 
+            station_bonus_remaining_uses = None
+            if is_station_bonus_applied and max_uses is not None and used_uses is not None:
+                try:
+                    station_bonus_remaining_uses = max(0, int(max_uses) - int(used_uses))
+                except Exception:
+                    station_bonus_remaining_uses = None
+
             return Response(
                 {
                     "success": True,
@@ -2308,6 +2318,7 @@ class TrainingRunCompleteView(APIView):
                     "is_win": bool(is_win),
                     "saved_percent_effective": float(saved_percent),
                     "is_station_bonus_applied": is_station_bonus_applied,
+                    "station_bonus_remaining_uses": station_bonus_remaining_uses,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -2725,6 +2736,9 @@ class GameRunCompleteView(APIView):
                 )
             
             # Расчет финального количества энергии
+            counter_field = None
+            max_uses = None
+            used_uses = None
             if is_win:
                 # При победе начисляем всю собранную энергию
                 final_energy = energy_collected
@@ -2770,6 +2784,14 @@ class GameRunCompleteView(APIView):
             # ОПТИМИЗАЦИЯ: Убираем лишний запрос к БД - данные не изменились
             # user_profile уже загружен в начале метода и не изменялся
             # user_profile = UserProfile.objects.get(user_id=user_profile.user_id)
+
+            # Для фронта: сколько попыток станционного бонуса осталось (если он был применён)
+            station_bonus_remaining_uses = None
+            if is_station_bonus_applied and max_uses is not None and used_uses is not None:
+                try:
+                    station_bonus_remaining_uses = max(0, int(max_uses) - int(used_uses))
+                except Exception:
+                    station_bonus_remaining_uses = None
             
             return Response(
                 {
@@ -2780,6 +2802,7 @@ class GameRunCompleteView(APIView):
                     "is_win": is_win,
                     "saved_percent_effective": float(saved_percent),
                     "is_station_bonus_applied": is_station_bonus_applied,
+                    "station_bonus_remaining_uses": station_bonus_remaining_uses,
                     "total_energy": float(user_profile.energy),  # Текущий баланс (без начисления)
                     "storage": float(user_profile.storage),
                     "power": float(user_profile.power),
@@ -2918,12 +2941,12 @@ class GameRunClaimView(APIView):
                 )
             
             # Расчет финального количества энергии (та же логика что в GameRunCompleteView)
+            counter_field = None
+            max_uses = None
+            used_uses = None
             if is_win:
                 final_energy = energy_collected
                 saved_percent = 100.0
-                counter_field = None
-                max_uses = None
-                used_uses = None
             else:
                 # При проигрыше применяем процент сохранения с учётом уровня станции (1–3) и лимитов
                 # calculate_saved_percent_with_station_bonus сам fallback'ится на инженеров при отсутствии бонуса
@@ -3025,6 +3048,13 @@ class GameRunClaimView(APIView):
             # Получаем обновленный объект пользователя
             user_profile = UserProfile.objects.get(user_id=user_profile.user_id)
 
+            station_bonus_remaining_uses = None
+            if counter_field and max_uses is not None and used_uses is not None and not is_win:
+                try:
+                    station_bonus_remaining_uses = max(0, int(max_uses) - int(used_uses) - 1)
+                except Exception:
+                    station_bonus_remaining_uses = None
+
             return Response(
                 {
                     "success": True,
@@ -3032,6 +3062,7 @@ class GameRunClaimView(APIView):
                     "energy_gained": float(final_energy),
                     "saved_percent_effective": float(saved_percent),
                     "is_station_bonus_applied": bool(counter_field and max_uses is not None and used_uses is not None and not is_win),
+                    "station_bonus_remaining_uses": station_bonus_remaining_uses,
                     "total_energy": float(user_profile.energy),
                     "storage": float(user_profile.storage),
                     "power": float(user_profile.power),

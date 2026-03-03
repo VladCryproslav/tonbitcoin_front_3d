@@ -206,10 +206,13 @@
           </div>
           <div v-if="gameOverType !== 'win' && hasStationBonusOnLose" class="game-over-result-row">
             <img src="@/assets/beginners_help_icon.webp" alt="" class="game-over-result-icon" />
-            <span class="game-over-result-label">{{ t('game.run_result_newbie_help') }}</span>
+            <span class="game-over-result-label">
+              {{ t('game.run_result_newbie_help') }}
+              <button class="newbie-help-info-btn" @click.stop.prevent="showNewbieHelpInfoModal = true">i</button>
+            </span>
             <span class="game-over-result-value">{{ formatPercent(effectiveSavedPercentFromBackend) }}</span>
           </div>
-          <div v-if="gameOverType !== 'win'" class="game-over-result-row">
+          <div v-if="gameOverType !== 'win' && !hasStationBonusOnLose" class="game-over-result-row">
             <img src="@/assets/engineer.webp" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">
               {{
@@ -220,7 +223,7 @@
             </span>
             <span class="game-over-result-value">{{ formatPercent(whiteEngineerSavedPercent) }}</span>
           </div>
-          <div v-if="gameOverType !== 'win' && goldEngineerLevel" class="game-over-result-row">
+          <div v-if="gameOverType !== 'win' && goldEngineerLevel && !hasStationBonusOnLose" class="game-over-result-row">
             <img src="@/assets/gold.webp" alt="" class="game-over-result-icon" />
             <span class="game-over-result-label">{{ t('game.run_result_saved_by_level', { level: goldEngineerLevel }) }}</span>
             <span class="game-over-result-value">{{ formatPercent(goldEngineerBonusPercent) }}</span>
@@ -327,6 +330,22 @@
       </template>
       <template #modal-body>
         {{ connectionUnstableModalBody }}
+      </template>
+    </InfoModal>
+
+    <!-- Инфо по помощи новичкам -->
+    <InfoModal
+      v-if="showNewbieHelpInfoModal"
+      @close="showNewbieHelpInfoModal = false"
+    >
+      <template #header>
+        {{ t('game.newbie_help_modal_title') }}
+      </template>
+      <template #modal-body>
+        {{ t('game.newbie_help_modal_body', {
+          percent: effectiveSavedPercentFromBackend.toFixed(1),
+          runs: stationBonusRemainingUses ?? 0
+        }) }}
       </template>
     </InfoModal>
 
@@ -569,6 +588,14 @@ const hasStationBonusOnLose = computed(() => {
   // Сравниваем с небольшим допуском по float
   return Math.abs(backendPct - engineerPct) > 0.1
 })
+// Оставшиеся применения станционного бонуса (если бэк их вернул)
+const stationBonusRemainingUses = computed(() => {
+  if (!completedRunData.value) return null
+  const v = completedRunData.value.station_bonus_remaining_uses
+  if (v === undefined || v === null) return null
+  const n = Number(v)
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : null
+})
 // Вычисляем собранную энергию для отображения в модалке - используем ту же логику, что и в счетчике энергии
 const displayedEnergyCollected = computed(() => {
   // Если модалка показана, всегда используем сохраненное значение
@@ -752,6 +779,8 @@ let shakeBaseX = 0
 let shakeBaseY = 0
 const SHAKE_DURATION_FRAMES = 10
 const hitFlashTick = ref(0)
+// Модалка с подробной информацией о «Помощи новичкам»
+const showNewbieHelpInfoModal = ref(false)
 const FIXED_STEP_MS = 1000 / 60
 const MAX_STEPS = 3
 const ROLL_IMMUNE_MS = 950
@@ -3747,6 +3776,23 @@ onUnmounted(() => {
     linear-gradient(to bottom, rgba(255, 0, 0, 0.32) 0%, rgba(255, 0, 0, 0.18) 7%, transparent 20%),
     linear-gradient(to top, rgba(255, 0, 0, 0.32) 0%, rgba(255, 0, 0, 0.18) 7%, transparent 20%);
   animation: hit-flash-pulse 260ms ease-out forwards;
+}
+
+.newbie-help-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background-color: #fcd909;
+  color: #000;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
 }
 
 @keyframes hit-flash-pulse {
