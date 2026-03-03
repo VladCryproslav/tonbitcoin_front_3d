@@ -342,18 +342,19 @@
         {{ t('game.newbie_help_modal_title') }}
       </template>
       <template #modal-body>
-        {{
-          t('game.newbie_help_modal_body', {
+        <div
+          class="newbie-help-body"
+          v-html="t('game.newbie_help_modal_body', {
             percent: effectiveSavedPercentFromBackend.toFixed(1),
             runs: stationBonusRemainingUses ?? 0,
             p1: completedRunData?.station_bonus_percent_level_1 ?? 0,
             p2: completedRunData?.station_bonus_percent_level_2 ?? 0,
             p3: completedRunData?.station_bonus_percent_level_3 ?? 0,
-            l1: currentStationLevel === 1 ? ' (текущий уровень)' : '',
-            l2: currentStationLevel === 2 ? ' (текущий уровень)' : '',
-            l3: currentStationLevel === 3 ? ' (текущий уровень)' : ''
-          })
-        }}
+            l1: currentStationLevel === 1 ? `<span class='newbie-help-current-level'>(текущий уровень)</span>` : '',
+            l2: currentStationLevel === 2 ? `<span class='newbie-help-current-level'>(текущий уровень)</span>` : '',
+            l3: currentStationLevel === 3 ? `<span class='newbie-help-current-level'>(текущий уровень)</span>` : ''
+          })"
+        />
       </template>
     </InfoModal>
 
@@ -3837,6 +3838,15 @@ onUnmounted(() => {
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
+}
+
+.newbie-help-body {
+  text-align: left;
+}
+
+.newbie-help-current-level {
+  color: #fea400;
+  font-weight: 700;
 }
 
 @keyframes hit-flash-pulse {
