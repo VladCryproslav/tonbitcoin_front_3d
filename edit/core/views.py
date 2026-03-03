@@ -2471,6 +2471,19 @@ def calculate_saved_percent_with_station_bonus(user_profile, now=None):
     if not config:
         return calculate_saved_percent_on_lose(user_profile, now), None, None, None
 
+    # Ограничение льготного станционного бонуса по "возрасту" аккаунта.
+    # Если пользователь зарегистрирован дольше, чем lose_bonus_newbie_days,
+    # станционный бонус не применяется (как для уровней 4–10).
+    try:
+        newbie_days = int(getattr(config, "lose_bonus_newbie_days", 0))
+    except (TypeError, ValueError):
+        newbie_days = 0
+
+    if newbie_days > 0 and getattr(user_profile, "register_date", None):
+        cutoff = now - timezone.timedelta(days=newbie_days)
+        if user_profile.register_date < cutoff:
+            return calculate_saved_percent_on_lose(user_profile, now), None, None, None
+
     # Определяем уровень станции (1..10) по station_type
     try:
         station_level = user_profile.get_station_level() + 1  # 1..10

@@ -333,6 +333,7 @@ class RunnerConfigAdmin(admin.ModelAdmin):
         'lose_max_uses_station_level_1',
         'lose_max_uses_station_level_2',
         'lose_max_uses_station_level_3',
+        'lose_bonus_newbie_days',
     ]
     list_editable = [
         'stars_per_kw',
@@ -351,6 +352,7 @@ class RunnerConfigAdmin(admin.ModelAdmin):
         'lose_max_uses_station_level_1',
         'lose_max_uses_station_level_2',
         'lose_max_uses_station_level_3',
+        'lose_bonus_newbie_days',
     ]
     list_display_links = None
 
