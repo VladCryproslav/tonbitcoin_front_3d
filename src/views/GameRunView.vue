@@ -3861,3 +3861,15 @@ onUnmounted(() => {
   }
 }
 </style>
+
+<!-- Глобальные стили для v-html внутри InfoModal -->
+<style lang="scss">
+.newbie-help-current-level {
+  color: #fea400 !important;
+  font-weight: 700;
+}
+
+.newbie-help-body {
+  text-align: left;
+}
+</style>
