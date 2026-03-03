@@ -2309,6 +2309,18 @@ class TrainingRunCompleteView(APIView):
                 except Exception:
                     station_bonus_remaining_uses = None
 
+            station_bonus_percent_level_1 = None
+            station_bonus_percent_level_2 = None
+            station_bonus_percent_level_3 = None
+            try:
+                cfg = RunnerConfig.objects.first()
+                if cfg:
+                    station_bonus_percent_level_1 = float(getattr(cfg, "lose_percent_station_level_1", 0.0))
+                    station_bonus_percent_level_2 = float(getattr(cfg, "lose_percent_station_level_2", 0.0))
+                    station_bonus_percent_level_3 = float(getattr(cfg, "lose_percent_station_level_3", 0.0))
+            except Exception:
+                station_bonus_percent_level_1 = station_bonus_percent_level_2 = station_bonus_percent_level_3 = None
+
             return Response(
                 {
                     "success": True,
@@ -2319,6 +2331,9 @@ class TrainingRunCompleteView(APIView):
                     "saved_percent_effective": float(saved_percent),
                     "is_station_bonus_applied": is_station_bonus_applied,
                     "station_bonus_remaining_uses": station_bonus_remaining_uses,
+                    "station_bonus_percent_level_1": station_bonus_percent_level_1,
+                    "station_bonus_percent_level_2": station_bonus_percent_level_2,
+                    "station_bonus_percent_level_3": station_bonus_percent_level_3,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -2792,6 +2807,19 @@ class GameRunCompleteView(APIView):
                     station_bonus_remaining_uses = max(0, int(max_uses) - int(used_uses))
                 except Exception:
                     station_bonus_remaining_uses = None
+
+            # Для фронта: проценты бонуса по уровням станции 1–3 из RunnerConfig
+            station_bonus_percent_level_1 = None
+            station_bonus_percent_level_2 = None
+            station_bonus_percent_level_3 = None
+            try:
+                cfg = RunnerConfig.objects.first()
+                if cfg:
+                    station_bonus_percent_level_1 = float(getattr(cfg, "lose_percent_station_level_1", 0.0))
+                    station_bonus_percent_level_2 = float(getattr(cfg, "lose_percent_station_level_2", 0.0))
+                    station_bonus_percent_level_3 = float(getattr(cfg, "lose_percent_station_level_3", 0.0))
+            except Exception:
+                station_bonus_percent_level_1 = station_bonus_percent_level_2 = station_bonus_percent_level_3 = None
             
             return Response(
                 {
@@ -2803,6 +2831,9 @@ class GameRunCompleteView(APIView):
                     "saved_percent_effective": float(saved_percent),
                     "is_station_bonus_applied": is_station_bonus_applied,
                     "station_bonus_remaining_uses": station_bonus_remaining_uses,
+                    "station_bonus_percent_level_1": station_bonus_percent_level_1,
+                    "station_bonus_percent_level_2": station_bonus_percent_level_2,
+                    "station_bonus_percent_level_3": station_bonus_percent_level_3,
                     "total_energy": float(user_profile.energy),  # Текущий баланс (без начисления)
                     "storage": float(user_profile.storage),
                     "power": float(user_profile.power),
@@ -3051,7 +3082,8 @@ class GameRunClaimView(APIView):
             station_bonus_remaining_uses = None
             if counter_field and max_uses is not None and used_uses is not None and not is_win:
                 try:
-                    station_bonus_remaining_uses = max(0, int(max_uses) - int(used_uses) - 1)
+                    # used_uses здесь ещё "старое" значение до инкремента, поэтому учитываем +1
+                    station_bonus_remaining_uses = max(0, int(max_uses) - (int(used_uses) + 1))
                 except Exception:
                     station_bonus_remaining_uses = None
 
