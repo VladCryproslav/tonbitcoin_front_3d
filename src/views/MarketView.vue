@@ -504,7 +504,7 @@ onUnmounted(() => {
         </button>
         <span
           class="gem-tag gem-tag-pro"
-          style="background: linear-gradient(135deg, #FCD909 0%, #FCA643 40%, #E98509 100%); color: #000;"
+          style="background: linear-gradient(135deg, #E98509 0%, #FCA643 40%, #FCD909 100%); color: #000;"
         >PRO</span>
       </div>
 
