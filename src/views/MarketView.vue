@@ -435,11 +435,11 @@ onUnmounted(() => {
         </button>
         <span class="gem-tag" style="background: linear-gradient(270deg, #FEA400 0%, #FCD909 100%); color: #000;">{{ t('gems.special') }}</span>
       </div>
-      <!--
+
       <div class="special-offers-header">
         <h2 class="special-offers-title">{{ t('market.starter_pack_offers') }}</h2>
       </div>
-      -->
+
       <div v-if="starterPack" class="gem-item">
         <div class="gem-info-icon-top" @click="openStarterPackInfo = true">i</div>
         <div class="gem-picture">
@@ -466,7 +466,7 @@ onUnmounted(() => {
         </button>
         <span class="gem-tag" style="background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);">Обычный</span>
       </div>
-      <!--
+
       <div v-if="starterPackPro" class="gem-item starter-pack-pro-card">
         <div class="gem-info-icon-top" @click="openStarterPackInfo = true">i</div>
         <div class="gem-picture">
@@ -496,7 +496,7 @@ onUnmounted(() => {
         </button>
         <span class="gem-tag gem-tag-pro" style="background: linear-gradient(270deg, rgba(231, 87, 236, 1) 0%, rgba(152, 81, 236, 1) 50%, rgba(94, 124, 234, 1) 100%);">PRO</span>
       </div>
-      -->
+
       <h2 class="section-title">{{ t('market.nft_assets') }}</h2>
       <div class="assets-item">
         <img src="@/assets/market/mining_equip_market_icon.webp" class="assets-icon" alt="" />
