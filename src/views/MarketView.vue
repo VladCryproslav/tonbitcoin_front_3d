@@ -487,7 +487,7 @@ onUnmounted(() => {
           class="gem-buy-btn btn-purple"
           :disabled="isProcessing"
           @click="buyGem(starterPackPro)"
-          style="background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent), linear-gradient(to bottom, #FCA643, #E98509);"
+          style="background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent), linear-gradient(135deg, #FCD909 0%, #FCA643 40%, #E98509 100%);"
         >
           <span>{{ t('common.buy') }}</span>
           <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && starterPackPro.enableSale !== false }">
@@ -502,7 +502,10 @@ onUnmounted(() => {
             </div>
           </template>
         </button>
-        <span class="gem-tag gem-tag-pro" style="background-color: #E98509; color: #000;">PRO</span>
+        <span
+          class="gem-tag gem-tag-pro"
+          style="background: linear-gradient(135deg, #FCD909 0%, #FCA643 40%, #E98509 100%); color: #000;"
+        >PRO</span>
       </div>
 
       <h2 class="section-title">{{ t('market.nft_assets') }}</h2>
