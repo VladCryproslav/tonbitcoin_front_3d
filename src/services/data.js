@@ -178,7 +178,7 @@ const asicsSheet = [
 ]
 
 // Активность акции для GEMS (можно включать/выключать)
-const gemsSaleActive = false // Изменить на true для активации скидки
+const gemsSaleActive = true // Изменить на false для отключения скидки
 const gemsSalePercent = 50 // Процент скидки (например 50 = -50%)
 const gemsSaleEndDate = new Date('2024-10-31T23:59:59') // Дата окончания акции
 
@@ -238,7 +238,7 @@ const gemsSheet = [
     buttonColor: 'purple',
     hasPurpleStroke: true,
     enableSale: true,
-    salePercent: 39.6, // Кастомная скидка для этого GEMS (50%)
+    salePercent: 60.4, // Кастомная скидка для этого GEMS (250 -> 99)
     imagePath: '@/assets/gems/Starter_pack.webp',
     link: '', // Not used - uses TON payment instead
     info: 'starter_pack_modal',
@@ -259,7 +259,7 @@ const gemsSheet = [
     buttonColor: 'purple',
     hasPurpleStroke: true,
     enableSale: true,
-    salePercent: 59.9, // Кастомная скидка для этого GEMS (50%)
+    salePercent: 40.1, // Кастомная скидка для этого GEMS (1000 -> 599)
     imagePath: '@/assets/gems/Starter_pack_pro.webp',
     link: '', // Not used - uses TON payment instead
     info: 'starter_pack_modal',
