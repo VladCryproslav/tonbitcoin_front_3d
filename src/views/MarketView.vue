@@ -298,9 +298,12 @@ const buyGem = async (gemItem) => {
     } catch { /* ignore */ }
     try {
       let transferAmount = gemItem.price
-      if (gemItem.type === 'Starter Pack' && gemItem.starterPackSale) {
+
+      // Явно различаем обычный и PRO стартовые пакеты по ссылке на объект,
+      // а не по полю type (оба имеют type === 'Starter Pack' в data.js)
+      if (gemItem === starterPack.value && gemItem.starterPackSale) {
         transferAmount = getStarterPackPrice()
-      } else if (gemItem.type === 'Starter Pack Pro' && gemItem.starterPackSale) {
+      } else if (gemItem === starterPackPro.value && gemItem.starterPackSale) {
         transferAmount = getStarterPackProPrice()
       } else if (gemsSaleActive && gemItem.enableSale !== false) {
         transferAmount = getGemPrice(gemItem)
