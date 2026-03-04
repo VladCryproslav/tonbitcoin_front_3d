@@ -178,7 +178,7 @@ const asicsSheet = [
 ]
 
 // Активность акции для GEMS (можно включать/выключать)
-const gemsSaleActive = true // Изменить на false для отключения скидки
+const gemsSaleActive = false // Изменить на false для отключения скидки
 const gemsSalePercent = 50 // Процент скидки (например 50 = -50%)
 const gemsSaleEndDate = new Date('2024-10-31T23:59:59') // Дата окончания акции
 
@@ -238,6 +238,7 @@ const gemsSheet = [
     buttonColor: 'purple',
     hasPurpleStroke: true,
     enableSale: true,
+    starterPackSale: true, // независимая акция для Starter Pack
     salePercent: 60.4, // Кастомная скидка для этого GEMS (250 -> 99)
     imagePath: '@/assets/gems/Starter_pack.webp',
     link: '', // Not used - uses TON payment instead
@@ -259,6 +260,7 @@ const gemsSheet = [
     buttonColor: 'purple',
     hasPurpleStroke: true,
     enableSale: true,
+    starterPackSale: true, // независимая акция для Starter Pack PRO
     salePercent: 40.1, // Кастомная скидка для этого GEMS (1000 -> 599)
     imagePath: '@/assets/gems/Starter_pack_pro.webp',
     link: '', // Not used - uses TON payment instead
@@ -339,7 +341,7 @@ const gemsSheet = [
     type: 'Cryochamber',
     price: 99,
     rarity: 'class_1',
-    enableSale: true,
+    enableSale: false,
     salePercent: 50,
     description: 'For Energizers',
     imagePath: '@/assets/gems/Cryo_NFT.webp',

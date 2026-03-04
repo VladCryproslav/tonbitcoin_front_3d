@@ -66,11 +66,18 @@ const getStarterPackPriceDisplay = () => {
 /** Как в MinerView: для отображения цены в модалке (округление до десятых) */
 const getStarterPackPrice = () => {
   if (!starterPack.value) return 99
-  if (gemsSaleActive && starterPack.value.enableSale !== false) {
-    const discountedPrice = getGemPrice(starterPack.value)
-    return Math.round(discountedPrice * 10) / 10
-  }
-  return starterPack.value.price
+  if (!starterPack.value.starterPackSale) return starterPack.value.price
+  const salePercent = starterPack.value.salePercent || gemsSalePercent
+  const discountedPrice = starterPack.value.price * (1 - salePercent / 100)
+  return Math.round(discountedPrice * 10) / 10
+}
+
+const getStarterPackProPrice = () => {
+  if (!starterPackPro.value) return 599
+  if (!starterPackPro.value.starterPackSale) return starterPackPro.value.price
+  const salePercent = starterPackPro.value.salePercent || gemsSalePercent
+  const discountedPrice = starterPackPro.value.price * (1 - salePercent / 100)
+  return Math.round(discountedPrice * 10) / 10
 }
 
 const showModal = (status, title, body) => {
@@ -291,7 +298,14 @@ const buyGem = async (gemItem) => {
       await tonConnectUI.closeModal().catch(() => {})
     } catch { /* ignore */ }
     try {
-      const transferAmount = gemsSaleActive && gemItem.enableSale !== false ? getGemPrice(gemItem) : gemItem.price
+      let transferAmount = gemItem.price
+      if (gemItem.type === 'Starter Pack' && gemItem.starterPackSale) {
+        transferAmount = getStarterPackPrice()
+      } else if (gemItem.type === 'Starter Pack Pro' && gemItem.starterPackSale) {
+        transferAmount = getStarterPackProPrice()
+      } else if (gemsSaleActive && gemItem.enableSale !== false) {
+        transferAmount = getGemPrice(gemItem)
+      }
       const receiveAddress = 'UQDJMlSoT5-5CdCQROyN4SK_j0kMxpexF0Q3-boppeO7kZdl'
       const simplePayload = beginCell()
         .storeUint(0, 32)
@@ -453,11 +467,11 @@ onUnmounted(() => {
         </div>
         <button class="gem-buy-btn btn-purple" :disabled="isProcessing" @click="buyGem(starterPack)">
           <span>{{ t('common.buy') }}</span>
-          <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && starterPack.enableSale !== false }">
+          <span class="gem-price" :class="{ 'gem-saleprice': starterPack?.starterPackSale }">
             <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
             {{ starterPack.price }}
           </span>
-          <template v-if="gemsSaleActive && starterPack.enableSale !== false">
+          <template v-if="starterPack?.starterPackSale">
             <div class="gem-sale-perc">-{{ starterPack.salePercent || 10 }}%</div>
             <div class="gem-sale-newprice">
               <img src="@/assets/TON.png" width="12" height="12" alt="TON" />
@@ -491,15 +505,15 @@ onUnmounted(() => {
           style="background: radial-gradient(ellipse 80% 40% at bottom center, #ffffff90, transparent), linear-gradient(135deg, #E98509 0%, #FCA643 70%, #FCD909 100%);"
         >
           <span>{{ t('common.buy') }}</span>
-          <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && starterPackPro.enableSale !== false }">
+          <span class="gem-price" :class="{ 'gem-saleprice': starterPackPro?.starterPackSale }">
             <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
             {{ starterPackPro.price }}
           </span>
-          <template v-if="gemsSaleActive && starterPackPro.enableSale !== false">
+          <template v-if="starterPackPro?.starterPackSale">
             <div class="gem-sale-perc">-{{ starterPackPro.salePercent || 10 }}%</div>
             <div class="gem-sale-newprice">
               <img src="@/assets/TON.png" width="12" height="12" alt="TON" />
-              {{ getGemPrice(starterPackPro) }}
+              {{ getStarterPackProPrice() }}
             </div>
           </template>
         </button>
