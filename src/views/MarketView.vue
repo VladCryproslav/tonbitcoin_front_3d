@@ -495,7 +495,7 @@ onUnmounted(() => {
         </div>
         <div class="gem-info">
           <span class="gem-type">
-            {{ starterPackPro.type }}
+            Premium Pack
             <span class="gem-pro-pill">PRO</span>
           </span>
           <span v-for="(benefit, idx) in starterPackPro.benefits" :key="idx" class="gem-description">{{ t(`gems.${benefit}`) }}</span>

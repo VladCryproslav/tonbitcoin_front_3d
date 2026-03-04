@@ -253,7 +253,7 @@ const gemsSheet = [
   {
     shop: true,
     name: 'Buy NFT',
-    type: 'Premium Pack',
+    type: 'Starter Pack',
     price: 1000,
     rarity: 'special',
     description: 'Singularity Reactor',
