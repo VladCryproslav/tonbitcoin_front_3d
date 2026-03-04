@@ -237,8 +237,8 @@ const gemsSheet = [
     description: 'Nuclear power plant',
     buttonColor: 'purple',
     hasPurpleStroke: true,
-    enableSale: false,
-    salePercent: 10, // Кастомная скидка для этого GEMS (50%)
+    enableSale: true,
+    salePercent: 39.6, // Кастомная скидка для этого GEMS (50%)
     imagePath: '@/assets/gems/Starter_pack.webp',
     link: '', // Not used - uses TON payment instead
     info: 'starter_pack_modal',
@@ -258,8 +258,8 @@ const gemsSheet = [
     description: 'Singularity Reactor',
     buttonColor: 'purple',
     hasPurpleStroke: true,
-    enableSale: false,
-    salePercent: 10, // Кастомная скидка для этого GEMS (50%)
+    enableSale: true,
+    salePercent: 59.9, // Кастомная скидка для этого GEMS (50%)
     imagePath: '@/assets/gems/Starter_pack_pro.webp',
     link: '', // Not used - uses TON payment instead
     info: 'starter_pack_modal',

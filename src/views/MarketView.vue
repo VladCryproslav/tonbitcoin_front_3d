@@ -455,13 +455,13 @@ onUnmounted(() => {
           <span>{{ t('common.buy') }}</span>
           <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && starterPack.enableSale !== false }">
             <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
-            {{ starterPack.price }}
+            250
           </span>
           <template v-if="gemsSaleActive && starterPack.enableSale !== false">
             <div class="gem-sale-perc">-{{ starterPack.salePercent || 10 }}%</div>
             <div class="gem-sale-newprice">
               <img src="@/assets/TON.png" width="12" height="12" alt="TON" />
-              {{ getStarterPackPriceDisplay() }}
+              99
             </div>
           </template>
         </button>
@@ -493,13 +493,13 @@ onUnmounted(() => {
           <span>{{ t('common.buy') }}</span>
           <span class="gem-price" :class="{ 'gem-saleprice': gemsSaleActive && starterPackPro.enableSale !== false }">
             <img src="@/assets/TON.png" width="14" height="14" alt="TON" />
-            {{ starterPackPro.price }}
+            1000
           </span>
           <template v-if="gemsSaleActive && starterPackPro.enableSale !== false">
             <div class="gem-sale-perc">-{{ starterPackPro.salePercent || 10 }}%</div>
             <div class="gem-sale-newprice">
               <img src="@/assets/TON.png" width="12" height="12" alt="TON" />
-              {{ getStarterPackPriceDisplay() }}
+              599
             </div>
           </template>
         </button>
