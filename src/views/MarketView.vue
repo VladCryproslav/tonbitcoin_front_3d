@@ -58,9 +58,8 @@ const modalBody = ref('')
 
 const getStarterPackPriceDisplay = () => {
   if (!starterPack.value) return 0
-  return gemsSaleActive && starterPack.value.enableSale !== false
-    ? getGemPrice(starterPack.value)
-    : starterPack.value.price
+  if (!starterPack.value.starterPackSale) return starterPack.value.price
+  return getStarterPackPrice()
 }
 
 /** Как в MinerView: для отображения цены в модалке (округление до десятых) */
