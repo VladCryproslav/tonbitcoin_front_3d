@@ -671,7 +671,9 @@ onUnmounted(() => {
             {{ t('gems.starter_pack_title') }}<br><br>
             • {{ t('gems.starter_pack_pro_item_1') }}<br>
             • {{ t('gems.starter_pack_pro_item_2') }}<br>
-            • {{ t('gems.starter_pack_pro_item_3') }}<br><br>
+            • {{ t('gems.starter_pack_pro_item_3') }}<br>
+            • {{ t('gems.starter_pack_pro_item_4') }}<br>
+            • {{ t('gems.starter_pack_pro_item_5') }}<br><br>
             {{ t('gems.starter_pack_pro_price_info') }}<br>
             {{ t('gems.starter_pack_pro_price_offer') }}<br><br>
             <span style="color: #ffc300;">{{ t('gems.starter_pack_item_8') }}</span>
