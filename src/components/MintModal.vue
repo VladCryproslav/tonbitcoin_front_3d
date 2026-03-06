@@ -11,6 +11,10 @@ import { max_kw } from '@/services/data'
 
 const app = useAppStore()
 const { t } = useI18n()
+
+// Визуальный переключатель режима минта (Blockchain / In-App)
+const withdrawalType = ref('blockchain')
+
 const min = computed(() => app.withdraw_config?.min_kw || 300)
 // available — полный баланс без ограничения max_kw
 const available = computed(() => Math.max(0, Math.floor(app?.wallet_info?.kw_amount)))
@@ -25,9 +29,6 @@ const max = computed(() => {
   return Math.min(max_kw, Math.max(0, energy))
 })
 const amount = ref(Math.min(max.value, available.value))
-
-// Визуальный переключатель режима минта (Blockchain / In-App)
-const withdrawalType = ref('blockchain')
 
 const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= new Date())
 
