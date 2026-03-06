@@ -18,6 +18,9 @@ const available = computed(() => Math.max(0, Math.floor(app?.wallet_info?.kw_amo
 const max = computed(() => Math.min(max_kw, Math.floor(app?.user?.energy)))
 const amount = ref(Math.min(max.value, available.value))
 
+// Визуальный переключатель режима минта (Blockchain / In-App)
+const withdrawalType = ref('blockchain')
+
 const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= new Date())
 
 const commissionRate = computed(() => {
@@ -41,6 +44,11 @@ const ton_address = useTonAddress()
 const emit = defineEmits(['close'])
 const emitClose = () => {
   emit('close')
+}
+
+// Обработчик только для визуального переключения (бэкенд пока не трогаем)
+const handleWithdrawalTypeClick = (type) => {
+  withdrawalType.value = type
 }
 
 function getTimeUntil(date) {
@@ -140,6 +148,27 @@ async function claim() {
             address: ton_address?.slice(0, 5) + '...' +
               ton_address.slice(-5)
           }) }}</div>
+          <!-- Blockchain/In-App toggle (только визуал, без изменения логики минта) -->
+          <div class="toggle-panel">
+            <div class="toggle-panel-spacer"></div>
+            <div class="toggle-container">
+              <button
+                class="toggle-btn"
+                :class="{ active: withdrawalType === 'blockchain' }"
+                @click="handleWithdrawalTypeClick('blockchain')"
+              >
+                {{ t('modals.mint_modal.blockchain') }}
+              </button>
+              <button
+                class="toggle-btn"
+                :class="{ active: withdrawalType === 'inapp' }"
+                @click="handleWithdrawalTypeClick('inapp')"
+              >
+                {{ t('modals.mint_modal.inapp') }}
+              </button>
+            </div>
+            <div class="toggle-panel-spacer"></div>
+          </div>
           <CustomSlider v-model="amount" :min="min" :max="max" :available="available" />
           <!-- <VueSlider v-model="amount" :height="8" :dotSize="25" :dotStyle="{ boxShadow: 'none' }" :width="'100%'"
             :min="min" :max="max" :tooltip="'none'" :enableCross="false"
@@ -345,5 +374,56 @@ async function claim() {
 .modal-leave-active .modal-container {
   -webkit-transform: scale(1.1);
   transform: scale(1.1);
+}
+
+// Стили для переключателя Blockchain/In-App
+.toggle-panel {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  position: relative;
+}
+
+.toggle-panel-spacer {
+  min-width: 0;
+}
+
+.toggle-container {
+  display: flex;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 20px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  grid-column: 2;
+  justify-self: center;
+  width: 100%;
+  max-width: 280px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 6px 16px;
+  border-radius: 18px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-family: 'Inter' !important;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &.active {
+    background: linear-gradient(135deg, rgba(49, 255, 128, 0.2), rgba(49, 255, 128, 0.1));
+    color: #31ff80;
+    box-shadow: 0 0 10px rgba(49, 255, 128, 0.3);
+  }
+
+  &:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.05);
+  }
 }
 </style>

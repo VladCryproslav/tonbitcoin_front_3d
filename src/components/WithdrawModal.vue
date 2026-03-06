@@ -17,6 +17,9 @@ const props = defineProps({
   claim: Boolean,
 })
 
+// Визуальный переключатель режима вывода (Blockchain / In-App)
+const withdrawalType = ref('blockchain')
+
 
 const totalBalance = computed(() => {
   return app?.user?.mined_tokens_balance + app?.user?.mined_tokens_balance_s21 + app?.user?.mined_tokens_balance_sx
@@ -183,6 +186,27 @@ async function withdrawTBTC() {
                     ton_address.slice(-5)
                 })
             }}
+          </div>
+          <!-- Blockchain/In-App toggle (только визуал, без изменения логики вывода) -->
+          <div class="toggle-panel">
+            <div class="toggle-panel-spacer"></div>
+            <div class="toggle-container">
+              <button
+                class="toggle-btn"
+                :class="{ active: withdrawalType === 'blockchain' }"
+                @click="withdrawalType = 'blockchain'"
+              >
+                {{ t('modals.withdraw_modal.blockchain') }}
+              </button>
+              <button
+                class="toggle-btn"
+                :class="{ active: withdrawalType === 'inapp' }"
+                @click="withdrawalType = 'inapp'"
+              >
+                {{ t('modals.withdraw_modal.inapp') }}
+              </button>
+            </div>
+            <div class="toggle-panel-spacer"></div>
           </div>
           <CustomSlider v-model="withdraw_amount" :min="min" :max="maxLimit" :available="availableDisplay" />
           <div class="price">
@@ -370,5 +394,56 @@ async function withdrawTBTC() {
 .modal-leave-active .modal-container {
   -webkit-transform: scale(1.1);
   transform: scale(1.1);
+}
+
+// Стили для переключателя Blockchain/In-App
+.toggle-panel {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  position: relative;
+}
+
+.toggle-panel-spacer {
+  min-width: 0;
+}
+
+.toggle-container {
+  display: flex;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 20px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  grid-column: 2;
+  justify-self: center;
+  width: 100%;
+  max-width: 280px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 6px 16px;
+  border-radius: 18px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-family: 'Inter' !important;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &.active {
+    background: linear-gradient(135deg, rgba(49, 255, 128, 0.2), rgba(49, 255, 128, 0.1));
+    color: #31ff80;
+    box-shadow: 0 0 10px rgba(49, 255, 128, 0.3);
+  }
+
+  &:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.05);
+  }
 }
 </style>
