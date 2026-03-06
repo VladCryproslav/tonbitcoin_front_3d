@@ -33,27 +33,50 @@ const available = computed(() => {
   return Math.max(0, Math.floor(app?.wallet_info?.tbtc_amount + app?.wallet_info?.tbtc_amount_s21 + app?.wallet_info?.tbtc_amount_sx))
 })
 const max = computed(() => {
-  // Всегда ограничиваем max на 3000, независимо от баланса
-  // Пользователь может выбрать любое значение от min до 3000
+  // Для blockchain-вывода сохраняем лимит max_fbtc (3000),
+  // для In-App — используем полный баланс без ограничения сверху.
+  if (withdrawalType.value === 'inapp') {
+    if (props?.claim) {
+      return Math.floor(totalBalance.value)
+    }
+    return Math.floor(app?.user?.tbtc_wallet || 0)
+  }
+
   if (props?.claim) {
     return Math.min(max_fbtc, Math.floor(totalBalance.value))
   } else {
-    return Math.min(max_fbtc, Math.floor(app?.user?.tbtc_wallet))
+    return Math.min(max_fbtc, Math.floor(app?.user?.tbtc_wallet || 0))
   }
 })
 
-// Жёсткий лимит, чтобы не было никаких выходов за 3000 из-за вычислений
-const maxLimit = computed(() => Math.min(max_fbtc, Math.max(0, max.value || 0)))
+// Жёсткий лимит для blockchain-вывода, чтобы не было выходов за 3000 из‑за вычислений
+const maxLimit = computed(() => {
+  if (withdrawalType.value === 'inapp') {
+    // Для In-App лимит по фронту не режем, используем max (полный баланс)
+    return Math.max(0, max.value || 0)
+  }
+  return Math.min(max_fbtc, Math.max(0, max.value || 0))
+})
 
-// Отображаемый available, чтобы шкала не уезжала за пределы 3000
-const availableDisplay = computed(() => Math.min(available.value, maxLimit.value))
+// Отображаемый available:
+// - In-App: показываем весь доступный баланс
+// - Blockchain: не даём шкале уходить за пределы 3000
+const availableDisplay = computed(() => {
+  if (withdrawalType.value === 'inapp') {
+    return available.value
+  }
+  return Math.min(available.value, maxLimit.value)
+})
 
-// Инициализация withdraw_amount - ограничиваем только по maxLimit
+// Инициализация withdraw_amount - стартуем из допустимого диапазона
 const withdraw_amount = ref(Math.min(maxLimit.value, max_fbtc))
 
 function clampAmount(val) {
   const numeric = Number(val) || 0
-  const upper = maxLimit.value || max_fbtc
+  const upper =
+    withdrawalType.value === 'inapp'
+      ? available.value || max_fbtc
+      : maxLimit.value || max_fbtc
   const lower = Math.max(0, min.value || 0)
   return Math.min(upper, Math.max(lower, numeric))
 }
@@ -125,9 +148,17 @@ function getTimeUntil(date) {
 async function withdrawTBTC() {
   const user_id = user?.id
   const receiveWallet = ton_address.value
-  // Жёстко ограничиваем по max_fbtc напрямую (не через max.value)
-  // Финальная сумма: жёстко обрезаем 3000 и maxLimit
-  const finalAmount = Number(Math.min(max_fbtc, maxLimit.value || max_fbtc, Number(withdraw_amount.value) || 0).toFixed(2))
+  // Финальная сумма:
+  // - In-App: не ограничиваем сверху по max_fbtc, только min/available
+  // - Blockchain: жёстко обрезаем 3000 и maxLimit
+  const rawAmount = Number(withdraw_amount.value) || 0
+  const finalAmount = withdrawalType.value === 'inapp'
+    ? Number(
+        Math.min(available.value, Math.max(min.value || 0, rawAmount)).toFixed(2),
+      )
+    : Number(
+        Math.min(max_fbtc, maxLimit.value || max_fbtc, rawAmount).toFixed(2),
+      )
 
   // In-App: комиссия 0%
   const fee = withdrawalType.value === 'inapp'

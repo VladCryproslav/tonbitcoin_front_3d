@@ -14,8 +14,16 @@ const { t } = useI18n()
 const min = computed(() => app.withdraw_config?.min_kw || 300)
 // available — полный баланс без ограничения max_kw
 const available = computed(() => Math.max(0, Math.floor(app?.wallet_info?.kw_amount)))
-// max ограничивает ход ползунка (останавливается на 20000)
-const max = computed(() => Math.min(max_kw, Math.floor(app?.user?.energy)))
+// max ограничивает ход ползунка:
+// - Blockchain: ограничиваем max_kw
+// - In-App: даём весь доступный energy без ограничения сверху
+const max = computed(() => {
+  const energy = Math.floor(app?.user?.energy || 0)
+  if (withdrawalType.value === 'inapp') {
+    return Math.max(0, energy)
+  }
+  return Math.min(max_kw, Math.max(0, energy))
+})
 const amount = ref(Math.min(max.value, available.value))
 
 // Визуальный переключатель режима минта (Blockchain / In-App)
