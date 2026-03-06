@@ -208,7 +208,9 @@
       "check_data": "Проверьте корректность введенных данных в поле",
       "next_mint_available": "Следующий минт токенов будет доступен через {time}",
       "few_minutes": "нескольких минут",
-      "24_hours": "24 часов"
+      "24_hours": "24 часов",
+      "blockchain": "Blockchain",
+      "inapp": "In-App"
     },
     "reconnect_modal": {
       "title": "Выберите правильный ответ",
@@ -361,7 +363,9 @@
       "24_hours": "24 часов",
       "check_data_correctness": "Проверьте корректность введенных данных в поле",
       "next_claim_available": "Следующий клейм токенов будет доступен через {time}",
-      "next_withdraw_available": "Следующий вывод токенов будет доступен через {time}"
+      "next_withdraw_available": "Следующий вывод токенов будет доступен через {time}",
+      "blockchain": "Blockchain",
+      "inapp": "In-App"
     },
     "withdraw_rent_modal": {
       "attention": "Внимание!",

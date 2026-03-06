@@ -208,7 +208,9 @@
       "check_data": "Check the correctness of the entered data in the field",
       "next_mint_available": "Next token mint will be available in {time}",
       "few_minutes": "a few minutes",
-      "24_hours": "24 hours"
+      "24_hours": "24 hours",
+      "blockchain": "Blockchain",
+      "inapp": "In-App"
     },
     "reconnect_modal": {
       "title": "Choose the correct answer",
@@ -361,7 +363,9 @@
       "24_hours": "24 hours",
       "check_data_correctness": "Check the correctness of the entered data in the field",
       "next_claim_available": "Next claim will be available in {time}",
-      "next_withdraw_available": "Next withdraw will be available in {time}"
+      "next_withdraw_available": "Next withdraw will be available in {time}",
+      "blockchain": "Blockchain",
+      "inapp": "In-App"
     },
     "withdraw_rent_modal": {
       "attention": "Attention!",
