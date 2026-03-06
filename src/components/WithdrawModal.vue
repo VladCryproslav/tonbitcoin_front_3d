@@ -139,7 +139,7 @@ async function withdrawTBTC() {
   const mining = props?.claim ? true : false
   const reqData = {
     user_id: user_id,
-    wallet_address: withdrawalType.value === 'blockchain' ? receiveWallet : null,
+    wallet_address: receiveWallet,
     token_amount: finalAmount,
     token_contract_address: 'EQBOqBiArR45GUlifxdzZ40ZahdVhjtU7GjY-lVtqruHvQEc',
     is_mining: mining,
@@ -150,12 +150,34 @@ async function withdrawTBTC() {
       .post('create-withdrawal-request/', reqData)
       .then((res) => {
         if (res.status == 200) {
-          const timeText = finalAmount < (props?.claim ? app.withdraw_config?.max_auto_claim : app.withdraw_config?.max_auto_tbtc) ? t('modals.withdraw_modal.several_minutes') : t('modals.withdraw_modal.24_hours')
-          emit('close', {
-            status: 'success',
-            title: t('notification.st_success'),
-            body: props?.claim ? t('modals.withdraw_modal.claim_request_accepted', { amount: netAmount, time: timeText }) : t('modals.withdraw_modal.withdraw_request_accepted', { amount: netAmount, time: timeText }),
-          })
+          if (withdrawalType.value === 'inapp') {
+            emit('close', {
+              status: 'success',
+              title: t('notification.st_success'),
+              body: t('modals.withdraw_modal.inapp_success', { amount: netAmount }),
+            })
+          } else {
+            const timeText =
+              finalAmount <
+              (props?.claim
+                ? app.withdraw_config?.max_auto_claim
+                : app.withdraw_config?.max_auto_tbtc)
+                ? t('modals.withdraw_modal.several_minutes')
+                : t('modals.withdraw_modal.24_hours')
+            emit('close', {
+              status: 'success',
+              title: t('notification.st_success'),
+              body: props?.claim
+                ? t('modals.withdraw_modal.claim_request_accepted', {
+                    amount: netAmount,
+                    time: timeText,
+                  })
+                : t('modals.withdraw_modal.withdraw_request_accepted', {
+                    amount: netAmount,
+                    time: timeText,
+                  }),
+            })
+          }
         }
       })
       .catch((err) => {

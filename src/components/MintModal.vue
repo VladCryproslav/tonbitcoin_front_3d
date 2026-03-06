@@ -96,7 +96,7 @@ async function claim() {
   const tokensNet = +(gross * (1 - rate)).toFixed(0)
   const reqData = {
     user_id: user_id,
-    wallet_address: withdrawalType.value === 'blockchain' ? receiveWallet : null,
+    wallet_address: receiveWallet,
     token_amount: gross,
     token_contract_address: 'EQDSYiFUtMVS9rhBDhbTfP-zbj_uqa69bHv6e5IberQH5n1N',
     is_mining: false,
@@ -107,12 +107,20 @@ async function claim() {
       .post('create-withdrawal-request/', reqData)
       .then(() => {
         const tokens = tokensNet
-        const time = amount.value < app.withdraw_config?.max_auto_kw ? t('modals.mint_modal.few_minutes') : t('modals.mint_modal.24_hours')
-        emit('close', {
-          status: 'success',
-          title: t('notification.st_success'),
-          body: t('modals.mint_modal.request_accepted', { tokens, time }),
-        })
+        if (withdrawalType.value === 'inapp') {
+          emit('close', {
+            status: 'success',
+            title: t('notification.st_success'),
+            body: t('modals.mint_modal.inapp_success', { tokens }),
+          })
+        } else {
+          const time = amount.value < app.withdraw_config?.max_auto_kw ? t('modals.mint_modal.few_minutes') : t('modals.mint_modal.24_hours')
+          emit('close', {
+            status: 'success',
+            title: t('notification.st_success'),
+            body: t('modals.mint_modal.request_accepted', { tokens, time }),
+          })
+        }
       })
       .catch((e) => {
         let body

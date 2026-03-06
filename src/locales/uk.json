@@ -210,7 +210,8 @@
       "few_minutes": "кілька хвилин",
       "24_hours": "24 годин",
       "blockchain": "Blockchain",
-      "inapp": "In-App"
+      "inapp": "In-App",
+      "inapp_success": "Поповнення внутрішнього гаманця успішно виконано на суму {tokens} kW. Наступна заявка на mint буде доступна через 24 години."
     },
     "reconnect_modal": {
       "title": "Виберіть правильну відповідь",
@@ -365,7 +366,8 @@
       "next_claim_available": "Наступний клейм токенів буде доступний через {time}",
       "next_withdraw_available": "Наступне виведення токенів буде доступне через {time}",
       "blockchain": "Blockchain",
-      "inapp": "In-App"
+      "inapp": "In-App",
+      "inapp_success": "Поповнення внутрішнього гаманця успішно виконано на суму {amount} fBTC. Наступна заявка на claim буде доступна через 24 години."
     },
     "withdraw_rent_modal": {
       "attention": "Увага!",

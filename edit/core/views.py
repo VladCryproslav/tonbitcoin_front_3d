@@ -1101,6 +1101,12 @@ def common_withdrawal(request):
         )
 
     user_profile: UserProfile = request.user_profile
+    # Для in-app используем тон-адрес пользователя при записи в WithdrawalRequest,
+    # чтобы не нарушать NOT NULL constraint в БД, но логика проверки адреса выше
+    # уже отключена для withdrawal_type == "inapp".
+    wallet_for_record = (
+        wallet_address if withdrawal_type != "inapp" else user_profile.ton_wallet
+    )
     cache.set(f"last_withdraw_{user_id}", timezone.now(), timeout=10)
 
     if token_contract_address not in [
@@ -1136,6 +1142,8 @@ def common_withdrawal(request):
     user_profile: UserProfile = request.user_profile
     energy = user_profile.energy
     tbtc_claimed_period = float(user_profile.tbtc_claimed_period)
+
+    # Базовые ноты
     if is_mining:
         note = "withdraw"
     elif is_staking:
@@ -1145,15 +1153,19 @@ def common_withdrawal(request):
     else:
         note = "claim"
 
+    # In-App: переопределяем note только по типу токена
     if withdrawal_type == "inapp":
         if (
             token_contract_address
             == "EQDSYiFUtMVS9rhBDhbTfP-zbj_uqa69bHv6e5IberQH5n1N"
         ):
+            # kW In-App
             note = "In-app claim"
-        elif is_mining:
-            note = "In-app withdraw claim"
-        elif not is_staking and not is_rent:
+        elif (
+            token_contract_address
+            == "EQBOqBiArR45GUlifxdzZ40ZahdVhjtU7GjY-lVtqruHvQEc"
+        ):
+            # fBTC In-App
             note = "In-app withdraw"
     comment = ""
     is_auto = False
@@ -1182,13 +1194,15 @@ def common_withdrawal(request):
             token_contract_address
             == "EQDSYiFUtMVS9rhBDhbTfP-zbj_uqa69bHv6e5IberQH5n1N"
         ):
+            # kW: объединяем blockchain claim и In-App claim
             notes_filter = ["claim", "In-app claim"]
         elif (
             token_contract_address
             == "EQBOqBiArR45GUlifxdzZ40ZahdVhjtU7GjY-lVtqruHvQEc"
             and is_mining
         ):
-            notes_filter = ["withdraw", "In-app withdraw claim"]
+            # fBTC из майнинга: объединяем blockchain withdraw и In-App withdraw
+            notes_filter = ["withdraw", "In-app withdraw"]
 
         last_request = (
             WithdrawalRequest.objects.filter(
@@ -1293,18 +1307,32 @@ def common_withdrawal(request):
                             status=status.HTTP_400_BAD_REQUEST,
                         )
 
-                    ratio = withdraw_gross / total_mined_tokens_balance if total_mined_tokens_balance else 0
+                    ratio = (
+                        withdraw_gross / total_mined_tokens_balance
+                        if total_mined_tokens_balance
+                        else 0
+                    )
 
                     mined_main_take = user_profile.mined_tokens_balance * ratio
                     mined_s21_take = user_profile.mined_tokens_balance_s21 * ratio
                     mined_sx_take = user_profile.mined_tokens_balance_sx * ratio
 
-                    commision_percent = user_profile.sbt_get_claim_commision()
-                    low_sum = withdraw_gross < 100
-                    apply_comission = lambda t: t - 1 if low_sum else t * (1-commision_percent)
+                    # Для In-App комиссия = 0, для blockchain берём из SBT
+                    if withdrawal_type == "inapp":
+                        commision_percent = 0
+                        low_sum = False
+                    else:
+                        commision_percent = user_profile.sbt_get_claim_commision()
+                        low_sum = withdraw_gross < 100
 
-                    token_amount_s21 = (1-commision_percent) * mined_s21_take
-                    token_amount_sx = (1-commision_percent) * mined_sx_take
+                    apply_comission = (
+                        (lambda t: t - 1)
+                        if low_sum
+                        else (lambda t: t * (1 - commision_percent))
+                    )
+
+                    token_amount_s21 = (1 - commision_percent) * mined_s21_take
+                    token_amount_sx = (1 - commision_percent) * mined_sx_take
                     token_amount = (
                         apply_comission(mined_main_take)
                         + token_amount_s21
@@ -1312,16 +1340,24 @@ def common_withdrawal(request):
                     )
                     UserProfile.objects.filter(user_id=user_profile.user_id).update(
                         mined_tokens_balance=F("mined_tokens_balance") - mined_main_take,
-                        mined_tokens_balance_s21=F("mined_tokens_balance_s21") - mined_s21_take,
-                        mined_tokens_balance_sx=F("mined_tokens_balance_sx") - mined_sx_take,
+                        mined_tokens_balance_s21=F("mined_tokens_balance_s21")
+                        - mined_s21_take,
+                        mined_tokens_balance_sx=F("mined_tokens_balance_sx")
+                        - mined_sx_take,
                         tbtc_claimed_period=F("tbtc_claimed_period") + token_amount,
+                        # Для In-App дополнительно пополняем внутренний tbtc_wallet
+                        **(
+                            {"tbtc_wallet": F("tbtc_wallet") + token_amount}
+                            if withdrawal_type == "inapp"
+                            else {}
+                        ),
                     )
                     WalletInfo.objects.filter(
                         user=user_profile, wallet=user_profile.ton_wallet
                     ).update(
                         tbtc_amount=F("tbtc_amount") - mined_main_take,
                         tbtc_amount_s21=F("tbtc_amount_s21") - mined_s21_take,
-                        tbtc_amount_sx=F("tbtc_amount_sx") - mined_sx_take
+                        tbtc_amount_sx=F("tbtc_amount_sx") - mined_sx_take,
                     )
 
                     # today = timezone.now().date()
@@ -1397,7 +1433,7 @@ def common_withdrawal(request):
                 MiningStats.objects.update(
                     total_tbtc_claimed=F("total_tbtc_claimed") + token_amount
                 )
-                if token_amount < max_auto_claim:
+                if withdrawal_type != "inapp" and token_amount < max_auto_claim:
                     commission_amount = max(0, withdraw_gross - token_amount)
                     real_amount = token_amount
                     # if token_amount < 100:
@@ -1596,13 +1632,13 @@ def common_withdrawal(request):
                 claimed_at=timezone.now(),
                 status="wait_auto",
                 tx_id=tx_hash,
-                wallet_address=wallet_address,
+                wallet_address=wallet_for_record,
                 comment=comment,
             )
 
         withdrawal_request = WithdrawalRequest.objects.create(
             user=user_profile,
-            wallet_address=wallet_address,
+            wallet_address=wallet_for_record,
             token_amount=token_amount,
             token_contract_address=token_contract_address,
             claimed_at=timezone.now(),

@@ -210,7 +210,8 @@
       "few_minutes": "нескольких минут",
       "24_hours": "24 часов",
       "blockchain": "Blockchain",
-      "inapp": "In-App"
+      "inapp": "In-App",
+      "inapp_success": "Пополнение внутреннего кошелька успешно выполнено на сумму {tokens} kW. Следующая заявка на mint будет доступна через 24 часа."
     },
     "reconnect_modal": {
       "title": "Выберите правильный ответ",
@@ -365,7 +366,8 @@
       "next_claim_available": "Следующий клейм токенов будет доступен через {time}",
       "next_withdraw_available": "Следующий вывод токенов будет доступен через {time}",
       "blockchain": "Blockchain",
-      "inapp": "In-App"
+      "inapp": "In-App",
+      "inapp_success": "Пополнение внутреннего кошелька успешно выполнено на сумму {amount} fBTC. Следующая заявка на claim будет доступна через 24 часа."
     },
     "withdraw_rent_modal": {
       "attention": "Внимание!",

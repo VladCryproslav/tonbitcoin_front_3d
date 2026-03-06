@@ -210,7 +210,8 @@
       "few_minutes": "a few minutes",
       "24_hours": "24 hours",
       "blockchain": "Blockchain",
-      "inapp": "In-App"
+      "inapp": "In-App",
+      "inapp_success": "Internal wallet top-up successfully completed for {tokens} kW. The next mint request will be available in 24 hours."
     },
     "reconnect_modal": {
       "title": "Choose the correct answer",
@@ -365,7 +366,8 @@
       "next_claim_available": "Next claim will be available in {time}",
       "next_withdraw_available": "Next withdraw will be available in {time}",
       "blockchain": "Blockchain",
-      "inapp": "In-App"
+      "inapp": "In-App",
+      "inapp_success": "Internal wallet top-up successfully completed for {amount} fBTC. The next claim request will be available in 24 hours."
     },
     "withdraw_rent_modal": {
       "attention": "Attention!",
