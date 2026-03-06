@@ -23,15 +23,27 @@ const withdrawalType = ref('blockchain')
 
 const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= new Date())
 
+// Blockchain: без SBT 20% (минт 10% + пара 10%), Silver 19% (9.5%+9.5%), Gold/Premium 18% (9%+9%). In-App не трогаем.
 const commissionRate = computed(() => {
+  if (withdrawalType.value === 'inapp') return 0.10 // In-App как сейчас: 10%
   const hasGold = app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft
   const hasSilver = app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft
-  if (hasGold || premiumActive.value) return 0.08 // 4% + 4%
-  if (hasSilver) return 0.09 // 4.5% + 4.5%
-  return 0.10 // 5% + 5%
+  if (hasGold || premiumActive.value) return 0.18 // 9% + 9%
+  if (hasSilver) return 0.19 // 9.5% + 9.5%
+  return 0.20 // 10% + 10%
 })
 
-const individualFeeRate = computed(() => commissionRate.value / 2)
+// Доля одной статьи: минт или пополнение пары (для blockchain 50/50, для In-App только минт 10%)
+const individualFeeRate = computed(() => {
+  if (withdrawalType.value === 'inapp') return 0.10 // In-App: 10% минт, 0% пара
+  return commissionRate.value / 2
+})
+
+// Для отображения процента ликвидности: In-App = 0, blockchain = половина commission
+const liquidityPoolPercent = computed(() => {
+  if (withdrawalType.value === 'inapp') return 0
+  return commissionRate.value / 2
+})
 
 const tokensToReceive = computed(() => {
   const gross = Number(amount.value) || 0
@@ -187,9 +199,9 @@ async function claim() {
             <div class="kw-price">
               <span>{{ t('modals.mint_modal.mint_fee') }}</span>
               <span class="font-semibold flex gap-1"
-                :class="{ '!text-[#FCD909]': (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive }">
+                :class="{ '!text-[#FCD909]': withdrawalType === 'blockchain' && ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive) }">
                 {{ (individualFeeRate * 100).toFixed(1).replace(/\.0$/, '') }}%
-                <template v-if="(app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive">
+                <template v-if="withdrawalType === 'blockchain' && ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive)">
                   ({{ premiumActive ? t('boost.king') : 'SBT' }})
                 </template>
               </span>
@@ -197,9 +209,9 @@ async function claim() {
             <div class="kw-price">
               <span>{{ t('modals.mint_modal.liquidity_pool') }}</span>
               <span class="font-semibold flex gap-1"
-                :class="{ '!text-[#FCD909]': (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive }">
-                {{ (individualFeeRate * 100).toFixed(1).replace(/\.0$/, '') }}%
-                <template v-if="(app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive">
+                :class="{ '!text-[#FCD909]': withdrawalType === 'blockchain' && ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive) }">
+                {{ (liquidityPoolPercent * 100).toFixed(1).replace(/\.0$/, '') }}%
+                <template v-if="withdrawalType === 'blockchain' && ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive)">
                   ({{ premiumActive ? t('boost.king') : 'SBT' }})
                 </template>
               </span>

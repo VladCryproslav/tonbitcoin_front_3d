@@ -66,10 +66,19 @@ watch([available, maxLimit], () => {
 })
 
 const commissionRate = computed(() => {
-  return (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) ? 0.0085 : ((app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value) ? 0.007 : 0.01
+  // In-App: комиссия 0%
+  if (withdrawalType.value === 'inapp') return 0
+
+  // Blockchain: текущая логика SBT / Premium
+  return (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft)
+    ? 0.0085
+    : ((app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive.value)
+      ? 0.007
+      : 0.01
 })
 
 const totalCommission = computed(() => {
+  if (withdrawalType.value === 'inapp') return 0
   return withdraw_amount.value < 100 ? 1 : +(withdraw_amount.value * commissionRate.value).toFixed(2)
 })
 
@@ -78,6 +87,12 @@ const toWalletAmount = computed(() => {
   const totalWithdraw = withdraw_amount.value || 0
   if (totalWithdraw <= 0) return 0
 
+  // In-App: без комиссии, всё идёт во внутренний баланс
+  if (withdrawalType.value === 'inapp') {
+    return +totalWithdraw.toFixed(2)
+  }
+
+  // Blockchain: минимум 1 fBTC при сумме < 100, иначе процент
   const fee = totalWithdraw < 100 ? 1 : totalWithdraw * commissionRate.value
   return +(totalWithdraw - fee).toFixed(2)
 })
@@ -113,7 +128,13 @@ async function withdrawTBTC() {
   // Жёстко ограничиваем по max_fbtc напрямую (не через max.value)
   // Финальная сумма: жёстко обрезаем 3000 и maxLimit
   const finalAmount = Number(Math.min(max_fbtc, maxLimit.value || max_fbtc, Number(withdraw_amount.value) || 0).toFixed(2))
-  const fee = finalAmount < 100 ? 1 : finalAmount * commissionRate.value
+
+  // In-App: комиссия 0%
+  const fee = withdrawalType.value === 'inapp'
+    ? 0
+    : finalAmount < 100
+      ? 1
+      : finalAmount * commissionRate.value
   const netAmount = +(finalAmount - fee).toFixed(2)
   const mining = props?.claim ? true : false
   const reqData = {
@@ -219,11 +240,11 @@ async function withdrawTBTC() {
               <span>{{ props?.claim ? t('modals.withdraw_modal.fee_for_claim') :
                 t('modals.withdraw_modal.fee_for_withdraw') }}</span>
               <span class="font-semibold flex gap-1"
-                :class="{ 'text-[#FCD909]': (app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive }">
+                :class="{ 'text-[#FCD909]': withdrawalType === 'blockchain' && ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt && app?.user?.has_gold_sbt_nft) || premiumActive) }">
                 {{ totalCommission }}
                 <img class="ml-1" src="@/assets/fBTC.webp" width="16px" height="16px" /> {{
-                  ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt &&
-                    app?.user?.has_gold_sbt_nft) || premiumActive) ? `(${premiumActive ? t('boost.king') : 'SBT'})` : "" }}
+                  (withdrawalType === 'blockchain' && ((app?.user?.has_silver_sbt && app?.user?.has_silver_sbt_nft) || (app?.user?.has_gold_sbt &&
+                    app?.user?.has_gold_sbt_nft) || premiumActive)) ? `(${premiumActive ? t('boost.king') : 'SBT'})` : "" }}
               </span>
             </div>
             <div class="tbtc-price">
