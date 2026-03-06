@@ -345,6 +345,39 @@ withdrawal_request = WithdrawalRequest.objects.create(
     note=note,
     commision_percent=commision_percent,
 )
+
+#### 3.2.4. Ограничение 1 запрос в 24 часа (In‑App + Blockchain)
+
+Сейчас лимит реализован так:
+
+```1145:1153:edit/core/views.py
+last_request = (
+    WithdrawalRequest.objects.filter(
+        user=user_profile,
+        token_contract_address=token_contract_address,
+        note=note,
+    )
+    .order_by("-claimed_at")
+    .first()
+)
+if last_request and (timezone.now() - last_request.claimed_at).days < 1:
+    return Response(
+        {
+            "error": "You can only make one withdrawal request per day",
+            "last_date": last_request.claimed_at,
+        },
+        400,
+    )
+```
+
+Требование:
+- если сегодня уже был **любой** вывод данного токена (In‑App или blockchain), следующий запрос (In‑App или blockchain) для этого токена должен быть доступен только через 24 часа.
+
+План минимального изменения:
+- для лимита использовать фильтр по `user` + `token_contract_address`, без разделения по `note`, либо группировать `note`:
+  - для kW: `note ∈ {"withdraw", "In-app withdraw"}`;
+  - для fBTC из майнинга: `note ∈ {"claim", "withdraw", "In-app withdraw claim"}`.
+- Таким образом, In‑App и blockchain‑выводы учитываются одним общим лимитом “1 запрос в 24 часа” для каждой пары (пользователь, токен), при этом поведение staking/rent можно оставить как сейчас (отдельные ноты и отдельные лимиты).
 ```
 
 ### 3.3. Автоминт и ограничения — что не трогаем
