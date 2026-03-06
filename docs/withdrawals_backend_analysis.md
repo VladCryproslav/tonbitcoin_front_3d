@@ -375,8 +375,8 @@ if last_request and (timezone.now() - last_request.claimed_at).days < 1:
 
 План минимального изменения:
 - для лимита использовать фильтр по `user` + `token_contract_address`, без разделения по `note`, либо группировать `note`:
-  - для kW: `note ∈ {"withdraw", "In-app withdraw"}`;
-  - для fBTC из майнинга: `note ∈ {"claim", "withdraw", "In-app withdraw claim"}`.
+  - для kW: `note ∈ {"claim", "In-app claim"}`;
+  - для fBTC из майнинга: `note ∈ {"withdraw", "In-app withdraw"}`.
 - Таким образом, In‑App и blockchain‑выводы учитываются одним общим лимитом “1 запрос в 24 часа” для каждой пары (пользователь, токен), при этом поведение staking/rent можно оставить как сейчас (отдельные ноты и отдельные лимиты).
 ```
 

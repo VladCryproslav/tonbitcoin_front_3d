@@ -1038,6 +1038,11 @@ class CreateWithdrawalRequestView(APIView):
                 "token_contract_address": openapi.Schema(type=openapi.TYPE_STRING),
                 "is_mining": openapi.Schema(type=openapi.TYPE_BOOLEAN),
                 "is_staking": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                "withdrawal_type": openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description='Тип вывода: "blockchain" (по умолчанию) или "inapp"',
+                    enum=["blockchain", "inapp"],
+                ),
             },
         ),
         responses={
@@ -1065,12 +1070,23 @@ def common_withdrawal(request):
     is_mining = request.data.get("is_mining", False)
     is_staking = request.data.get("is_staking", False)
     is_rent = request.data.get("is_rent", False)
+    withdrawal_type = request.data.get("withdrawal_type", "blockchain")
 
-    if not all([wallet_address, token_amount, token_contract_address]):
-        return Response(
-            {"error": "All fields are required"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    if withdrawal_type not in ("blockchain", "inapp"):
+        withdrawal_type = "blockchain"
+
+    if withdrawal_type == "blockchain":
+        if not all([wallet_address, token_amount, token_contract_address]):
+            return Response(
+                {"error": "All fields are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+    else:
+        if not all([token_amount, token_contract_address]):
+            return Response(
+                {"error": "All fields are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     user_id = request.user_profile.user_id
     last_withdraw_time = cache.get(f"last_withdraw_{user_id}")
@@ -1096,21 +1112,26 @@ def common_withdrawal(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    try:
-        real_address = pytoniq_core.Address(wallet_address).to_str(
-            is_user_friendly=False
-        )
-    except Exception:
-        action_logger.info(
-            f"wrong wallet address: {real_address}, need {request.user_profile.ton_wallet} for {request.user_profile.id}"
-        )
-    if real_address != request.user_profile.ton_wallet:
-        action_logger.info(
-            f"wrong wallet address: {real_address}, need {request.user_profile.ton_wallet} for {request.user_profile.id}"
-        )
-        return Response(
-            {"error": "Wrong wallet address"}, status=status.HTTP_400_BAD_REQUEST
-        )
+    if withdrawal_type == "blockchain":
+        try:
+            real_address = pytoniq_core.Address(wallet_address).to_str(
+                is_user_friendly=False
+            )
+        except Exception:
+            action_logger.info(
+                f"wrong wallet address: {wallet_address}, need {request.user_profile.ton_wallet} for {request.user_profile.id}"
+            )
+            return Response(
+                {"error": "Wrong wallet address"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        if real_address != request.user_profile.ton_wallet:
+            action_logger.info(
+                f"wrong wallet address: {real_address}, need {request.user_profile.ton_wallet} for {request.user_profile.id}"
+            )
+            return Response(
+                {"error": "Wrong wallet address"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     user_profile: UserProfile = request.user_profile
     energy = user_profile.energy
@@ -1123,6 +1144,17 @@ def common_withdrawal(request):
         note = "rent"
     else:
         note = "claim"
+
+    if withdrawal_type == "inapp":
+        if (
+            token_contract_address
+            == "EQDSYiFUtMVS9rhBDhbTfP-zbj_uqa69bHv6e5IberQH5n1N"
+        ):
+            note = "In-app claim"
+        elif is_mining:
+            note = "In-app withdraw claim"
+        elif not is_staking and not is_rent:
+            note = "In-app withdraw"
     comment = ""
     is_auto = False
 
@@ -1140,14 +1172,29 @@ def common_withdrawal(request):
 
     min_rent = getattr(withdraw_config, "min_rent", 10)
     max_auto_rent = getattr(withdraw_config, "max_auto_rent", 1000)
-    wallet_info = WalletInfo.objects.filter(user=user_profile, wallet=user_profile.ton_wallet).first()
+    wallet_info = WalletInfo.objects.filter(
+        user=user_profile, wallet=user_profile.ton_wallet
+    ).first()
 
     try:
+        notes_filter = [note]
+        if (
+            token_contract_address
+            == "EQDSYiFUtMVS9rhBDhbTfP-zbj_uqa69bHv6e5IberQH5n1N"
+        ):
+            notes_filter = ["claim", "In-app claim"]
+        elif (
+            token_contract_address
+            == "EQBOqBiArR45GUlifxdzZ40ZahdVhjtU7GjY-lVtqruHvQEc"
+            and is_mining
+        ):
+            notes_filter = ["withdraw", "In-app withdraw claim"]
+
         last_request = (
             WithdrawalRequest.objects.filter(
                 user=user_profile,
                 token_contract_address=token_contract_address,
-                note=note,
+                note__in=notes_filter,
             )
             .order_by("-claimed_at")
             .first()
@@ -1166,35 +1213,57 @@ def common_withdrawal(request):
             == "EQDSYiFUtMVS9rhBDhbTfP-zbj_uqa69bHv6e5IberQH5n1N"
         ):
             token_type = "kw"
-            if user_profile.energy < token_amount or token_amount < min_kw or (wallet_info and wallet_info.kw_amount < token_amount):
+            if (
+                user_profile.energy < token_amount
+                or token_amount < min_kw
+                or (wallet_info and wallet_info.kw_amount < token_amount)
+            ):
                 return Response(
                     {"error": "Not enough kW in wallet"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            with transaction.atomic():
-                UserProfile.objects.filter(user_id=user_profile.user_id).update(
-                    energy=F("energy") - token_amount
-                )
-                WalletInfo.objects.filter(
-                    user=user_profile, wallet=user_profile.ton_wallet
-                ).update(kw_amount=F("kw_amount") - token_amount)
-            commision_percent = user_profile.sbt_get_kw_commision()
-            if token_amount < max_auto_kw:
-                real_amount = token_amount * (1 - commision_percent)
-                add_kw_commission(token_amount - real_amount)
+
+            if withdrawal_type == "inapp":
+                # In-App: энергия -> внутренний kw_wallet, без блокчейн-транзакции и без LP-пула
+                gross = float(token_amount)
+                net = gross * 0.9  # 10% комиссия как на фронте
+                with transaction.atomic():
+                    UserProfile.objects.filter(user_id=user_profile.user_id).update(
+                        energy=F("energy") - gross,
+                        kw_wallet=F("kw_wallet") + net,
+                    )
+                    WalletInfo.objects.filter(
+                        user=user_profile, wallet=user_profile.ton_wallet
+                    ).update(kw_amount=F("kw_amount") - gross)
+                real_amount = net
+                commision_percent = 0.10
                 tx_hash = ""
-                comment = f"Mint {user_profile.user_id}"
-                # try:
-                #     tx_hash = async_to_sync(send_kw)(
-                #         wallet_address, real_amount, f"Mint {user_profile.user_id}"
-                #     )
-                # except Exception as e:
-                #     tx_hash = "error"
-                #     action_logger.exception("Error mint")
-                action_logger.info(
-                    f"AUTOCLAIM {wallet_address}, {real_amount}, Mint {user_profile.user_id}, {tx_hash}"
-                )
-                is_auto = True
+                comment = f"In-app Mint {user_profile.user_id}"
+            else:
+                with transaction.atomic():
+                    UserProfile.objects.filter(user_id=user_profile.user_id).update(
+                        energy=F("energy") - token_amount
+                    )
+                    WalletInfo.objects.filter(
+                        user=user_profile, wallet=user_profile.ton_wallet
+                    ).update(kw_amount=F("kw_amount") - token_amount)
+                commision_percent = user_profile.sbt_get_kw_commision()
+                if token_amount < max_auto_kw:
+                    real_amount = token_amount * (1 - commision_percent)
+                    add_kw_commission(token_amount - real_amount)
+                    tx_hash = ""
+                    comment = f"Mint {user_profile.user_id}"
+                    # try:
+                    #     tx_hash = async_to_sync(send_kw)(
+                    #         wallet_address, real_amount, f"Mint {user_profile.user_id}"
+                    #     )
+                    # except Exception as e:
+                    #     tx_hash = "error"
+                    #     action_logger.exception("Error mint")
+                    action_logger.info(
+                        f"AUTOCLAIM {wallet_address}, {real_amount}, Mint {user_profile.user_id}, {tx_hash}"
+                    )
+                    is_auto = True
         else:
             token_type = "tbtc"
             if is_mining:

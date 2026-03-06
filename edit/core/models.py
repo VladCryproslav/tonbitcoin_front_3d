@@ -421,10 +421,10 @@ class UserProfile(models.Model):
         gold_sbt = self.has_gold_sbt and self.has_gold_sbt_nft
         premium_sub = self.premium_sub_expires and self.premium_sub_expires > timezone.now()
         if gold_sbt or premium_sub:
-            return 0.08  # 4% + 4% (pool + fee)
+            return 0.18  # 9% + 9% (pool + fee)
         if self.has_silver_sbt and self.has_silver_sbt_nft:
-            return 0.09  # 4.5% + 4.5%
-        return 0.10  # 5% + 5%
+            return 0.19  # 9.5% + 9.5%
+        return 0.20  # 10% + 10%
 
     def sbt_get_claim_commision(self):
         gold_sbt = self.has_gold_sbt and self.has_gold_sbt_nft
@@ -1180,6 +1180,7 @@ class WithdrawalRequest(models.Model):
     token_contract_address = models.CharField(max_length=255)
     claimed_at = models.DateTimeField(default=timezone.now)
     processed = models.BooleanField(default=False)
+    withdrawal_type = models.CharField(max_length=20, default="blockchain")
 
     energy = models.FloatField(default=0)  # Енергія в кіловатах
     tbtc_left = models.FloatField(default=0)

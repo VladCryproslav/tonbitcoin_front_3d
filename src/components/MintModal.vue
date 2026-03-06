@@ -96,10 +96,11 @@ async function claim() {
   const tokensNet = +(gross * (1 - rate)).toFixed(0)
   const reqData = {
     user_id: user_id,
-    wallet_address: receiveWallet,
+    wallet_address: withdrawalType.value === 'blockchain' ? receiveWallet : null,
     token_amount: gross,
     token_contract_address: 'EQDSYiFUtMVS9rhBDhbTfP-zbj_uqa69bHv6e5IberQH5n1N',
-    isMining: false,
+    is_mining: false,
+    withdrawal_type: withdrawalType.value,
   }
   try {
     await host

@@ -139,10 +139,11 @@ async function withdrawTBTC() {
   const mining = props?.claim ? true : false
   const reqData = {
     user_id: user_id,
-    wallet_address: receiveWallet,
+    wallet_address: withdrawalType.value === 'blockchain' ? receiveWallet : null,
     token_amount: finalAmount,
     token_contract_address: 'EQBOqBiArR45GUlifxdzZ40ZahdVhjtU7GjY-lVtqruHvQEc',
     is_mining: mining,
+    withdrawal_type: withdrawalType.value,
   }
   try {
     await host
