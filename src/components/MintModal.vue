@@ -3,7 +3,7 @@ const Exit = defineAsyncComponent(() => import('@/assets/upg-modal-close.svg'))
 import { useTelegram } from '@/services/telegram'
 import { useAppStore } from '@/stores/app'
 import { useTonAddress } from '@townsquarelabs/ui-vue'
-import { computed, defineAsyncComponent, ref } from 'vue'
+import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { host } from '../../axios.config'
 import { useI18n } from 'vue-i18n'
 import CustomSlider from './CustomSlider.vue'
@@ -29,6 +29,20 @@ const max = computed(() => {
   return Math.min(max_kw, Math.max(0, energy))
 })
 const amount = ref(Math.min(max.value, available.value))
+
+function clampAmount(val) {
+  const numeric = Number(val) || 0
+  const upper = Math.max(0, max.value || 0)
+  const lower = Math.max(0, min.value || 0)
+  return Math.min(upper, Math.max(lower, numeric))
+}
+
+watch([max, withdrawalType], () => {
+  const clamped = clampAmount(amount.value)
+  if (clamped !== amount.value) {
+    amount.value = clamped
+  }
+})
 
 const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= new Date())
 
