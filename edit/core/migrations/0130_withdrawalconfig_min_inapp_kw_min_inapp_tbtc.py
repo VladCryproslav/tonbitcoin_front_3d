@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("core", "0099_roadmapitem_title_en_roadmapitem_title_ru"),
+        ("core", "0129_remove_singularity_prev_fields"),
     ]
 
     operations = [

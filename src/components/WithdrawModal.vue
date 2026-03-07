@@ -28,11 +28,16 @@ const totalBalance = computed(() => {
 const premiumActive = computed(() => new Date(app.user?.premium_sub_expires) >= new Date())
 
 const min = computed(() => {
+  const cfg = app.withdraw_config
   if (withdrawalType.value === 'inapp') {
-    const inappTbtc = app.withdraw_config?.min_inapp_tbtc ?? app.withdraw_config?.min_tbtc ?? 50
-    return props?.claim ? (app.withdraw_config?.min_inapp_tbtc ?? app.withdraw_config?.min_claim ?? 2) : inappTbtc
+    const inappTbtc = cfg?.min_inapp_tbtc ?? cfg?.min_tbtc ?? 50
+    return props?.claim ? (cfg?.min_inapp_tbtc ?? cfg?.min_claim ?? 2) : inappTbtc
   }
-  return props?.claim ? app.withdraw_config?.min_claim || 2 : app.withdraw_config?.min_tbtc || 50
+  // blockchain: только min_claim и min_tbtc, не min_inapp_*
+  const blockchainMin = props?.claim
+    ? (cfg?.min_claim ?? 2)
+    : (cfg?.min_tbtc ?? 50)
+  return Number(blockchainMin) || (props?.claim ? 2 : 50)
 })
 // available всегда показывает полное доступное количество
 const available = computed(() => {
