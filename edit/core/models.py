@@ -1257,6 +1257,16 @@ class WithdrawalConfig(models.Model):
     min_kw = models.FloatField(default=500)
     min_tbtc = models.FloatField(default=50)
     min_claim = models.FloatField(default=0)
+    min_inapp_kw = models.FloatField(
+        default=300,
+        verbose_name="Min in-app kw",
+        help_text="Минимальная сумма kW для вывода In-App",
+    )
+    min_inapp_tbtc = models.FloatField(
+        default=50,
+        verbose_name="Min in-app tbtc",
+        help_text="Минимальная сумма fBTC для вывода In-App",
+    )
     max_auto_kw = models.FloatField(default=10000)
     max_auto_tbtc = models.FloatField(default=500)
     max_auto_claim = models.FloatField(default=500)

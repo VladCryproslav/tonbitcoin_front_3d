@@ -15,7 +15,12 @@ const { t } = useI18n()
 // Визуальный переключатель режима минта (Blockchain / In-App)
 const withdrawalType = ref('blockchain')
 
-const min = computed(() => app.withdraw_config?.min_kw || 300)
+const min = computed(() => {
+  if (withdrawalType.value === 'inapp') {
+    return app.withdraw_config?.min_inapp_kw ?? app.withdraw_config?.min_kw ?? 300
+  }
+  return app.withdraw_config?.min_kw || 300
+})
 // available — полный баланс без ограничения max_kw
 const available = computed(() => Math.max(0, Math.floor(app?.wallet_info?.kw_amount)))
 // max ограничивает ход ползунка:

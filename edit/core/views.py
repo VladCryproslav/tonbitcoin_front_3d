@@ -1173,6 +1173,8 @@ def common_withdrawal(request):
     withdraw_config = WithdrawalConfig.objects.first() or None
     min_kw = getattr(withdraw_config, "min_kw", 500)
     min_tbtc = getattr(withdraw_config, "min_tbtc", 50)
+    min_inapp_kw = getattr(withdraw_config, "min_inapp_kw", 300)
+    min_inapp_tbtc = getattr(withdraw_config, "min_inapp_tbtc", 50)
     min_claim = getattr(withdraw_config, "min_claim", 0)
     max_auto_kw = getattr(withdraw_config, "max_auto_kw", 10000)
     max_auto_tbtc = getattr(withdraw_config, "max_auto_tbtc", 500)
@@ -1227,9 +1229,12 @@ def common_withdrawal(request):
             == "EQDSYiFUtMVS9rhBDhbTfP-zbj_uqa69bHv6e5IberQH5n1N"
         ):
             token_type = "kw"
+            min_kw_effective = (
+                min_inapp_kw if withdrawal_type == "inapp" else min_kw
+            )
             if (
                 user_profile.energy < token_amount
-                or token_amount < min_kw
+                or token_amount < min_kw_effective
                 or (wallet_info and wallet_info.kw_amount < token_amount)
             ):
                 return Response(
@@ -1301,7 +1306,10 @@ def common_withdrawal(request):
 
                     withdraw_gross = min(requested_amount, total_mined_tokens_balance)
 
-                    if withdraw_gross < min_claim:
+                    min_claim_effective = (
+                        min_inapp_tbtc if withdrawal_type == "inapp" else min_claim
+                    )
+                    if withdraw_gross < min_claim_effective:
                         return Response(
                             {"error": "Not enough tBTC in wallet 2"},
                             status=status.HTTP_400_BAD_REQUEST,
