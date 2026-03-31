@@ -15,7 +15,8 @@ const app = useAppStore()
 const { tg } = useTelegram()
 const { t, locale } = useI18n()
 
-const TECH_MAINTENANCE = true; // Технічні роботи
+const TECH_MAINTENANCE = false; // Технічні роботи
+const TECH_INFOBOT = true;
 const opacityLevels = ref([])
 
 const scrollHandler = () => {
@@ -179,23 +180,24 @@ onMounted(async () => {
           <span v-html="t('preloader.agent_text')"></span>
         </div>
       </div>
-      <div v-if="TECH_MAINTENANCE" class="user-maintenance">
-        <img src="@/assets/maintenance.webp" />
-        <div class="maintenance-data">
-          <h1>{{ t('preloader.maintenance') }}</h1>
-          <span v-html="t('preloader.maintenance_text')"></span>
-          <!-- <span>Бот версии 2.4 закрыт с 27.06.2025 19.00</span>
-          <span>Обновленный бот версии 3.0 будет открыт 03.07.2025</span>
-          <br>
-          <span>Подробнее на канале TonBitcoin:</span>
-          <span style="opacity: 1;" @click="openMaintenance">t.me/ton4btc/720</span> -->
+      <div v-if="TECH_MAINTENANCE" class="user-maintenance" :class="{ infobot: TECH_INFOBOT }">
+        <img :src="TECH_INFOBOT ? '/src/assets/infobot.webp' : '/src/assets/maintenance.webp'" />
+        <div class="maintenance-data" :class="{ infobot: TECH_INFOBOT }">
+          <h1>{{ TECH_INFOBOT ? 'Информация' : t('preloader.maintenance') }}</h1>
+          <span v-if="TECH_INFOBOT">
+            Работа приложения временно приостановлена в связи с текущей ситуацией на рынке TON.
+            Мы продолжим информировать вас о дальнейших планах и новостях в нашем
+            Telegram-канале проекта TonBitcoin.
+          </span>
+          <span v-else v-html="t('preloader.maintenance_text')"></span>
         </div>
       </div>
     </div>
     <footer>
       <h2 v-show="!app?.blocked && !TECH_MAINTENANCE">{{ labels[currLabel] }}</h2>
       <div v-show="app.loadingProgress < 100 || app?.blocked || TECH_MAINTENANCE" class="shell">
-        <div class="bar" :class="{ blocked: app?.blocked }"
+        <div class="bar"
+          :class="{ blocked: app?.blocked, infobot: TECH_INFOBOT && !app?.blocked }"
           :style="{ width: (app?.blocked || TECH_MAINTENANCE) ? '100%' : app.loadingProgress + '%' }">
         </div>
       </div>
@@ -422,6 +424,14 @@ header {
       border: 1px solid #FFD500;
       border-radius: 1rem;
 
+      &.infobot {
+        border-color: #009600;
+      }
+
+      &.infobot {
+        background: linear-gradient(to bottom, #00c800, #009600);
+      }
+
       h1 {
         text-align: center;
         font-family: 'Roboto', sans-serif;
@@ -505,6 +515,7 @@ footer {
 
     &:active {
       background: linear-gradient(to bottom, #fcd90990, #fea40090);
+
     }
   }
 }
