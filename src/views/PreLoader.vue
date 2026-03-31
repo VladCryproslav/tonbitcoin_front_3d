@@ -4,6 +4,8 @@ import { useAppStore } from '@/stores/app'
 import bg1 from '@/assets/loading_1.webp'
 import bg2 from '@/assets/loading_2.webp'
 import bg3 from '@/assets/loading_3.webp'
+import imgMaintenance from '@/assets/maintenance.webp'
+import imgInfobot from '@/assets/infobot.webp'
 import { useTelegram } from '@/services/telegram'
 import { useI18n } from 'vue-i18n'
 const IconDone = defineAsyncComponent(() => import('@/assets/done.svg'))
@@ -183,7 +185,7 @@ onMounted(async () => {
         </div>
       </div>
       <div v-if="TECH_SCREEN" class="user-maintenance" :class="{ infobot: TECH_INFOBOT }">
-        <img :src="TECH_INFOBOT ? '/src/assets/infobot.webp' : '/src/assets/maintenance.webp'" />
+        <img :src="TECH_INFOBOT ? imgInfobot : imgMaintenance" alt="" />
         <div class="maintenance-data" :class="{ infobot: TECH_INFOBOT }">
           <h1>{{ TECH_INFOBOT ? 'Информация' : t('preloader.maintenance') }}</h1>
           <span v-if="TECH_INFOBOT">
@@ -266,6 +268,10 @@ onMounted(async () => {
 
   &.blocked {
     background: linear-gradient(to bottom, #ff3b59, #b92b41);
+  }
+
+  &.infobot {
+    background: linear-gradient(to bottom, #2ecc71, #009600);
   }
 }
 
@@ -428,10 +434,6 @@ header {
 
       &.infobot {
         border-color: #009600;
-      }
-
-      &.infobot {
-        background: linear-gradient(to bottom, #00c800, #009600);
       }
 
       h1 {
