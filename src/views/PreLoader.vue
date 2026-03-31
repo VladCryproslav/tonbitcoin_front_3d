@@ -187,11 +187,9 @@ onMounted(async () => {
       <div v-if="TECH_SCREEN" class="user-maintenance" :class="{ infobot: TECH_INFOBOT }">
         <img :src="TECH_INFOBOT ? imgInfobot : imgMaintenance" alt="" />
         <div class="maintenance-data" :class="{ infobot: TECH_INFOBOT }">
-          <h1>{{ TECH_INFOBOT ? 'Информация' : t('preloader.maintenance') }}</h1>
+          <h1>{{ TECH_INFOBOT ? t('preloader.infobot') : t('preloader.maintenance') }}</h1>
           <span v-if="TECH_INFOBOT">
-            Работа приложения временно приостановлена в связи с текущей ситуацией на рынке TON.
-            Мы продолжим информировать вас о дальнейших планах и новостях в нашем
-            Telegram-канале проекта TonBitcoin.
+            {{ t('preloader.infobot_text') }}
           </span>
           <span v-else v-html="t('preloader.maintenance_text')"></span>
         </div>

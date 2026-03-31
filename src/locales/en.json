@@ -609,6 +609,8 @@
     "agent_text": "Security system detected suspicious activity. Your account has been blocked for violating <b>TonBitcoin</b> project rules",
     "maintenance": "Maintenance",
     "maintenance_text": "Attention! Scheduled maintenance is being performed. Upon completion, users will be notified in the <b>TonBitcoin</b> project Telegram channel.",
+    "infobot": "Information",
+    "infobot_text": "The application is temporarily paused due to the current situation on the TON market. We will continue to inform you about future plans and news in our <b>TonBitcoin</b> Telegram channel.",
     "loading": "Loading...",
     "unpossible": "Loading impossible",
     "start_btn": "Press to start"
