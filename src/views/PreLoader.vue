@@ -17,6 +17,8 @@ const { t, locale } = useI18n()
 
 const TECH_MAINTENANCE = false; // Технічні роботи
 const TECH_INFOBOT = true;
+/** Блокуючий тех-екран: maintenance і/або окремий infobot-режим */
+const TECH_SCREEN = TECH_MAINTENANCE || TECH_INFOBOT
 const opacityLevels = ref([])
 
 const scrollHandler = () => {
@@ -129,8 +131,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="loader" :class="{ blocked: app?.blocked, maintenance: TECH_MAINTENANCE }">
-    <header :style="app?.blocked || TECH_MAINTENANCE ? 'z-index: -1;' : ''">
+  <div class="loader" :class="{ blocked: app?.blocked, maintenance: TECH_SCREEN }">
+    <header :style="app?.blocked || TECH_SCREEN ? 'z-index: -1;' : ''">
       <Logo width="90px" />
       <h1>TonBitcoin Mine</h1>
       <div class="roadmap">
@@ -172,7 +174,7 @@ onMounted(async () => {
       </div>
     </header>
     <div class="content">
-      <div v-if="!app?.blocked && !TECH_MAINTENANCE" class="slider" :style="backgroundStyle"></div>
+      <div v-if="!app?.blocked && !TECH_SCREEN" class="slider" :style="backgroundStyle"></div>
       <div v-if="app?.blocked" class="user-ban">
         <img src="@/assets/blocked user.webp" />
         <div class="ban-data">
@@ -180,7 +182,7 @@ onMounted(async () => {
           <span v-html="t('preloader.agent_text')"></span>
         </div>
       </div>
-      <div v-if="TECH_MAINTENANCE" class="user-maintenance" :class="{ infobot: TECH_INFOBOT }">
+      <div v-if="TECH_SCREEN" class="user-maintenance" :class="{ infobot: TECH_INFOBOT }">
         <img :src="TECH_INFOBOT ? '/src/assets/infobot.webp' : '/src/assets/maintenance.webp'" />
         <div class="maintenance-data" :class="{ infobot: TECH_INFOBOT }">
           <h1>{{ TECH_INFOBOT ? 'Информация' : t('preloader.maintenance') }}</h1>
@@ -194,21 +196,21 @@ onMounted(async () => {
       </div>
     </div>
     <footer>
-      <h2 v-show="!app?.blocked && !TECH_MAINTENANCE">{{ labels[currLabel] }}</h2>
-      <div v-show="app.loadingProgress < 100 || app?.blocked || TECH_MAINTENANCE" class="shell">
+      <h2 v-show="!app?.blocked && !TECH_SCREEN">{{ labels[currLabel] }}</h2>
+      <div v-show="app.loadingProgress < 100 || app?.blocked || TECH_SCREEN" class="shell">
         <div class="bar"
           :class="{ blocked: app?.blocked, infobot: TECH_INFOBOT && !app?.blocked }"
-          :style="{ width: (app?.blocked || TECH_MAINTENANCE) ? '100%' : app.loadingProgress + '%' }">
+          :style="{ width: (app?.blocked || TECH_SCREEN) ? '100%' : app.loadingProgress + '%' }">
         </div>
       </div>
       <Transition name="slide-fade">
-        <button v-show="app.loadingProgress == 100 && !app?.blocked && !TECH_MAINTENANCE" class="start-btn"
+        <button v-show="app.loadingProgress == 100 && !app?.blocked && !TECH_SCREEN" class="start-btn"
           @click="endLoader">
           {{ t('preloader.start_btn') }}
         </button>
       </Transition>
-      <h1 v-show="app.loadingProgress < 100 && !app?.blocked && !TECH_MAINTENANCE">{{ t('preloader.loading') }}</h1>
-      <h1 v-show="app?.blocked || TECH_MAINTENANCE">{{ t('preloader.unpossible') }}</h1>
+      <h1 v-show="app.loadingProgress < 100 && !app?.blocked && !TECH_SCREEN">{{ t('preloader.loading') }}</h1>
+      <h1 v-show="app?.blocked || TECH_SCREEN">{{ t('preloader.unpossible') }}</h1>
       <span>TonBitcoin Ver. 3.2</span>
     </footer>
   </div>
