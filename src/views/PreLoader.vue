@@ -18,7 +18,7 @@ const { tg } = useTelegram()
 const { t, locale } = useI18n()
 
 const TECH_MAINTENANCE = false; // Технічні роботи
-const TECH_INFOBOT = false;
+const TECH_INFOBOT = true;
 /** Блокуючий тех-екран: maintenance і/або окремий infobot-режим */
 const TECH_SCREEN = TECH_MAINTENANCE || TECH_INFOBOT
 const opacityLevels = ref([])
@@ -197,7 +197,11 @@ onMounted(async () => {
         >
           <h1>{{ TECH_INFOBOT ? t('preloader.infobot') : t('preloader.maintenance') }}</h1>
           <span v-if="TECH_INFOBOT" class="infobot-text">
-            {{ t('preloader.infobot_text') }}<span class="infobot-highlight">{{ t('preloader.infobot_highlight') }}</span>
+            {{ t('preloader.infobot_text') }}
+            <span class="infobot-foot">
+              <span class="infobot-lead">{{ t('preloader.infobot_lead') }}</span>
+              <span class="infobot-highlight">{{ t('preloader.infobot_highlight') }}</span>
+            </span>
           </span>
           <span v-else v-html="t('preloader.maintenance_text')"></span>
         </div>
@@ -427,7 +431,7 @@ header {
     }
 
     &.infobot img {
-      margin-top: -88%;
+      margin-top: -92%;
       transform: translateY(-16px);
     }
 
@@ -449,6 +453,22 @@ header {
         .infobot-text {
           opacity: 1;
           color: rgba(255, 255, 255, 0.78);
+          display: block;
+          width: 100%;
+          align-self: stretch;
+          text-align: left;
+        }
+
+        .infobot-foot {
+          display: block;
+          width: 100%;
+          margin-top: 0.85em;
+          padding-left: 1em;
+          box-sizing: border-box;
+        }
+
+        .infobot-lead {
+          display: block;
         }
       }
 
@@ -479,6 +499,8 @@ header {
       }
 
       .infobot-highlight {
+        display: block;
+        margin-top: 0.35em;
         color: #fcd909;
         font-weight: 600;
         opacity: 1;
