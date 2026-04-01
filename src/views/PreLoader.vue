@@ -199,8 +199,7 @@ onMounted(async () => {
           <span v-if="TECH_INFOBOT" class="infobot-text">
             {{ t('preloader.infobot_text') }}
             <span class="infobot-foot">
-              <span class="infobot-lead">{{ t('preloader.infobot_lead') }}</span>
-              <span class="infobot-highlight">{{ t('preloader.infobot_highlight') }}</span>
+              <span class="infobot-lead">{{ t('preloader.infobot_lead') }}</span>{{ ' ' }}<span class="infobot-highlight">{{ t('preloader.infobot_highlight') }}</span>
             </span>
           </span>
           <span v-else v-html="t('preloader.maintenance_text')"></span>
@@ -471,7 +470,7 @@ header {
         }
 
         .infobot-lead {
-          display: block;
+          display: inline;
           text-align: left;
           color: rgba(255, 255, 255, 0.78);
           opacity: 1;
@@ -482,9 +481,9 @@ header {
         }
 
         .infobot-highlight {
-          display: block;
-          margin-top: 0.35em;
-          padding-left: 1em;
+          display: inline;
+          margin: 0;
+          padding: 0;
           text-align: left;
           color: #fcd909;
           font-weight: 600;
