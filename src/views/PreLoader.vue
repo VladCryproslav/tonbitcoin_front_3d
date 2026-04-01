@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, defineAsyncComponent, nextTick } from 'vue'
+import { computed, onMounted, ref, defineAsyncComponent } from 'vue'
 import { useAppStore } from '@/stores/app'
 import bg1 from '@/assets/loading_1.webp'
 import bg2 from '@/assets/loading_2.webp'
@@ -85,8 +85,8 @@ const changeImage = () => {
 // const progress = ref(0)
 const emit = defineEmits(['progress-complete'])
 
-const openMaintenance = () => {
-  tg.openTelegramLink('https://t.me/ton4btc/720')
+const openInfobotChannel = () => {
+  tg?.openTelegramLink?.('https://t.me/ton7btc')
 }
 
 const endLoader = () => {
@@ -186,7 +186,15 @@ onMounted(async () => {
       </div>
       <div v-if="TECH_SCREEN" class="user-maintenance" :class="{ infobot: TECH_INFOBOT }">
         <img :src="TECH_INFOBOT ? imgInfobot : imgMaintenance" alt="" />
-        <div class="maintenance-data" :class="{ infobot: TECH_INFOBOT }">
+        <div
+          class="maintenance-data"
+          :class="{ infobot: TECH_INFOBOT, 'infobot-clickable': TECH_INFOBOT }"
+          :role="TECH_INFOBOT ? 'button' : undefined"
+          :tabindex="TECH_INFOBOT ? 0 : undefined"
+          @click="TECH_INFOBOT && openInfobotChannel()"
+          @keydown.enter.prevent="TECH_INFOBOT && openInfobotChannel()"
+          @keydown.space.prevent="TECH_INFOBOT && openInfobotChannel()"
+        >
           <h1>{{ TECH_INFOBOT ? t('preloader.infobot') : t('preloader.maintenance') }}</h1>
           <span v-if="TECH_INFOBOT">
             {{ t('preloader.infobot_text') }}
@@ -418,6 +426,11 @@ header {
       filter: drop-shadow(0 30px 40px #ffffffd0);
     }
 
+    &.infobot img {
+      margin-top: -88%;
+      transform: translateY(-16px);
+    }
+
     .maintenance-data {
       width: 90%;
       display: flex;
@@ -432,6 +445,15 @@ header {
 
       &.infobot {
         border-color: #009600;
+      }
+
+      &.infobot-clickable {
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+
+        &:active {
+          opacity: 0.92;
+        }
       }
 
       h1 {
