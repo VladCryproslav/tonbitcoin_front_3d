@@ -455,7 +455,7 @@ header {
           display: block;
           width: 100%;
           align-self: stretch;
-          text-align: left;
+          text-align: center;
         }
 
         .infobot-foot {
