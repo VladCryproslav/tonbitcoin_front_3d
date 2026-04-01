@@ -464,14 +464,14 @@ header {
           margin-top: 0.85em;
           padding-left: 0;
           box-sizing: border-box;
-          text-align: left;
+          text-align: center;
           color: rgba(255, 255, 255, 0.78);
           opacity: 1;
         }
 
         .infobot-lead {
           display: inline;
-          text-align: left;
+          text-align: center;
           color: rgba(255, 255, 255, 0.78);
           opacity: 1;
           font-weight: 400;
