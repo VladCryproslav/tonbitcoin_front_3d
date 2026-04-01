@@ -507,6 +507,7 @@ class UserStakingAdmin(admin.ModelAdmin):
         "days",
         "reward",
         "collected",
+        "last_collected",
         "start_date",
         "end_date",
         "status",
