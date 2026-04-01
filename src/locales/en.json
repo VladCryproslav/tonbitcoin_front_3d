@@ -610,8 +610,8 @@
     "agent_text": "Security system detected suspicious activity. Your account has been blocked for violating <b>TonBitcoin</b> project rules",
     "maintenance": "Maintenance",
     "maintenance_text": "Attention! Scheduled maintenance is being performed. Upon completion, users will be notified in the <b>TonBitcoin</b> project Telegram channel.",
-    "infobot": "Attention! Dear community!",
-    "infobot_text": "Due to unfavorable external events, such as almost complete blocking of Telegram on the territory of Russia from April 1, 2026, even through VPN, which led to a huge outflow of users from TON projects, we are forced to stop the work of our TonBitcoin project until the situation in Telegram and the TON blockchain becomes more favorable for the existence of our project with you. More detailed information on our official channel: <a href='https://t.me/ton4btc'>https://t.me/ton4btc</a>",
+    "infobot": "Dear community!",
+    "infobot_text": "Due to unfavorable external events, such as almost complete blocking of Telegram on the territory of Russia from April 1, 2026, even through VPN, which led to a huge outflow of users from TON projects, we are forced to stop the work of our TonBitcoin project until the situation in Telegram and the TON blockchain becomes more favorable for the existence of our project with you. More detailed information on our official channel TonBitcoin",
     "loading": "Loading...",
     "unpossible": "Loading impossible",
     "start_btn": "Press to start"
