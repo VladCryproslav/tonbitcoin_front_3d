@@ -196,8 +196,8 @@ onMounted(async () => {
           @keydown.space.prevent="TECH_INFOBOT && openInfobotChannel()"
         >
           <h1>{{ TECH_INFOBOT ? t('preloader.infobot') : t('preloader.maintenance') }}</h1>
-          <span v-if="TECH_INFOBOT">
-            {{ t('preloader.infobot_text') }}
+          <span v-if="TECH_INFOBOT" class="infobot-text">
+            {{ t('preloader.infobot_text') }}<span class="infobot-highlight">{{ t('preloader.infobot_highlight') }}</span>
           </span>
           <span v-else v-html="t('preloader.maintenance_text')"></span>
         </div>
@@ -445,6 +445,11 @@ header {
 
       &.infobot {
         border-color: #009600;
+
+        .infobot-text {
+          opacity: 1;
+          color: rgba(255, 255, 255, 0.78);
+        }
       }
 
       &.infobot-clickable {
@@ -471,6 +476,15 @@ header {
         font-weight: 400;
         font-size: 13px;
         opacity: 0.6;
+      }
+
+      .infobot-highlight {
+        color: #fcd909;
+        font-weight: 600;
+        opacity: 1;
+        text-decoration: underline;
+        text-decoration-color: #fcd90980;
+        text-underline-offset: 2px;
       }
 
       a {
