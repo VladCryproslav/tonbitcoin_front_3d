@@ -17,8 +17,8 @@ const app = useAppStore()
 const { tg } = useTelegram()
 const { t, locale } = useI18n()
 
-const TECH_MAINTENANCE = true; // Технічні роботи
-const TECH_INFOBOT = false;
+const TECH_MAINTENANCE = false; // Технічні роботи
+const TECH_INFOBOT = true;
 /** Блокуючий тех-екран: maintenance і/або окремий infobot-режим */
 const TECH_SCREEN = TECH_MAINTENANCE || TECH_INFOBOT
 const opacityLevels = ref([])
