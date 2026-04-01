@@ -431,7 +431,7 @@ header {
     }
 
     &.infobot img {
-      margin-top: -92%;
+      margin-top: -90%;
       transform: translateY(-16px);
     }
 
@@ -469,6 +469,24 @@ header {
 
         .infobot-lead {
           display: block;
+          color: inherit;
+          opacity: 1;
+          font-weight: 400;
+          font-size: inherit;
+          font-family: 'Roboto', sans-serif;
+          text-decoration: none;
+        }
+
+        .infobot-highlight {
+          display: block;
+          margin-top: 0.35em;
+          color: #fcd909;
+          font-weight: 600;
+          opacity: 1;
+          text-decoration: underline;
+          text-decoration-color: #fcd90980;
+          text-underline-offset: 2px;
+          font-family: 'Roboto', sans-serif;
         }
       }
 
@@ -496,17 +514,6 @@ header {
         font-weight: 400;
         font-size: 13px;
         opacity: 0.6;
-      }
-
-      .infobot-highlight {
-        display: block;
-        margin-top: 0.35em;
-        color: #fcd909;
-        font-weight: 600;
-        opacity: 1;
-        text-decoration: underline;
-        text-decoration-color: #fcd90980;
-        text-underline-offset: 2px;
       }
 
       a {
