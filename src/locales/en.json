@@ -612,8 +612,8 @@
     "maintenance_text": "Attention! Scheduled maintenance is being performed. Upon completion, users will be notified in the <b>TonBitcoin</b> project Telegram channel.",
     "infobot": "Dear community!",
     "infobot_text": "Due to unfavorable external events, such as almost complete blocking of Telegram on the territory of Russia from April 1, 2026, even through VPN, which led to a huge outflow of users from TON projects, we are forced to stop the work of our TonBitcoin project until the situation in Telegram and the TON blockchain becomes more favorable for the existence of our project with you.",
-    "infobot_lead": "More detailed information on",
-    "infobot_highlight": "our official TonBitcoin channel",
+    "infobot_lead": "More detailed information on our",
+    "infobot_highlight": "official TonBitcoin channel",
     "loading": "Loading...",
     "unpossible": "Loading impossible",
     "start_btn": "Press to start"
