@@ -7,9 +7,7 @@ import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { host } from '../../axios.config'
 import { useI18n } from 'vue-i18n'
 import CustomSlider from './CustomSlider.vue'
-import ModalNew from './ModalNew.vue'
 import { max_kw } from '@/services/data'
-import { mint_kw } from '@/services/app'
 
 const app = useAppStore()
 const { t } = useI18n()
@@ -88,8 +86,6 @@ const emitClose = () => {
   emit('close')
 }
 
-const openMaintenanceModal = ref(false)
-
 // Обработчик только для визуального переключения (бэкенд пока не трогаем)
 const handleWithdrawalTypeClick = (type) => {
   withdrawalType.value = type
@@ -112,10 +108,6 @@ function getTimeUntil(date) {
 }
 
 async function claim() {
-  if (mint_kw) {
-    openMaintenanceModal.value = true
-    return
-  }
   const user_id = user?.id
   const receiveWallet = ton_address.value
   // Обновляем профиль, чтобы подтянуть актуальные флаги SBT/premium перед расчетом комиссии
@@ -193,14 +185,6 @@ async function claim() {
 </script>
 
 <template>
-  <ModalNew
-    v-if="openMaintenanceModal"
-    status="warning"
-    :title="t('notification.st_attention')"
-    :body="t('notification.withdraw_tokens_maintenance')"
-    no-auto-close
-    @close="openMaintenanceModal = false"
-  />
   <div class="modal-mask" name="modal">
     <div class="modal-wrapper">
       <div class="modal-container">

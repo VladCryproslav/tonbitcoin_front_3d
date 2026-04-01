@@ -16,6 +16,7 @@ import StationSlider from '@/components/StationSlider.vue'
 import { useTonAddress } from '@townsquarelabs/ui-vue'
 import { useTelegram } from '@/services/telegram'
 import { halloweenActive } from '@/services/data'
+import { mint_kw } from '@/services/app'
 import ModalNew from '@/components/ModalNew.vue'
 import MintModal from '@/components/MintModal.vue'
 import UpgradeModal from '@/components/UpgradeModal.vue'
@@ -552,6 +553,14 @@ async function claim() {
       'warning',
       t('notification.st_attention'),
       t('notification.min_mint_bal_wallet', { bal: app.withdraw_config?.min_kw || 300, address: ton_address.value?.slice(0, 5) + '...' + ton_address.value?.slice(-5) })
+    )
+    return
+  }
+  if (mint_kw) {
+    showMeModal(
+      'warning',
+      t('notification.st_attention'),
+      t('notification.withdraw_tokens_maintenance'),
     )
     return
   }

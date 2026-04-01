@@ -7,9 +7,7 @@ import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { host } from '../../axios.config'
 import { useI18n } from 'vue-i18n'
 import CustomSlider from './CustomSlider.vue'
-import ModalNew from './ModalNew.vue'
 import { max_fbtc } from '@/services/data'
-import { claim_fbtc } from '@/services/app'
 
 const { t } = useI18n()
 
@@ -142,8 +140,6 @@ const emitClose = () => {
   emit('close')
 }
 
-const openMaintenanceModal = ref(false)
-
 function getTimeUntil(date) {
   const now = new Date()
   const futureDate = new Date(new Date(date).getTime() + 24 * 60 * 60 * 1000)
@@ -161,10 +157,6 @@ function getTimeUntil(date) {
 }
 
 async function withdrawTBTC() {
-  if (claim_fbtc) {
-    openMaintenanceModal.value = true
-    return
-  }
   const user_id = user?.id
   const receiveWallet = ton_address.value
   // Финальная сумма:
@@ -259,14 +251,6 @@ async function withdrawTBTC() {
 </script>
 
 <template>
-  <ModalNew
-    v-if="openMaintenanceModal"
-    status="warning"
-    :title="t('notification.st_attention')"
-    :body="t('notification.withdraw_tokens_maintenance')"
-    no-auto-close
-    @close="openMaintenanceModal = false"
-  />
   <div class="modal-mask" name="modal">
     <div class="modal-wrapper">
       <div class="modal-container">

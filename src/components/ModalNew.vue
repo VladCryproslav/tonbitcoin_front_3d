@@ -4,7 +4,9 @@ const Error = defineAsyncComponent(() => import('@/assets/error.svg'))
 const Warning = defineAsyncComponent(() => import('@/assets/info.svg'))
 const Exit = defineAsyncComponent(() => import('@/assets/close-modal.svg'))
 
-import { defineAsyncComponent, onMounted } from 'vue'
+import { defineAsyncComponent, onMounted, onUnmounted } from 'vue'
+
+const AUTO_CLOSE_MS = 2000
 
 const props = defineProps({
   status: String,
@@ -20,18 +22,28 @@ const emitClose = () => {
   emit('close')
 }
 
+let closeTimer = null
+
 onMounted(() => {
   if (!props.noAutoClose) {
-    setTimeout(() => {
+    closeTimer = setTimeout(() => {
+      closeTimer = null
       emit('close')
-    }, 2000)
+    }, AUTO_CLOSE_MS)
+  }
+})
+
+onUnmounted(() => {
+  if (closeTimer) {
+    clearTimeout(closeTimer)
+    closeTimer = null
   }
 })
 </script>
 
 <template>
-  <div class="modal-mask" name="modal" @click="emitClose">
-    <div class="modal-wrapper">
+  <div class="modal-mask" name="modal">
+    <div class="modal-wrapper" @click="emitClose">
       <div
         class="modal-container"
         :class="{
@@ -39,6 +51,7 @@ onMounted(() => {
           'status-error': props.status == 'error',
           'status-warning': props.status == 'warning',
         }"
+        @click.stop
       >
         <div class="grouping">
           <Success v-if="props.status == 'success'" :width="22" :height="22" />

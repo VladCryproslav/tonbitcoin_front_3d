@@ -10,6 +10,7 @@ import ModalNew from '@/components/ModalNew.vue'
 import WithdrawModal from '@/components/WithdrawModal.vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { claim_fbtc } from '@/services/app'
 
 const app = useAppStore()
 const connectedAddressString = useTonAddress(false)
@@ -178,6 +179,14 @@ async function withdrawTBTC() {
       'error',
       t('notification.st_error'),
       t('notification.min_withdraw_err', { value: app.withdraw_config?.min_tbtc }),
+    )
+    return
+  }
+  if (claim_fbtc) {
+    showModal(
+      'warning',
+      t('notification.st_attention'),
+      t('notification.withdraw_tokens_maintenance'),
     )
     return
   }

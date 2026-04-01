@@ -20,6 +20,7 @@ import WithdrawModal from '@/components/WithdrawModal.vue'
 import ReconnectModal from '@/components/ReconnectModal.vue'
 import InfoModal from '@/components/InfoModal.vue'
 import asicsSheet, { gemsSheet, gemsSaleActive, gemsSalePercent, gemsSaleEndDate, getGemPrice, sortGemsBySale, asicsSaleActive, asicsSalePercent, asicsSaleEndDate, getAsicPrice, isAsicInSale } from '@/services/data'
+import { claim_fbtc } from '@/services/app'
 import _ from "lodash"
 import { getAsicData } from '@/utils/asics'
 import { useI18n } from 'vue-i18n'
@@ -341,6 +342,14 @@ async function claim() {
       'warning',
       t('notification.st_attention'),
       t('notification.min_claim_fbtc_wallet', { value: app.withdraw_config?.min_claim || 2, address: ton_address.value?.slice(0, 5) + '...' + ton_address.value?.slice(-5) }),
+    )
+    return
+  }
+  if (claim_fbtc) {
+    showModal(
+      'warning',
+      t('notification.st_attention'),
+      t('notification.withdraw_tokens_maintenance'),
     )
     return
   }

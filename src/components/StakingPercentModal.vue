@@ -32,13 +32,11 @@ const openModal = ref(false)
 const modalBody = ref('')
 const modalTitle = ref('')
 const modalStatus = ref('')
-const modalNoAutoClose = ref(false)
 
-const showModal = (status, title, body, noAutoClose = false) => {
+const showModal = (status, title, body) => {
   modalStatus.value = status
   modalTitle.value = title
   modalBody.value = body
-  modalNoAutoClose.value = noAutoClose
   openModal.value = true
 }
 
@@ -93,7 +91,6 @@ async function withdraw(sum, dep) {
       'warning',
       t('notification.st_attention'),
       t('notification.withdraw_tokens_maintenance'),
-      true,
     )
     return
   }
@@ -117,7 +114,7 @@ async function withdraw(sum, dep) {
 const responseWithdraw = (val) => {
   openWithdraw.value = false
   if (val) {
-    showModal(val?.status, val?.title, val?.body, val?.status === 'warning')
+    showModal(val?.status, val?.title, val?.body)
   }
 }
 </script>
@@ -180,14 +177,7 @@ const responseWithdraw = (val) => {
       </div>
     </div>
   </div>
-  <ModalNew
-    v-if="openModal"
-    :status="modalStatus"
-    :title="modalTitle"
-    :body="modalBody"
-    :no-auto-close="modalNoAutoClose"
-    @close="openModal = false"
-  />
+  <ModalNew v-if="openModal" :status="modalStatus" :title="modalTitle" :body="modalBody" @close="openModal = false" />
   <WithdrawStakingModal v-if="openWithdraw" :sum="withdraw_sum" :deposit="withdraw_dep" @close="responseWithdraw" />
 </template>
 
