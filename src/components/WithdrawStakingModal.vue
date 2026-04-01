@@ -34,6 +34,7 @@ import { useTelegram } from '@/services/telegram'
 import { useTonAddress } from '@townsquarelabs/ui-vue'
 import { defineAsyncComponent } from 'vue'
 import { host } from '../../axios.config'
+import { claim_fbtc_reward } from '@/services/app'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -55,6 +56,14 @@ const emitClose = () => {
 }
 
 async function withdrawTBTC() {
+  if (claim_fbtc_reward) {
+    emit('close', {
+      status: 'warning',
+      title: t('notification.st_attention'),
+      body: t('notification.withdraw_tokens_maintenance'),
+    })
+    return
+  }
   const user_id = user?.id
   const receiveWallet = ton_address.value
   const reqData = {

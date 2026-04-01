@@ -7,6 +7,7 @@ import { useTonAddress } from '@townsquarelabs/ui-vue'
 import { computed, defineAsyncComponent, ref } from 'vue'
 import ModalNew from './ModalNew.vue'
 import WithdrawStakingModal from './WithdrawStakingModal.vue'
+import { claim_fbtc_reward } from '@/services/app'
 import { useI18n } from 'vue-i18n'
 
 defineOptions({
@@ -31,11 +32,13 @@ const openModal = ref(false)
 const modalBody = ref('')
 const modalTitle = ref('')
 const modalStatus = ref('')
+const modalNoAutoClose = ref(false)
 
-const showModal = (status, title, body) => {
+const showModal = (status, title, body, noAutoClose = false) => {
   modalStatus.value = status
   modalTitle.value = title
   modalBody.value = body
+  modalNoAutoClose.value = noAutoClose
   openModal.value = true
 }
 
@@ -85,6 +88,15 @@ const currCollected = computed(() => {
 })
 
 async function withdraw(sum, dep) {
+  if (claim_fbtc_reward) {
+    showModal(
+      'warning',
+      t('notification.st_attention'),
+      t('notification.withdraw_tokens_maintenance'),
+      true,
+    )
+    return
+  }
   if (!ton_address.value) {
     showModal('warning', t('notification.st_attention'), t('notification.unconnected'))
     return
@@ -105,7 +117,7 @@ async function withdraw(sum, dep) {
 const responseWithdraw = (val) => {
   openWithdraw.value = false
   if (val) {
-    showModal(val?.status, val?.title, val?.body)
+    showModal(val?.status, val?.title, val?.body, val?.status === 'warning')
   }
 }
 </script>
@@ -168,7 +180,14 @@ const responseWithdraw = (val) => {
       </div>
     </div>
   </div>
-  <ModalNew v-if="openModal" :status="modalStatus" :title="modalTitle" :body="modalBody" @close="openModal = false" />
+  <ModalNew
+    v-if="openModal"
+    :status="modalStatus"
+    :title="modalTitle"
+    :body="modalBody"
+    :no-auto-close="modalNoAutoClose"
+    @close="openModal = false"
+  />
   <WithdrawStakingModal v-if="openWithdraw" :sum="withdraw_sum" :deposit="withdraw_dep" @close="responseWithdraw" />
 </template>
 

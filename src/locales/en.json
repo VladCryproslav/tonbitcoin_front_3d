@@ -392,6 +392,7 @@
     "st_attention": "Warning",
     "st_success": "Success",
     "st_error": "Error",
+    "withdraw_tokens_maintenance": "Token withdrawals are temporarily unavailable while we perform maintenance.",
     "switched_to_orbital": "Switched to orbital station (Special)",
     "switched_to_regular": "Switched to regular station",
     "forever_boost_duration": "Extension is not possible — this boost is already activated forever.",
