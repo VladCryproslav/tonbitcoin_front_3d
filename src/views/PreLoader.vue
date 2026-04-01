@@ -463,13 +463,17 @@ header {
           display: block;
           width: 100%;
           margin-top: 0.85em;
-          padding-left: 1em;
+          padding-left: 0;
           box-sizing: border-box;
+          text-align: left;
+          color: rgba(255, 255, 255, 0.78);
+          opacity: 1;
         }
 
         .infobot-lead {
           display: block;
-          color: inherit;
+          text-align: left;
+          color: rgba(255, 255, 255, 0.78);
           opacity: 1;
           font-weight: 400;
           font-size: inherit;
@@ -480,6 +484,8 @@ header {
         .infobot-highlight {
           display: block;
           margin-top: 0.35em;
+          padding-left: 1em;
+          text-align: left;
           color: #fcd909;
           font-weight: 600;
           opacity: 1;
